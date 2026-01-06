@@ -1,2 +1,2 @@
-# backend
-main backend repository
+# main-game
+main game repository

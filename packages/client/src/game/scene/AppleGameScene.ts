@@ -3,7 +3,7 @@
 
 /* START OF COMPILED CODE */
 
-class AppleGameScene extends Phaser.Scene {
+export class AppleGameScene extends Phaser.Scene {
 
 	constructor() {
 		super("AppleGameScene");

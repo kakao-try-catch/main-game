@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@main-game/common": "file:../common"
+    "@main-game/common": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

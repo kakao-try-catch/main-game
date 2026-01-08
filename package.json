@@ -1,0 +1,20 @@
+{
+  "name": "main-game",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/common",
+    "packages/server",
+    "packages/client"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w packages/client",
+    "build": "npm run build -w packages/common && npm run build -w packages/client && npm run build -w packages/server",
+    "preview": "npm run preview -w packages/client",
+    "lint": "npm run lint -w packages/client"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}

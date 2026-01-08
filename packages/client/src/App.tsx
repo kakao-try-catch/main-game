@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PhaserGame } from './game/PhaserGame';
+import { PhaserGame } from './game/GameContainer';
 import './App.css';
 
 function App() {

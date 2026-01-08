@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
-import { MainScene } from './scenes/MainScene';
+import { AppleGameScene } from './scene/AppleGameScene';
 
 interface PhaserGameProps {
   onGameReady?: (game: Phaser.Game) => void;
@@ -19,7 +19,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady }) => {
       height: 600,
       parent: parentRef.current,
       backgroundColor: '#282c34',
-      scene: [MainScene],
+      scene: [AppleGameScene],
       physics: {
         default: 'arcade',
         arcade: {

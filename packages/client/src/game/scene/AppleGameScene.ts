@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 
-export class MainScene extends Phaser.Scene {
+export class AppleGameScene extends Phaser.Scene {
   constructor() {
-    super({ key: 'MainScene' });
+    super({ key: 'AppleGameScene' });
   }
 
   preload() {
@@ -12,7 +12,7 @@ export class MainScene extends Phaser.Scene {
 
   create() {
     // 게임 오브젝트 생성
-    const text = this.add.text(400, 300, 'Phaser + React + TypeScript', {
+    const text = this.add.text(400, 300, '테스트', {
       fontSize: '32px',
       color: '#ffffff'
     });
@@ -26,5 +26,6 @@ export class MainScene extends Phaser.Scene {
 
   update(_time: number, _delta: number) {
     // 게임 로직 업데이트
+     console.log(_time, _delta);
   }
 }

@@ -7,6 +7,11 @@
     "module": "ESNext",
     "types": ["vite/client"],
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@main-game/common": ["../../common/src"],
+      "@main-game/common/*": ["../../common/src/*"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "bundler",

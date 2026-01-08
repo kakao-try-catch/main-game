@@ -1,0 +1,19 @@
+{
+    "id": "ba830f99-c38d-424b-9a13-e2b108230040",
+    "sceneType": "SCENE",
+    "settings": {
+        "displayName": "AppleGameScene",
+        "preloadPackFiles": [],
+        "createMethodName": "editorCreate",
+        "sceneKey": "AppleGameScene",
+        "compilerOutputLanguage": "TYPE_SCRIPT"
+    },
+    "displayList": [],
+    "plainObjects": [],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

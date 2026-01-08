@@ -1,31 +1,35 @@
-import Phaser from 'phaser';
 
-export class AppleGameScene extends Phaser.Scene {
-  constructor() {
-    super({ key: 'AppleGameScene' });
-  }
+// You can write more code here
 
-  preload() {
-    // 게임 에셋 로드
-    // this.load.image('key', 'path/to/image.png');
-  }
+/* START OF COMPILED CODE */
 
-  create() {
-    // 게임 오브젝트 생성
-    const text = this.add.text(400, 300, '테스트', {
-      fontSize: '32px',
-      color: '#ffffff'
-    });
-    text.setOrigin(0.5);
+class AppleGameScene extends Phaser.Scene {
 
-    // 클릭 이벤트 예제
-    this.input.on('pointerdown', () => {
-      console.log('Game canvas clicked!');
-    });
-  }
+	constructor() {
+		super("AppleGameScene");
 
-  update(_time: number, _delta: number) {
-    // 게임 로직 업데이트
-     console.log(_time, _delta);
-  }
+		/* START-USER-CTR-CODE */
+		// Write your code here.
+		/* END-USER-CTR-CODE */
+	}
+
+	editorCreate(): void {
+
+		this.events.emit("scene-awake");
+	}
+
+	/* START-USER-CODE */
+
+	// Write your code here
+
+	create() {
+
+		this.editorCreate();
+	}
+
+	/* END-USER-CODE */
 }
+
+/* END OF COMPILED CODE */
+
+// You can write more code here

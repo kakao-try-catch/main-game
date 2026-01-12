@@ -1,124 +1,89 @@
 import Phaser from 'phaser';
 
 export interface DragSelectionOptions {
-  fillColor?: number;
-  fillAlpha?: number;
-  lineColor?: number;
-  lineAlpha?: number;
-  lineWidth?: number;
-  log?: boolean;
-  logThrottleMs?: number;
+    fillColor?: number;
+    fillAlpha?: number;
+    lineColor?: number;
+    lineAlpha?: number;
+    lineWidth?: number;
+    onDrag?: (rect: Phaser.Geom.Rectangle) => void;
+    onDragEnd?: (rect: Phaser.Geom.Rectangle) => void;
 }
 
-/**
- * Attach drag-to-select behavior to a scene.
- * Returns a detach() function to remove listeners and graphics.
- */
+const DEFAULT_OPTIONS: Required<Omit<DragSelectionOptions, 'onDrag' | 'onDragEnd'>> = {
+    fillColor: 0xffff00,
+    fillAlpha: 0.4,
+    lineColor: 0xffff00,
+    lineAlpha: 0.8,
+    lineWidth: 2,
+};
+
 export function attachDragSelection(
-  scene: Phaser.Scene,
-  opts: DragSelectionOptions = {}
-) {
-  const {
-    fillColor = 0xfff200,
-    fillAlpha = 0.4,
-    lineColor = 0xfff200,
-    lineAlpha = 0.8,
-    lineWidth = 6,
-    log = true,
-    logThrottleMs = 50,
-  } = opts;
+    scene: Phaser.Scene,
+    options: DragSelectionOptions = {}
+): () => void {
+    const config = { ...DEFAULT_OPTIONS, ...options };
 
-  const graphics = scene.add.graphics();
-  graphics.setDepth(10000);
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
 
-  // 스타일은 한 번만 설정
-  graphics.fillStyle(fillColor, fillAlpha);
-  graphics.lineStyle(lineWidth, lineColor, lineAlpha);
+    // 선택 영역 그래픽
+    const graphics = scene.add.graphics();
+    graphics.setDepth(1000);
 
-  let dragging = false;
-  let startX = 0;
-  let startY = 0;
-  let lastLogTime = 0;
+    // 현재 선택 영역
+    const selectionRect = new Phaser.Geom.Rectangle();
 
-  function onDown(pointer: Phaser.Input.Pointer) {
-    startX = pointer.worldX;
-    startY = pointer.worldY;
-    dragging = true;
+    const onPointerDown = (pointer: Phaser.Input.Pointer) => {
+        isDragging = true;
+        startX = pointer.x;
+        startY = pointer.y;
+        graphics.clear();
+    };
 
-    if (log) {
-      console.log(`drag start: (${startX.toFixed(1)}, ${startY.toFixed(1)})`);
-    }
-  }
+    const onPointerMove = (pointer: Phaser.Input.Pointer) => {
+        if (!isDragging) return;
 
-  function onMove(pointer: Phaser.Input.Pointer) {
-    if (!dragging) return;
+        const x = Math.min(startX, pointer.x);
+        const y = Math.min(startY, pointer.y);
+        const width = Math.abs(pointer.x - startX);
+        const height = Math.abs(pointer.y - startY);
 
-    const curX = pointer.worldX;
-    const curY = pointer.worldY;
+        // 선택 영역 업데이트
+        selectionRect.setTo(x, y, width, height);
 
-    // 쓰로틀링된 로그
-    if (log) {
-      const now = performance.now();
-      if (now - lastLogTime >= logThrottleMs) {
-        lastLogTime = now;
-        console.log(
-          `drag: start=(${startX.toFixed(1)}, ${startY.toFixed(1)}) current=(${curX.toFixed(1)}, ${curY.toFixed(1)})`
-        );
-      }
-    }
+        // 그래픽 그리기
+        graphics.clear();
+        graphics.fillStyle(config.fillColor, config.fillAlpha);
+        graphics.fillRect(x, y, width, height);
+        graphics.lineStyle(config.lineWidth, config.lineColor, config.lineAlpha);
+        graphics.strokeRect(x, y, width, height);
 
-    // 좌표 계산 최적화
-    let x: number, y: number, w: number, h: number;
-    if (startX < curX) {
-      x = startX;
-      w = curX - startX;
-    } else {
-      x = curX;
-      w = startX - curX;
-    }
-    if (startY < curY) {
-      y = startY;
-      h = curY - startY;
-    } else {
-      y = curY;
-      h = startY - curY;
-    }
+        // 드래그 중 콜백 호출
+        options.onDrag?.(selectionRect);
+    };
 
-    graphics.clear();
-    // 스타일 재설정 (clear 후 필요)
-    graphics.fillStyle(fillColor, fillAlpha);
-    graphics.lineStyle(lineWidth, lineColor, lineAlpha);
-    graphics.fillRect(x, y, w, h);
-    graphics.strokeRect(x, y, w, h);
-  }
+    const onPointerUp = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        // 드래그 종료 콜백 호출
+        options.onDragEnd?.(selectionRect);
+        
+        graphics.clear();
+    };
 
-  function onUp(pointer: Phaser.Input.Pointer) {
-    if (!dragging) return;
+    // 이벤트 등록
+    scene.input.on('pointerdown', onPointerDown);
+    scene.input.on('pointermove', onPointerMove);
+    scene.input.on('pointerup', onPointerUp);
 
-    if (log) {
-      console.log(
-        `drag end: start=(${startX.toFixed(1)}, ${startY.toFixed(1)}) end=(${pointer.worldX.toFixed(1)}, ${pointer.worldY.toFixed(1)})`
-      );
-    }
-
-    dragging = false;
-    graphics.clear();
-  }
-
-  scene.input.on('pointerdown', onDown);
-  scene.input.on('pointermove', onMove);
-  scene.input.on('pointerup', onUp);
-  scene.input.on('pointerupoutside', onUp);
-
-  function detach() {
-    scene.input.off('pointerdown', onDown);
-    scene.input.off('pointermove', onMove);
-    scene.input.off('pointerup', onUp);
-    scene.input.off('pointerupoutside', onUp);
-    graphics.destroy();
-  }
-
-  scene.events.once('shutdown', detach);
-
-  return detach;
+    // 해제 함수 반환
+    return () => {
+        scene.input.off('pointerdown', onPointerDown);
+        scene.input.off('pointermove', onPointerMove);
+        scene.input.off('pointerup', onPointerUp);
+        graphics.destroy();
+    };
 }

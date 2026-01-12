@@ -4,22 +4,72 @@ import Phaser from 'phaser';
 
 /* START OF COMPILED CODE */
 
-export default class applePrefab extends Phaser.GameObjects.Ellipse {
+export default class applePrefab extends Phaser.GameObjects.Container {
 
-	constructor(scene: Phaser.Scene, x?: number, y?: number, width?: number, height?: number) {
-		super(scene, x ?? 0, y ?? 0, width ?? 68, height ?? 68);
+	constructor(scene: Phaser.Scene, x?: number, y?: number) {
+		super(scene, x ?? 0, y ?? -7);
 
-		this.isFilled = true;
-		this.fillColor = 14628150;
+		// appleFrame
+		const appleFrame = scene.add.ellipse(0, 7, 68, 68);
+		appleFrame.scaleX = 1.2;
+		appleFrame.scaleY = 1.2;
+		appleFrame.visible = false;
+		appleFrame.isFilled = true;
+		appleFrame.fillColor = 14083697;
+		appleFrame.strokeAlpha = 0.5;
+		this.add(appleFrame);
+
+		// appleShape
+		const appleShape = scene.add.ellipse(0, 7, 68, 68);
+		appleShape.isFilled = true;
+		appleShape.fillColor = 14628150;
+		this.add(appleShape);
+
+		// appleText
+		const appleText = scene.add.text(0, 7, "", {});
+		appleText.setOrigin(0.5, 0.5);
+		appleText.text = "0";
+		appleText.setStyle({ "align": "center", "fontSize": "55px", "fontStyle": "bold" });
+		this.add(appleText);
 
 		/* START-USER-CTR-CODE */
-		// Write your code here.
+		this.appleFrame = appleFrame;
+		//this.appleShape = appleShape;
+		this.appleText = appleText;
 		/* END-USER-CTR-CODE */
 	}
 
 	/* START-USER-CODE */
 
-	// Write your code here.
+	private appleFrame!: Phaser.GameObjects.Ellipse;
+	//private appleShape!: Phaser.GameObjects.Ellipse;
+	private appleText!: Phaser.GameObjects.Text;
+	private appleNumber: number = 0;
+
+	/** 사과 프레임의 visible을 설정합니다. */
+	setFrameVisible(visible: boolean): void {
+		this.appleFrame.visible = visible;
+	}
+
+	/** 사과의 숫자를 설정하고 텍스트에 반영합니다. */
+	setNumber(num: number): void {
+		this.appleNumber = num;
+		this.appleText.text = String(num);
+	}
+
+	/** 사과의 숫자를 반환합니다. */
+	getNumber(): number {
+		return this.appleNumber;
+	}
+
+	/** 주어진 사각형 범위 안에 이 사과가 있는지 확인합니다. */
+	isInRect(rect: Phaser.Geom.Rectangle): boolean {
+		// 사과의 월드 좌표 계산
+		const worldX = this.x;
+		const worldY = this.y + 7;  // appleShape의 로컬 y 오프셋
+		
+		return Phaser.Geom.Rectangle.Contains(rect, worldX, worldY);
+	}
 
 	/* END-USER-CODE */
 }

@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
-import applePrefab from '../applePrefab';
+import applePrefab from '../apple/applePrefab';
+import timerPrefab from '../utils/timerPrefab';
+import TimerSystem from '../utils/timerSystem';
 import { attachDragSelection } from '../utils/dragSelection';
 
 // You can write more code here
@@ -25,18 +27,9 @@ export default class AppleGameScene extends Phaser.Scene {
 		background.isFilled = true;
 		background.fillColor = 15006687;
 
-		// timerBar
-		const timerBar = this.add.rectangle(1324, 75, 22, 752);
-		timerBar.setOrigin(0, 0);
-		timerBar.isFilled = true;
-		timerBar.fillColor = 4170789;
 
-		// timeTxt
-		const timeTxt = this.add.text(1298, 24, "", {});
-		timeTxt.scaleX = 0.9;
-		timeTxt.scaleY = 1.3;
-		timeTxt.text = "TIME";
-		timeTxt.setStyle({ "color": "#000000ff", "fontSize": "32px", "fontStyle": "bold", "stroke": "#000000ff" });
+		this.timer = new timerPrefab(this, 1336, 32);
+		this.add.existing(this.timer);
 
 		const base = { x: 91, y: 91 };
 		// applePrefab instances
@@ -49,7 +42,13 @@ export default class AppleGameScene extends Phaser.Scene {
 		this.events.emit("scene-awake");
 	}
 
+	private timer!: timerPrefab;
+	private timerSystem!: TimerSystem;
+
 	/* START-USER-CODE */
+
+	// 전체 게임 시간 (초)
+	private static readonly TOTAL_GAME_TIME = 110;
 
 	// 드래그 선택 해제용 함수 (씬 전환 시 자동 정리됨)
 	private detachDrag?: () => void;
@@ -57,6 +56,13 @@ export default class AppleGameScene extends Phaser.Scene {
 	create() {
 		this.editorCreate();
 		this.setupDragSelection();
+		this.setupTimer();
+	}
+
+	/** 타이머 시스템 초기화 */
+	private setupTimer() {
+		this.timerSystem = new TimerSystem(this, this.timer);
+		this.timerSystem.start(AppleGameScene.TOTAL_GAME_TIME);
 	}
 
 	/** 드래그 선택 박스 초기화 */

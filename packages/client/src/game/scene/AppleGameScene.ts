@@ -48,7 +48,7 @@ export default class AppleGameScene extends Phaser.Scene {
 	/* START-USER-CODE */
 
 	// 전체 게임 시간 (초)
-	private static readonly TOTAL_GAME_TIME = 110;
+	private static readonly TOTAL_GAME_TIME = 110; //110초
 
 	// 드래그 선택 해제용 함수 (씬 전환 시 자동 정리됨)
 	private detachDrag?: () => void;

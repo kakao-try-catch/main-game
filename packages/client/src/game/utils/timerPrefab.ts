@@ -34,15 +34,14 @@ export default class timerPrefab extends Phaser.GameObjects.Container {
 
 	private timerBar!: Phaser.GameObjects.Rectangle;
 
-	/**
-	 * 타이머 바의 높이를 비율에 맞게 조정합니다.
-	 * @param ratio 0~1 사이의 비율 (1 = 가득 참, 0 = 비어 있음)
-	 */
-	setBarRatio(ratio: number): void {
-		// 비율을 0~1 사이로 클램프
-		const clampedRatio = Math.max(0, Math.min(1, ratio));
-		// scaleY를 사용하여 위에서 아래로 줄어들게 함 (origin이 하단이므로)
-		this.timerBar.scaleY = clampedRatio;
+	/** 타이머 바 오브젝트 반환 (Tween 직접 적용) */
+	getBar(): Phaser.GameObjects.Rectangle {
+		return this.timerBar;
+	}
+
+	/** 타이머 바 스케일 직접 설정 */
+	setBarScale(scale: number): void {
+		this.timerBar.scaleY = Math.max(0, Math.min(1, scale));
 	}
 
 	/* END-USER-CODE */

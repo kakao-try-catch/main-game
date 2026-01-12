@@ -2,6 +2,7 @@
     "id": "70c771cf-a8d7-4d17-8474-899ce116fcf8",
     "sceneType": "PREFAB",
     "settings": {
+        "exportClass": true,
         "preloadMethodName": "",
         "preloadPackFiles": [],
         "createMethodName": "",

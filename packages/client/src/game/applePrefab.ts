@@ -1,9 +1,10 @@
+import Phaser from 'phaser';
 
 // You can write more code here
 
 /* START OF COMPILED CODE */
 
-class applePrefab extends Phaser.GameObjects.Ellipse {
+export default class applePrefab extends Phaser.GameObjects.Ellipse {
 
 	constructor(scene: Phaser.Scene, x?: number, y?: number, width?: number, height?: number) {
 		super(scene, x ?? 0, y ?? 0, width ?? 68, height ?? 68);

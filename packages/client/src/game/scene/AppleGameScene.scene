@@ -2,6 +2,7 @@
     "id": "ba830f99-c38d-424b-9a13-e2b108230040",
     "sceneType": "SCENE",
     "settings": {
+        "exportClass": true,
         "displayName": "AppleGameScene",
         "preloadPackFiles": [],
         "createMethodName": "editorCreate",
@@ -35,7 +36,7 @@
         {
             "type": "Container",
             "id": "85597097-47f5-4250-b6d6-e01f9f866247",
-            "label": "row 1",
+            "label": "row_0",
             "x": 91,
             "y": 91,
             "list": [
@@ -231,7 +232,7 @@
         {
             "type": "Container",
             "id": "1738054c-b6e5-4eda-ba0d-72f0a1a4dcb7",
-            "label": "row",
+            "label": "row_1",
             "x": 91,
             "y": 165,
             "list": [
@@ -427,7 +428,7 @@
         {
             "type": "Container",
             "id": "55aba002-ed97-4a98-9ffe-3a9ea6ce4cb7",
-            "label": "row_1",
+            "label": "row_2",
             "x": 91,
             "y": 239,
             "list": [
@@ -623,7 +624,7 @@
         {
             "type": "Container",
             "id": "0c8942f9-5f05-4c93-8794-32cb78a93cab",
-            "label": "row_2",
+            "label": "row_3",
             "x": 91,
             "y": 313,
             "list": [
@@ -819,7 +820,7 @@
         {
             "type": "Container",
             "id": "8792cdc1-76ff-497a-a727-49ac6e2ed35c",
-            "label": "row_3",
+            "label": "row_4",
             "x": 91,
             "y": 387,
             "list": [
@@ -1015,7 +1016,7 @@
         {
             "type": "Container",
             "id": "9da66a04-ce17-495e-8555-f79990dad378",
-            "label": "row_4",
+            "label": "row_5",
             "x": 91,
             "y": 461,
             "list": [
@@ -1211,7 +1212,7 @@
         {
             "type": "Container",
             "id": "1f69eebb-44aa-4c8b-9921-dd9d3444d52a",
-            "label": "row_5",
+            "label": "row_6",
             "x": 91,
             "y": 535,
             "list": [
@@ -1407,7 +1408,7 @@
         {
             "type": "Container",
             "id": "348479ff-f5ad-4749-8c00-2f2710a000ed",
-            "label": "row_6",
+            "label": "row_7",
             "x": 91,
             "y": 609,
             "list": [
@@ -1603,7 +1604,7 @@
         {
             "type": "Container",
             "id": "d9f7a532-ac57-40b8-860d-977cdd5515d6",
-            "label": "row_7",
+            "label": "row_8",
             "x": 91,
             "y": 683,
             "list": [
@@ -1799,7 +1800,7 @@
         {
             "type": "Container",
             "id": "da2ed83a-88ba-4586-89f8-0fe9a0268728",
-            "label": "row_8",
+            "label": "row_9",
             "x": 91,
             "y": 757,
             "list": [

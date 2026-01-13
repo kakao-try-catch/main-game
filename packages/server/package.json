@@ -11,11 +11,12 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@main-game/common": "workspace:*"
+    "@main-game/common": "workspace:*",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
-    "typescript": "~5.9.3",
+    "@types/node": "^24.10.1",
     "ts-node": "^10.9.2",
-    "@types/node": "^24.10.1"
+    "typescript": "~5.9.3"
   }
 }

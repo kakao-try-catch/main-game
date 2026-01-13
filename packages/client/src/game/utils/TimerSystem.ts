@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import timerPrefab from './TimerPrefab';
+import AppleGameManager from '../apple/AppleGameManager';
 
 /** 타이머 이벤트 타입 */
 export const TimerEvents = {
@@ -10,6 +11,7 @@ export const TimerEvents = {
 export default class TimerSystem {
     private readonly scene: Phaser.Scene;
     private readonly timerPrefab: timerPrefab;
+    private readonly appleGameManager?: AppleGameManager;
     
     private totalTime = 0;
     private remainingTime = 0;
@@ -19,9 +21,10 @@ export default class TimerSystem {
     private isFinished = false;
     private isPaused = false;
 
-    constructor(scene: Phaser.Scene, timerPrefabInstance: timerPrefab) {
+    constructor(scene: Phaser.Scene, timerPrefabInstance: timerPrefab, appleGameManager?: AppleGameManager) {
         this.scene = scene;
         this.timerPrefab = timerPrefabInstance;
+        this.appleGameManager = appleGameManager;
         
         // 씬 종료 시 자동 정리
         this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
@@ -75,6 +78,7 @@ export default class TimerSystem {
         
         console.log('⏱️ 타이머 종료! 시간이 모두 소진되었습니다.');
         this.scene.events.emit(TimerEvents.COMPLETE);
+        this.appleGameManager?.gameEnd();
     }
 
     /** 타이머 일시정지 */

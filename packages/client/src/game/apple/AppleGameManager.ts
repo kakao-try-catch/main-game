@@ -3,6 +3,7 @@ import applePrefab from './ApplePrefab';
 import TimerPrefab from '../utils/TimerPrefab';
 import TimerSystem from '../utils/TimerSystem';
 import { attachDragSelection } from '../utils/DragSelection';
+import GameResultPrefab from '../utils/game-result/GameResultPrefab';
 
 /** 사과 게임 설정 */
 interface AppleGameConfig {
@@ -138,8 +139,19 @@ export default class AppleGameManager {
 
     /** 타이머 시작 */
     private startTimer(): void {
-        this.timerSystem = new TimerSystem(this.scene, this.timerPrefab);
+        this.timerSystem = new TimerSystem(this.scene, this.timerPrefab, this);
         this.timerSystem.start(this.config.totalTime);
+    }
+
+    public gameEnd(): void {
+        // 드래그 선택 비활성화
+        this.detachDrag?.();
+        
+        // 게임 결과 화면 표시
+        const gameResult = new GameResultPrefab(this.scene);
+        this.scene.add.existing(gameResult);
+        
+        console.log('🎮 게임 종료! 결과 화면 표시');
     }
 
     /** 전체 사과 리스트 반환 */

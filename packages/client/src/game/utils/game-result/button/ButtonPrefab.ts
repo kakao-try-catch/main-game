@@ -28,6 +28,11 @@ export default class ButtonPrefab extends Phaser.GameObjects.Container {
 		/* START-USER-CTR-CODE */
 		// Write your code here.
 		this.setSize(386, 136);
+		this.setInteractive({ useHandCursor: true })
+			.on('pointerover', () => this.onPointerOver())
+			.on('pointerout', () => this.onPointerOut())
+			.on('pointerdown', () => this.onPointerDown())
+			.on('pointerup', () => this.onPointerUp());
 		/* END-USER-CTR-CODE */
 	}
 
@@ -40,6 +45,36 @@ export default class ButtonPrefab extends Phaser.GameObjects.Container {
 	setText(label: string): this {
 		this.text.setText(label);
 		return this;
+	}
+
+	/**
+	 * 클릭 이벤트 핸들러를 설정합니다.
+	 * @param callback 클릭 시 실행할 콜백 함수
+	 */
+	setOnClick(callback: () => void): this {
+		this.onClick = callback;
+		return this;
+	}
+
+	private onPointerOver(): void {
+		this.shape.fillColor = 0x7A9FD1; // 밝은 색으로 변경
+		this.scene.game.canvas.style.cursor = 'pointer';
+	}
+
+	private onPointerOut(): void {
+		this.shape.fillColor = 9530303; // 원래 색으로 복원
+		this.scene.game.canvas.style.cursor = 'default';
+	}
+
+	private onPointerDown(): void {
+		this.shape.fillColor = 0x6B8FC1; // 눌린 상태 색상
+		this.setScale(0.95); // 살짝 축소
+	}
+
+	private onPointerUp(): void {
+		this.shape.fillColor = 0x7A9FD1;
+		this.setScale(1); // 원래 크기로 복원
+		this.onClick?.();
 	}
 
 	/* END-USER-CODE */

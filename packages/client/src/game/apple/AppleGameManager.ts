@@ -124,13 +124,19 @@ export default class AppleGameManager {
 
         console.log(`선택된 사과 수: ${this.selectedApples.size}, 합계: ${sum}`);
 
-        // 합이 10이면 사과 제거
+        // 2. 합이 10이면 사과 제거 및 점수 계산
         if (sum === 10) {
+            const score = this.selectedApples.size; 
+
             this.selectedApples.forEach(apple => {
                 apple.destroy();
             });
             // 삭제된 사과들을 리스트에서 한 번에 필터링
             this.apples = this.apples.filter(apple => apple.active);
+            
+            // 점수 이벤트 발생
+            this.scene.events.emit('appleScored', { points: score });
+
         } else {
             // 프레임 숨기기 (삭제하지 않은 경우에만)
             this.selectedApples.forEach(apple => apple.setFrameVisible(false));
@@ -138,7 +144,7 @@ export default class AppleGameManager {
         
         this.selectedApples.clear();
     }
-
+    
     /** 타이머 시작 */
     private startTimer(): void {
         this.timerSystem = new TimerSystem(this.scene, this.timerPrefab, this);

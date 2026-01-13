@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import timerPrefab from '../utils/timerPrefab';
-import AppleGameManager from '../apple/appleGameManager';
+import timerPrefab from '../utils/Timer.prefab';
+import AppleGameManager from '../apple/AppleGameManager';
 
 // You can write more code here
 

@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import applePrefab from './applePrefab';
-import timerPrefab from '../utils/timerPrefab';
-import TimerSystem from '../utils/timerSystem';
-import { attachDragSelection } from '../utils/dragSelection';
+import applePrefab from './Apple.prefab';
+import timerPrefab from '../utils/Timer.prefab';
+import TimerSystem from '../utils/TimerSystem';
+import { attachDragSelection } from '../utils/DragSelection';
 
 /** 사과 게임 설정 */
 interface AppleGameConfig {
@@ -54,6 +54,7 @@ export default class AppleGameManager {
 
     /** 게임 초기화 및 시작 */
     init(): void {
+
         this.createApples();
         this.setupDragSelection();
         this.startTimer();

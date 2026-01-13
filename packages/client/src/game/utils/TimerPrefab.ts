@@ -3,7 +3,7 @@
 
 /* START OF COMPILED CODE */
 
-export default class timerPrefab extends Phaser.GameObjects.Container {
+export default class TimerPrefab extends Phaser.GameObjects.Container {
 
 	constructor(scene: Phaser.Scene, x?: number, y?: number) {
 		super(scene, x ?? 0, y ?? 0);

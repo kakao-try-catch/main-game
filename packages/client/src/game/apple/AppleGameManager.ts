@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import applePrefab from './Apple.prefab';
-import timerPrefab from '../utils/Timer.prefab';
+import applePrefab from './ApplePrefab';
+import TimerPrefab from '../utils/TimerPrefab';
 import TimerSystem from '../utils/TimerSystem';
 import { attachDragSelection } from '../utils/DragSelection';
 
@@ -40,13 +40,13 @@ export default class AppleGameManager {
     private selectedApples: Set<applePrefab> = new Set();
     
     // 타이머 관련
-    private timerPrefab!: timerPrefab;
+    private timerPrefab!: TimerPrefab;
     private timerSystem!: TimerSystem;
     
     // 드래그 선택 해제용
     private detachDrag?: () => void;
 
-    constructor(scene: Phaser.Scene, timer: timerPrefab, config: Partial<AppleGameConfig> = {}) {
+    constructor(scene: Phaser.Scene, timer: TimerPrefab, config: Partial<AppleGameConfig> = {}) {
         this.scene = scene;
         this.timerPrefab = timer;
         this.config = { ...DEFAULT_CONFIG, ...config };

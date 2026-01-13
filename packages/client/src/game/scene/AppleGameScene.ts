@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import timerPrefab from '../utils/Timer.prefab';
+import TimerPrefab from '../utils/TimerPrefab';
 import AppleGameManager from '../apple/AppleGameManager';
 
 // You can write more code here
@@ -26,13 +26,13 @@ export default class AppleGameScene extends Phaser.Scene {
 		background.fillColor = 0xF6F5F6;
 
 
-		this.timer = new timerPrefab(this, 1336, 32);
+		this.timer = new TimerPrefab(this, 1336, 32);
 		this.add.existing(this.timer);
 
 		this.events.emit("scene-awake");
 	}
 
-	private timer!: timerPrefab;
+	private timer!: TimerPrefab;
 	private gameManager!: AppleGameManager;
 
 	/* START-USER-CODE */

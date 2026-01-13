@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import timerPrefab from './Timer.prefab';
+import timerPrefab from './TimerPrefab';
 
 /** 타이머 이벤트 타입 */
 export const TimerEvents = {

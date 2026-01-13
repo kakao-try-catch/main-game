@@ -23,7 +23,7 @@ export default class AppleGameScene extends Phaser.Scene {
 		const background = this.add.rectangle(0, 0, 1380, 862);
 		background.setOrigin(0, 0);
 		background.isFilled = true;
-		background.fillColor = 15006687;
+		background.fillColor = 0xF6F5F6;
 
 
 		this.timer = new timerPrefab(this, 1336, 32);

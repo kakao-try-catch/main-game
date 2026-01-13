@@ -69,6 +69,53 @@
                     "fontSize": "60px",
                     "fontStyle": "bold",
                     "color": "#000000ff"
+                },
+                {
+                    "type": "Container",
+                    "id": "6cae2007-b3ae-492d-a48f-bc10372e1a82",
+                    "label": "Rank",
+                    "x": -285,
+                    "y": 29,
+                    "list": [
+                        {
+                            "type": "Rectangle",
+                            "id": "c51cda6d-e15c-4e37-ae49-7ae8d0f45b03",
+                            "label": "PlayerRank",
+                            "x": 3,
+                            "y": 233,
+                            "originY": 1,
+                            "isFilled": true,
+                            "fillColor": "#bababa",
+                            "width": 210,
+                            "height": 246
+                        },
+                        {
+                            "type": "Text",
+                            "id": "fabc5ae6-f0cc-426e-8317-2e6e82af0dd2",
+                            "label": "scoreText",
+                            "originX": 0.5,
+                            "text": "6",
+                            "resolution": 5,
+                            "fontFamily": "Ariel",
+                            "fontSize": "50px",
+                            "fontStyle": "bold",
+                            "color": "#000000ff"
+                        },
+                        {
+                            "type": "Text",
+                            "id": "0b9a05a4-1de9-4e8b-aa81-a71ae964dee9",
+                            "label": "playerNameText",
+                            "x": 4,
+                            "y": -15,
+                            "originX": 0.5,
+                            "originY": 1,
+                            "text": "Sonia",
+                            "resolution": 5,
+                            "fontFamily": "Ariel",
+                            "fontSize": "50px",
+                            "color": "#000000ff"
+                        }
+                    ]
                 }
             ]
         }

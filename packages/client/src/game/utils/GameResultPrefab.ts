@@ -35,6 +35,31 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		titleText.setStyle({ "align": "center", "color": "#000000ff", "fontFamily": "Ariel", "fontSize": "60px", "fontStyle": "bold", "resolution": 5 });
 		this.add(titleText);
 
+		// Rank
+		const rank = scene.add.container(-285, 29);
+		this.add(rank);
+
+		// PlayerRank
+		const playerRank = scene.add.rectangle(3, 233, 210, 246);
+		playerRank.setOrigin(0.5, 1);
+		playerRank.isFilled = true;
+		playerRank.fillColor = 12237498;
+		rank.add(playerRank);
+
+		// scoreText
+		const scoreText = scene.add.text(0, 0, "", {});
+		scoreText.setOrigin(0.5, 0);
+		scoreText.text = "6";
+		scoreText.setStyle({ "color": "#000000ff", "fontFamily": "Ariel", "fontSize": "50px", "fontStyle": "bold", "resolution": 5 });
+		rank.add(scoreText);
+
+		// playerNameText
+		const playerNameText = scene.add.text(4, -15, "", {});
+		playerNameText.setOrigin(0.5, 1);
+		playerNameText.text = "Sonia";
+		playerNameText.setStyle({ "color": "#000000ff", "fontFamily": "Ariel", "fontSize": "50px", "resolution": 5 });
+		rank.add(playerNameText);
+
 		/* START-USER-CTR-CODE */
 		// Write your code here.
 		/* END-USER-CTR-CODE */

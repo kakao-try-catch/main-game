@@ -36,7 +36,7 @@ export default class AppleGameManager {
     // 전체 사과 리스트
     private apples: applePrefab[] = [];
     
-    // 현재 선택된 사과들
+    // 현재 선택된 사과들 (합이 10일시 이걸 apples에서 삭제함)
     private selectedApples: Set<applePrefab> = new Set();
     
     // 타이머 관련

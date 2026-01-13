@@ -67,7 +67,7 @@ export default class applePrefab extends Phaser.GameObjects.Container {
 		// 사과의 월드 좌표 계산
 		const worldX = this.x;
 		const worldY = this.y + 7;  // appleShape의 로컬 y 오프셋
-		
+
 		return Phaser.Geom.Rectangle.Contains(rect, worldX, worldY);
 	}
 

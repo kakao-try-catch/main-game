@@ -5,9 +5,10 @@ import { BootScene } from './scene/BootScene';
 
 interface PhaserGameProps {
   onGameReady?: (game: Phaser.Game) => void;
+  onAppleScored?: (points: number) => void;
 }
 
-export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady }) => {
+export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScored }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -37,11 +38,28 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady }) => {
       onGameReady(game);
     }
 
+
+    let appleGameScene: Phaser.Scene | null = null;
+    let appleScoredHandler: ((data: { points: number }) => void) | null = null;
+    
+    game.events.once('ready', () => {
+      appleGameScene = game.scene.getScene('AppleGameScene');
+      if (appleGameScene && onAppleScored) {
+        appleScoredHandler = (data: { points: number }) => {
+          onAppleScored(data.points);
+        };
+        appleGameScene.events.on('appleScored', appleScoredHandler);
+      }
+    });
+
     return () => {
+      if (appleGameScene && appleScoredHandler) {
+        appleGameScene.events.off('appleScored', appleScoredHandler);
+      }
       game.destroy(true);
       gameRef.current = null;
     };
-  }, [onGameReady]);
+  }, [onGameReady, onAppleScored]);
 
   return <div ref={parentRef} id="phaser-game" />;
 };

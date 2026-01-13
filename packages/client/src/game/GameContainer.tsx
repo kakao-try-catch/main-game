@@ -39,16 +39,23 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
     }
 
 
+    let appleGameScene: Phaser.Scene | null = null;
+    let appleScoredHandler: ((data: { points: number }) => void) | null = null;
+    
     game.events.once('ready', () => {
-      const appleGameScene = game.scene.getScene('AppleGameScene');
+      appleGameScene = game.scene.getScene('AppleGameScene');
       if (appleGameScene && onAppleScored) {
-        appleGameScene.events.on('appleScored', (data: { points: number }) => {
+        appleScoredHandler = (data: { points: number }) => {
           onAppleScored(data.points);
-        });
+        };
+        appleGameScene.events.on('appleScored', appleScoredHandler);
       }
     });
 
     return () => {
+      if (appleGameScene && appleScoredHandler) {
+        appleGameScene.events.off('appleScored', appleScoredHandler);
+      }
       game.destroy(true);
       gameRef.current = null;
     };

@@ -5,9 +5,10 @@ import { BootScene } from './scene/BootScene';
 
 interface PhaserGameProps {
   onGameReady?: (game: Phaser.Game) => void;
+  onAppleScored?: (points: number) => void;
 }
 
-export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady }) => {
+export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScored }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -37,11 +38,21 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady }) => {
       onGameReady(game);
     }
 
+
+    game.events.once('ready', () => {
+      const appleGameScene = game.scene.getScene('AppleGameScene');
+      if (appleGameScene && onAppleScored) {
+        appleGameScene.events.on('appleScored', (data: { points: number }) => {
+          onAppleScored(data.points);
+        });
+      }
+    });
+
     return () => {
       game.destroy(true);
       gameRef.current = null;
     };
-  }, [onGameReady]);
+  }, [onGameReady, onAppleScored]);
 
   return <div ref={parentRef} id="phaser-game" />;
 };

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { PhaserGame } from './game/GameContainer';
-import PlayerCard from './components/PlayerCard'; // PlayerCard 경로에 맞게 수정
+import PlayerCard from './components/PlayerCard';
 import './App.css';
 
 interface PlayerData {
@@ -11,10 +11,11 @@ interface PlayerData {
 }
 
 function App() {
-  const testPlayerCount =  1; // 테스트용 플레이어 수
+  const testPlayerCount = 1;
+
+  const testCurrentUserId = "id_1";
 
   const [gameReady, setGameReady] = useState(false);
-
   const [players, setPlayers] = useState<PlayerData[]>([
     { id: "id_1", name: "1P", score: 0, color: "#209cee" },
     { id: "id_2", name: "2P", score: 0, color: "#e76e55" },
@@ -22,10 +23,25 @@ function App() {
     { id: "id_4", name: "4P", score: 0, color: "#f2d024" },
   ]);
 
-  const handleGameReady = (game: Phaser.Game) => {
+  // 점수 증가 함수
+  const handleAddScore = (playerId: string, pointsToAdd: number) => {
+    setPlayers(prevPlayers => 
+      prevPlayers.map(player => 
+        player.id === playerId 
+          ? { ...player, score: player.score + pointsToAdd } 
+          : player
+      )
+    );
+  };
+
+  const handleAppleScored = useCallback((points: number) => {
+    handleAddScore(testCurrentUserId, points);
+  }, [testCurrentUserId]);
+
+  const handleGameReady = useCallback((game: Phaser.Game) => {
     console.log('Phaser game is ready!', game);
     setGameReady(true);
-  };
+  }, []);
 
   return (
     <div className="App">
@@ -37,12 +53,12 @@ function App() {
 
       <div style={playerListStyle}>
         {players.slice(0, testPlayerCount).map((player) => (
-          <PlayerCard name={player.name} score={player.score} color={player.color} />
+          <PlayerCard key={player.id} name={player.name} score={player.score} color={player.color} />
         ))}
       </div>
 
       <main className="game-container">
-        <PhaserGame onGameReady={handleGameReady} />
+        <PhaserGame onGameReady={handleGameReady} onAppleScored={handleAppleScored} />
       </main>
     </div>
   );
@@ -53,6 +69,7 @@ const playerListStyle: React.CSSProperties = {
   flexWrap: 'wrap',
   gap: '16px', 
   marginLeft: '32px',
+  marginTop: '20px', // UI 간격 조정
   alignSelf: 'flex-start',
 };
 

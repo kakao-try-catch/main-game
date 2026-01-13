@@ -1,0 +1,68 @@
+{
+    "id": "70c771cf-a8d7-4d17-8474-899ce116fcf8",
+    "sceneType": "PREFAB",
+    "settings": {
+        "exportClass": true,
+        "preloadMethodName": "",
+        "preloadPackFiles": [],
+        "createMethodName": "",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 1380,
+        "borderHeight": 862
+    },
+    "displayList": [
+        {
+            "type": "Container",
+            "id": "bba418f4-e4b4-48f8-92bf-61de25b10c30",
+            "label": "container_1",
+            "y": -7,
+            "list": [
+                {
+                    "type": "Ellipse",
+                    "id": "62f9e69b-bd88-4035-b5e2-7710f3c44e7b",
+                    "label": "appleFrame",
+                    "y": 7,
+                    "scaleX": 1.2,
+                    "scaleY": 1.2,
+                    "visible": false,
+                    "isFilled": true,
+                    "fillColor": "#DECF00",
+                    "strokeAlpha": 0.5,
+                    "width": 68,
+                    "height": 68
+                },
+                {
+                    "type": "Ellipse",
+                    "id": "4728d813-6851-4a53-81d1-4405e94301b9",
+                    "label": "appleShape",
+                    "y": 7,
+                    "scaleX": 0.9,
+                    "scaleY": 0.9,
+                    "isFilled": true,
+                    "fillColor": "df3536",
+                    "width": 68,
+                    "height": 68
+                },
+                {
+                    "type": "Text",
+                    "id": "50fb79b3-a226-4298-b72e-86bdb5eec736",
+                    "label": "appleText",
+                    "y": 7,
+                    "originX": 0.5,
+                    "originY": 0.5,
+                    "text": "0",
+                    "align": "center",
+                    "fontSize": "50px",
+                    "fontStyle": "bold"
+                }
+            ]
+        }
+    ],
+    "plainObjects": [],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

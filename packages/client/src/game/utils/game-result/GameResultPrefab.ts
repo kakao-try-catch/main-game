@@ -41,10 +41,14 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		// Write your code here.
 
 		//rank players
+		const playerCount = 4; // 나중에 실제 플레이어 수로 변경
+		const spacing = 216;
+		const centerX = 39; // 가운데 정렬 기준점
+		const startX = centerX - ((playerCount - 1) * spacing) / 2;
 
-		for(let i = 0; i < 4; i++) { //나중에 4라는 숫자는 플레이어 수로 바꿀 것
-			const rankPlayer = new RankOnePlayerPrefab(scene, -285 + i * 216, 29);
-			rankPlayer.setRank(i + 1); //1~4등 //임시로 1,2,3,4 순서로 하게 하였음!
+		for(let i = 0; i < playerCount; i++) {
+			const rankPlayer = new RankOnePlayerPrefab(scene, startX + i * spacing, 29);
+			rankPlayer.setRank(i + 1); //1~4등 //임시로 1,2,3,4 순서로 하게 하였음
 			this.add(rankPlayer);
 		}
 

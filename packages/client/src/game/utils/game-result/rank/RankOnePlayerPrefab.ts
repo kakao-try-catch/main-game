@@ -73,8 +73,8 @@ export default class RankOnePlayerPrefab extends Phaser.GameObjects.Container {
 		// 높이 차이 계산 (1등 기준과의 차이)
 		const heightDiff = this.BASE_HEIGHT - config.height;
 
-		// playerRank 높이 변경
-		this.playerRank.height = config.height;
+		// playerRank 높이 변경 (setSize 사용하여 origin 기준으로 크기 조정)
+		this.playerRank.setSize(210, config.height);
 
 		// 높이 차이에 따라 Y 좌표 조정
 		this.scoreText.setY(this.BASE_SCORE_TEXT_Y + heightDiff);

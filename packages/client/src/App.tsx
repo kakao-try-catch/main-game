@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PhaserGame } from './game/GameContainer';
 import './App.css';
+import PlayerCard from './components/PlayerCard';
 
 function App() {
   const [gameReady, setGameReady] = useState(false);
@@ -16,16 +17,10 @@ function App() {
         <h1>My Phaser Game</h1>
         {gameReady && <p>게임이 준비되었습니다!</p>}
       </header>
-      
+      <PlayerCard/>
       <main className="game-container">
         <PhaserGame onGameReady={handleGameReady} />
       </main>
-
-      <footer className="game-controls">
-        <button onClick={() => console.log('Button clicked')}>
-          테스트 버튼
-        </button>
-      </footer>
     </div>
   );
 }

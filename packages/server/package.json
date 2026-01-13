@@ -1,0 +1,21 @@
+{
+  "name": "@main-game/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@main-game/common": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "ts-node": "^10.9.2",
+    "@types/node": "^24.10.1"
+  }
+}

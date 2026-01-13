@@ -1,0 +1,21 @@
+{
+    "section1": {
+        "files": [
+            {
+                "url": {
+                    "IMG": "src/assets/사과게임 1안.png"
+                },
+                "type": "texture",
+                "key": "사과게임 1안"
+            }
+        ]
+    },
+    "meta": {
+        "app": "Phaser Editor 2D - Asset Pack Editor",
+        "contentType": "phasereditor2d.pack.core.AssetContentType",
+        "url": "https://phasereditor2d.com",
+        "version": 2,
+        "showAllFilesInBlocks": false,
+        "visible": true
+    }
+}

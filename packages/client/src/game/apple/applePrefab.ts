@@ -15,12 +15,14 @@ export default class applePrefab extends Phaser.GameObjects.Container {
 		appleFrame.scaleY = 1.2;
 		appleFrame.visible = false;
 		appleFrame.isFilled = true;
-		appleFrame.fillColor = 14083697;
+		appleFrame.fillColor = 14601984;
 		appleFrame.strokeAlpha = 0.5;
 		this.add(appleFrame);
 
 		// appleShape
 		const appleShape = scene.add.ellipse(0, 7, 68, 68);
+		appleShape.scaleX = 0.9;
+		appleShape.scaleY = 0.9;
 		appleShape.isFilled = true;
 		appleShape.fillColor = 14628150;
 		this.add(appleShape);
@@ -29,7 +31,7 @@ export default class applePrefab extends Phaser.GameObjects.Container {
 		const appleText = scene.add.text(0, 7, "", {});
 		appleText.setOrigin(0.5, 0.5);
 		appleText.text = "0";
-		appleText.setStyle({ "align": "center", "fontSize": "55px", "fontStyle": "bold" });
+		appleText.setStyle({ "align": "center", "fontSize": "50px", "fontStyle": "bold" });
 		this.add(appleText);
 
 		/* START-USER-CTR-CODE */

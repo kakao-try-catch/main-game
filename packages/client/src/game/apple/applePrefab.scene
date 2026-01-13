@@ -26,7 +26,7 @@
                     "scaleY": 1.2,
                     "visible": false,
                     "isFilled": true,
-                    "fillColor": "#d6e671",
+                    "fillColor": "#DECF00",
                     "strokeAlpha": 0.5,
                     "width": 68,
                     "height": 68
@@ -36,6 +36,8 @@
                     "id": "4728d813-6851-4a53-81d1-4405e94301b9",
                     "label": "appleShape",
                     "y": 7,
+                    "scaleX": 0.9,
+                    "scaleY": 0.9,
                     "isFilled": true,
                     "fillColor": "df3536",
                     "width": 68,
@@ -50,7 +52,7 @@
                     "originY": 0.5,
                     "text": "0",
                     "align": "center",
-                    "fontSize": "55px",
+                    "fontSize": "50px",
                     "fontStyle": "bold"
                 }
             ]

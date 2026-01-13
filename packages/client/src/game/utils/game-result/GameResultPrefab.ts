@@ -18,7 +18,6 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 
 		// Frame
 		const frame = scene.add.rectangle(35, 146, 1041, 690);
-		frame.visible = false;
 		frame.isFilled = true;
 		frame.fillColor = 16184822;
 		frame.isStroked = true;
@@ -55,7 +54,7 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		replayButton
 			.setText("REPLAY")
 			.setOnClick(() => {
-				console.log("Replay clicked!");
+				scene.scene.restart();
 			});
 		this.add(replayButton);
 

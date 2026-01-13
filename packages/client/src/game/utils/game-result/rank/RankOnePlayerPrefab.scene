@@ -1,0 +1,79 @@
+{
+    "id": "8c3e46c2-6f31-4488-a30a-3f54614f01c2",
+    "sceneType": "PREFAB",
+    "settings": {
+        "exportClass": true,
+        "preloadMethodName": "",
+        "preloadPackFiles": [],
+        "createMethodName": "",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 1440,
+        "borderHeight": 896
+    },
+    "displayList": [
+        {
+            "type": "Container",
+            "id": "20519bda-fb2b-4234-93a2-4a638bc4a47c",
+            "label": "Rank",
+            "list": [
+                {
+                    "type": "Rectangle",
+                    "id": "c51cda6d-e15c-4e37-ae49-7ae8d0f45b03",
+                    "label": "PlayerRank",
+                    "x": 3,
+                    "y": 233,
+                    "originY": 1,
+                    "isFilled": true,
+                    "fillColor": "C996CC",
+                    "width": 210,
+                    "height": 246
+                },
+                {
+                    "type": "Text",
+                    "id": "fabc5ae6-f0cc-426e-8317-2e6e82af0dd2",
+                    "label": "scoreText",
+                    "originX": 0.5,
+                    "text": "6",
+                    "resolution": 5,
+                    "fontFamily": "Ariel",
+                    "fontSize": "50px",
+                    "fontStyle": "bold",
+                    "color": "#000000ff"
+                },
+                {
+                    "type": "Text",
+                    "id": "0b9a05a4-1de9-4e8b-aa81-a71ae964dee9",
+                    "label": "playerNameText",
+                    "x": 4,
+                    "y": -13,
+                    "originX": 0.5,
+                    "originY": 1,
+                    "text": "Sonia",
+                    "resolution": 5,
+                    "fontFamily": "Ariel",
+                    "fontSize": "50px",
+                    "color": "#000000ff",
+                    "strokeThickness": 1
+                },
+                {
+                    "type": "Image",
+                    "id": "2cc5f2ea-040c-46a8-87cf-45962f96d39b",
+                    "label": "crown",
+                    "texture": {
+                        "key": "crown"
+                    },
+                    "x": -1,
+                    "y": -69,
+                    "originY": 0.85
+                }
+            ]
+        }
+    ],
+    "plainObjects": [],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

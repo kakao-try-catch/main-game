@@ -33,6 +33,15 @@ export default class ButtonPrefab extends Phaser.GameObjects.Container {
 
 	/* START-USER-CODE */
 
+	/**
+	 * 버튼 텍스트를 설정합니다.
+	 * @param label 버튼에 표시할 텍스트
+	 */
+	setText(label: string): this {
+		this.text.setText(label);
+		return this;
+	}
+
 	/* END-USER-CODE */
 }
 

@@ -72,15 +72,26 @@
                     "color": "#000000ff"
                 },
                 {
-                    "prefabId": "8c3e46c2-6f31-4488-a30a-3f54614f01c2",
-                    "id": "6cae2007-b3ae-492d-a48f-bc10372e1a82",
+                    "prefabId": "6723f69b-f3fb-42db-8a72-4dd38f30f983",
+                    "id": "d354c220-909d-47db-9a49-f2e1e13d04d2",
                     "unlock": [
                         "x",
                         "y"
                     ],
-                    "label": "Rank",
-                    "x": -285,
-                    "y": 29
+                    "label": "ReplayButton",
+                    "x": -198,
+                    "y": 347
+                },
+                {
+                    "prefabId": "6723f69b-f3fb-42db-8a72-4dd38f30f983",
+                    "id": "d722eb0b-7565-4c70-bfc3-eb43f351b6e6",
+                    "unlock": [
+                        "x",
+                        "y"
+                    ],
+                    "label": "RoomButton",
+                    "x": 283,
+                    "y": 347
                 }
             ]
         }

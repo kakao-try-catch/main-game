@@ -1,4 +1,5 @@
 import RankOnePlayerPrefab from './rank/RankOnePlayerPrefab';
+import ButtonPrefab from './button/ButtonPrefab';
 // You can write more code here
 
 /* START OF COMPILED CODE */
@@ -14,10 +15,6 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		background.fillColor = 0;
 		background.fillAlpha = 0.4;
 		this.add(background);
-
-		// __
-		const __ = scene.add.image(36, 165, "결과");
-		this.add(__);
 
 		// Frame
 		const frame = scene.add.rectangle(35, 146, 1041, 690);
@@ -51,6 +48,25 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 			rankPlayer.setRank(i + 1); //1~4등 //임시로 1,2,3,4 순서로 하게 하였음
 			this.add(rankPlayer);
 		}
+
+		
+		// ReplayButton
+		const replayButton = new ButtonPrefab(scene, -198, 347);
+		replayButton
+			.setText("REPLAY")
+			.setOnClick(() => {
+				console.log("Replay clicked!");
+			});
+		this.add(replayButton);
+
+		// RoomButton
+		const roomButton = new ButtonPrefab(scene, 283, 347);
+		roomButton
+			.setText("LOBBY")
+			.setOnClick(() => {
+				console.log("Room clicked!");
+			});
+		this.add(roomButton);
 
 		/* END-USER-CTR-CODE */
 	}

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 // Vite: import asset pack file as URL so Phaser can fetch it at runtime
-//// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-//// @ts-expect-error Vite will provide a string URL at build time
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error Vite will provide a string URL at build time
 import assetPackUrl from '../../assets/asset-pack.json?url';
 
 export class BootScene extends Phaser.Scene {

@@ -6,7 +6,7 @@ import ButtonPrefab from './button/ButtonPrefab';
 
 export default class GameResultPrefab extends Phaser.GameObjects.Container {
 
-	constructor(scene: Phaser.Scene, x?: number, y?: number) {
+	constructor(scene: Phaser.Scene, playerCount: number = 4, x?: number, y?: number) {
 		super(scene, x ?? 684, y ?? 283);
 
 		// background
@@ -37,7 +37,6 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		// Write your code here.
 
 		//rank players
-		const playerCount = 4; // 나중에 실제 플레이어 수로 변경
 		const spacing = 216;
 		const centerX = 39; // 가운데 정렬 기준점
 		const startX = centerX - ((playerCount - 1) * spacing) / 2;

@@ -16,6 +16,7 @@ interface AppleGameConfig {
     minNumber: number;      // 최소 숫자 (1)
     maxNumber: number;      // 최대 숫자 (9)
     totalTime: number;      // 전체 게임 시간 (110초)
+    playerCount: number;    // 플레이어 수 (1~4)
 }
 
 const DEFAULT_CONFIG: AppleGameConfig = {
@@ -28,6 +29,7 @@ const DEFAULT_CONFIG: AppleGameConfig = {
     minNumber: 1,
     maxNumber: 9,
     totalTime: 110,
+    playerCount: 4,
 };
 
 export default class AppleGameManager {
@@ -148,10 +150,15 @@ export default class AppleGameManager {
         this.detachDrag?.();
         
         // 게임 결과 화면 표시
-        const gameResult = new GameResultPrefab(this.scene);
+        const gameResult = new GameResultPrefab(this.scene, this.config.playerCount);
         this.scene.add.existing(gameResult);
         
         console.log('🎮 게임 종료! 결과 화면 표시');
+    }
+
+    /** 플레이어 수 반환 */
+    getPlayerCount(): number {
+        return this.config.playerCount;
     }
 
     /** 전체 사과 리스트 반환 */

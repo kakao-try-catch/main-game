@@ -8,26 +8,23 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
 
    constructor(scene: Phaser.Scene, x?: number, y?: number, scale: number = 1) {
       super(scene, x ?? 0, y ?? -7);
-
-      // appleFrame
-      const appleFrame = scene.add.image(-0.5, 5, "selectedApple");
+      // 기준 해상도에서의 오프셋/크기 * scale
+      const appleFrame = scene.add.image(-0.5, 5 * scale, "selectedApple");
       appleFrame.visible = false;
+      appleFrame.setScale(scale);
       this.add(appleFrame);
-      
       // apple
-      const apple = scene.add.image(0, 5, "apple");
+      const apple = scene.add.image(0, 5 * scale, "apple");
+      apple.setScale(scale);
       this.add(apple);
-
       // appleText
-      const appleText = scene.add.text(0, 15, "", {});
+      const appleText = scene.add.text(0, 15 * scale, "", {});
       appleText.setOrigin(0.5, 0.5);
       appleText.text = "0";
-      appleText.setStyle({ "align": "center", "fontSize": "50px", "fontFamily": "NeoDunggeunmo", "fontStyle": "bold" });
+      appleText.setStyle({ "align": "center", "fontSize": `${50 * scale}px`, "fontFamily": "NeoDunggeunmo", "fontStyle": "bold" });
       this.add(appleText);
-
       /* START-USER-CTR-CODE */
       this.appleFrame = appleFrame;
-      //this.appleShape = appleShape;
       this.appleText = appleText;
       /* END-USER-CTR-CODE */
    }

@@ -133,22 +133,21 @@ export default class AppleGameManager {
 
     /** 사과 그리드 생성 */
     private createApples(): void {
-        const { gridCols, gridRows, baseX, baseY, spacingX, spacingY, minNumber, maxNumber } = this.config;
-        
+        const { gridCols, gridRows, baseX, baseY, spacingX, spacingY, minNumber, maxNumber, ratio } = this.config;
         this.apples = [];
-        
         for (let col = 0; col < gridCols; col++) {
             for (let row = 0; row < gridRows; row++) {
                 const x = baseX + col * spacingX;
                 const y = baseY + row * spacingY;
-                
-                const apple = new applePrefab(this.scene, x, y);
-                this.scene.add.existing(apple);
-                
+                const apple = new applePrefab(this.scene, x, y, ratio);
+                if (this.container) {
+                    this.container.add(apple);
+                } else {
+                    this.scene.add.existing(apple);
+                }
                 // 랜덤 숫자 설정 (minNumber ~ maxNumber)
                 const randomNum = Phaser.Math.Between(minNumber, maxNumber);
                 apple.setNumber(randomNum);
-                
                 this.apples.push(apple);
             }
         }
@@ -184,7 +183,7 @@ export default class AppleGameManager {
 
     /** 드래그 종료 시 호출 */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private onDragEnd(rect: Phaser.Geom.Rectangle): void {
+    private onDragEnd(_rect: Phaser.Geom.Rectangle): void {
         // 선택된 사과들의 숫자 합 계산
         let sum = 0;
         this.selectedApples.forEach(apple => {

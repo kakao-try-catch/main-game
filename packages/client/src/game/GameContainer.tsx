@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
 import { AppleGameScene } from './scene/AppleGameScene';
 import { BootScene } from './scene/BootScene';
@@ -40,13 +40,111 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
     }
   }, [playerCount, players, currentPlayerIndex]);
 
+  // 부모 div 크기 변화 감지 (리사이즈 대응)
+  useLayoutEffect(() => {
+    function updateRatio() {
+      if (parentRef.current) {
+        const width = parentRef.current.clientWidth;
+        const ratio = width / 1380;
+        (window as any).__APPLE_GAME_RATIO = ratio;
+      }
+    }
+    updateRatio();
+    window.addEventListener('resize', updateRatio);
+    return () => window.removeEventListener('resize', updateRatio);
+  }, []);
+
+  useEffect(() => {
+    if (gameRef.current || !parentRef.current) {
+      // 이미 생성됨
+      return;
+    }
+    const width = parentRef.current.clientWidth;
+    const height = parentRef.current.clientHeight;
+    const ratio = width / 1380;
+    (window as any).__APPLE_GAME_RATIO = ratio;
+    const config: Phaser.Types.Core.GameConfig = {
+      type: Phaser.AUTO,
+      width,
+      height,
+      parent: parentRef.current,
+      backgroundColor: '#F6F5F6',
+      scene: [BootScene, AppleGameScene],
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 0, x: 0 },
+          debug: false
+        }
+      }
+    };
+    const game = new Phaser.Game(config);
+    gameRef.current = game;
+    if (onGameReady) onGameReady(game);
+    let appleGameScene: Phaser.Scene | null = null;
+    let appleScoredHandler: ((data: { points: number }) => void) | null = null;
+    game.events.once('ready', () => {
+      appleGameScene = game.scene.getScene('AppleGameScene');
+      if (appleGameScene) {
+        if (appleGameScene.scene.isActive()) {
+          appleGameScene.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex });
+        } else {
+          appleGameScene.events.once('create', () => {
+            appleGameScene?.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex });
+          });
+        }
+        if (onAppleScored) {
+          appleScoredHandler = (data: { points: number }) => {
+            onAppleScored(data.points);
+          };
+          appleGameScene.events.on('appleScored', appleScoredHandler);
+        }
+        if (onGameEnd) {
+          appleGameScene.events.on('gameEnd', (data: { players: PlayerResultData[] }) => {
+            onGameEnd(data.players);
+          });
+        }
+      }
+    });
+    return () => {
+      if (appleGameScene && appleScoredHandler) {
+        appleGameScene.events.off('appleScored', appleScoredHandler);
+      }
+      if (appleGameScene) {
+        appleGameScene.events.off('gameEnd');
+      }
+      game.destroy(true);
+      gameRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onGameReady, onAppleScored]);
+
   useEffect(() => {
     if (gameRef.current || !parentRef.current) return;
 
+    // 실제 컨테이너 크기에 맞춰 ratio 계산
+    let ratio = 1;
+    let parentWidth = parentRef.current?.offsetWidth || 0;
+    let parentHeight = parentRef.current?.offsetHeight || 0;
+    // fallback: window 크기 사용
+    if (!parentWidth || !parentHeight) {
+      parentWidth = window.innerWidth;
+      parentHeight = window.innerHeight;
+    }
+    ratio = Math.min(parentWidth / 1380, parentHeight / 862);
+    if (!ratio || ratio <= 0) ratio = 1;
+    (window as any).__APPLE_GAME_RATIO = ratio;
+
+    // 디버깅용 프린트
+    console.log('[PhaserGame] parent div size:', parentWidth, parentHeight);
+    console.log('[PhaserGame] ratio:', ratio);
+    console.log('[PhaserGame] Phaser config width/height:', 1380 * ratio, 862 * ratio);
+    console.log('[PhaserGame] parentRef.current:', parentRef.current);
+
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 1380,
-      height: 862,
+      width: 1380 * ratio,
+      height: 862 * ratio,
       parent: parentRef.current,
       backgroundColor: '#F6F5F6',
       scene: [BootScene, AppleGameScene],
@@ -59,8 +157,10 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       }
     };
 
+    console.log('[PhaserGame] Phaser.Game 인스턴스 생성 직전');
     const game = new Phaser.Game(config);
     gameRef.current = game;
+    console.log('[PhaserGame] Phaser.Game 인스턴스 생성 완료:', game);
 
     if (onGameReady) {
       onGameReady(game);
@@ -109,5 +209,34 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onGameReady, onAppleScored]);
 
-  return <div ref={parentRef} id="phaser-game" />;
+  // 화면 크기에 따라 1380:862 비율을 유지하는 스타일
+  const aspectRatio = 1380 / 862;
+  // 항상 반응형으로 설정 (1370px 이상에서도 늘어남)
+  const vw = window.innerWidth;
+  const vh = window.innerHeight - 150; // React UI 높이를 고려하여 150px 마진 추가
+  let width, height, ratio;
+  width = vw;
+  height = vw / aspectRatio;
+  if (height > vh) {
+    height = vh;
+    width = vh * aspectRatio;
+  }
+  ratio = width / 1380;
+  // window.__APPLE_GAME_RATIO를 항상 갱신
+  useLayoutEffect(() => {
+    (window as any).__APPLE_GAME_RATIO = ratio;
+  }, [ratio]);
+  const containerStyle: React.CSSProperties = {
+    width: `${width}px`,
+    height: `${height}px`,
+    maxWidth: '100vw',
+    maxHeight: '100vh',
+    minWidth: '320px',
+    minHeight: '200px',
+    margin: '0 auto',
+    display: 'block',
+    background: '#222',
+    position: 'relative',
+  };
+  return <div ref={parentRef} id="phaser-game" style={containerStyle} />
 };

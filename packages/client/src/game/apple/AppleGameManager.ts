@@ -17,6 +17,7 @@ interface AppleGameConfig {
     maxNumber: number;      // 최대 숫자 (9)
     totalTime: number;      // 전체 게임 시간 (110초)
     playerCount: number;    // 플레이어 수 (1~4)
+    ratio: number;          // 스케일 비율
 }
 
 const DEFAULT_CONFIG: AppleGameConfig = {
@@ -30,6 +31,7 @@ const DEFAULT_CONFIG: AppleGameConfig = {
     maxNumber: 9,
     totalTime: 110,
     playerCount: 4,
+    ratio: 1,
 };
 
 /** 플레이어 데이터 */
@@ -58,6 +60,7 @@ function adjustBrightness(hexColor: string, brightnessOffset: number): number {
 }
 
 export default class AppleGameManager {
+    private container: Phaser.GameObjects.Container | null = null;
     private readonly scene: Phaser.Scene;
     private readonly config: AppleGameConfig;
     
@@ -95,10 +98,29 @@ export default class AppleGameManager {
     private currentPlayerColor: number = 0x209cee;
     private currentFrameColor: number = adjustBrightness('#209cee', AppleGameManager.FRAME_BRIGHTNESS_ADJUSTMENT);
 
-    constructor(scene: Phaser.Scene, timer: TimerPrefab, config: Partial<AppleGameConfig> = {}) {
+    constructor(scene: Phaser.Scene, timer: TimerPrefab, container?: Phaser.GameObjects.Container, config: Partial<AppleGameConfig> = {}) {
         this.scene = scene;
         this.timerPrefab = timer;
-        this.config = { ...DEFAULT_CONFIG, ...config };
+        this.container = container ?? null;
+        const ratio = window.__APPLE_GAME_RATIO || 1;
+        const gridCols = config.gridCols ?? DEFAULT_CONFIG.gridCols;
+        const gridRows = config.gridRows ?? DEFAULT_CONFIG.gridRows;
+        // 기준값에 비율 곱
+        const baseX = 91 * ratio;
+        const baseY = 91 * ratio;
+        const spacingX = 73 * ratio;
+        const spacingY = 74 * ratio;
+        this.config = {
+            ...DEFAULT_CONFIG,
+            ...config,
+            gridCols,
+            gridRows,
+            baseX,
+            baseY,
+            spacingX,
+            spacingY,
+            ratio,
+        };
     }
 
     /** 게임 초기화 및 시작 */

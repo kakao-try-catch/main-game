@@ -19,36 +19,61 @@ export default class AppleGameScene extends Phaser.Scene {
 	//이제 AppleGameScene.scene은 절대 연 다음에 저장하면 안됩니다. 그거 열어서 저장하면 이 코드 날아감 (원래 페이저 에디터가 그럼)
 
 	editorCreate(): void {
-		// background
-		const background = this.add.rectangle(0, 0, 1380, 862);
+		const ratio = window.__APPLE_GAME_RATIO || 1;
+		// 게임 전체 컨테이너 생성 (0,0)
+		this.gameContainer = this.add.container(0, 0);
+		this.gameContainer.setSize(1380 * ratio, 862 * ratio);
+
+		// 배경
+		const background = this.add.rectangle(0, 0, 1380 * ratio, 862 * ratio);
 		background.setOrigin(0, 0);
 		background.isFilled = true;
 		background.fillColor = 0xF6F5F6;
+		this.gameContainer.add(background);
 
-
-		this.timer = new TimerPrefab(this, 1336, 32);
-		this.add.existing(this.timer);
+		// margin, 사과 그리드, 타이머 바 위치 계산 (실제 캔버스 width 기준)
+		const canvasWidth = this.sys.game.canvas.width;
+		const margin = 20 * ratio;
+		const timerBarWidth = 22 * ratio;
+		const gridCols = 17;
+		const appleSize = 50 * ratio;
+		// 사과 그리드 최대 width: 캔버스 width - 타이머 바 width - 2 * margin
+		const maxAppleGridWidth = canvasWidth - timerBarWidth - 2 * margin;
+		// spacingX 계산: (maxAppleGridWidth - appleSize) / (gridCols - 1)
+		const spacingX = (maxAppleGridWidth - appleSize) / (gridCols - 1);
+		const baseX = margin;
+		// 타이머 바 x좌표: 항상 오른쪽 끝에 고정
+		const timerX = canvasWidth - timerBarWidth / 2 - margin;
+		console.log(`Timer X: ${timerX}px, Percentage: ${(timerX / canvasWidth * 100).toFixed(2)}%`);
+		this.timer = new TimerPrefab(this, timerX, 32 * ratio);
+		this.gameContainer.add(this.timer);
+		// AppleGameManager에 baseX, spacingX, gridCols를 명시적으로 넘기기 위해 저장
+		this._appleGridConfig = { baseX, spacingX, gridCols };
 
 		this.events.emit("scene-awake");
 	}
 
 	private timer!: TimerPrefab;
 	private gameManager!: AppleGameManager;
-	private initialPlayerIndex: number = 0;
+	private gameContainer!: Phaser.GameObjects.Container;
+	private _appleGridConfig!: { baseX: number; spacingX: number; gridCols: number };
 	private isGameInitialized: boolean = false;
 
 	/* START-USER-CODE */
 
 	create() {
 		this.editorCreate();
-		
 		// AppleGameManager가 사과 생성, 드래그 선택, 타이머를 모두 관리
-		this.gameManager = new AppleGameManager(this, this.timer);
+		// gameContainer를 넘겨서 사과도 이 컨테이너에 추가하도록 함
+		this.gameManager = new AppleGameManager(this, this.timer, this.gameContainer, {
+			baseX: this._appleGridConfig.baseX,
+			spacingX: this._appleGridConfig.spacingX,
+			gridCols: this._appleGridConfig.gridCols
+		});
 
 		// React에서 플레이어 데이터 업데이트 수신 (먼저 등록)
 		this.events.on('updatePlayers', (data: { playerCount: number; players: { id: string; name: string; score: number; color: string }[]; currentPlayerIndex: number }) => {
 			console.log('📩 updatePlayers 이벤트 수신:', data);
-			
 			// 게임이 아직 초기화되지 않았으면 초기값 저장 후 초기화
 			if (!this.isGameInitialized) {
 				this.initialPlayerIndex = data.currentPlayerIndex;

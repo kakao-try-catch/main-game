@@ -1,3 +1,66 @@
+/* 리액트 컴포넌트의 CSS 파일에서 */
+.nes-btn.is-custom-fix {
+  /* 기존 box-shadow가 깨질 경우를 대비해 약간의 오차를 커버하는 방식 */
+  box-shadow: 
+      inset -4px -4px #adafbc, /* 안쪽 그림자 (버튼 색상에 따라 다름) */
+      0 0 0 4px #212529;       /* 바깥쪽 테두리 (검정) */
+}
+
+/* 만약 위 코드로 해결되지 않는다면, 아래처럼 더 강력하게 덮어쓰기 */
+.nes-btn {
+    border-image-slice: 2;
+    border-image-width: 2;
+    border-image-repeat: stretch;
+    border-image-source: url('data:image/svg+xml;utf8,<?xml version="1.0" encoding="UTF-8" ?><svg version="1.1" width="5" height="5" xmlns="http://www.w3.org/2000/svg"><path d="M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z" fill="rgb(33,37,41)" /></svg>');
+    border-image-outset: 2;
+}
+
+/* 리액트 컴포넌트 CSS 파일 또는 전역 CSS */
+
+.nes-container.is-rounded {
+  /* 1. 기존의 border-image 속성을 모두 초기화 (가장 중요) */
+  border-image-source: none;
+  border-image-slice: 0;
+  border-image-width: 0;
+  border-image-outset: 0;
+  border-image-repeat: stretch;
+  
+  /* 2. 기본 border 제거 */
+  border-style: none;
+  
+  /* 3. 배경색과 여백 설정 */
+  /* NES.css 컨테이너는 기본 배경이 흰색입니다. 필요시 변경하세요. */
+  background-color: #fff; 
+  margin: 4px; /* 그림자가 뻗어 나갈 공간 확보 */
+
+  /* 4. Box-shadow로 '픽셀 라운드' 테두리 구현 */
+  /* 원리: 상, 하, 좌, 우로 각각 4px씩 검은 그림자를 만듭니다.
+     그림자가 겹치지 않는 '모서리 끝부분'은 자연스럽게 비어있게 되어 
+     완벽한 픽셀 라운드 효과가 나옵니다.
+  */
+  box-shadow: 
+      -4px 0 0 0 #212529,  /* 왼쪽 테두리 */
+       4px 0 0 0 #212529,  /* 오른쪽 테두리 */
+       0 -4px 0 0 #212529, /* 위쪽 테두리 */
+       0 4px 0 0 #212529;  /* 아래쪽 테두리 */
+}
+
+/* 예: 검은색 테마 컨테이너일 경우 */
+.nes-container.is-rounded.is-dark {
+  background-color: #212529; /* 내부 배경 */
+  color: #fff; /* 글자색 */
+  
+  /* 테두리 색상은 흰색 등으로 변경 */
+  box-shadow: 
+      -4px 0 0 0 #fff, 
+       4px 0 0 0 #fff, 
+       0 -4px 0 0 #fff, 
+       0 4px 0 0 #fff;
+}
+
+/* 나머지는 원래 내용 */
+
+
 .App {
   min-height: 100vh;
   display: flex;

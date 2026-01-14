@@ -48,7 +48,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       width: 1380,
       height: 862,
       parent: parentRef.current,
-      backgroundColor: '#282c34',
+      backgroundColor: '#F6F5F6',
       scene: [BootScene, AppleGameScene],
       physics: {
         default: 'arcade',
@@ -106,7 +106,8 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       game.destroy(true);
       gameRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onGameReady, onAppleScored]);
 
-  }, [onGameReady, onAppleScored, onGameEnd, playerCount, players, currentPlayerIndex]);
   return <div ref={parentRef} id="phaser-game" />;
 };

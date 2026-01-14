@@ -4,6 +4,7 @@ import { PhaserGame } from './game/GameContainer';
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
 import './App.css';
+import SocketCounter from './components/SocketCounter';
 
 interface PlayerData {
   id: string;
@@ -86,6 +87,8 @@ function App() {
         </p>}
       </header>
 
+      <SocketCounter />
+      
       <div style={{ ...playerListStyle, marginLeft: 0 }}>
         {players.slice(0, testPlayerCount).map((player) => (
           <PlayerCard key={player.id} name={player.name} score={player.score} color={player.color} />

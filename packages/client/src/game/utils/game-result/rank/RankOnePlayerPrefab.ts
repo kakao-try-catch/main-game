@@ -35,14 +35,14 @@ export default class RankOnePlayerPrefab extends Phaser.GameObjects.Container {
 		this.scoreText = scene.add.text(0, this.BASE_SCORE_TEXT_Y, "", {});
 		this.scoreText.setOrigin(0.5, 0);
 		this.scoreText.text = "6";
-		this.scoreText.setStyle({ "color": "#000000ff", "fontFamily": "Ariel", "fontSize": "50px", "fontStyle": "bold", "resolution": 5 });
+		this.scoreText.setStyle({ "color": "#000000ff", "fontFamily": "Arial", "fontSize": "50px", "fontStyle": "bold", "resolution": 5 });
 		this.add(this.scoreText);
 
 		// playerNameText
 		this.playerNameText = scene.add.text(4, this.BASE_PLAYER_NAME_TEXT_Y, "", {});
 		this.playerNameText.setOrigin(0.5, 1);
 		this.playerNameText.text = "Sonia";
-		this.playerNameText.setStyle({ "color": "#000000ff", "fontFamily": "Ariel", "fontSize": "50px", "strokeThickness": 1, "resolution": 5 });
+		this.playerNameText.setStyle({ "color": "#000000ff", "fontFamily": "Arial", "fontSize": "50px", "strokeThickness": 1, "resolution": 5 });
 		this.add(this.playerNameText);
 
 		// crown

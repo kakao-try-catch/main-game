@@ -40,6 +40,23 @@ export interface PlayerData {
     color: string;
 }
 
+/** HEX 색상을 숫자로 변환 */
+function hexStringToNumber(hex: string): number {
+    return parseInt(hex.replace('#', ''), 16);
+}
+
+/** HSV에서 명도(V)를 조절한 색상 반환 */
+function adjustBrightness(hexColor: string, brightnessOffset: number): number {
+    const color = Phaser.Display.Color.HexStringToColor(hexColor);
+    const hsv = Phaser.Display.Color.RGBToHSV(color.red, color.green, color.blue);
+    
+    // 명도 조정 (0~1 범위, brightnessOffset는 0~100 범위로 가정)
+    const newV = Math.max(0, Math.min(1, (hsv.v as number) - brightnessOffset / 100));
+    
+    const rgb = Phaser.Display.Color.HSVToRGB(hsv.h as number, hsv.s as number, newV) as { r: number; g: number; b: number };
+    return Phaser.Display.Color.GetColor(rgb.r, rgb.g, rgb.b);
+}
+
 export default class AppleGameManager {
     private readonly scene: Phaser.Scene;
     private readonly config: AppleGameConfig;
@@ -63,6 +80,18 @@ export default class AppleGameManager {
     // 플레이어 데이터
     private players: PlayerData[] = [];
 
+    // 기본 플레이어 색상 (1P 파란색 기준)
+    private static readonly DEFAULT_COLORS = [
+        '#209cee',  // 1P 파란색
+        '#e76e55',  // 2P 빨간색
+        '#92cc41',  // 3P 초록색
+        '#f2d024',  // 4P 노란색
+    ];
+
+    // 현재 플레이어 색상 (0x 형식) - 1P 파란색 기본값
+    private currentPlayerColor: number = 0x209cee;
+    private currentFrameColor: number = adjustBrightness('#209cee', 15);
+
     constructor(scene: Phaser.Scene, timer: TimerPrefab, config: Partial<AppleGameConfig> = {}) {
         this.scene = scene;
         this.timerPrefab = timer;
@@ -72,6 +101,7 @@ export default class AppleGameManager {
     /** 게임 초기화 및 시작 */
     init(currentPlayerIndex: number = 0): void {
         this.createApples();
+        this.setCurrentPlayerIndex(currentPlayerIndex);  // 외부에서 받은 값 사용
         this.setupDragSelection();
         this.startTimer();
     }
@@ -104,8 +134,8 @@ export default class AppleGameManager {
         this.detachDrag?.();
 
         this.detachDrag = attachDragSelection(this.scene, {
-            fillColor: 0xfff200,
-            lineColor: 0xfff200,
+            fillColor: this.currentPlayerColor,
+            lineColor: this.currentPlayerColor,
             onDrag: (rect) => this.onDragUpdate(rect),
             onDragEnd: (rect) => this.onDragEnd(rect),
         });
@@ -120,6 +150,7 @@ export default class AppleGameManager {
         // 새로운 선택 영역 내 사과들 프레임 표시
         for (const apple of this.apples) {
             if (apple.isInRect(rect)) {
+                apple.setFrameColor(this.currentFrameColor);
                 apple.setFrameVisible(true);
                 this.selectedApples.add(apple);
             }
@@ -185,6 +216,16 @@ export default class AppleGameManager {
         console.log(`🎮 현재 플레이어: ${index}번`);
     }
 
+    /** 플레이어 색상 업데이트 */
+    private updatePlayerColors(): void {
+        const player = this.players[this.currentPlayerIndex];
+        // 플레이어 데이터가 없으면 기본 색상 사용
+        const colorHex = player?.color ?? AppleGameManager.DEFAULT_COLORS[this.currentPlayerIndex] ?? '#209cee';
+        
+        this.currentPlayerColor = hexStringToNumber(colorHex);
+        this.currentFrameColor = adjustBrightness(colorHex, 15);
+        console.log(`🎨 플레이어 색상: ${colorHex}, 프레임: 0x${this.currentFrameColor.toString(16)}`);
+    }
 
     /** 현재 플레이어 인덱스 반환 */
     getCurrentPlayerIndex(): number {

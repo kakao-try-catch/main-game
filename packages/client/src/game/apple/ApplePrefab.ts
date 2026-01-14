@@ -13,15 +13,6 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
       const appleFrame = scene.add.image(-0.5, 5, "selectedApple");
       appleFrame.visible = false;
       this.add(appleFrame);
-
-      // appleShape
-      const appleShape = scene.add.ellipse(0, 7, 68, 68);
-      appleShape.scaleX = 0.9;
-      appleShape.scaleY = 0.9;
-      appleShape.visible = false;
-      appleShape.isFilled = true;
-      appleShape.fillColor = 14628150;
-      this.add(appleShape);
       
       // apple
       const apple = scene.add.image(0, 5, "apple");
@@ -55,7 +46,7 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
 
 	/** 사과 프레임의 색상을 설정합니다. */
 	setFrameColor(color: number): void {
-		//this.appleFrame.fillColor = color;
+		this.appleFrame.setTint ( color ) ;
 	}
 
    /** 사과의 숫자를 설정하고 텍스트에 반영합니다. */

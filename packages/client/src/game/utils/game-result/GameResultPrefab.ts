@@ -101,7 +101,58 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 
 	/* START-USER-CODE */
 
+	/**
+	 * 플레이어 순위를 계산합니다.
+	 * - 점수 내림차순 정렬
+	 * - 같은 점수인 경우 플레이어 번호가 작은 순서
+	 * - 공동 순위 허용 (동점자 수만큼 다음 순위 건너뜀)
+	 * 예: 10,10,10,5 → 1,1,1,4 / 10,10,5,5 → 1,1,3,3
+	 */
 	private calculateRanks(players: PlayerResultData[], playerCount: number): RankedPlayer[] {
+		// 플레이어가 없으면 빈 배열 반환
+		if (players.length === 0) {
+			// 기본 플레이어 데이터 생성 (테스트용)
+			const defaultPlayers: RankedPlayer[] = [];
+			for (let i = 0; i < playerCount; i++) {
+				defaultPlayers.push({
+					id: `id_${i + 1}`,
+					name: `${i + 1}P`,
+					score: 0,
+					color: ['#209cee', '#e76e55', '#92cc41', '#f2d024'][i] || '#209cee',
+					playerIndex: i,
+					rank: i + 1
+				});
+			}
+			return defaultPlayers;
+		}
+
+		// 1. 점수 내림차순, 같으면 playerIndex 오름차순 정렬
+		const sortedPlayers = [...players].sort((a, b) => {
+			if (b.score !== a.score) {
+				return b.score - a.score; // 점수 내림차순
+			}
+			return a.playerIndex - b.playerIndex; // 플레이어 번호 오름차순
+		});
+
+		// 2. 기본 순위 부여 (공동 순위 허용)
+		const rankedPlayers: RankedPlayer[] = [];
+		let currentRank = 1;
+
+		for (let i = 0; i < sortedPlayers.length; i++) {
+			const player = sortedPlayers[i];
+			
+			// 첫 번째 플레이어가 아니고, 이전 플레이어와 점수가 다르면 순위 증가
+			if (i > 0 && sortedPlayers[i - 1].score !== player.score) {
+				currentRank = i + 1;
+			}
+
+			rankedPlayers.push({
+				...player,
+				rank: currentRank
+			});
+		}
+
+		return rankedPlayers;
 	}
 
 	/* END-USER-CODE */

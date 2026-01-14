@@ -19,6 +19,16 @@
                 "url": "crown.png",
                 "type": "image",
                 "key": "crown"
+            },
+            {
+                "url": "src/assets/images/apple.png",
+                "type": "image",
+                "key": "apple"
+            },
+            {
+                "url": "src/assets/images/selectedApple.png",
+                "type": "image",
+                "key": "selectedApple"
             }
         ]
     },

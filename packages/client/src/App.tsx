@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PhaserGame } from './game/GameContainer';
 import PlayerCard from './components/PlayerCard'; // PlayerCard 경로에 맞게 수정
 import './App.css';
+import SocketCounter from './components/SocketCounter';
 
 interface PlayerData {
   id: string;
@@ -35,6 +36,8 @@ function App() {
         </p>}
       </header>
 
+      <SocketCounter />
+      
       <div style={playerListStyle}>
         {players.slice(0, testPlayerCount).map((player) => (
           <PlayerCard name={player.name} score={player.score} color={player.color} />

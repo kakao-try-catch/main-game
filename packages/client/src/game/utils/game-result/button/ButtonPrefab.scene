@@ -47,7 +47,7 @@
                     "text": "REPLAY",
                     "resolution": 5,
                     "align": "center",
-                    "fontFamily": "Ariel",
+                    "fontFamily": "Arial",
                     "fontSize": "80px",
                     "fontStyle": "bold"
                 }

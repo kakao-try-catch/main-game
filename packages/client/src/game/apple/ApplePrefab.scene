@@ -53,8 +53,8 @@
                     "originY": 0.5,
                     "text": "0",
                     "align": "center",
-                    "fontSize": "50px",
-                    "fontStyle": "bold"
+                    "fontStyle": "bold",
+                    "fontFamily": "NeoDunggeunmo"
                 },
                 {
                     "type": "Image",
@@ -72,7 +72,7 @@
                     "texture": {
                         "key": "selectedApple"
                     },
-                    "y": 7
+                    "y": 5
                 }
             ]
         }

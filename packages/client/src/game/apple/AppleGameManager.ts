@@ -3,8 +3,7 @@ import applePrefab from './ApplePrefab';
 import TimerPrefab from '../utils/TimerPrefab';
 import TimerSystem from '../utils/TimerSystem';
 import { attachDragSelection } from '../utils/DragSelection';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import GameResultPrefab, { type PlayerResultData } from '../utils/game-result/GameResultPrefab';
+import type { PlayerResultData } from '../utils/game-result/GameResultPrefab';
 
 /** 사과 게임 설정 */
 interface AppleGameConfig {

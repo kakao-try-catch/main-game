@@ -31,7 +31,7 @@
   /* 3. 배경색과 여백 설정 */
   /* NES.css 컨테이너는 기본 배경이 흰색입니다. 필요시 변경하세요. */
   background-color: #fff; 
-  margin: 4px; /* 그림자가 뻗어 나갈 공간 확보 */
+  margin: var(--nes-rounded-container-margin, 4px); /* 기본 4px, 커스텀 여백은 CSS 변수로 설정 */
 
   /* 4. Box-shadow로 '픽셀 라운드' 테두리 구현 */
   /* 원리: 상, 하, 좌, 우로 각각 4px씩 검은 그림자를 만듭니다.

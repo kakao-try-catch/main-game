@@ -12,7 +12,7 @@ export default class TimerPrefab extends Phaser.GameObjects.Container {
 		const timerBar = scene.add.rectangle(0, 777, 22, 752);
 		timerBar.setOrigin(0.5, 1);
 		timerBar.isFilled = true;
-		timerBar.fillColor = 0x916BBF;
+		timerBar.fillColor = 0x3fa425; // 시작 시 초록색
 		this.add(timerBar);
 
 		// timeTxt

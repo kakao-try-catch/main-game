@@ -1,3 +1,15 @@
+// 색상 보간 함수
+function lerpColor(a: number[], b: number[], t: number): number[] {
+    return [
+        Math.round(a[0] + (b[0] - a[0]) * t),
+        Math.round(a[1] + (b[1] - a[1]) * t),
+        Math.round(a[2] + (b[2] - a[2]) * t),
+    ];
+}
+
+function rgbToHex([r, g, b]: number[]): number {
+    return (r << 16) + (g << 8) + b;
+}
 import Phaser from 'phaser';
 import timerPrefab from './TimerPrefab';
 import AppleGameManager from '../apple/AppleGameManager';
@@ -61,12 +73,29 @@ export default class TimerSystem {
     }
 
     /** 매초 호출 - 남은 시간 추적 및 이벤트 발생 */
-    private tick(): void {
-        if (this.isFinished || this.isPaused) return;
+        private tick(): void {
+                if (this.isFinished || this.isPaused) return;
 
-        this.remainingTime--;
-        this.scene.events.emit(TimerEvents.TICK, this.remainingTime);
-    }
+                this.remainingTime--;
+                this.scene.events.emit(TimerEvents.TICK, this.remainingTime);
+
+                // --- 타이머 바 색상 변화 ---
+                // 색상 정의
+                const green = [63, 164, 37];   // #3fa425
+                const yellow = [255, 204, 0];  // #ffcc00
+                const red = [255, 51, 51];     // #ff3333
+                let color: number[];
+                if (this.ratio > 0.4) {
+                    // green → yellow (1 ~ 0.4)
+                    const t = (this.ratio - 0.4) / 0.6;
+                    color = lerpColor(green, yellow, 1 - t);
+                } else {
+                    // yellow → red (0.4 ~ 0)
+                    const t = this.ratio / 0.4;
+                    color = lerpColor(yellow, red, 1 - t);
+                }
+                this.timerPrefab.getBar().fillColor = rgbToHex(color);
+        }
 
     /** 타이머 완료 처리 */
     private onTimerComplete(): void {

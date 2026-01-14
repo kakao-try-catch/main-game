@@ -106,8 +106,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       game.destroy(true);
       gameRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onGameReady, onAppleScored]);
 
+  }, [onGameReady, onAppleScored, onGameEnd, playerCount, players, currentPlayerIndex]);
   return <div ref={parentRef} id="phaser-game" />;
 };

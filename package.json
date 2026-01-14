@@ -3,11 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "packages/common",
-    "packages/server",
-    "packages/client"
-  ],
   "scripts": {
     "dev": "pnpm --filter ./packages/client dev",
     "build": "pnpm --filter ./packages/common build && pnpm --filter ./packages/client build && pnpm --filter ./packages/server build",

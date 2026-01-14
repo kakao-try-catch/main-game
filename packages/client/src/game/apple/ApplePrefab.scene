@@ -64,6 +64,15 @@
                         "key": "apple"
                     },
                     "y": 5
+                },
+                {
+                    "type": "Image",
+                    "id": "2be88e7d-4788-4174-8aa4-183d38e3afbd",
+                    "label": "selectedApple",
+                    "texture": {
+                        "key": "selectedApple"
+                    },
+                    "y": 7
                 }
             ]
         }

@@ -1,0 +1,46 @@
+name: Set Project Closed Date
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  update_closed_date:
+    runs-on: ubuntu-latest
+    # GitHub CLI가 API를 호출할 권한 설정
+    permissions:
+      issues: read
+      contents: read
+    
+    env:
+      # ⚠️ 레포지토리 Settings > Secrets에 'PROJECT_TOKEN'이 등록되어 있어야 합니다.
+      GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+      ORGANIZATION: kakao-try-catch
+      PROJECT_NUMBER: 4
+      # 방금 찾은 'Closed date' 필드의 ID입니다.
+      FIELD_ID: PVTF_lADODxSbDs4BMNtMzg7z_lo
+
+    steps:
+      - name: Get Project Item ID
+        id: get_item_id
+        run: |
+          # 1. 현재 닫힌 이슈의 Node ID를 가져옵니다.
+          ISSUE_NODE_ID=${{ github.event.issue.node_id }}
+          
+          # 2. 프로젝트에서 해당 이슈와 연결된 'Item ID'를 찾습니다.
+          # (프로젝트의 행(Row)을 수정하려면 Issue ID가 아니라 Item ID가 필요합니다)
+          item_id=$(gh project item-list $PROJECT_NUMBER --owner $ORGANIZATION --format json --limit 1000 | jq -r ".items[] | select(.content.id == \"$ISSUE_NODE_ID\") | .id")
+          
+          echo "ITEM_ID=$item_id" >> $GITHUB_ENV
+          echo "Found Item ID: $item_id"
+
+      - name: Update Closed Date Field
+        if: env.ITEM_ID != ''
+        run: |
+          # 3. 오늘 날짜를 구합니다 (YYYY-MM-DD 형식)
+          TODAY=$(date +%Y-%m-%d)
+          
+          # 4. 프로젝트의 해당 아이템에 날짜를 업데이트합니다.
+          gh project item-edit --id $ITEM_ID --field-id $FIELD_ID --date $TODAY --project-id $PROJECT_NUMBER
+          
+          echo "✅ Closed Date updated to $TODAY"

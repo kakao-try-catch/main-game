@@ -29,7 +29,7 @@ const DEFAULT_CONFIG: AppleGameConfig = {
     spacingY: 74,
     minNumber: 1,
     maxNumber: 9,
-    totalTime: 5,
+    totalTime: 110,
     playerCount: 4,
 };
 

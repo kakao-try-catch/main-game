@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+
+import { useState, useCallback, useRef } from 'react';
 import { PhaserGame } from './game/GameContainer';
 import PlayerCard from './components/PlayerCard';
+import GameResult from './game/utils/game-result/GameResult';
 import './App.css';
 
 interface PlayerData {
@@ -11,11 +13,24 @@ interface PlayerData {
 }
 
 function App() {
-  const testPlayerCount = 1;
+  const testPlayerCount = 4;
 
-  const testCurrentUserId = "id_1";
+    // 현재 유저 정보 (서버에서 받아올 예정)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [currentUser, setCurrentUser] = useState<{
+        id: string;
+        playerIndex: number;
+        name: string;
+    }>({
+        id: "id_1",
+        playerIndex: 0,
+        name: "1P"
+    });
 
   const [gameReady, setGameReady] = useState(false);
+  const [gameEnded, setGameEnded] = useState(false);
+  const [finalPlayers, setFinalPlayers] = useState<(PlayerData & { playerIndex: number })[]>([]);
+  const gameRef = useRef<Phaser.Game | null>(null);
   const [players, setPlayers] = useState<PlayerData[]>([
     { id: "id_1", name: "1P", score: 0, color: "#209cee" },
     { id: "id_2", name: "2P", score: 0, color: "#e76e55" },
@@ -35,30 +50,66 @@ function App() {
   };
 
   const handleAppleScored = useCallback((points: number) => {
-    handleAddScore(testCurrentUserId, points);
-  }, [testCurrentUserId]);
+    handleAddScore(currentUser.id, points);
+  }, [currentUser.id]);
+
 
   const handleGameReady = useCallback((game: Phaser.Game) => {
     console.log('Phaser game is ready!', game);
+    gameRef.current = game;
     setGameReady(true);
   }, []);
 
+  const handleGameEnd = useCallback((endPlayers: (PlayerData & { playerIndex: number })[]) => {
+    setFinalPlayers(endPlayers);
+    setGameEnded(true);
+  }, []);
+
+  const handleReplay = useCallback(() => {
+    setGameEnded(false);
+    setPlayers(prev => prev.map(p => ({ ...p, score: 0 })));
+    if (gameRef.current) {
+      gameRef.current.destroy(true);
+      gameRef.current = null;
+    }
+  }, []);
+
+  const handleLobby = useCallback(() => {
+    setGameEnded(false);
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        {gameReady && <p style={{fontFamily: 'NeoDunggeunmo', fontSize: '24px'}}>
+    <div className="App" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+      <header className="App-header" style={{ width: '100%', textAlign: 'left', marginLeft: 0 }}>
+        {gameReady && <p style={{fontFamily: 'NeoDunggeunmo', fontSize: '24px', textAlign: 'left', marginLeft: 0}}>
           마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록 하세요
         </p>}
       </header>
 
-      <div style={playerListStyle}>
+      <div style={{ ...playerListStyle, marginLeft: 0 }}>
         {players.slice(0, testPlayerCount).map((player) => (
           <PlayerCard key={player.id} name={player.name} score={player.score} color={player.color} />
         ))}
       </div>
 
-      <main className="game-container">
-        <PhaserGame onGameReady={handleGameReady} onAppleScored={handleAppleScored} />
+      <main className="game-container" style={{ position: 'relative', display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+        {!gameEnded && (
+          <PhaserGame
+            playerCount={players.length}
+            players={players}
+            currentPlayerIndex={currentUser.playerIndex}
+            onAppleScored={handleAppleScored}
+            onGameEnd={handleGameEnd}
+            onGameReady={handleGameReady}
+          />
+        )}
+        {gameEnded && (
+          <GameResult
+            players={finalPlayers}
+            onReplay={handleReplay}
+            onLobby={handleLobby}
+          />
+        )}
       </main>
     </div>
   );

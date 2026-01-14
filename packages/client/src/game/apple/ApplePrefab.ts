@@ -58,6 +58,11 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
 		this.appleFrame.visible = visible;
 	}
 
+	/** 사과 프레임의 색상을 설정합니다. */
+	setFrameColor(color: number): void {
+		this.appleFrame.fillColor = color;
+	}
+
 	/** 사과의 숫자를 설정하고 텍스트에 반영합니다. */
 	setNumber(num: number): void {
 		this.appleNumber = num;

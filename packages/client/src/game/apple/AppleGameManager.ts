@@ -3,6 +3,7 @@ import applePrefab from './ApplePrefab';
 import TimerPrefab from '../utils/TimerPrefab';
 import TimerSystem from '../utils/TimerSystem';
 import { attachDragSelection } from '../utils/DragSelection';
+import type { PlayerResultData } from '../utils/game-result/GameResultPrefab';
 
 /** 사과 게임 설정 */
 interface AppleGameConfig {
@@ -15,6 +16,7 @@ interface AppleGameConfig {
     minNumber: number;      // 최소 숫자 (1)
     maxNumber: number;      // 최대 숫자 (9)
     totalTime: number;      // 전체 게임 시간 (110초)
+    playerCount: number;    // 플레이어 수 (1~4)
 }
 
 const DEFAULT_CONFIG: AppleGameConfig = {
@@ -27,12 +29,41 @@ const DEFAULT_CONFIG: AppleGameConfig = {
     minNumber: 1,
     maxNumber: 9,
     totalTime: 110,
+    playerCount: 4,
 };
+
+/** 플레이어 데이터 */
+export interface PlayerData {
+    id: string;
+    name: string;
+    score: number;
+    color: string;
+}
+
+/** HEX 색상을 숫자로 변환 */
+function hexStringToNumber(hex: string): number {
+    return parseInt(hex.replace('#', ''), 16);
+}
+
+/** HSV에서 명도(V)를 조절한 색상 반환 */
+function adjustBrightness(hexColor: string, brightnessOffset: number): number {
+    const color = Phaser.Display.Color.HexStringToColor(hexColor);
+    const hsv = Phaser.Display.Color.RGBToHSV(color.red, color.green, color.blue);
+    
+    // 명도 조정 (0~1 범위, brightnessOffset는 0~100 범위로 가정)
+    const newV = Math.max(0, Math.min(1, (hsv.v as number) - brightnessOffset / 100));
+    
+    const rgb = Phaser.Display.Color.HSVToRGB(hsv.h as number, hsv.s as number, newV) as { r: number; g: number; b: number };
+    return Phaser.Display.Color.GetColor(rgb.r, rgb.g, rgb.b);
+}
 
 export default class AppleGameManager {
     private readonly scene: Phaser.Scene;
     private readonly config: AppleGameConfig;
     
+    // 현재 유저의 플레이어 인덱스
+    private currentPlayerIndex: number = 0;
+
     // 전체 사과 리스트
     private apples: applePrefab[] = [];
     
@@ -46,6 +77,24 @@ export default class AppleGameManager {
     // 드래그 선택 해제용
     private detachDrag?: () => void;
 
+    // 플레이어 데이터
+    private players: PlayerData[] = [];
+
+    // 기본 플레이어 색상 (1P 파란색 기준)
+    private static readonly DEFAULT_COLORS = [
+        '#209cee',  // 1P 파란색
+        '#e76e55',  // 2P 빨간색
+        '#92cc41',  // 3P 초록색
+        '#f2d024',  // 4P 노란색
+    ];
+
+    // 프레임 밝기 조절 값 (기본 플레이어 색상 대비)
+    private static readonly FRAME_BRIGHTNESS_ADJUSTMENT: number = 15;
+
+    // 현재 플레이어 색상 (0x 형식) - 1P 파란색 기본값
+    private currentPlayerColor: number = 0x209cee;
+    private currentFrameColor: number = adjustBrightness('#209cee', AppleGameManager.FRAME_BRIGHTNESS_ADJUSTMENT);
+
     constructor(scene: Phaser.Scene, timer: TimerPrefab, config: Partial<AppleGameConfig> = {}) {
         this.scene = scene;
         this.timerPrefab = timer;
@@ -53,9 +102,9 @@ export default class AppleGameManager {
     }
 
     /** 게임 초기화 및 시작 */
-    init(): void {
-
+    init(currentPlayerIndex: number = 0): void {
         this.createApples();
+        this.setCurrentPlayerIndex(currentPlayerIndex);  // 외부에서 받은 값 사용
         this.setupDragSelection();
         this.startTimer();
     }
@@ -88,8 +137,8 @@ export default class AppleGameManager {
         this.detachDrag?.();
 
         this.detachDrag = attachDragSelection(this.scene, {
-            fillColor: 0xfff200,
-            lineColor: 0xfff200,
+            fillColor: this.currentPlayerColor,
+            lineColor: this.currentPlayerColor,
             onDrag: (rect) => this.onDragUpdate(rect),
             onDragEnd: (rect) => this.onDragEnd(rect),
         });
@@ -104,6 +153,7 @@ export default class AppleGameManager {
         // 새로운 선택 영역 내 사과들 프레임 표시
         for (const apple of this.apples) {
             if (apple.isInRect(rect)) {
+                apple.setFrameColor(this.currentFrameColor);
                 apple.setFrameVisible(true);
                 this.selectedApples.add(apple);
             }
@@ -144,8 +194,69 @@ export default class AppleGameManager {
     
     /** 타이머 시작 */
     private startTimer(): void {
-        this.timerSystem = new TimerSystem(this.scene, this.timerPrefab);
+        this.timerSystem = new TimerSystem(this.scene, this.timerPrefab, this);
         this.timerSystem.start(this.config.totalTime);
+    }
+
+    public gameEnd(): void {
+        // 드래그 선택 비활성화
+        this.detachDrag?.();
+        // 플레이어 데이터에 playerIndex 추가
+        const playersWithIndex = this.players.map((player, index) => ({
+            ...player,
+            playerIndex: index
+        }));
+        // React로 게임 종료 이벤트 전달
+        this.scene.events.emit('gameEnd', { players: playersWithIndex });
+        console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
+    }
+
+    
+    /** 현재 플레이어 인덱스 업데이트 */
+    setCurrentPlayerIndex(index: number): void {
+        this.currentPlayerIndex = index;
+        this.updatePlayerColors();
+        // 드래그 선택 색상 업데이트를 위해 재설정
+        this.setupDragSelection();
+        console.log(`🎮 현재 플레이어: ${index}번`);
+    }
+
+    /** 플레이어 색상 업데이트 */
+    private static readonly FRAME_BRIGHTNESS_OFFSET = 15;
+
+    private updatePlayerColors(): void {
+        const player = this.players[this.currentPlayerIndex];
+        // 플레이어 데이터가 없으면 기본 색상 사용
+        const colorHex = player?.color ?? AppleGameManager.DEFAULT_COLORS[this.currentPlayerIndex] ?? '#209cee';
+        
+        this.currentPlayerColor = hexStringToNumber(colorHex);
+        this.currentFrameColor = adjustBrightness(colorHex, AppleGameManager.FRAME_BRIGHTNESS_OFFSET);
+        console.log(`🎨 플레이어 색상: ${colorHex}, 프레임: 0x${this.currentFrameColor.toString(16)}`);
+    }
+
+    /** 현재 플레이어 인덱스 반환 */
+    getCurrentPlayerIndex(): number {
+        return this.currentPlayerIndex;
+    }
+
+    /** 플레이어 수 반환 */
+    getPlayerCount(): number {
+        return this.config.playerCount;
+    }
+
+    /** 플레이어 데이터 반환 */
+    getPlayers(): PlayerData[] {
+        return this.players;
+    }
+
+    /** 플레이어 데이터 업데이트 (React에서 호출) */
+    updatePlayerData(playerCount: number, players: PlayerData[]): void {
+        this.config.playerCount = playerCount;
+        this.players = players;
+        this.updatePlayerColors();
+        // 드래그 선택 색상 업데이트
+        this.setupDragSelection();
+        console.log(`👥 플레이어 데이터 업데이트: ${playerCount}명`, players);
     }
 
     /** 전체 사과 리스트 반환 */

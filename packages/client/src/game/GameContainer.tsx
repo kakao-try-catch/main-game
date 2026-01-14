@@ -48,7 +48,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       width: 1380,
       height: 862,
       parent: parentRef.current,
-      backgroundColor: '#282c34',
+      backgroundColor: '#F6F5F6',
       scene: [BootScene, AppleGameScene],
       physics: {
         default: 'arcade',

@@ -223,13 +223,15 @@ export default class AppleGameManager {
     }
 
     /** 플레이어 색상 업데이트 */
+    private static readonly FRAME_BRIGHTNESS_OFFSET = 15;
+
     private updatePlayerColors(): void {
         const player = this.players[this.currentPlayerIndex];
         // 플레이어 데이터가 없으면 기본 색상 사용
         const colorHex = player?.color ?? AppleGameManager.DEFAULT_COLORS[this.currentPlayerIndex] ?? '#209cee';
         
         this.currentPlayerColor = hexStringToNumber(colorHex);
-        this.currentFrameColor = adjustBrightness(colorHex, 15);
+        this.currentFrameColor = adjustBrightness(colorHex, AppleGameManager.FRAME_BRIGHTNESS_OFFSET);
         console.log(`🎨 플레이어 색상: ${colorHex}, 프레임: 0x${this.currentFrameColor.toString(16)}`);
     }
 

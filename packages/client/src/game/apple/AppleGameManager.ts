@@ -3,7 +3,8 @@ import applePrefab from './ApplePrefab';
 import TimerPrefab from '../utils/TimerPrefab';
 import TimerSystem from '../utils/TimerSystem';
 import { attachDragSelection } from '../utils/DragSelection';
-import GameResultPrefab from '../utils/game-result/GameResultPrefab';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import GameResultPrefab, { type PlayerResultData } from '../utils/game-result/GameResultPrefab';
 
 /** 사과 게임 설정 */
 interface AppleGameConfig {
@@ -199,11 +200,17 @@ export default class AppleGameManager {
         // 드래그 선택 비활성화
         this.detachDrag?.();
         
-        // 게임 결과 화면 표시
-        const gameResult = new GameResultPrefab(this.scene, this.config.playerCount);
+        // 플레이어 데이터에 playerIndex 추가
+        const playersWithIndex = this.players.map((player, index) => ({
+            ...player,
+            playerIndex: index
+        }));
+
+        // 게임 결과 화면 표시 (플레이어 데이터 전달)
+        const gameResult = new GameResultPrefab(this.scene, this.config.playerCount, playersWithIndex);
         this.scene.add.existing(gameResult);
         
-        console.log('🎮 게임 종료! 결과 화면 표시');
+        console.log('🎮 게임 종료! 결과 화면 표시', playersWithIndex);
     }
 
     

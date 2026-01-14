@@ -2,11 +2,32 @@ import RankOnePlayerPrefab from './rank/RankOnePlayerPrefab';
 import ButtonPrefab from './button/ButtonPrefab';
 // You can write more code here
 
+/** 플레이어 데이터 인터페이스 */
+export interface PlayerResultData {
+	id: string;
+	name: string;
+	score: number;
+	color: string;
+	playerIndex: number; // 원래 플레이어 번호 (0~3)
+}
+
+/** 순위가 매겨진 플레이어 데이터 */
+interface RankedPlayer extends PlayerResultData {
+	rank: number; // 1~4
+}
+
+/** HEX 색상 문자열을 숫자로 변환 */
+function hexStringToNumber(hex: string): number {
+	return parseInt(hex.replace('#', ''), 16);
+}
+
 /* START OF COMPILED CODE */
 
 export default class GameResultPrefab extends Phaser.GameObjects.Container {
 
-	constructor(scene: Phaser.Scene, playerCount: number = 4, x?: number, y?: number) {
+	private rankPlayers: RankOnePlayerPrefab[] = [];
+
+	constructor(scene: Phaser.Scene, playerCount: number = 4, players: PlayerResultData[] = [], x?: number, y?: number) {
 		super(scene, x ?? 684, y ?? 283);
 
 		// background
@@ -36,15 +57,24 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		/* START-USER-CTR-CODE */
 		// Write your code here.
 
+		// 순위 계산 및 정렬
+		const rankedPlayers = this.calculateRanks(players, playerCount);
+
 		//rank players
 		const spacing = 216;
 		const centerX = 39; // 가운데 정렬 기준점
 		const startX = centerX - ((playerCount - 1) * spacing) / 2;
 
-		for(let i = 0; i < playerCount; i++) {
+		for(let i = 0; i < rankedPlayers.length; i++) {
+			const player = rankedPlayers[i];
 			const rankPlayer = new RankOnePlayerPrefab(scene, startX + i * spacing, 29);
-			rankPlayer.setRank(i + 1); //1~4등 //임시로 1,2,3,4 순서로 하게 하였음
+			rankPlayer
+				.setRank(player.rank)
+				.setPlayerName(player.name)
+				.setScore(player.score)
+				.setPlayerColor(hexStringToNumber(player.color));
 			this.add(rankPlayer);
+			this.rankPlayers.push(rankPlayer);
 		}
 
 		
@@ -71,7 +101,8 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 
 	/* START-USER-CODE */
 
-	// Write your code here.
+	private calculateRanks(players: PlayerResultData[], playerCount: number): RankedPlayer[] {
+	}
 
 	/* END-USER-CODE */
 }

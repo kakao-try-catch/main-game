@@ -11,9 +11,7 @@ interface PlayerData {
 }
 
 function App() {
-  const testPlayerCount = 1;
-
-  const testCurrentUserId = "id_1";
+  const testPlayerCount = 4;
 
     // 현재 유저 정보 (서버에서 받아올 예정)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -46,10 +44,9 @@ function App() {
     );
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAppleScored = useCallback((points: number) => {
-    handleAddScore(testCurrentUserId, points);
-  }, [testCurrentUserId]);
+    handleAddScore(currentUser.id, points);
+  }, [currentUser.id]);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleGameReady = useCallback((game: Phaser.Game) => {
@@ -75,7 +72,8 @@ function App() {
         <PhaserGame
             playerCount={players.length}
             players={players}
-            currentPlayerIndex={0}  // 게임에 전달
+            currentPlayerIndex={currentUser.playerIndex}
+            onAppleScored={handleAppleScored}
         />
       </main>
     </div>

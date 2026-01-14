@@ -59,7 +59,7 @@ export default class RankOnePlayerPrefab extends Phaser.GameObjects.Container {
 	 * 랭킹 순위에 따라 높이와 스타일을 설정합니다.
 	 * @param rank 1~4 사이의 순위
 	 */
-	setRank(rank: number): void {
+	setRank(rank: number): this {
 		const rankConfig: Record<number, { height: number; crownTint?: number; crownVisible: boolean }> = {
 			1: { height: 246, crownTint: 0xFAA629, crownVisible: true },
 			2: { height: 186, crownTint: 0xA7AFB3, crownVisible: true },
@@ -68,7 +68,7 @@ export default class RankOnePlayerPrefab extends Phaser.GameObjects.Container {
 		};
 
 		const config = rankConfig[rank];
-		if (!config) return;
+		if (!config) return this;
 
 		// 높이 차이 계산 (1등 기준과의 차이)
 		const heightDiff = this.BASE_HEIGHT - config.height;
@@ -86,6 +86,32 @@ export default class RankOnePlayerPrefab extends Phaser.GameObjects.Container {
 		if (config.crownVisible && config.crownTint) {
 			this.crown.setTint(config.crownTint);
 		}
+
+		return this;
+	}
+
+	/**
+	 * 플레이어 이름 설정
+	 */
+	setPlayerName(name: string): this {
+		this.playerNameText.setText(name);
+		return this;
+	}
+
+	/**
+	 * 점수 설정
+	 */
+	setScore(score: number): this {
+		this.scoreText.setText(score.toString());
+		return this;
+	}
+
+	/**
+	 * 플레이어 색상 설정 (막대 색상)
+	 */
+	setPlayerColor(color: number): this {
+		this.playerRank.fillColor = color;
+		return this;
 	}
 
 	/* END-USER-CODE */

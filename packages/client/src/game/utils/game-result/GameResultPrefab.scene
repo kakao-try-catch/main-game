@@ -1,0 +1,106 @@
+{
+    "id": "5b5c26fe-78d8-443b-a35e-3a230759fb77",
+    "sceneType": "PREFAB",
+    "settings": {
+        "exportClass": true,
+        "preloadMethodName": "",
+        "preloadPackFiles": [],
+        "createMethodName": "",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 1440,
+        "borderHeight": 896
+    },
+    "displayList": [
+        {
+            "type": "Container",
+            "id": "7bfab7da-8228-4160-9784-f401dbfa79e0",
+            "label": "container_1",
+            "x": 684,
+            "y": 283,
+            "list": [
+                {
+                    "type": "Rectangle",
+                    "id": "65b7d830-59f3-4336-809a-e0b21b2848d9",
+                    "label": "background",
+                    "x": 36,
+                    "y": 165,
+                    "isFilled": true,
+                    "fillColor": "#000000",
+                    "fillAlpha": 0.4,
+                    "width": 1440,
+                    "height": 896
+                },
+                {
+                    "type": "Image",
+                    "id": "ee2e068e-34d1-47c3-80fe-f1f5cd47f92f",
+                    "label": "__",
+                    "texture": {
+                        "key": "결과"
+                    },
+                    "x": 36,
+                    "y": 165
+                },
+                {
+                    "type": "Rectangle",
+                    "id": "de0c4f8c-1754-460c-acf8-ba32d590ada0",
+                    "label": "Frame",
+                    "x": 35,
+                    "y": 146,
+                    "visible": false,
+                    "isFilled": true,
+                    "fillColor": "F6F5F6",
+                    "strokeColor": "916BBF",
+                    "lineWidth": 10,
+                    "isStroked": true,
+                    "width": 1041,
+                    "height": 690
+                },
+                {
+                    "type": "Text",
+                    "id": "7e9ba7e1-a9bd-4802-b2fc-5132df92b2de",
+                    "label": "TitleText",
+                    "x": 35,
+                    "y": -90,
+                    "originX": 0.5,
+                    "originY": 1,
+                    "text": "APPLE GAME TOGETHER",
+                    "resolution": 5,
+                    "align": "center",
+                    "fontFamily": "Ariel",
+                    "fontSize": "60px",
+                    "fontStyle": "bold",
+                    "color": "#000000ff"
+                },
+                {
+                    "prefabId": "6723f69b-f3fb-42db-8a72-4dd38f30f983",
+                    "id": "d354c220-909d-47db-9a49-f2e1e13d04d2",
+                    "unlock": [
+                        "x",
+                        "y"
+                    ],
+                    "label": "ReplayButton",
+                    "x": -198,
+                    "y": 347
+                },
+                {
+                    "prefabId": "6723f69b-f3fb-42db-8a72-4dd38f30f983",
+                    "id": "d722eb0b-7565-4c70-bfc3-eb43f351b6e6",
+                    "unlock": [
+                        "x",
+                        "y"
+                    ],
+                    "label": "RoomButton",
+                    "x": 283,
+                    "y": 347
+                }
+            ]
+        }
+    ],
+    "plainObjects": [],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

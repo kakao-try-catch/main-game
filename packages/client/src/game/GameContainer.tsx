@@ -10,15 +10,24 @@ export interface PlayerData {
   color: string;
 }
 
+interface PlayerResultData {
+  id: string;
+  name: string;
+  score: number;
+  color: string;
+  playerIndex: number;
+}
+
 interface PhaserGameProps {
   onGameReady?: (game: Phaser.Game) => void;
   onAppleScored?: (points: number) => void;
+  onGameEnd?: (players: PlayerResultData[]) => void;
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
 }
 
-export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScored, playerCount = 4, players = [], currentPlayerIndex = 0 }) => {
+export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScored, onGameEnd, playerCount = 4, players = [], currentPlayerIndex = 0 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -79,12 +88,20 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
           };
           appleGameScene.events.on('appleScored', appleScoredHandler);
         }
+        if (onGameEnd) {
+          appleGameScene.events.on('gameEnd', (data: { players: PlayerResultData[] }) => {
+            onGameEnd(data.players);
+          });
+        }
       }
     });
     
     return () => {
       if (appleGameScene && appleScoredHandler) {
         appleGameScene.events.off('appleScored', appleScoredHandler);
+      }
+      if (appleGameScene) {
+        appleGameScene.events.off('gameEnd');
       }
       game.destroy(true);
       gameRef.current = null;

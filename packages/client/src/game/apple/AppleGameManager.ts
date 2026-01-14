@@ -29,7 +29,7 @@ const DEFAULT_CONFIG: AppleGameConfig = {
     spacingY: 74,
     minNumber: 1,
     maxNumber: 9,
-    totalTime: 110,
+    totalTime: 5,
     playerCount: 4,
 };
 
@@ -199,18 +199,14 @@ export default class AppleGameManager {
     public gameEnd(): void {
         // 드래그 선택 비활성화
         this.detachDrag?.();
-        
         // 플레이어 데이터에 playerIndex 추가
         const playersWithIndex = this.players.map((player, index) => ({
             ...player,
             playerIndex: index
         }));
-
-        // 게임 결과 화면 표시 (플레이어 데이터 전달)
-        const gameResult = new GameResultPrefab(this.scene, this.config.playerCount, playersWithIndex);
-        this.scene.add.existing(gameResult);
-        
-        console.log('🎮 게임 종료! 결과 화면 표시', playersWithIndex);
+        // React로 게임 종료 이벤트 전달
+        this.scene.events.emit('gameEnd', { players: playersWithIndex });
+        console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
     }
 
     

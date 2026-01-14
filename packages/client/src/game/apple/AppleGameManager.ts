@@ -89,9 +89,12 @@ export default class AppleGameManager {
         '#f2d024',  // 4P 노란색
     ];
 
+    // 프레임 밝기 조절 값 (기본 플레이어 색상 대비)
+    private static readonly FRAME_BRIGHTNESS_ADJUSTMENT: number = 15;
+
     // 현재 플레이어 색상 (0x 형식) - 1P 파란색 기본값
     private currentPlayerColor: number = 0x209cee;
-    private currentFrameColor: number = adjustBrightness('#209cee', 15);
+    private currentFrameColor: number = adjustBrightness('#209cee', AppleGameManager.FRAME_BRIGHTNESS_ADJUSTMENT);
 
     constructor(scene: Phaser.Scene, timer: TimerPrefab, config: Partial<AppleGameConfig> = {}) {
         this.scene = scene;

@@ -50,7 +50,7 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		const titleText = scene.add.text(35, -90, "", {});
 		titleText.setOrigin(0.5, 1);
 		titleText.text = "APPLE GAME TOGETHER";
-		titleText.setStyle({ "align": "center", "color": "#000000ff", "fontFamily": "Ariel", "fontSize": "60px", "fontStyle": "bold", "resolution": 5 });
+		titleText.setStyle({ "align": "center", "color": "#000000ff", "fontFamily": "Arial", "fontSize": "60px", "fontStyle": "bold", "resolution": 5 });
 		this.add(titleText);
 
 

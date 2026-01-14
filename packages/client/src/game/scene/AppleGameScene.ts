@@ -34,6 +34,8 @@ export default class AppleGameScene extends Phaser.Scene {
 
 	private timer!: TimerPrefab;
 	private gameManager!: AppleGameManager;
+	private initialPlayerIndex: number = 0;
+	private isGameInitialized: boolean = false;
 
 	/* START-USER-CODE */
 
@@ -42,7 +44,23 @@ export default class AppleGameScene extends Phaser.Scene {
 		
 		// AppleGameManager가 사과 생성, 드래그 선택, 타이머를 모두 관리
 		this.gameManager = new AppleGameManager(this, this.timer);
-		this.gameManager.init();
+
+		// React에서 플레이어 데이터 업데이트 수신 (먼저 등록)
+		this.events.on('updatePlayers', (data: { playerCount: number; players: { id: string; name: string; score: number; color: string }[]; currentPlayerIndex: number }) => {
+			console.log('📩 updatePlayers 이벤트 수신:', data);
+			
+			// 게임이 아직 초기화되지 않았으면 초기값 저장 후 초기화
+			if (!this.isGameInitialized) {
+				this.initialPlayerIndex = data.currentPlayerIndex;
+				this.gameManager.updatePlayerData(data.playerCount, data.players);
+				this.gameManager.init(data.currentPlayerIndex);
+				this.isGameInitialized = true;
+			} else {
+				// 이미 초기화된 경우 업데이트만
+				this.gameManager.updatePlayerData(data.playerCount, data.players);
+				this.gameManager.setCurrentPlayerIndex(data.currentPlayerIndex);
+			}
+		});
 	}
 
 	/* END-USER-CODE */

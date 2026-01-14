@@ -15,6 +15,18 @@ function App() {
 
   const testCurrentUserId = "id_1";
 
+    // 현재 유저 정보 (서버에서 받아올 예정)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [currentUser, setCurrentUser] = useState<{
+        id: string;
+        playerIndex: number;
+        name: string;
+    }>({
+        id: "id_1",
+        playerIndex: 0,
+        name: "1P"
+    });
+
   const [gameReady, setGameReady] = useState(false);
   const [players, setPlayers] = useState<PlayerData[]>([
     { id: "id_1", name: "1P", score: 0, color: "#209cee" },
@@ -58,7 +70,11 @@ function App() {
       </div>
 
       <main className="game-container">
-        <PhaserGame onGameReady={handleGameReady} onAppleScored={handleAppleScored} />
+        <PhaserGame
+            playerCount={players.length}
+            players={players}
+            currentPlayerIndex={0}  // 게임에 전달
+        />
       </main>
     </div>
   );

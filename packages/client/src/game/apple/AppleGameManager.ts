@@ -32,10 +32,21 @@ const DEFAULT_CONFIG: AppleGameConfig = {
     playerCount: 4,
 };
 
+/** 플레이어 데이터 */
+export interface PlayerData {
+    id: string;
+    name: string;
+    score: number;
+    color: string;
+}
+
 export default class AppleGameManager {
     private readonly scene: Phaser.Scene;
     private readonly config: AppleGameConfig;
     
+    // 현재 유저의 플레이어 인덱스
+    private currentPlayerIndex: number = 0;
+
     // 전체 사과 리스트
     private apples: applePrefab[] = [];
     
@@ -49,6 +60,9 @@ export default class AppleGameManager {
     // 드래그 선택 해제용
     private detachDrag?: () => void;
 
+    // 플레이어 데이터
+    private players: PlayerData[] = [];
+
     constructor(scene: Phaser.Scene, timer: TimerPrefab, config: Partial<AppleGameConfig> = {}) {
         this.scene = scene;
         this.timerPrefab = timer;
@@ -56,8 +70,7 @@ export default class AppleGameManager {
     }
 
     /** 게임 초기화 및 시작 */
-    init(): void {
-
+    init(currentPlayerIndex: number = 0): void {
         this.createApples();
         this.setupDragSelection();
         this.startTimer();
@@ -162,9 +175,40 @@ export default class AppleGameManager {
         console.log('🎮 게임 종료! 결과 화면 표시');
     }
 
+    
+    /** 현재 플레이어 인덱스 업데이트 */
+    setCurrentPlayerIndex(index: number): void {
+        this.currentPlayerIndex = index;
+        this.updatePlayerColors();
+        // 드래그 선택 색상 업데이트를 위해 재설정
+        this.setupDragSelection();
+        console.log(`🎮 현재 플레이어: ${index}번`);
+    }
+
+
+    /** 현재 플레이어 인덱스 반환 */
+    getCurrentPlayerIndex(): number {
+        return this.currentPlayerIndex;
+    }
+
     /** 플레이어 수 반환 */
     getPlayerCount(): number {
         return this.config.playerCount;
+    }
+
+    /** 플레이어 데이터 반환 */
+    getPlayers(): PlayerData[] {
+        return this.players;
+    }
+
+    /** 플레이어 데이터 업데이트 (React에서 호출) */
+    updatePlayerData(playerCount: number, players: PlayerData[]): void {
+        this.config.playerCount = playerCount;
+        this.players = players;
+        this.updatePlayerColors();
+        // 드래그 선택 색상 업데이트
+        this.setupDragSelection();
+        console.log(`👥 플레이어 데이터 업데이트: ${playerCount}명`, players);
     }
 
     /** 전체 사과 리스트 반환 */

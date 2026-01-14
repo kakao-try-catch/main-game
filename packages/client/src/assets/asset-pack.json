@@ -3,10 +3,22 @@
         "files": [
             {
                 "url": {
+                    "IMG": "결과.png"
+                },
+                "type": "texture",
+                "key": "결과"
+            },
+            {
+                "url": {
                     "IMG": "src/assets/사과게임 1안.png"
                 },
                 "type": "texture",
                 "key": "사과게임 1안"
+            },
+            {
+                "url": "crown.png",
+                "type": "image",
+                "key": "crown"
             }
         ]
     },

@@ -7,6 +7,11 @@
                 },
                 "type": "texture",
                 "key": "사과게임 1안"
+            },
+            {
+                "url": "src/assets/images/apple.png",
+                "type": "image",
+                "key": "apple"
             }
         ]
     },

@@ -38,6 +38,7 @@
                     "y": 7,
                     "scaleX": 0.9,
                     "scaleY": 0.9,
+                    "visible": false,
                     "isFilled": true,
                     "fillColor": "df3536",
                     "width": 68,
@@ -47,13 +48,22 @@
                     "type": "Text",
                     "id": "50fb79b3-a226-4298-b72e-86bdb5eec736",
                     "label": "appleText",
-                    "y": 7,
+                    "y": 15,
                     "originX": 0.5,
                     "originY": 0.5,
                     "text": "0",
                     "align": "center",
                     "fontSize": "50px",
                     "fontStyle": "bold"
+                },
+                {
+                    "type": "Image",
+                    "id": "854ea023-cdc5-4b31-b017-d7535c9e8c3c",
+                    "label": "apple",
+                    "texture": {
+                        "key": "apple"
+                    },
+                    "y": 5
                 }
             ]
         }

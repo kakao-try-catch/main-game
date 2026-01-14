@@ -4,7 +4,7 @@ import Phaser from 'phaser';
 
 /* START OF COMPILED CODE */
 
-export default class applePrefab extends Phaser.GameObjects.Container {
+export default class ApplePrefab extends Phaser.GameObjects.Container {
 
 	constructor(scene: Phaser.Scene, x?: number, y?: number) {
 		super(scene, x ?? 0, y ?? -7);
@@ -23,12 +23,17 @@ export default class applePrefab extends Phaser.GameObjects.Container {
 		const appleShape = scene.add.ellipse(0, 7, 68, 68);
 		appleShape.scaleX = 0.9;
 		appleShape.scaleY = 0.9;
+		appleShape.visible = false;
 		appleShape.isFilled = true;
 		appleShape.fillColor = 14628150;
 		this.add(appleShape);
 
+		// apple
+		const apple = scene.add.image(0, 5, "apple");
+		this.add(apple);
+
 		// appleText
-		const appleText = scene.add.text(0, 7, "", {});
+		const appleText = scene.add.text(0, 15, "", {});
 		appleText.setOrigin(0.5, 0.5);
 		appleText.text = "0";
 		appleText.setStyle({ "align": "center", "fontSize": "50px", "fontStyle": "bold" });

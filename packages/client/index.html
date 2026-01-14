@@ -7,6 +7,20 @@
     <title>front</title>
   </head>
   <body>
+    <h1 id="target">대기 중...</h1>
+
+    <script type="module">
+        // 클라이언트 사이드에서도 ESM 스타일로 import 가능 (CDN 활용)
+        import { io } from "https://cdn.socket.io/4.8.0/socket.io.esm.min.js";
+
+        const socket = io("http://localhost:3000");
+        const display = document.getElementById('target');
+
+        socket.on('update_number', (num) => {
+            display.textContent = num;
+            console.log('받은 숫자:', num);
+        });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

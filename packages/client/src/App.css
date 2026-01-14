@@ -37,7 +37,7 @@
        0 4px 0 0 #212529;  /* 아래쪽 테두리 */
 }
 
-/* 예: 검은색 테마 컨테이너일 경우 */
+/* 검은색 테마용 기본 라운드 컨테이너 스타일 (.nes-container.is-rounded.is-dark 전체에 적용됨, 필요 시 주석 처리하거나 커스터마이즈 가능) */
 .nes-container.is-rounded.is-dark {
   background-color: #212529; /* 내부 배경 */
   color: #fff; /* 글자색 */

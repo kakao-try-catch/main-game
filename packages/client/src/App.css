@@ -25,12 +25,12 @@
   border-image-outset: 0;
   border-image-repeat: stretch;
   
-  /* 2. 기본 border 제거 */
-  border-style: none;
+  /* 2. 기본 border 제거 (필요 시 CSS 변수로 덮어쓰기 가능) */
+  border-style: var(--nes-rounded-border-style, none);
   
-  /* 3. 배경색과 여백 설정 */
-  /* NES.css 컨테이너는 기본 배경이 흰색입니다. 필요시 변경하세요. */
-  background-color: #fff; 
+  /* 3. 배경색과 여백 설정 (CSS 변수로 쉽게 커스터마이즈 가능) */
+  /* NES.css 컨테이너는 기본 배경이 흰색입니다. 필요시 --nes-rounded-bg를 설정하세요. */
+  background-color: var(--nes-rounded-bg, #fff); 
   margin: var(--nes-rounded-container-margin, 4px); /* 기본 4px, 커스텀 여백은 CSS 변수로 설정 */
 
   /* 4. Box-shadow로 픽셀 스타일의 테두리 구현 */

@@ -81,7 +81,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
         }
       }
     });
-
+    
     return () => {
       if (appleGameScene && appleScoredHandler) {
         appleGameScene.events.off('appleScored', appleScoredHandler);
@@ -89,6 +89,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       game.destroy(true);
       gameRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onGameReady, onAppleScored]);
 
   return <div ref={parentRef} id="phaser-game" />;

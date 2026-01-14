@@ -46,10 +46,12 @@ function App() {
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAppleScored = useCallback((points: number) => {
     handleAddScore(testCurrentUserId, points);
   }, [testCurrentUserId]);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleGameReady = useCallback((game: Phaser.Game) => {
     console.log('Phaser game is ready!', game);
     setGameReady(true);

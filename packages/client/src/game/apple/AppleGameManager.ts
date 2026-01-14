@@ -2,8 +2,7 @@ import Phaser from 'phaser';
 import applePrefab from './ApplePrefab';
 import TimerPrefab from '../utils/TimerPrefab';
 import TimerSystem from '../utils/TimerSystem';
-import { attachDragSelection } from '../utils/DragSelection';
-import type { PlayerResultData } from '../utils/game-result/GameResultPrefab';
+import { attachDragSelection } from '../utils/dragSelection';
 
 /** 사과 게임 설정 */
 interface AppleGameConfig {
@@ -151,6 +150,18 @@ export default class AppleGameManager {
                 this.apples.push(apple);
             }
         }
+    }
+
+    /** 드래그 좌표를 0~1로 정규화 (서버 전송용) */
+    public static normalizeRect(rect: Phaser.Geom.Rectangle): {x:number,y:number,w:number,h:number} {
+        const ratio = window.__APPLE_GAME_RATIO || 1;
+        // 항상 기준 해상도(1380x862)로 정규화
+        return {
+            x: rect.x / (1380 * ratio),
+            y: rect.y / (862 * ratio),
+            w: rect.width / (1380 * ratio),
+            h: rect.height / (862 * ratio),
+        };
     }
 
     /** 드래그 선택 박스 초기화 */

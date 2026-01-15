@@ -7,6 +7,7 @@ import GameResult from "./game/utils/game-result/GameResult";
 import SocketCounter from "./components/SocketCounter";
 import SoundSetting from "./components/SoundSetting";
 import LandingPage from "./components/LandingPage";
+import Lobby from "./components/Lobby";
 
 import "./App.css";
 
@@ -19,7 +20,9 @@ interface PlayerData {
 
 function App() {
   const testPlayerCount = 4;
-  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState<
+    "landing" | "lobby" | "game"
+  >("landing");
   const [userNickname, setUserNickname] = useState("");
 
   // 현재 유저 정보 (서버에서 받아올 예정)
@@ -28,10 +31,12 @@ function App() {
     id: string;
     playerIndex: number;
     name: string;
+    isHost: boolean;
   }>({
     id: "id_1",
     playerIndex: 0,
     name: "1P",
+    isHost: true, // 첫 유저는 방장
   });
 
   const [gameReady, setGameReady] = useState(false);
@@ -90,17 +95,37 @@ function App() {
 
   const handleLobby = useCallback(() => {
     setGameEnded(false);
+    setCurrentScreen("lobby");
   }, []);
 
   const handleStart = (nickname: string) => {
     setUserNickname(nickname);
     setCurrentUser((prev) => ({ ...prev, name: nickname }));
-    setIsGameStarted(true);
+    setCurrentScreen("lobby");
+  };
+
+  const handleGameStart = () => {
+    setCurrentScreen("game");
   };
 
   // 랜딩 페이지 표시
-  if (!isGameStarted) {
+  if (currentScreen === "landing") {
     return <LandingPage onStart={handleStart} />;
+  }
+
+  // 로비 표시
+  if (currentScreen === "lobby") {
+    return (
+      <Lobby
+        currentPlayer={{
+          id: currentUser.id,
+          name: currentUser.name,
+          color: "#209cee",
+          isHost: currentUser.isHost,
+        }}
+        onGameStart={handleGameStart}
+      />
+    );
   }
 
   return (

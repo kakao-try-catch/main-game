@@ -126,7 +126,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
     if (gameRef.current || !parentRef.current) return;
 
     // 실제 컨테이너 크기에 맞춰 ratio 계산
-    let ratio = 1;
+    let ratio;
     let parentWidth = parentRef.current?.offsetWidth || 0;
     let parentHeight = parentRef.current?.offsetHeight || 0;
     // fallback: window 크기 사용

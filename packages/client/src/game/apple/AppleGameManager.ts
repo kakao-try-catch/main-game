@@ -130,12 +130,12 @@ export default class AppleGameManager {
         // 타이머바의 세로 길이를 Phaser 캔버스의 세로 길이에서 margin을 빼서 계산
         const canvasWidth = (scene.sys.game.config.width as number) || window.innerWidth;
         const canvasHeight = (scene.sys.game.config.height as number) || window.innerHeight;
-        const ratio2 = this.config.ratio;
-        const timerBarMarginTop = 70*ratio2; // px, 필요에 따라 조정
-        const timerBarMarginBottom = 65*ratio2; // px, 필요에 따라 조정
+        const timerRatio = this.config.ratio;
+        const timerBarMarginTop = 70 * timerRatio; // px, 필요에 따라 조정
+        const timerBarMarginBottom = 65 * timerRatio; // px, 필요에 따라 조정
         const timerBarCanvasHeight = canvasHeight - timerBarMarginTop - timerBarMarginBottom;
-        const timerBarWidth = 22 * ratio2;
-        const timerBarMarginRight = 30 * ratio2; // 오른쪽 마진
+        const timerBarWidth = 22 * timerRatio;
+        const timerBarMarginRight = 30 * timerRatio; // 오른쪽 마진
         // x좌표: 캔버스 오른쪽 끝에서 마진과 타이머 바 width의 절반만큼 뺀 위치
         const timerBarX = canvasWidth - timerBarMarginRight - timerBarWidth / 2;
         console.log('[DEBUG] 캔버스 width:', canvasWidth, 'timerBarX:', timerBarX);

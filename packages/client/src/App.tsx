@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useCallback, useRef } from 'react';
 import { PhaserGame } from './game/GameContainer';
@@ -111,7 +112,6 @@ function App() {
             name={player.name}
             score={player.score}
             color={player.color}
-            style={{ maxWidth: '216px', maxHeight: '58px', width: '216px', height: '58px' }}
           />
         ))}
       </div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
 import { AppleGameScene } from './scene/AppleGameScene';
@@ -48,7 +49,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       if (parentRef.current) {
         const width = Math.min(parentRef.current.clientWidth, MAX_WIDTH);
         const ratio = width / MAX_WIDTH;
-        (window as any).__APPLE_GAME_RATIO = ratio;
+        (window as Window).__APPLE_GAME_RATIO = ratio;
       }
     }
     updateRatio();

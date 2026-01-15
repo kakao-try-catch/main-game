@@ -44,7 +44,7 @@ export default class TimerPrefab extends Phaser.GameObjects.Container {
 			fontSize: `${scaledFontSize}px`,
 			fontStyle: "bold",
 			stroke: "#000000ff",
-			fontFamily: "'둥근모', 'Dunggeunmo', 'sans-serif'"
+			fontFamily: "'NeoDunggeunmo', 'sans-serif'"
 		});
 		this.add(timeTxt);
 

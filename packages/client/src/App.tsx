@@ -1,10 +1,14 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { PhaserGame } from './game/GameContainer';
+import { BGMProvider }  from './contexts/BGMContext';
+
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
-import './App.css';
 import SocketCounter from './components/SocketCounter';
+import SoundSetting from './components/SoundSetting';
+
+import './App.css';
 
 interface PlayerData {
   id: string;
@@ -38,7 +42,7 @@ function App() {
     { id: "id_3", name: "3P", score: 0, color: "#92cc41" }, 
     { id: "id_4", name: "4P", score: 0, color: "#f2d024" },
   ]);
-
+  
   // 점수 증가 함수
   const handleAddScore = (playerId: string, pointsToAdd: number) => {
     setPlayers(prevPlayers => 
@@ -86,6 +90,10 @@ function App() {
           마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록 하세요
         </p>}
       </header>
+
+      <BGMProvider>
+        <SoundSetting gameReady={gameReady} />
+      </BGMProvider>
 
       <SocketCounter />
       

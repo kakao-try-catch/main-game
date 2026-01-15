@@ -128,14 +128,27 @@ export default class AppleGameManager {
             ratio,
         };
         // 타이머바의 세로 길이를 Phaser 캔버스의 세로 길이에서 margin을 빼서 계산
+        const canvasWidth = (scene.sys.game.config.width as number) || window.innerWidth;
         const canvasHeight = (scene.sys.game.config.height as number) || window.innerHeight;
-        const timerBarMarginTop = 40; // px, 필요에 따라 조정
-        const timerBarMarginBottom = 40; // px, 필요에 따라 조정
+        const ratio2 = this.config.ratio;
+        const timerBarMarginTop = 70*ratio2; // px, 필요에 따라 조정
+        const timerBarMarginBottom = 65*ratio2; // px, 필요에 따라 조정
         const timerBarCanvasHeight = canvasHeight - timerBarMarginTop - timerBarMarginBottom;
-        console.log('[DEBUG] 캔버스 height:', canvasHeight, 'timerBarCanvasHeight:', timerBarCanvasHeight);
+        const timerBarWidth = 22 * ratio2;
+        const timerBarMarginRight = 30 * ratio2; // 오른쪽 마진
+        // x좌표: 캔버스 오른쪽 끝에서 마진과 타이머 바 width의 절반만큼 뺀 위치
+        const timerBarX = canvasWidth - timerBarMarginRight - timerBarWidth / 2;
+        console.log('[DEBUG] 캔버스 width:', canvasWidth, 'timerBarX:', timerBarX);
 
-        // TimerPrefab의 y를 marginTop에 맞추고, barHeight를 timerBarCanvasHeight로 전달
-        this.timerPrefab = timer ?? new TimerPrefab(scene, undefined, timerBarMarginTop, timerBarCanvasHeight);
+        // TimerPrefab의 x, y, barHeight를 명확히 지정 (origin이 (0.5, 1)이므로 y를 아래로 내림)
+        const timerBarY = timerBarMarginTop + timerBarCanvasHeight;
+        this.timerPrefab = timer ?? new TimerPrefab(scene, timerBarX, timerBarY, timerBarCanvasHeight);
+        // 타이머를 컨테이너 또는 씬에 추가하여 화면에 보이게 함
+        if (this.container) {
+            this.container.add(this.timerPrefab);
+        } else {
+            this.scene.add.existing(this.timerPrefab);
+        }
     }
 
     /** 게임 초기화 및 시작 */

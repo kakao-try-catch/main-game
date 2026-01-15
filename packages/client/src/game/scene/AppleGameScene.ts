@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import TimerPrefab from '../utils/TimerPrefab';
+// import TimerPrefab from '../utils/TimerPrefab';
 import AppleGameManager from '../apple/AppleGameManager';
 
 // You can write more code here
@@ -34,26 +34,20 @@ export default class AppleGameScene extends Phaser.Scene {
 		// margin, 사과 그리드, 타이머 바 위치 계산 (실제 캔버스 width 기준)
 		const canvasWidth = this.sys.game.canvas.width;
 		const margin = 20 * ratio;
-		const timerBarWidth = 22 * ratio;
 		const gridCols = 17;
 		const appleSize = 50 * ratio;
 		// 사과 그리드 최대 width: 캔버스 width - 타이머 바 width - 2 * margin
-		const maxAppleGridWidth = canvasWidth - timerBarWidth - 2 * margin;
+		const maxAppleGridWidth = canvasWidth - 22 * ratio - 2 * margin;
 		// spacingX 계산: (maxAppleGridWidth - appleSize) / (gridCols - 1)
 		const spacingX = (maxAppleGridWidth - appleSize) / (gridCols - 1);
 		const baseX = margin;
-		// 타이머 바 x좌표: 항상 오른쪽 끝에 고정
-		const timerX = canvasWidth - timerBarWidth / 2 - margin;
-		console.log(`Timer X: ${timerX}px, Percentage: ${(timerX / canvasWidth * 100).toFixed(2)}%`);
-		this.timer = new TimerPrefab(this, timerX, 32 * ratio);
-		this.gameContainer.add(this.timer);
 		// AppleGameManager에 baseX, spacingX, gridCols를 명시적으로 넘기기 위해 저장
 		this._appleGridConfig = { baseX, spacingX, gridCols };
 
 		this.events.emit("scene-awake");
 	}
 
-	private timer!: TimerPrefab;
+	// private timer!: TimerPrefab;
 	private gameManager!: AppleGameManager;
 	private gameContainer!: Phaser.GameObjects.Container;
 	private _appleGridConfig!: { baseX: number; spacingX: number; gridCols: number };
@@ -65,7 +59,7 @@ export default class AppleGameScene extends Phaser.Scene {
 		this.editorCreate();
 		// AppleGameManager가 사과 생성, 드래그 선택, 타이머를 모두 관리
 		// gameContainer를 넘겨서 사과도 이 컨테이너에 추가하도록 함
-		this.gameManager = new AppleGameManager(this, this.timer, this.gameContainer, {
+		this.gameManager = new AppleGameManager(this, undefined, this.gameContainer, {
 			baseX: this._appleGridConfig.baseX,
 			spacingX: this._appleGridConfig.spacingX,
 			gridCols: this._appleGridConfig.gridCols

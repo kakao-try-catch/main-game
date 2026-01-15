@@ -17,11 +17,11 @@ export default class TimerPrefab extends Phaser.GameObjects.Container {
 		super(scene, x ?? 0, y ?? 0);
 
 		// 타이머 바 높이: 사과 그리드와 동일하게 맞춤
-		const timerBarHeight = barHeight !== undefined ? barHeight : gridBottom-gridTop;
+		const timerBarHeight = barHeight ?? 762; // 기본값 50 (필요에 따라 조정)
 
 		// timerBar
 		const timerBar = scene.add.rectangle(0, 0, 22 * clampedRatio, timerBarHeight);
-		timerBar.setOrigin(0.5, 0);
+		timerBar.setOrigin(0.5, 1);
 		timerBar.isFilled = true;
 		timerBar.fillColor = 0x3fa425;
 		//timerBar.setScale(clampedRatio);

@@ -221,7 +221,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
     height = vh;
     width = vh * aspectRatio;
   }
-  ratio = width / 1380;
+  //ratio = width / 1380;
   // window.__APPLE_GAME_RATIO를 항상 갱신
   useLayoutEffect(() => {
     (window as any).__APPLE_GAME_RATIO = ratio;

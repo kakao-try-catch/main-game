@@ -1,0 +1,93 @@
+* {
+  font-family: "NeoDunggeunmo", monospace !important;
+}
+
+.landing-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.landing-content {
+  background: white;
+  padding: 60px 80px;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+.game-title {
+  font-size: 48px;
+  margin-bottom: 60px;
+  text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+  letter-spacing: 2px;
+}
+
+.landing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+  width: 100%;
+}
+
+.nes-field {
+  width: 100%;
+  max-width: 400px;
+}
+
+.nes-field label {
+  font-size: 20px;
+  margin-bottom: 12px;
+  display: block;
+  text-align: left;
+}
+
+.nes-input {
+  width: 100%;
+  font-size: 18px;
+  padding: 12px;
+}
+
+.start-button {
+  font-size: 24px;
+  padding: 16px 60px;
+  margin-top: 20px;
+}
+
+.start-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .landing-content {
+    padding: 40px 30px;
+  }
+
+  .game-title {
+    font-size: 36px;
+    margin-bottom: 40px;
+  }
+
+  .nes-field label {
+    font-size: 18px;
+  }
+
+  .nes-input {
+    font-size: 16px;
+  }
+
+  .start-button {
+    font-size: 20px;
+    padding: 12px 40px;
+  }
+}

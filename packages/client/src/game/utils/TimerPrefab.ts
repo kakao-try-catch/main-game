@@ -27,14 +27,25 @@ export default class TimerPrefab extends Phaser.GameObjects.Container {
 		//timerBar.setScale(clampedRatio);
 		this.add(timerBar);
 
-		// timeTxt
-		const timeTxt = scene.add.text(0, 0, "", {});
-		timeTxt.scaleX = 0.9 * clampedRatio;
-		timeTxt.scaleY = 1.3 * clampedRatio;
+		// timeTxt: 타이머 바 위쪽에 고정
+		const timeTxt = scene.add.text(0, -timerBarHeight - 40 * clampedRatio/1.5, "", {});
+		timeTxt.scaleX = 1.5 * clampedRatio;
+		timeTxt.scaleY = 1.8 * clampedRatio;
 		timeTxt.setResolution(5);
 		timeTxt.setOrigin(0.5, 0.5);
 		timeTxt.text = "TIME";
-		timeTxt.setStyle({ "color": "#000000ff", "fontSize": `${32 * clampedRatio}px`, "fontStyle": "bold", "stroke": "#000000ff" });
+		// fontSize를 비율에 따라 조정하되, 너무 크거나 작지 않게 제한
+		const baseFontSize = 25;
+		const minFontSize = 16;
+		const maxFontSize = 32;
+		const scaledFontSize = Math.max(minFontSize, Math.min(maxFontSize, baseFontSize * clampedRatio));
+		timeTxt.setStyle({
+			color: "#000000ff",
+			fontSize: `${scaledFontSize}px`,
+			fontStyle: "bold",
+			stroke: "#000000ff",
+			fontFamily: "'둥근모', 'Dunggeunmo', 'sans-serif'"
+		});
 		this.add(timeTxt);
 
 		// timerBar 참조 저장

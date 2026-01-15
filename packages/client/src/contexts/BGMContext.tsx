@@ -43,11 +43,13 @@ export const BGMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 사용자 상호작용 감지 (권한 따기)
   const handleUserInteraction = useCallback(() => {
     if (audioRef.current && !isInitialized) {
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch((error) => {
+          console.error('BGM 초기화 play() 실패:', error);
+        } );
       audioRef.current.pause();
       setIsInitialized(true); 
     }
-  }, [isInitialized]);
+  } ,  [ ] ) ;
 
   useEffect(() => {
     window.addEventListener('click', handleUserInteraction, { once: true });

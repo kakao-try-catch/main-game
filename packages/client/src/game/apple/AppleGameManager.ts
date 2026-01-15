@@ -4,6 +4,13 @@ import TimerPrefab from '../utils/TimerPrefab';
 import TimerSystem from '../utils/TimerSystem';
 import { attachDragSelection } from '../utils/dragSelection';
 
+// Declare the global property for TypeScript
+declare global {
+    interface Window {
+        __APPLE_GAME_RATIO?: number;
+    }
+}
+
 /** 사과 게임 설정 */
 interface AppleGameConfig {
     gridCols: number;       // 가로 사과 개수 (17)
@@ -101,7 +108,8 @@ export default class AppleGameManager {
         this.scene = scene;
         this.timerPrefab = timer;
         this.container = container ?? null;
-        const ratio = window.__APPLE_GAME_RATIO || 1;
+        // ratio 우선순위: config.ratio > window.__APPLE_GAME_RATIO > 1
+        const ratio = config.ratio ?? window.__APPLE_GAME_RATIO ?? 1;
         const gridCols = config.gridCols ?? DEFAULT_CONFIG.gridCols;
         const gridRows = config.gridRows ?? DEFAULT_CONFIG.gridRows;
         // 기준값에 비율 곱

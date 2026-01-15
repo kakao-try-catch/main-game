@@ -76,7 +76,6 @@ export default class AppleGameScene extends Phaser.Scene {
 			console.log('📩 updatePlayers 이벤트 수신:', data);
 			// 게임이 아직 초기화되지 않았으면 초기값 저장 후 초기화
 			if (!this.isGameInitialized) {
-				this.initialPlayerIndex = data.currentPlayerIndex;
 				this.gameManager.updatePlayerData(data.playerCount, data.players);
 				this.gameManager.init(data.currentPlayerIndex);
 				this.isGameInitialized = true;

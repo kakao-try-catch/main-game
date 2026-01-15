@@ -9,6 +9,7 @@ interface LandingPageProps {
 
 function LandingPage({ onStart }: LandingPageProps) {
   const [nickname, setNickname] = useState("");
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,13 +38,22 @@ function LandingPage({ onStart }: LandingPageProps) {
             />
           </div>
 
-          <button
-            type="submit"
-            className="nes-btn is-primary start-button"
-            disabled={!nickname.trim()}
+          <div
+            className="button-wrapper"
+            onMouseEnter={() => !nickname.trim() && setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
           >
-            시작
-          </button>
+            <button
+              type="submit"
+              className="nes-btn is-primary start-button"
+              disabled={!nickname.trim()}
+            >
+              시작
+            </button>
+            {showTooltip && !nickname.trim() && (
+              <div className="tooltip">닉네임을 입력하세요</div>
+            )}
+          </div>
         </form>
       </div>
     </div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import 'nes.css/css/nes.min.css';
 
@@ -63,8 +64,17 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, rat
   const ratio = propRatio ?? ((window as any).__APPLE_GAME_RATIO || 1);
   const rankedPlayers = calculateRanks(players);
   return (
-    <div style={getOverlayStyle(ratio)}>
-      <div className="nes-container is-rounded" style={getContainerStyle(ratio)}>
+    <div style={getOverlayStyle()}>
+      <div
+        className="nes-container is-rounded"
+        style={{
+          ...getContainerStyle(ratio),
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
         <h1 style={getTitleStyle(ratio)}>APPLE GAME TOGETHER</h1>
         <div style={getRankContainerStyle(ratio)}>
           {rankedPlayers.map((player, idx) => {
@@ -119,21 +129,21 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, rat
 
 
 // 비율(ratio) 기반 스타일 함수들
-function getOverlayStyle(ratio: number): React.CSSProperties {
+function getOverlayStyle(): React.CSSProperties {
   return {
-    position: 'absolute',
+    position: 'fixed',
     top: 0,
     left: 0,
-    width: `${1380 * ratio}px`,
-    height: `${862 * ratio}px`,
+    width: '100vw',
+    height: '100vh',
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     zIndex: 1000,
+    pointerEvents: 'auto',
   };
 }
-
 function getContainerStyle(ratio: number): React.CSSProperties {
   return {
     backgroundColor: '#fff',

@@ -25,6 +25,7 @@ interface GameResultProps {
   players: PlayerResultData[];
   onReplay: () => void;
   onLobby: () => void;
+  ratio?: number;
 }
 
 function calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
@@ -56,53 +57,56 @@ function getCrownProps(rank: number): { visible: boolean; fill: string } {
   return { visible: false, fill: 'none' };
 }
 
-const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby }) => {
+
+const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, ratio: propRatio }) => {
+  // 기준 해상도 대비 현재 비율 (사과 게임과 동일)
+  const ratio = propRatio ?? ((window as any).__APPLE_GAME_RATIO || 1);
   const rankedPlayers = calculateRanks(players);
   return (
-    <div style={overlayStyle}>
-      <div className="nes-container is-rounded" style={containerStyle}>
-        <h1 style={titleStyle}>APPLE GAME TOGETHER</h1>
-        <div style={rankContainerStyle}>
+    <div style={getOverlayStyle(ratio)}>
+      <div className="nes-container is-rounded" style={getContainerStyle(ratio)}>
+        <h1 style={getTitleStyle(ratio)}>APPLE GAME TOGETHER</h1>
+        <div style={getRankContainerStyle(ratio)}>
           {rankedPlayers.map((player, idx) => {
-            const height = getRankHeight(player.rank);
+            const height = getRankHeight(player.rank) * ratio;
             const crown = getCrownProps(player.rank);
             return (
-              <div 
-              key={player.id}
+              <div
+                key={player.id}
                 style={{
-                    ...rankItemStyle,
-                    marginLeft: idx === 0 ? 0 : '-5px', // 첫 박스는 0, 나머지는 음수
+                  ...getRankItemStyle(ratio),
+                  marginLeft: idx === 0 ? 0 : -5 * ratio,
                 }}>
                 {crown.visible && (
-                  <CrownSvg style={{ ...crownStyle, marginTop: '0px', marginBottom: '3px' }} fill={crown.fill} />
+                  <CrownSvg style={{ ...getCrownStyle(ratio), marginTop: 0, marginBottom: 3 * ratio }} fill={crown.fill} />
                 )}
-                <div style={{ ...playerNameStyle, marginTop: '0px' }}>{player.name}</div>
+                <div style={{ ...getPlayerNameStyle(ratio), marginTop: 0 }}>{player.name}</div>
                 <div
                   style={{
-                    ...rankBarStyle,
+                    ...getRankBarStyle(ratio),
                     height: `${height}px`,
                     backgroundColor: player.color,
                   }}
                 >
-                  <div style={scoreStyle}>{player.score}</div>
+                  <div style={getScoreStyle(ratio)}>{player.score}</div>
                 </div>
               </div>
             );
           })}
         </div>
-        <div style={buttonContainerStyle}>
-          <button 
-            type="button" 
+        <div style={getButtonContainerStyle(ratio)}>
+          <button
+            type="button"
             className="nes-btn is-primary"
-            style={buttonStyle}
+            style={getButtonStyle(ratio)}
             onClick={onReplay}
           >
             REPLAY
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="nes-btn is-primary"
-            style={buttonStyle}
+            style={getButtonStyle(ratio)}
             onClick={onLobby}
           >
             LOBBY
@@ -113,104 +117,128 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby }) =
   );
 };
 
-const overlayStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  width: '1380px',
-  height: '862px',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  zIndex: 1000,
-};
 
-const containerStyle: React.CSSProperties = {
-  backgroundColor: '#fff',
-  width: '1052px',
-  height: '700px',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  alignItems: 'center',
-  padding: '40px',
-  boxSizing: 'border-box',
-};
+// 비율(ratio) 기반 스타일 함수들
+function getOverlayStyle(ratio: number): React.CSSProperties {
+  return {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: `${1380 * ratio}px`,
+    height: `${862 * ratio}px`,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    zIndex: 1000,
+  };
+}
 
-const titleStyle: React.CSSProperties = {
-  fontFamily: 'NeoDunggeunmo',
-  fontSize: '55px',
-  marginBottom: '20px',
-  marginTop: '0',
-  color: '#212529',
-};
+function getContainerStyle(ratio: number): React.CSSProperties {
+  return {
+    backgroundColor: '#fff',
+    width: `${1052 * ratio}px`,
+    height: `${700 * ratio}px`,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: `${40 * ratio}px`,
+    boxSizing: 'border-box',
+  };
+}
 
-const rankContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'flex-end', // 상단 정렬로 변경
-  gap: '1px',
-  marginBottom: '30px',
-  minHeight: '320px',
-  width: '100%',
-};
+function getTitleStyle(ratio: number): React.CSSProperties {
+  return {
+    fontFamily: 'NeoDunggeunmo',
+    fontSize: `${55 * ratio}px`,
+    marginBottom: `${20 * ratio}px`,
+    marginTop: 0,
+    color: '#212529',
+  };
+}
 
-const rankItemStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'flex-start', // 추가!
-  gap: '0px',
-  width: '220px',
-  marginLeft: '-5px',
-};
+function getRankContainerStyle(ratio: number): React.CSSProperties {
+  return {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    gap: `${1 * ratio}px`,
+    marginBottom: `${30 * ratio}px`,
+    minHeight: `${320 * ratio}px`,
+    width: '100%',
+  };
+}
 
-const crownStyle: React.CSSProperties = {
-  width: '48px',
-  height: '48px',
-  marginBottom: '-32px',
-};
+function getRankItemStyle(ratio: number): React.CSSProperties {
+  return {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 0,
+    width: `${220 * ratio}px`,
+    marginLeft: -5 * ratio,
+  };
+}
 
-const playerNameStyle: React.CSSProperties = {
-  fontFamily: 'NeoDunggeunmo',
-  fontSize: '48px',
-  color: '#212529',
-  marginBottom: '0px',
-  marginTop: '-18px',
-  lineHeight: '45px', 
-};
+function getCrownStyle(ratio: number): React.CSSProperties {
+  return {
+    width: `${48 * ratio}px`,
+    height: `${48 * ratio}px`,
+    marginBottom: `${-32 * ratio}px`,
+  };
+}
 
-const scoreStyle: React.CSSProperties = {
-  fontFamily: 'NeoDunggeunmo',
-  fontSize: '48px',
-  color: '#212529',
-  paddingTop: '10px',
-};
+function getPlayerNameStyle(ratio: number): React.CSSProperties {
+  return {
+    fontFamily: 'NeoDunggeunmo',
+    fontSize: `${48 * ratio}px`,
+    color: '#212529',
+    marginBottom: 0,
+    marginTop: -18 * ratio,
+    lineHeight: `${45 * ratio}px`,
+  };
+}
 
-const rankBarStyle: React.CSSProperties = {
-  width: '210px',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'flex-start',
-};
+function getScoreStyle(ratio: number): React.CSSProperties {
+  return {
+    fontFamily: 'NeoDunggeunmo',
+    fontSize: `${48 * ratio}px`,
+    color: '#212529',
+    paddingTop: `${10 * ratio}px`,
+  };
+}
 
-const buttonContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'center',
-  gap: '60px',
-  marginTop: '10px',
-};
+function getRankBarStyle(ratio: number): React.CSSProperties {
+  return {
+    width: `${210 * ratio}px`,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  };
+}
 
-const buttonStyle: React.CSSProperties = {
-  fontFamily: 'NeoDunggeunmo',
-  fontSize: '51px', // 36 + 15
-  width: '386px',
-  height: '136px',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  cursor: 'pointer',
-};
+function getButtonContainerStyle(ratio: number): React.CSSProperties {
+  return {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: `${60 * ratio}px`,
+    marginTop: `${10 * ratio}px`,
+  };
+}
+
+function getButtonStyle(ratio: number): React.CSSProperties {
+  return {
+    fontFamily: 'NeoDunggeunmo',
+    fontSize: `${51 * ratio}px`,
+    width: `${386 * ratio}px`,
+    height: `${136 * ratio}px`,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    cursor: 'pointer',
+  };
+}
 
 export default GameResult;

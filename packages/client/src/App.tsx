@@ -111,6 +111,7 @@ function App() {
             players={finalPlayers}
             onReplay={handleReplay}
             onLobby={handleLobby}
+            ratio={(window as any).__APPLE_GAME_RATIO || 1}
           />
         )}
       </main>

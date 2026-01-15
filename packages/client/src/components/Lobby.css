@@ -204,20 +204,23 @@
   white-space: nowrap;
 }
 
-.setting-item select,
-.setting-item input {
+.setting-item .nes-select {
+  width: auto;
+  min-width: 100px;
+}
+
+.setting-item .nes-select select {
+  font-size: 12px;
+  padding: 2px 6px;
+  height: 28px;
+  min-width: 100px;
+}
+
+.setting-item .nes-input {
   width: 80px;
   font-size: 12px;
   padding: 2px 6px;
   height: 28px;
-}
-
-.setting-item .nes-select {
-  width: auto;
-}
-
-.setting-item .nes-select select {
-  width: 80px;
 }
 
 .setting-item span {

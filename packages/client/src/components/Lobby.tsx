@@ -182,21 +182,22 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                         >
                           <div className="setting-item">
                             <label>맵 크기:</label>
-                            <select
-                              value={settings.mapSize}
-                              onChange={(e) =>
-                                handleSettingChange(
-                                  game.id,
-                                  "mapSize",
-                                  e.target.value
-                                )
-                              }
-                              className="nes-select is-small"
-                            >
-                              <option value="small">작음</option>
-                              <option value="normal">보통</option>
-                              <option value="large">큼</option>
-                            </select>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.mapSize}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    "mapSize",
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="small">작음</option>
+                                <option value="normal">보통</option>
+                                <option value="large">큼</option>
+                              </select>
+                            </div>
                           </div>
                           <div className="setting-item">
                             <label>제한 시간:</label>
@@ -247,58 +248,61 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 }}
                               />
                             ) : (
-                              <select
-                                value={settings.timeLimit}
-                                onChange={(e) => {
-                                  const val = parseInt(e.target.value);
-                                  handleSettingChange(
-                                    game.id,
-                                    "timeLimit",
-                                    val
-                                  );
-                                }}
-                                className="nes-select is-small"
-                              >
-                                <option value={120}>120초</option>
-                                <option value={180}>180초</option>
-                                <option value={240}>240초</option>
-                                <option value={-1}>직접 입력</option>
-                              </select>
+                              <div className="nes-select is-small">
+                                <select
+                                  value={settings.timeLimit}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    handleSettingChange(
+                                      game.id,
+                                      "timeLimit",
+                                      val
+                                    );
+                                  }}
+                                >
+                                  <option value={120}>120초</option>
+                                  <option value={180}>180초</option>
+                                  <option value={240}>240초</option>
+                                  <option value={-1}>직접 입력</option>
+                                </select>
+                              </div>
                             )}
                           </div>
                           <div className="setting-item">
                             <label>사과 생성:</label>
-                            <select
-                              value={settings.appleRange}
-                              onChange={(e) =>
-                                handleSettingChange(
-                                  game.id,
-                                  "appleRange",
-                                  e.target.value
-                                )
-                              }
-                              className="nes-select is-small"
-                            >
-                              <option value="1-9">쉬움(1-9)</option>
-                              <option value="1-5">어려움(1-5)</option>
-                            </select>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.appleRange}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    "appleRange",
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="1-9">쉬움(1-9)</option>
+                                <option value="1-5">어려움(1-5)</option>
+                              </select>
+                            </div>
                           </div>
                           <div className="setting-item">
                             <label>0 생성:</label>
-                            <select
-                              value={settings.includeZero ? "O" : "X"}
-                              onChange={(e) =>
-                                handleSettingChange(
-                                  game.id,
-                                  "includeZero",
-                                  e.target.value === "O"
-                                )
-                              }
-                              className="nes-select is-small"
-                            >
-                              <option value="X">X</option>
-                              <option value="O">O</option>
-                            </select>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.includeZero ? "O" : "X"}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    "includeZero",
+                                    e.target.value === "O"
+                                  )
+                                }
+                              >
+                                <option value="X">X</option>
+                                <option value="O">O</option>
+                              </select>
+                            </div>
                           </div>
                         </div>
                       ) : (

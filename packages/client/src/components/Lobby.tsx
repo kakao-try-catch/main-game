@@ -45,6 +45,12 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   ]);
 
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({ show: false, message: "", type: "success" });
+  const [showButtonTooltip, setShowButtonTooltip] = useState(false);
 
   // 각 게임의 설정 (기본값)
   const [gameSettings, setGameSettings] = useState<
@@ -75,16 +81,26 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     }));
   };
 
+  const showTooltip = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setTooltip({ show: true, message, type });
+    setTimeout(() => {
+      setTooltip({ show: false, message: "", type: "success" });
+    }, 2000);
+  };
+
   const handleCopyLink = () => {
     // 나중에 구현
     const link = window.location.href;
     navigator.clipboard.writeText(link);
-    alert("초대 링크가 복사되었습니다!");
+    showTooltip("초대 링크가 복사되었습니다!", "success");
   };
 
   const handleStartGame = () => {
     if (!selectedGame) {
-      alert("게임을 선택해주세요!");
+      showTooltip("게임을 선택해주세요!", "error");
       return;
     }
     onGameStart();
@@ -309,19 +325,33 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
         </div>
       </div>
 
+      {/* 툴팁 */}
+      {tooltip.show && (
+        <div className={`lobby-tooltip ${tooltip.type}`}>{tooltip.message}</div>
+      )}
+
       {/* 하단: 버튼들 */}
       <div className="lobby-footer">
         <button className="nes-btn" onClick={handleCopyLink}>
           <i className="nes-icon is-small link"></i>
           초대 링크 복사
         </button>
-        <button
-          className="nes-btn is-primary"
-          onClick={handleStartGame}
-          disabled={!selectedGame}
+        <div
+          className="button-wrapper"
+          onMouseEnter={() => !selectedGame && setShowButtonTooltip(true)}
+          onMouseLeave={() => setShowButtonTooltip(false)}
         >
-          게임 시작
-        </button>
+          <button
+            className="nes-btn is-primary"
+            onClick={handleStartGame}
+            disabled={!selectedGame}
+          >
+            게임 시작
+          </button>
+          {showButtonTooltip && !selectedGame && (
+            <div className="button-tooltip">게임을 선택해주세요</div>
+          )}
+        </div>
       </div>
     </div>
   );

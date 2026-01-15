@@ -3,36 +3,43 @@
 
 /* START OF COMPILED CODE */
 
+
 export default class TimerPrefab extends Phaser.GameObjects.Container {
+	/**
+	 * @param scene Phaser 씬
+	 * @param x X좌표
+	 * @param y Y좌표
+	 * @param barHeight 타이머 바의 높이 (사과 그리드와 동일하게 맞춤)
+	 */
+	constructor(scene: Phaser.Scene, x?: number, y?: number, barHeight?: number) {
+		const ratio = window.__APPLE_GAME_RATIO || 1;
+		const clampedRatio = Math.min(Math.max(ratio, 0.5), 1.5);
+		super(scene, x ?? 0, y ?? 0);
 
-	   constructor(scene: Phaser.Scene, x?: number, y?: number) {
-		   const ratio = window.__APPLE_GAME_RATIO || 1;
-		   const clampedRatio = Math.min(Math.max(ratio, 0.5), 1.5); // 최소 0.5, 최대 1.0으로 클램핑
-		   super(scene, x ?? 0, y ?? 0);
+		// 타이머 바 높이: 사과 그리드와 동일하게 맞춤
+		const timerBarHeight = barHeight !== undefined ? barHeight : gridBottom-gridTop;
 
-		   // timerBar
-		   const timerBar = scene.add.rectangle(0, 777 * clampedRatio, 22 * clampedRatio, 752 * clampedRatio);
-		   timerBar.setOrigin(0.5, 1);
-		   timerBar.isFilled = true;
-		   timerBar.fillColor = 0x3fa425; // 시작 시 초록색
-		   timerBar.setScale(clampedRatio);
-		   this.add(timerBar);
+		// timerBar
+		const timerBar = scene.add.rectangle(0, 0, 22 * clampedRatio, timerBarHeight);
+		timerBar.setOrigin(0.5, 0);
+		timerBar.isFilled = true;
+		timerBar.fillColor = 0x3fa425;
+		//timerBar.setScale(clampedRatio);
+		this.add(timerBar);
 
-		   // timeTxt
-		   const timeTxt = scene.add.text(0, 0, "", {});
-		   timeTxt.scaleX = 0.9 * clampedRatio;
-		   timeTxt.scaleY = 1.3 * clampedRatio;
-		   timeTxt.setResolution(5); // 폰트 좀더 선명하게
-		   timeTxt.setOrigin(0.5, 0.5);
-		   timeTxt.text = "TIME";
-		   timeTxt.setStyle({ "color": "#000000ff", "fontSize": `${32 * clampedRatio}px`, "fontStyle": "bold", "stroke": "#000000ff" });
-		   this.add(timeTxt);
+		// timeTxt
+		const timeTxt = scene.add.text(0, 0, "", {});
+		timeTxt.scaleX = 0.9 * clampedRatio;
+		timeTxt.scaleY = 1.3 * clampedRatio;
+		timeTxt.setResolution(5);
+		timeTxt.setOrigin(0.5, 0.5);
+		timeTxt.text = "TIME";
+		timeTxt.setStyle({ "color": "#000000ff", "fontSize": `${32 * clampedRatio}px`, "fontStyle": "bold", "stroke": "#000000ff" });
+		this.add(timeTxt);
 
-		   /* START-USER-CTR-CODE */
-		   // timerBar 참조 저장
-		   this.timerBar = timerBar;
-		   /* END-USER-CTR-CODE */
-	   }
+		// timerBar 참조 저장
+		this.timerBar = timerBar;
+	}
 
 	/* START-USER-CODE */
 

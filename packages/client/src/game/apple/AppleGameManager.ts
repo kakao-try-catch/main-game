@@ -104,9 +104,8 @@ export default class AppleGameManager {
     private currentPlayerColor: number = 0x209cee;
     private currentFrameColor: number = adjustBrightness('#209cee', AppleGameManager.FRAME_BRIGHTNESS_ADJUSTMENT);
 
-    constructor(scene: Phaser.Scene, timer: TimerPrefab, container?: Phaser.GameObjects.Container, config: Partial<AppleGameConfig> = {}) {
+    constructor(scene: Phaser.Scene, timer: TimerPrefab | undefined, container?: Phaser.GameObjects.Container, config: Partial<AppleGameConfig> = {}) {
         this.scene = scene;
-        this.timerPrefab = timer;
         this.container = container ?? null;
         // ratio 우선순위: config.ratio > window.__APPLE_GAME_RATIO > 1
         const ratio = config.ratio ?? window.__APPLE_GAME_RATIO ?? 1;
@@ -128,6 +127,15 @@ export default class AppleGameManager {
             spacingY,
             ratio,
         };
+        // 타이머바의 세로 길이를 Phaser 캔버스의 세로 길이에서 margin을 빼서 계산
+        const canvasHeight = (scene.sys.game.config.height as number) || window.innerHeight;
+        const timerBarMarginTop = 40; // px, 필요에 따라 조정
+        const timerBarMarginBottom = 40; // px, 필요에 따라 조정
+        const timerBarCanvasHeight = canvasHeight - timerBarMarginTop - timerBarMarginBottom;
+        console.log('[DEBUG] 캔버스 height:', canvasHeight, 'timerBarCanvasHeight:', timerBarCanvasHeight);
+
+        // TimerPrefab의 y를 marginTop에 맞추고, barHeight를 timerBarCanvasHeight로 전달
+        this.timerPrefab = timer ?? new TimerPrefab(scene, undefined, timerBarMarginTop, timerBarCanvasHeight);
     }
 
     /** 게임 초기화 및 시작 */

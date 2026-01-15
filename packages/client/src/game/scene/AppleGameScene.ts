@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-// import TimerPrefab from '../utils/TimerPrefab';
 import AppleGameManager from '../apple/AppleGameManager';
 
 // You can write more code here

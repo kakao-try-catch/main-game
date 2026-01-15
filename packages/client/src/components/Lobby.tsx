@@ -2,6 +2,7 @@ import { useState } from "react";
 import "nes.css/css/nes.min.css";
 import "../assets/fonts/Font.css";
 import "./Lobby.css";
+import type { AppleGamePreset } from "../game/types/GamePreset";
 
 interface Player {
   id: string;
@@ -25,7 +26,7 @@ interface GameSettings {
 
 interface LobbyProps {
   currentPlayer: Player;
-  onGameStart: () => void;
+  onGameStart: (preset: AppleGamePreset) => void;
 }
 
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
@@ -87,7 +88,32 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       alert("게임을 선택해주세요!");
       return;
     }
-    onGameStart();
+
+    // 사과 게임 설정을 프리셋으로 변환
+    if (selectedGame === "apple") {
+      const settings = gameSettings.apple;
+
+      // mapSize를 gridSize로 변환
+      let gridSize: 'S' | 'M' | 'L' = 'M';
+      if (settings.mapSize === 'small') gridSize = 'S';
+      else if (settings.mapSize === 'normal') gridSize = 'M';
+      else if (settings.mapSize === 'large') gridSize = 'L';
+
+      // appleRange를 numberRange로 변환
+      let numberRange: '1-9' | '1-5' | '1-3' = '1-9';
+      if (settings.appleRange === '1-5') numberRange = '1-5';
+      else if (settings.appleRange === '1-3') numberRange = '1-3';
+
+      const preset: AppleGamePreset = {
+        gridSize,
+        timeLimit: settings.timeLimit === -1 ? 'manual' : (settings.timeLimit as 30 | 60 | 120),
+        manualTime: settings.timeLimit === -1 ? undefined : settings.timeLimit,
+        numberRange,
+        includeZero: settings.includeZero || false,
+      };
+
+      onGameStart(preset);
+    }
   };
 
   // 빈 슬롯 생성
@@ -142,11 +168,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                 return (
                   <div
                     key={game.id}
-                    className={`game-item ${
-                      selectedGame === game.id ? "selected" : ""
-                    } ${
-                      selectedGame && selectedGame !== game.id ? "dimmed" : ""
-                    }`}
+                    className={`game-item ${selectedGame === game.id ? "selected" : ""
+                      } ${selectedGame && selectedGame !== game.id ? "dimmed" : ""
+                      }`}
                     onClick={() => handleSelectGame(game.id)}
                   >
                     <div className="game-thumbnail">
@@ -185,10 +209,10 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           <div className="setting-item">
                             <label>제한 시간:</label>
                             {settings.timeLimit === -1 ||
-                            (![120, 180, 240].includes(
-                              settings.timeLimit || 0
-                            ) &&
-                              settings.timeLimit !== undefined) ? (
+                              (![120, 180, 240].includes(
+                                settings.timeLimit || 0
+                              ) &&
+                                settings.timeLimit !== undefined) ? (
                               <input
                                 type="number"
                                 value={
@@ -243,9 +267,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 }}
                                 className="nes-select is-small"
                               >
+                                <option value={30}>30초</option>
+                                <option value={60}>60초</option>
                                 <option value={120}>120초</option>
-                                <option value={180}>180초</option>
-                                <option value={240}>240초</option>
                                 <option value={-1}>직접 입력</option>
                               </select>
                             )}

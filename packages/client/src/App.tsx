@@ -9,6 +9,7 @@ import SocketCounter from "./components/SocketCounter";
 import SoundSetting from "./components/SoundSetting";
 import LandingPage from "./components/LandingPage";
 import Lobby from "./components/Lobby";
+import type { AppleGamePreset } from './game/types/GamePreset';
 
 import "./App.css";
 
@@ -53,10 +54,14 @@ function App() {
     { id: "id_4", name: "4P", score: 0, color: "#f2d024" },
   ]);
 
+  // 프리셋 설정 (로비에서 받아옴)
+  const [currentPreset, setCurrentPreset] = useState<AppleGamePreset | undefined>(undefined);
+
+
   // 점수 증가 함수
   const handleAddScore = (playerId: string, pointsToAdd: number) => {
-    setPlayers((prevPlayers) =>
-      prevPlayers.map((player) =>
+    setPlayers(prevPlayers =>
+      prevPlayers.map(player =>
         player.id === playerId
           ? { ...player, score: player.score + pointsToAdd }
           : player
@@ -92,6 +97,7 @@ function App() {
       gameRef.current.destroy(true);
       gameRef.current = null;
     }
+    setGameReady(false);
   }, []);
 
   const handleLobby = useCallback(() => {
@@ -105,7 +111,8 @@ function App() {
     setCurrentScreen("lobby");
   };
 
-  const handleGameStart = () => {
+  const handleGameStart = (preset: AppleGamePreset) => {
+    setCurrentPreset(preset);
     setCurrentScreen("game");
   };
 
@@ -132,7 +139,7 @@ function App() {
   return (
     <div className="App" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw' }}>
       <header className="App-header" style={{ width: '100%', textAlign: 'center', margin: '24px 0 0 0' }}>
-        {gameReady && <p style={{fontFamily: 'NeoDunggeunmo', fontSize: '24px', textAlign: 'center', margin: 0}}>
+        {gameReady && <p style={{ fontFamily: 'NeoDunggeunmo', fontSize: '24px', textAlign: 'center', margin: 0 }}>
           마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록 하세요
         </p>}
       </header>
@@ -142,7 +149,7 @@ function App() {
       </BGMProvider>
 
       <SocketCounter />
-      
+
       <div
         style={{
           ...playerListStyle,
@@ -162,11 +169,12 @@ function App() {
       </div>
 
       <main className="game-container" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-        {!gameEnded && (
+        {!gameEnded && currentPreset && (
           <PhaserGame
             playerCount={players.length}
             players={players}
             currentPlayerIndex={currentUser.playerIndex}
+            preset={currentPreset}
             onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
             onGameReady={handleGameReady}
@@ -188,7 +196,7 @@ function App() {
 const playerListStyle: React.CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
-  gap: '16px', 
+  gap: '16px',
   marginTop: '20px', // UI 간격 조정
   alignSelf: 'center',
   justifyContent: 'center',

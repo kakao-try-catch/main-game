@@ -24,7 +24,6 @@ export default class TimerPrefab extends Phaser.GameObjects.Container {
 		timerBar.setOrigin(0.5, 1);
 		timerBar.isFilled = true;
 		timerBar.fillColor = 0x3fa425;
-		//timerBar.setScale(clampedRatio);
 		this.add(timerBar);
 
 		// timeTxt: 타이머 바 위쪽에 고정

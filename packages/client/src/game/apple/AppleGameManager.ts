@@ -181,7 +181,13 @@ export default class AppleGameManager {
         }
     }
 
-    /** 드래그 좌표를 0~1로 정규화 (서버 전송용) */
+    /**
+     * 드래그 좌표를 0~1 범위로 정규화하여 서버 전송/동기화에 사용하기 위한 헬퍼입니다.
+     * 
+     * 현재 이 프로젝트 내부 코드에서는 직접 호출하지 않지만,
+     * 외부 모듈(예: 서버 통신 로직, 리플레이/분석 도구 등)에서
+     * AppleGameManager.normalizeRect 를 사용할 수 있도록 남겨 둔 유틸리티 메소드입니다.
+     */
     public static normalizeRect(rect: Phaser.Geom.Rectangle): {x:number,y:number,w:number,h:number} {
         const ratio = window.__APPLE_GAME_RATIO || 1;
         // 항상 기준 해상도(1380x862)로 정규화

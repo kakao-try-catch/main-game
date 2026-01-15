@@ -30,6 +30,8 @@ interface PhaserGameProps {
 export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScored, onGameEnd, playerCount = 4, players = [], currentPlayerIndex = 0 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
+  const MAX_WIDTH = 1379;
+  const MAX_HEIGHT = 859;
 
   // 플레이어 데이터가 변경되면 씬에 전달
   useEffect(() => {
@@ -44,8 +46,8 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
   useLayoutEffect(() => {
     function updateRatio() {
       if (parentRef.current) {
-        const width = parentRef.current.clientWidth;
-        const ratio = width / 1380;
+        const width = Math.min(parentRef.current.clientWidth, MAX_WIDTH);
+        const ratio = width / MAX_WIDTH;
         (window as any).__APPLE_GAME_RATIO = ratio;
       }
     }
@@ -59,9 +61,9 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       // 이미 생성됨
       return;
     }
-    const width = parentRef.current.clientWidth;
-    const height = parentRef.current.clientHeight;
-    const ratio = width / 1380;
+    const width = Math.min(parentRef.current.clientWidth, MAX_WIDTH);
+    const height = Math.min(parentRef.current.clientHeight, MAX_HEIGHT);
+    const ratio = width / MAX_WIDTH;
     (window as any).__APPLE_GAME_RATIO = ratio;
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
@@ -131,7 +133,9 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       parentWidth = window.innerWidth;
       parentHeight = window.innerHeight;
     }
-    ratio = Math.min(parentWidth / 1380, parentHeight / 862);
+    parentWidth = Math.min(parentWidth, MAX_WIDTH);
+    parentHeight = Math.min(parentHeight, MAX_HEIGHT);
+    ratio = Math.min(parentWidth / MAX_WIDTH, parentHeight / MAX_HEIGHT);
     if (!ratio || ratio <= 0) ratio = 1;
     (window as any).__APPLE_GAME_RATIO = ratio;
 
@@ -210,10 +214,10 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
   }, [onGameReady, onAppleScored]);
 
   // 화면 크기에 따라 1380:862 비율을 유지하는 스타일
-  const aspectRatio = 1380 / 862;
-  // 항상 반응형으로 설정 (1370px 이상에서도 늘어남)
-  const vw = window.innerWidth;
-  const vh = window.innerHeight - 150; // React UI 높이를 고려하여 150px 마진 추가
+  const aspectRatio = MAX_WIDTH / MAX_HEIGHT;
+  // 항상 반응형으로 설정, 최대 크기 제한
+  const vw = Math.min(window.innerWidth, MAX_WIDTH);
+  const vh = Math.min(window.innerHeight - 150, MAX_HEIGHT); // React UI 높이를 고려하여 150px 마진 추가
   let width, height, ratio;
   width = vw;
   height = vw / aspectRatio;
@@ -221,7 +225,6 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
     height = vh;
     width = vh * aspectRatio;
   }
-  //ratio = width / 1380;
   // window.__APPLE_GAME_RATIO를 항상 갱신
   useLayoutEffect(() => {
     (window as any).__APPLE_GAME_RATIO = ratio;
@@ -229,8 +232,8 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
   const containerStyle: React.CSSProperties = {
     width: `${width}px`,
     height: `${height}px`,
-    maxWidth: '100vw',
-    maxHeight: '100vh',
+    maxWidth: `${MAX_WIDTH}px`,
+    maxHeight: `${MAX_HEIGHT}px`,
     minWidth: '320px',
     minHeight: '200px',
     margin: '0 auto',
@@ -238,5 +241,5 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
     background: '#222',
     position: 'relative',
   };
-  return <div ref={parentRef} id="phaser-game" style={containerStyle} />
+  return <div ref={parentRef} id="phaser-game" style={containerStyle} />;
 };

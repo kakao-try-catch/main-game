@@ -1,0 +1,19 @@
+/* 픽셀 슬라이더 기본 */
+.pixel-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 130px;
+  height: 14px;
+  background: #d3d3d3;
+  border: 3px solid #000;
+}
+
+.pixel-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-left: -2px;
+  background: #fff;
+  border: 3px solid #000;
+}

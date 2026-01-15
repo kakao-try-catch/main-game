@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { PhaserGame } from './game/GameContainer';
-import { BGMProvider }  from './contexts/BGMContext';
+import { SoundProvider }  from './contexts/SoundContext';
 
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
@@ -91,16 +91,15 @@ function App() {
         </p>}
       </header>
 
-      <BGMProvider>
-        <SoundSetting gameReady={gameReady} />
-      </BGMProvider>
-
       <SocketCounter />
       
       <div style={{ ...playerListStyle, marginLeft: 0 }}>
         {players.slice(0, testPlayerCount).map((player) => (
           <PlayerCard key={player.id} name={player.name} score={player.score} color={player.color} />
         ))}
+          <SoundProvider>
+            <SoundSetting gameReady={gameReady}  />
+          </SoundProvider>
       </div>
 
       <main className="game-container" style={{ position: 'relative', display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>

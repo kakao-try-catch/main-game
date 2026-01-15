@@ -111,11 +111,13 @@ export default class AppleGameManager {
         const ratio = config.ratio ?? window.__APPLE_GAME_RATIO ?? 1;
         const gridCols = config.gridCols ?? DEFAULT_CONFIG.gridCols;
         const gridRows = config.gridRows ?? DEFAULT_CONFIG.gridRows;
-        // 기준값에 비율 곱
-        const baseX = 91 * ratio;
-        const baseY = 91 * ratio;
-        const spacingX = 73 * ratio;
-        const spacingY = 74 * ratio;
+
+        // config에서 제공된 값 사용, 없으면 기준값에 비율 곱
+        const baseX = config.baseX ?? (91 * ratio);
+        const baseY = config.baseY ?? (91 * ratio);
+        const spacingX = config.spacingX ?? (73 * ratio);
+        const spacingY = config.spacingY ?? (74 * ratio);
+
         this.config = {
             ...DEFAULT_CONFIG,
             ...config,
@@ -151,6 +153,13 @@ export default class AppleGameManager {
         }
     }
 
+    /** 게임 설정 업데이트 (프리셋 적용) */
+    updateGameConfig(config: Partial<AppleGameConfig>): void {
+        // 설정 업데이트
+        Object.assign(this.config, config);
+        console.log('🎮 게임 설정 업데이트:', config);
+    }
+
     /** 게임 초기화 및 시작 */
     init(currentPlayerIndex: number = 0): void {
         this.createApples();
@@ -162,12 +171,22 @@ export default class AppleGameManager {
     /** 사과 그리드 생성 */
     private createApples(): void {
         const { gridCols, gridRows, baseX, baseY, spacingX, spacingY, minNumber, maxNumber, ratio } = this.config;
+
+        // 그리드 크기에 따라 사과 스케일 조정
+        // 어려움 모드(20x15)에서는 사과를 더 작게
+        let appleScale = ratio;
+        if (gridCols >= 20 || gridRows >= 15) {
+            appleScale = ratio * 0.7; // 어려움: 70% 크기
+        } else if (gridCols <= 10 && gridRows <= 6) {
+            appleScale = ratio * 1.1; // 쉬움: 110% 크기
+        }
+
         this.apples = [];
         for (let col = 0; col < gridCols; col++) {
             for (let row = 0; row < gridRows; row++) {
                 const x = baseX + col * spacingX;
                 const y = baseY + row * spacingY;
-                const apple = new applePrefab(this.scene, x, y, ratio);
+                const apple = new applePrefab(this.scene, x, y, appleScale);
                 if (this.container) {
                     this.container.add(apple);
                 } else {
@@ -188,7 +207,7 @@ export default class AppleGameManager {
      * 외부 모듈(예: 서버 통신 로직, 리플레이/분석 도구 등)에서
      * AppleGameManager.normalizeRect 를 사용할 수 있도록 남겨 둔 유틸리티 메소드입니다.
      */
-    public static normalizeRect(rect: Phaser.Geom.Rectangle): {x:number,y:number,w:number,h:number} {
+    public static normalizeRect(rect: Phaser.Geom.Rectangle): { x: number, y: number, w: number, h: number } {
         const ratio = window.__APPLE_GAME_RATIO || 1;
         // 항상 기준 해상도(1380x862)로 정규화
         return {

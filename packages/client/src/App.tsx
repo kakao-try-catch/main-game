@@ -23,7 +23,6 @@ function App() {
   const [currentScreen, setCurrentScreen] = useState<
     "landing" | "lobby" | "game"
   >("landing");
-  const [userNickname, setUserNickname] = useState("");
 
   // 현재 유저 정보 (서버에서 받아올 예정)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -99,7 +98,6 @@ function App() {
   }, []);
 
   const handleStart = (nickname: string) => {
-    setUserNickname(nickname);
     setCurrentUser((prev) => ({ ...prev, name: nickname }));
     setCurrentScreen("lobby");
   };

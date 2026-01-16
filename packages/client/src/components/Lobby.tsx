@@ -53,7 +53,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   >({
     apple: {
       mapSize: "normal",
-      timeLimit: 180,
+      timeLimit: 120,
       appleRange: "1-9",
       includeZero: false,
     },

@@ -1,21 +1,24 @@
 import React, { createContext, useContext, useRef, useCallback, useState, useEffect } from 'react';
 import bgmFile from '../assets/sounds/testapplebgm.mp3';
-import appleDropFile from '../assets/sounds/SFX/appleDrop.mp3';
-import gameStartFile from '../assets/sounds/SFX/gameStart.mp3';
+import appleDropSound from '../assets/sounds/SFX/appleDrop.mp3';
+import gameStartSound from '../assets/sounds/SFX/gameStart.mp3';
+import buttonClickSound from '../assets/sounds/SFX/buttonClick.mp3';
 
 // SFX 설정 타입
 interface SFXConfig {
   file: string;
   volume?: number;
+  startTime?: number; // 재생 시작 시점 (초 단위)
 }
 
-// SFX 목록 - 여기에 새로운 사운드를 추가하면 됩니다
+// SFX 목록
 const SFX_CONFIG: Record<string, SFXConfig> = {
-  appleDrop: { file: appleDropFile, volume: 0.7 },
-  gameStart: { file: gameStartFile, volume: 0.8 },
+  appleDrop: { file: appleDropSound, volume: 0.7, startTime: 0 },
+  gameStart: { file: gameStartSound, volume: 0.8, startTime: 0 },
+  buttonClick: { file: buttonClickSound, volume: 1.0, startTime: 0.2 },
 };
 
-type SFXName = 'appleDrop' | 'gameStart';
+type SFXName = 'appleDrop' | 'gameStart' | 'buttonClick';
 
 interface SoundContextType {
   setVolume: (volume: number) => void;
@@ -33,6 +36,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sfxMapRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const sfxBaseVolumesRef = useRef<Map<string, number>>(new Map()); // 각 SFX의 기본 볼륨 저장
+  const sfxStartTimesRef = useRef<Map<string, number>>(new Map()); // 각 SFX의 시작 시점 저장
 
   const [isInitialized, setIsInitialized] = useState(false); // 브라우저 권한 획득 여부
   const [isPlaying, setIsPlaying] = useState(false);
@@ -50,9 +54,11 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     Object.entries(SFX_CONFIG).forEach(([name, config]) => {
       const sfxAudio = new Audio(config.file);
       const baseVolume = config.volume ?? 0.7;
+      const startTime = config.startTime ?? 0;
       sfxAudio.volume = baseVolume * 0.5; // 초기 마스터 볼륨(0.5) 적용
       sfxMapRef.current.set(name, sfxAudio);
       sfxBaseVolumesRef.current.set(name, baseVolume); // 기본 볼륨 저장
+      sfxStartTimesRef.current.set(name, startTime); // 시작 시점 저장
     });
 
     return () => {
@@ -72,7 +78,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (isPlaying && isInitialized) {
       audioRef.current.play().catch((e) => console.log("재생 실패:", e));
-    } else {
+    } else if (!isPlaying && isInitialized) {
       audioRef.current.pause();
       setVolume(0);
     }
@@ -124,11 +130,13 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   // 범용 SFX 재생 함수
-  const playSFX = useCallback((soundName: string, allowOverlap = true) => {
+  const playSFX = useCallback((soundName: SFXName, allowOverlap = true, startTime?: number) => {
     const sfx = sfxMapRef.current.get(soundName);
     if (sfx) {
       if (!allowOverlap && !sfx.paused) return; // 이미 재생 중이면 무시
-      sfx.currentTime = 0;
+      // startTime이 지정되지 않으면 설정된 기본값 사용
+      const defaultStartTime = sfxStartTimesRef.current.get(soundName) ?? 0;
+      sfx.currentTime = startTime ?? defaultStartTime;
       sfx.play().catch((e) => console.log(`SFX "${soundName}" 재생 실패:`, e));
     }
   }, []);

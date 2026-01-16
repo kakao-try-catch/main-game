@@ -3,6 +3,7 @@ import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
 import { AppleGameScene } from './scene/AppleGameScene';
 import { BootScene } from './scene/BootScene';
+import type { AppleGamePreset } from './types/GamePreset';
 
 export interface PlayerData {
   id: string;
@@ -26,9 +27,11 @@ interface PhaserGameProps {
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
+  /** 게임 프리셋 설정 (로비에서 설정) */
+  preset?: AppleGamePreset;
 }
 
-export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScored, onGameEnd, playerCount = 4, players = [], currentPlayerIndex = 0 }) => {
+export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScored, onGameEnd, playerCount = 4, players = [], currentPlayerIndex = 0, preset }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const MAX_WIDTH = 1379;
@@ -39,9 +42,9 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
     if (!gameRef.current) return;
     const appleGameScene = gameRef.current.scene.getScene('AppleGameScene');
     if (appleGameScene) {
-      appleGameScene.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex });
+      appleGameScene.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex, preset });
     }
-  }, [playerCount, players, currentPlayerIndex]);
+  }, [playerCount, players, currentPlayerIndex, preset]);
 
   // 부모 div 크기 변화 감지 (리사이즈 대응)
   useLayoutEffect(() => {
@@ -106,10 +109,10 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       if (appleGameScene) {
         // 씬의 create()가 완료된 후에 이벤트 전달
         if (appleGameScene.scene.isActive()) {
-          appleGameScene.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex });
+          appleGameScene.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex, preset });
         } else {
           appleGameScene.events.once('create', () => {
-            appleGameScene?.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex });
+            appleGameScene?.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex, preset });
           });
         }
 

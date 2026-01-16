@@ -111,11 +111,13 @@ export default class AppleGameManager {
         const ratio = config.ratio ?? window.__APPLE_GAME_RATIO ?? 1;
         const gridCols = config.gridCols ?? DEFAULT_CONFIG.gridCols;
         const gridRows = config.gridRows ?? DEFAULT_CONFIG.gridRows;
-        // 기준값에 비율 곱
-        const baseX = 91 * ratio;
-        const baseY = 91 * ratio;
-        const spacingX = 73 * ratio;
-        const spacingY = 74 * ratio;
+
+        // config에서 제공된 값 사용, 없으면 기준값에 비율 곱
+        const baseX = config.baseX ?? (91 * ratio);
+        const baseY = config.baseY ?? (91 * ratio);
+        const spacingX = config.spacingX ?? (73 * ratio);
+        const spacingY = config.spacingY ?? (74 * ratio);
+
         this.config = {
             ...DEFAULT_CONFIG,
             ...config,
@@ -151,6 +153,13 @@ export default class AppleGameManager {
         }
     }
 
+    /** 게임 설정 업데이트 (프리셋 적용) */
+    updateGameConfig(config: Partial<AppleGameConfig>): void {
+        // 설정 업데이트
+        Object.assign(this.config, config);
+        console.log('🎮 게임 설정 업데이트:', config);
+    }
+
     /** 게임 초기화 및 시작 */
     init(currentPlayerIndex: number = 0): void {
         this.createApples();
@@ -162,12 +171,23 @@ export default class AppleGameManager {
     /** 사과 그리드 생성 */
     private createApples(): void {
         const { gridCols, gridRows, baseX, baseY, spacingX, spacingY, minNumber, maxNumber, ratio } = this.config;
+
+        // 그리드 크기에 따라 사과 스케일 조정
+        let appleScale = ratio;
+        if (gridCols >= 30 || gridRows >= 15) {
+            appleScale = ratio * 0.7; // L 크기(30x15): 70% 크기
+        } else if (gridCols === 20 && gridRows === 10) {
+            appleScale = ratio * 1.05; // M 크기(20x10): 105% 크기
+        } else if (gridCols <= 16 && gridRows <= 8) {
+            appleScale = ratio * 1.1; // S 크기(16x8): 110% 크기
+        }
+
         this.apples = [];
         for (let col = 0; col < gridCols; col++) {
             for (let row = 0; row < gridRows; row++) {
                 const x = baseX + col * spacingX;
                 const y = baseY + row * spacingY;
-                const apple = new applePrefab(this.scene, x, y, ratio);
+                const apple = new applePrefab(this.scene, x, y, appleScale);
                 if (this.container) {
                     this.container.add(apple);
                 } else {

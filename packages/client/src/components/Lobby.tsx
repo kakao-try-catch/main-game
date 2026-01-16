@@ -4,6 +4,12 @@ import "../assets/fonts/Font.css";
 import "./Lobby.css";
 import type { AppleGamePreset } from "../game/types/GamePreset";
 
+const TOOLTIP_DURATION = 2000;
+const MIN_TIME_LIMIT = 30;
+const MAX_TIME_LIMIT = 300;
+const DEFAULT_TIME_LIMIT = 120;
+const MAX_PLAYERS = 4;
+
 interface Player {
   id: string;
   name: string;
@@ -34,18 +40,27 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   const playerColors = ["#209cee", "#e76e55", "#92cc41", "#f2d024"];
 
   // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
-  const [players, setPlayers] = useState<Player[]>([
+  const players: Player[] = [
     { ...currentPlayer, color: playerColors[0] },
-  ]);
+  ];
 
   // 게임 리스트
   const [games] = useState<Game[]>([
-    { id: "apple", name: "사과 게임", thumbnail: "" },
-    { id: "flappy", name: "플래피 버드", thumbnail: "" },
-    { id: "minesweeper", name: "지뢰찾기", thumbnail: "" },
+    { id: "apple", name: "다같이 사과 게임", thumbnail: "🍎" },
+    { id: "flappy", name: "다같이 플래피 버드", thumbnail: "🐦" },
+    { id: "minesweeper", name: "다같이 지뢰찾기", thumbnail: "💣" },
   ]);
 
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({ show: false, message: "", type: "success" });
+  const [showButtonTooltip, setShowButtonTooltip] = useState(false);
+  const [showTimeLimitTooltip, setShowTimeLimitTooltip] = useState<
+    Record<string, boolean>
+  >({});
 
   // 각 게임의 설정 (기본값)
   const [gameSettings, setGameSettings] = useState<
@@ -68,7 +83,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   const handleSettingChange = (
     gameId: string,
     setting: keyof GameSettings,
-    value: any
+    value: string | number | boolean
   ) => {
     setGameSettings((prev) => ({
       ...prev,
@@ -76,16 +91,33 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     }));
   };
 
+  const showTooltip = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setTooltip({ show: true, message, type });
+    setTimeout(() => {
+      setTooltip({ show: false, message: "", type: "success" });
+    }, TOOLTIP_DURATION);
+  };
+
+  const showTimeLimitTooltipForGame = (gameId: string) => {
+    setShowTimeLimitTooltip((prev) => ({ ...prev, [gameId]: true }));
+    setTimeout(() => {
+      setShowTimeLimitTooltip((prev) => ({ ...prev, [gameId]: false }));
+    }, TOOLTIP_DURATION);
+  };
+
   const handleCopyLink = () => {
-    // 나중에 구현
+    // TODO: 서버에서 받은 실제 초대 링크로 교체 필요
     const link = window.location.href;
     navigator.clipboard.writeText(link);
-    alert("초대 링크가 복사되었습니다!");
+    showTooltip("초대 링크가 복사되었습니다!", "success");
   };
 
   const handleStartGame = () => {
     if (!selectedGame) {
-      alert("게임을 선택해주세요!");
+      showTooltip("게임을 선택해주세요!", "error");
       return;
     }
 
@@ -117,7 +149,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   };
 
   // 빈 슬롯 생성
-  const emptySlots = Array(4 - players.length).fill(null);
+  const emptySlots = Array(MAX_PLAYERS - players.length).fill(null);
 
   return (
     <div className="lobby-container">
@@ -131,7 +163,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
           <div className="nes-container is-rounded player-section">
             <h2 className="section-title">플레이어</h2>
             <div className="player-list">
-              {players.map((player, index) => (
+              {players.map((player) => (
                 <div
                   key={player.id}
                   className="player-item"
@@ -173,9 +205,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                       }`}
                     onClick={() => handleSelectGame(game.id)}
                   >
-                    <div className="game-thumbnail">
-                      {game.thumbnail || "🎮"}
-                    </div>
+                    <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
                       <h3 className="game-name">{game.name}</h3>
                       {game.id === "apple" ? (
@@ -190,23 +220,24 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                         >
                           <div className="setting-item">
                             <label>맵 크기:</label>
-                            <select
-                              value={settings.mapSize}
-                              onChange={(e) =>
-                                handleSettingChange(
-                                  game.id,
-                                  "mapSize",
-                                  e.target.value
-                                )
-                              }
-                              className="nes-select is-small"
-                            >
-                              <option value="small">작음</option>
-                              <option value="normal">보통</option>
-                              <option value="large">큼</option>
-                            </select>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.mapSize}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    "mapSize",
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="small">작음</option>
+                                <option value="normal">보통</option>
+                                <option value="large">큼</option>
+                              </select>
+                            </div>
                           </div>
-                          <div className="setting-item">
+                          <div className="setting-item time-limit-setting">
                             <label>제한 시간:</label>
                             {settings.timeLimit === -1 ||
                               (![120, 180, 240].includes(
@@ -266,61 +297,115 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                       300
                                     );
                                   }
-                                }}
-                              />
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      const val = parseInt(
+                                        e.currentTarget.value
+                                      );
+                                      if (
+                                        val &&
+                                        val >= MIN_TIME_LIMIT &&
+                                        val <= MAX_TIME_LIMIT
+                                      ) {
+                                        e.currentTarget.blur();
+                                      } else {
+                                        showTimeLimitTooltipForGame(game.id);
+                                        setTimeout(() => {
+                                          handleSettingChange(
+                                            game.id,
+                                            "timeLimit",
+                                            DEFAULT_TIME_LIMIT
+                                          );
+                                        }, 100);
+                                      }
+                                    }
+                                  }}
+                                  className="nes-input is-small"
+                                  placeholder="초"
+                                  min={MIN_TIME_LIMIT}
+                                  max={MAX_TIME_LIMIT}
+                                  autoFocus
+                                  onBlur={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    if (
+                                      !val ||
+                                      val < MIN_TIME_LIMIT ||
+                                      val > MAX_TIME_LIMIT
+                                    ) {
+                                      showTimeLimitTooltipForGame(game.id);
+                                      setTimeout(() => {
+                                        handleSettingChange(
+                                          game.id,
+                                          "timeLimit",
+                                          DEFAULT_TIME_LIMIT
+                                        );
+                                      }, 100);
+                                    }
+                                  }}
+                                />
+                              </div>
                             ) : (
-                              <select
-                                value={settings.timeLimit}
-                                onChange={(e) => {
-                                  const val = parseInt(e.target.value);
-                                  handleSettingChange(
-                                    game.id,
-                                    "timeLimit",
-                                    val
-                                  );
-                                }}
-                                className="nes-select is-small"
-                              >
-                                <option value={120}>120초</option>
-                                <option value={180}>180초</option>
-                                <option value={240}>240초</option>
-                                <option value={-1}>직접 입력</option>
-                              </select>
+                              <div className="nes-select is-small">
+                                <select
+                                  value={settings.timeLimit}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    handleSettingChange(
+                                      game.id,
+                                      "timeLimit",
+                                      val
+                                    );
+                                  }}
+                                >
+                                  <option value={120}>120초</option>
+                                  <option value={180}>180초</option>
+                                  <option value={240}>240초</option>
+                                  <option value={-1}>직접 입력</option>
+                                </select>
+                              </div>
+                            )}
+                            {showTimeLimitTooltip[game.id] && (
+                              <div className="time-limit-tooltip">
+                                제한 시간은 30-300초 사이로 설정해주세요
+                              </div>
                             )}
                           </div>
                           <div className="setting-item">
                             <label>사과 생성:</label>
-                            <select
-                              value={settings.appleRange}
-                              onChange={(e) =>
-                                handleSettingChange(
-                                  game.id,
-                                  "appleRange",
-                                  e.target.value
-                                )
-                              }
-                              className="nes-select is-small"
-                            >
-                              <option value="1-9">쉬움(1-9)</option>
-                              <option value="1-5">어려움(1-5)</option>
-                            </select>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.appleRange}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    "appleRange",
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="1-9">쉬움(1-9)</option>
+                                <option value="1-5">어려움(1-5)</option>
+                              </select>
+                            </div>
                           </div>
-                          <div className="setting-item">
+                          <div className="setting-item time-limit-setting">
                             <label>0 생성:</label>
-                            <select
-                              value={settings.includeZero ? "O" : "X"}
-                              onChange={(e) =>
-                                handleSettingChange(
-                                  game.id,
-                                  "includeZero",
-                                  e.target.value === "O"
-                                )
-                              }
-                              className="nes-select is-small"
-                            >
-                              <option value="X">X</option>
-                              <option value="O">O</option>
-                            </select>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.includeZero ? "O" : "X"}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    "includeZero",
+                                    e.target.value === "O"
+                                  )
+                                }
+                              >
+                                <option value="X">X</option>
+                                <option value="O">O</option>
+                              </select>
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -347,19 +432,33 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
         </div>
       </div>
 
+      {/* 툴팁 */}
+      {tooltip.show && (
+        <div className={`lobby-tooltip ${tooltip.type}`}>{tooltip.message}</div>
+      )}
+
       {/* 하단: 버튼들 */}
       <div className="lobby-footer">
         <button className="nes-btn" onClick={handleCopyLink}>
           <i className="nes-icon is-small link"></i>
           초대 링크 복사
         </button>
-        <button
-          className="nes-btn is-primary"
-          onClick={handleStartGame}
-          disabled={!selectedGame}
+        <div
+          className="button-wrapper"
+          onMouseEnter={() => !selectedGame && setShowButtonTooltip(true)}
+          onMouseLeave={() => setShowButtonTooltip(false)}
         >
-          게임 시작
-        </button>
+          <button
+            className="nes-btn is-primary"
+            onClick={handleStartGame}
+            disabled={!selectedGame}
+          >
+            게임 시작
+          </button>
+          {showButtonTooltip && !selectedGame && (
+            <div className="button-tooltip">게임을 선택해주세요</div>
+          )}
+        </div>
       </div>
     </div>
   );

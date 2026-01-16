@@ -74,7 +74,8 @@
   border-radius: 4px;
   background: white;
   position: relative;
-  flex-wrap: wrap;
+  min-height: 56px;
+  height: 56px;
 }
 
 .player-item.empty {
@@ -99,7 +100,7 @@
   font-size: 16px;
   font-weight: bold;
   min-width: 0;
-  word-break: break-word;
+  word-break: keep-all;
 }
 
 .player-host-badge {
@@ -204,25 +205,64 @@
   white-space: nowrap;
 }
 
-.setting-item select,
-.setting-item input {
+.setting-item .nes-select {
+  width: auto;
+  min-width: 100px;
+}
+
+.setting-item .nes-select select {
+  font-size: 12px;
+  padding: 2px 6px;
+  height: 28px;
+  min-width: 100px;
+}
+
+.setting-item .nes-input {
   width: 80px;
   font-size: 12px;
   padding: 2px 6px;
   height: 28px;
 }
 
-.setting-item .nes-select {
-  width: auto;
-}
-
-.setting-item .nes-select select {
-  width: 80px;
-}
-
 .setting-item span {
   margin-left: 2px;
   font-size: 12px;
+}
+
+.time-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: auto;
+}
+
+.time-limit-setting {
+  position: relative;
+}
+
+.time-limit-tooltip {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  padding: 8px 12px;
+  background-color: #e76e55 !important;
+  color: white !important;
+  border-radius: 4px;
+  font-size: 12px !important;
+  white-space: nowrap;
+  z-index: 10000 !important;
+  animation: fadeInOut 2s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.time-limit-tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: #e76e55;
 }
 
 .settings-empty {
@@ -296,6 +336,11 @@
   padding-top: 20px;
 }
 
+.lobby-footer .button-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .lobby-footer button {
   font-size: 18px;
   padding: 12px 24px;
@@ -304,6 +349,68 @@
 .lobby-footer button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.button-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+  padding: 8px 16px;
+  background-color: #212529;
+  color: white;
+  border-radius: 4px;
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+.button-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #212529;
+}
+
+/* 툴팁 */
+.lobby-tooltip {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 16px 32px;
+  background-color: #212529;
+  color: white;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: tooltip-fade-in 0.2s ease-out;
+}
+
+.lobby-tooltip.error {
+  background-color: #e76e55;
+}
+
+.lobby-tooltip.success {
+  background-color: #92cc41;
+  color: #212529;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* 반응형 디자인 */

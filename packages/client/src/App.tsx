@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback, useRef } from "react";
 import { PhaserGame } from "./game/GameContainer";
 import { BGMProvider } from "./contexts/BGMContext";
+import { UserProvider, useUser } from "./contexts/UserContext";
 
 import PlayerCard from "./components/PlayerCard";
 import GameResult from "./game/utils/game-result/GameResult";
@@ -20,15 +20,14 @@ interface PlayerData {
   color: string;
 }
 
-function App() {
+function AppContent() {
   const testPlayerCount = 4;
+  const { nickname, color, setUserInfo } = useUser();
   const [currentScreen, setCurrentScreen] = useState<
     "landing" | "lobby" | "game"
   >("landing");
-  const [userNickname, setUserNickname] = useState("");
 
   // 현재 유저 정보 (서버에서 받아올 예정)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [currentUser, setCurrentUser] = useState<{
     id: string;
     playerIndex: number;
@@ -37,8 +36,8 @@ function App() {
   }>({
     id: "id_1",
     playerIndex: 0,
-    name: "1P",
-    isHost: true, // 첫 유저는 방장
+    name: nickname || "1P",
+    isHost: false, // 방장 여부는 서버/방 생성 로직에서 결정됨
   });
 
   const [gameReady, setGameReady] = useState(false);
@@ -48,7 +47,7 @@ function App() {
   >([]);
   const gameRef = useRef<Phaser.Game | null>(null);
   const [players, setPlayers] = useState<PlayerData[]>([
-    { id: "id_1", name: "1P", score: 0, color: "#209cee" },
+    { id: "id_1", name: nickname || "1P", score: 0, color: color || "#209cee" },
     { id: "id_2", name: "2P", score: 0, color: "#e76e55" },
     { id: "id_3", name: "3P", score: 0, color: "#92cc41" },
     { id: "id_4", name: "4P", score: 0, color: "#f2d024" },
@@ -105,9 +104,17 @@ function App() {
     setCurrentScreen("lobby");
   }, []);
 
-  const handleStart = (nickname: string) => {
-    setUserNickname(nickname);
-    setCurrentUser((prev) => ({ ...prev, name: nickname }));
+  const handleStart = (inputNickname: string) => {
+    const userColor = "#209cee"; // 처음 유저는 파란색
+    setUserInfo(inputNickname, userColor, true);
+    setCurrentUser((prev) => ({ ...prev, name: inputNickname }));
+    setPlayers((prev) =>
+      prev.map((player, index) =>
+        index === 0
+          ? { ...player, name: inputNickname, color: userColor }
+          : player
+      )
+    );
     setCurrentScreen("lobby");
   };
 
@@ -150,6 +157,7 @@ function App() {
 
       <SocketCounter />
 
+      
       <div
         style={{
           ...playerListStyle,
@@ -202,4 +210,10 @@ const playerListStyle: React.CSSProperties = {
   justifyContent: 'center',
 };
 
-export default App;
+export default function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
+  );
+}

@@ -1,0 +1,84 @@
+// --- ENUMS ---
+export enum SystemPacketType {
+  UPDATE_NUMBER = "UPDATE_NUMBER",
+  JOIN_ROOM = "JOIN_ROOM",
+}
+
+export enum GamePacketType {
+  SET_FIELD = "SET_FIELD",
+  SET_TIME = "SET_TIME",
+  UPDATE_DRAG_AREA = "UPDATE_DRAG_AREA",
+  DROP_CELL_INDEX = "DROP_CELL_INDEX",
+  TIME_END = "TIME_END",
+  CONFIRM_DRAG_AREA = "CONFIRM_DRAG_AREA",
+  DRAWING_DRAG_AREA = "DRAWING_DRAG_AREA",
+}
+
+// --- COMMON TYPES ---
+type PlayerId = string;
+type AppleIndex = number;
+
+// --- SYSTEM PACKETS ---
+export interface UpdateNumberPacket {
+  type: SystemPacketType.UPDATE_NUMBER;
+  number: number;
+}
+export interface JoinRoomPacket {
+  type: SystemPacketType.JOIN_ROOM;
+  playerId: PlayerId;
+  roomId: string;
+}
+
+export type SystemPacket = UpdateNumberPacket | JoinRoomPacket;
+
+// --- GAME PACKETS ---
+export interface SetFieldPacket {
+  type: GamePacketType.SET_FIELD;
+  apples: number[];
+}
+export interface SetTimePacket {
+  type: GamePacketType.SET_TIME;
+  limitTime: number;
+}
+export interface UpdateDragAreaPacket {
+  type: GamePacketType.UPDATE_DRAG_AREA;
+  playerId: PlayerId;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+export interface DropCellIndexPacket {
+  type: GamePacketType.DROP_CELL_INDEX;
+  winnerId: PlayerId;
+  indices: AppleIndex[];
+  totalScore: number;
+}
+export interface TimeEndPacket {
+  type: GamePacketType.TIME_END;
+  results: { rank: number; playerId: PlayerId; score: number }[];
+}
+export interface ConfirmDragAreaPacket {
+  type: GamePacketType.CONFIRM_DRAG_AREA;
+  indices: AppleIndex[];
+}
+export interface DrawingDragAreaPacket {
+  type: GamePacketType.DRAWING_DRAG_AREA;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
+export type GamePacket =
+  | SetFieldPacket
+  | SetTimePacket
+  | UpdateDragAreaPacket
+  | DropCellIndexPacket
+  | TimeEndPacket
+  | ConfirmDragAreaPacket
+  | DrawingDragAreaPacket;
+
+// --- UNIFIED PACKET TYPE ---
+// 서버에서 클라이언트로 올 수 있는 모든 가능성을 합칩니다.
+export type ServerPacket = SystemPacket | GamePacket;

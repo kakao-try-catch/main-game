@@ -339,3 +339,90 @@
     padding: 10px 20px;
   }
 }
+
+/* nes.css input 필드 outline 수정 */
+.nes-input {
+  box-shadow:
+    /* 검은색 외곽 테두리 */
+    0 -4px 0 0 #000,
+    0 4px 0 0 #000,
+    -4px 0 0 0 #000,
+    4px 0 0 0 #000,
+    -4px -4px 0 0 #000,
+    4px -4px 0 0 #000,
+    -4px 4px 0 0 #000,
+    4px 4px 0 0 #000,
+    /* 하얀색 내부 테두리 */
+    0 -2px 0 0 #fff inset,
+    0 2px 0 0 #fff inset,
+    -2px 0 0 0 #fff inset,
+    2px 0 0 0 #fff inset !important;
+  outline: none !important;
+  border: 2px solid #fff !important;
+}
+
+.nes-input:focus {
+  box-shadow:
+    /* 파란색 외곽 테두리 (검은색 대신) */
+    0 -4px 0 0 #209cee,
+    0 4px 0 0 #209cee,
+    -4px 0 0 0 #209cee,
+    4px 0 0 0 #209cee,
+    -4px -4px 0 0 #209cee,
+    4px -4px 0 0 #209cee,
+    -4px 4px 0 0 #209cee,
+    4px 4px 0 0 #209cee,
+    /* 하얀색 내부 테두리 (동일 유지) */
+    0 -2px 0 0 #fff inset,
+    0 2px 0 0 #fff inset,
+    -2px 0 0 0 #fff inset,
+    2px 0 0 0 #fff inset !important;
+  outline: none !important;
+  border: 2px solid #fff !important;
+}
+
+.nes-input:active,
+.nes-input:focus-visible,
+.nes-input:focus-within {
+  box-shadow:
+    /* 파란색 외곽 테두리 (검은색 대신) */
+    0 -4px 0 0 #209cee,
+    0 4px 0 0 #209cee,
+    -4px 0 0 0 #209cee,
+    4px 0 0 0 #209cee,
+    -4px -4px 0 0 #209cee,
+    4px -4px 0 0 #209cee,
+    -4px 4px 0 0 #209cee,
+    4px 4px 0 0 #209cee,
+    /* 하얀색 내부 테두리 (동일 유지) */
+    0 -2px 0 0 #fff inset,
+    0 2px 0 0 #fff inset,
+    -2px 0 0 0 #fff inset,
+    2px 0 0 0 #fff inset !important;
+  outline: none !important;
+  border: 2px solid #fff !important;
+}
+
+/* 입력 중일 때도 outline 유지 */
+.nes-input[type="text"]:focus,
+.nes-input[type="number"]:focus,
+.nes-input[type="text"]:active,
+.nes-input[type="number"]:active {
+  box-shadow:
+    /* 파란색 외곽 테두리 (검은색 대신) */
+    0 -4px 0 0 #209cee,
+    0 4px 0 0 #209cee,
+    -4px 0 0 0 #209cee,
+    4px 0 0 0 #209cee,
+    -4px -4px 0 0 #209cee,
+    4px -4px 0 0 #209cee,
+    -4px 4px 0 0 #209cee,
+    4px 4px 0 0 #209cee,
+    /* 하얀색 내부 테두리 (동일 유지) */
+    0 -2px 0 0 #fff inset,
+    0 2px 0 0 #fff inset,
+    -2px 0 0 0 #fff inset,
+    2px 0 0 0 #fff inset !important;
+  outline: none !important;
+  border: 2px solid #fff !important;
+}

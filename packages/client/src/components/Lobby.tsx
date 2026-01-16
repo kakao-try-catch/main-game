@@ -39,9 +39,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
 
   // 게임 리스트
   const [games] = useState<Game[]>([
-    { id: "apple", name: "사과 게임", thumbnail: "" },
-    { id: "flappy", name: "플래피 버드", thumbnail: "" },
-    { id: "minesweeper", name: "지뢰찾기", thumbnail: "" },
+    { id: "apple", name: "다같이 사과 게임", thumbnail: "🍎" },
+    { id: "flappy", name: "다같이 플래피 버드", thumbnail: "🐦" },
+    { id: "minesweeper", name: "다같이 지뢰찾기", thumbnail: "💣" },
   ]);
 
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
@@ -175,9 +175,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                     }`}
                     onClick={() => handleSelectGame(game.id)}
                   >
-                    <div className="game-thumbnail">
-                      {game.thumbnail || "🎮"}
-                    </div>
+                    <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
                       <h3 className="game-name">{game.name}</h3>
                       {game.id === "apple" ? (

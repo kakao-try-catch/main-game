@@ -6,14 +6,14 @@
 export type AppleGridSize = 'S' | 'M' | 'L' | 'manual';
 
 /** 제한 시간 프리셋 */
-export type TimeLimit = 30 | 60 | 120 | 'manual';
+export type TimeLimit = 120 | 180 | 240 | 'manual';
 
 /** 사과 숫자 범위 프리셋 */
 export type NumberRange = '1-9' | '1-5' | '1-3';
 
 /** 사과 게임 프리셋 설정 */
 export interface AppleGamePreset {
-    /** 사과 생성 개수 (S: 10*6, M: 17*10, L: 20*15) */
+    /** 사과 생성 개수 (S: 16×8, M: 20×10, L: 30×15) */
     gridSize: AppleGridSize;
     /** 수동 설정 시 가로 개수 */
     manualCols?: number;
@@ -56,19 +56,19 @@ export function resolvePreset(preset: AppleGamePreset): ResolvedGameConfig {
 
     switch (preset.gridSize) {
         case 'S':
-            gridCols = 10;
-            gridRows = 6;
+            gridCols = 16;
+            gridRows = 8;
             break;
         case 'M':
-            gridCols = 17;
+            gridCols = 20;
             gridRows = 10;
             break;
         case 'L':
-            gridCols = 20;
+            gridCols = 30;
             gridRows = 15;
             break;
         case 'manual':
-            gridCols = preset.manualCols ?? 17;
+            gridCols = preset.manualCols ?? 20;
             gridRows = preset.manualRows ?? 10;
             break;
     }

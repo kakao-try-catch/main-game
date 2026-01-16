@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { PhaserGame } from "./game/GameContainer";
-import { BGMProvider } from "./contexts/BGMContext";
+import { SoundProvider, useSoundContext } from './contexts/SoundContext';
 import { UserProvider, useUser } from "./contexts/UserContext";
 
 import PlayerCard from "./components/PlayerCard";
@@ -21,6 +21,10 @@ interface PlayerData {
 
 function AppContent() {
   const testPlayerCount = 4;
+  const { playSFX } = useSoundContext();
+
+  // 현재 유저 정보 (서버에서 받아올 예정)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { nickname, color, setUserInfo } = useUser();
   const [currentScreen, setCurrentScreen] = useState<
     "landing" | "lobby" | "game"
@@ -63,12 +67,15 @@ function AppContent() {
     );
   };
 
-  const handleAppleScored = useCallback(
-    (points: number) => {
+  const handleAppleScored = useCallback((points: number) => {
+    try {
       handleAddScore(currentUser.id, points);
-    },
-    [currentUser.id]
-  );
+      playSFX('appleDrop');
+    } catch (error) {
+      console.error('Apple scored handler error:', error);
+    }
+  }, [currentUser.id, playSFX]);
+
 
   const handleGameReady = useCallback((game: Phaser.Game) => {
     console.log("Phaser game is ready!", game);
@@ -76,13 +83,11 @@ function AppContent() {
     setGameReady(true);
   }, []);
 
-  const handleGameEnd = useCallback(
-    (endPlayers: (PlayerData & { playerIndex: number })[]) => {
-      setFinalPlayers(endPlayers);
-      setGameEnded(true);
-    },
-    []
-  );
+  const handleGameEnd = useCallback((endPlayers: (PlayerData & { playerIndex: number })[]) => {
+    setFinalPlayers(endPlayers);
+    setGameEnded(true);
+    playSFX('gameEnd');
+  }, []);
 
   const handleReplay = useCallback(() => {
     setGameEnded(false);
@@ -144,10 +149,6 @@ function AppContent() {
         </p>}
       </header>
 
-      <BGMProvider>
-        <SoundSetting gameReady={gameReady} />
-      </BGMProvider>
-
       <SocketCounter />
       
       <div
@@ -166,6 +167,7 @@ function AppContent() {
             color={player.color}
           />
         ))}
+        <SoundSetting gameReady={gameReady} />
       </div>
 
       <main className="game-container" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
@@ -192,6 +194,7 @@ function AppContent() {
   );
 }
 
+
 const playerListStyle: React.CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
@@ -204,7 +207,10 @@ const playerListStyle: React.CSSProperties = {
 export default function App() {
   return (
     <UserProvider>
-      <AppContent />
+        <SoundProvider>
+           <AppContent />
+
+        </SoundProvider>
     </UserProvider>
   );
 }

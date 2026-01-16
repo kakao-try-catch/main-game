@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import 'nes.css/css/nes.min.css';
+import { useSoundContext } from '../../../contexts/SoundContext';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
 type CrownSvgProps = { fill: string; style?: React.CSSProperties };
@@ -71,6 +72,7 @@ function getCrownProps(rank: number): { visible: boolean; fill: string } {
 
 
 const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, ratio: propRatio }) => {
+  const { playSFX } = useSoundContext();
   // 기준 해상도 대비 현재 비율 (사과 게임과 동일)
   const ratio = propRatio ?? ((window as any).__APPLE_GAME_RATIO || 1);
   const rankedPlayers = calculateRanks(players);
@@ -132,7 +134,8 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, rat
             type="button"
             className="nes-btn is-primary"
             style={getButtonStyle(ratio)}
-            onClick={onReplay}
+            onClick={() => { playSFX('buttonClick'); onReplay(); }}
+            onMouseEnter={() => { playSFX('buttonHover'); }}
           >
             REPLAY
           </button>
@@ -140,7 +143,8 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, rat
             type="button"
             className="nes-btn is-primary"
             style={getButtonStyle(ratio)}
-            onClick={onLobby}
+            onClick={() => { playSFX('buttonClick'); onLobby(); }}
+            onMouseEnter={() => { playSFX('buttonHover'); }}
           >
             LOBBY
           </button>

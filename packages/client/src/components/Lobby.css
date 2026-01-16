@@ -228,6 +228,42 @@
   font-size: 12px;
 }
 
+.time-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: auto;
+}
+
+.time-limit-setting {
+  position: relative;
+}
+
+.time-limit-tooltip {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  padding: 8px 12px;
+  background-color: #e76e55 !important;
+  color: white !important;
+  border-radius: 4px;
+  font-size: 12px !important;
+  white-space: nowrap;
+  z-index: 10000 !important;
+  animation: fadeInOut 2s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.time-limit-tooltip::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: #e76e55;
+}
+
 .settings-empty {
   justify-content: center;
   align-items: center;

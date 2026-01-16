@@ -51,6 +51,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     type: "success" | "error";
   }>({ show: false, message: "", type: "success" });
   const [showButtonTooltip, setShowButtonTooltip] = useState(false);
+  const [showTimeLimitTooltip, setShowTimeLimitTooltip] = useState<
+    Record<string, boolean>
+  >({});
 
   // 각 게임의 설정 (기본값)
   const [gameSettings, setGameSettings] = useState<
@@ -88,6 +91,13 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     setTooltip({ show: true, message, type });
     setTimeout(() => {
       setTooltip({ show: false, message: "", type: "success" });
+    }, 2000);
+  };
+
+  const showTimeLimitTooltipForGame = (gameId: string) => {
+    setShowTimeLimitTooltip((prev) => ({ ...prev, [gameId]: true }));
+    setTimeout(() => {
+      setShowTimeLimitTooltip((prev) => ({ ...prev, [gameId]: false }));
     }, 2000);
   };
 
@@ -199,54 +209,70 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                               </select>
                             </div>
                           </div>
-                          <div className="setting-item">
+                          <div className="setting-item time-limit-setting">
                             <label>제한 시간:</label>
                             {settings.timeLimit === -1 ||
                             (![120, 180, 240].includes(
                               settings.timeLimit || 0
                             ) &&
                               settings.timeLimit !== undefined) ? (
-                              <input
-                                type="number"
-                                value={
-                                  settings.timeLimit === -1
-                                    ? ""
-                                    : settings.timeLimit
-                                }
-                                onChange={(e) =>
-                                  handleSettingChange(
-                                    game.id,
-                                    "timeLimit",
-                                    e.target.value
-                                      ? parseInt(e.target.value)
-                                      : -1
-                                  )
-                                }
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    const val = parseInt(e.currentTarget.value);
-                                    if (val && val >= 30) {
-                                      e.currentTarget.blur();
-                                    }
+                              <div className="time-input-wrapper">
+                                <input
+                                  type="number"
+                                  value={
+                                    settings.timeLimit === -1
+                                      ? ""
+                                      : settings.timeLimit
                                   }
-                                }}
-                                className="nes-input is-small"
-                                placeholder="초"
-                                min={30}
-                                max={600}
-                                autoFocus
-                                onBlur={(e) => {
-                                  const val = parseInt(e.target.value);
-                                  if (!val || val < 30) {
+                                  onChange={(e) =>
                                     handleSettingChange(
                                       game.id,
                                       "timeLimit",
-                                      120
-                                    );
+                                      e.target.value
+                                        ? parseInt(e.target.value)
+                                        : -1
+                                    )
                                   }
-                                }}
-                              />
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      const val = parseInt(
+                                        e.currentTarget.value
+                                      );
+                                      if (val && val >= 30 && val <= 300) {
+                                        e.currentTarget.blur();
+                                      } else {
+                                        showTimeLimitTooltipForGame(game.id);
+                                        setTimeout(() => {
+                                          handleSettingChange(
+                                            game.id,
+                                            "timeLimit",
+                                            120
+                                          );
+                                        }, 100);
+                                      }
+                                    }
+                                  }}
+                                  className="nes-input is-small"
+                                  placeholder="초"
+                                  min={30}
+                                  max={300}
+                                  autoFocus
+                                  onBlur={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    if (!val || val < 30 || val > 300) {
+                                      showTimeLimitTooltipForGame(game.id);
+                                      setTimeout(() => {
+                                        handleSettingChange(
+                                          game.id,
+                                          "timeLimit",
+                                          120
+                                        );
+                                      }, 100);
+                                    }
+                                  }}
+                                />
+                              </div>
                             ) : (
                               <div className="nes-select is-small">
                                 <select
@@ -265,6 +291,11 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                   <option value={240}>240초</option>
                                   <option value={-1}>직접 입력</option>
                                 </select>
+                              </div>
+                            )}
+                            {showTimeLimitTooltip[game.id] && (
+                              <div className="time-limit-tooltip">
+                                제한 시간은 30-300초 사이로 설정해주세요
                               </div>
                             )}
                           </div>
@@ -286,7 +317,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                               </select>
                             </div>
                           </div>
-                          <div className="setting-item">
+                          <div className="setting-item time-limit-setting">
                             <label>0 생성:</label>
                             <div className="nes-select is-small">
                               <select

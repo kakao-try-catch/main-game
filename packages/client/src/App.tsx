@@ -36,7 +36,7 @@ function AppContent() {
     id: "id_1",
     playerIndex: 0,
     name: nickname || "1P",
-    isHost: true, // 첫 유저는 방장
+    isHost: false, // 방장 여부는 서버/방 생성 로직에서 결정됨
   });
 
   const [gameReady, setGameReady] = useState(false);

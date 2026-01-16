@@ -39,9 +39,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   const playerColors = ["#209cee", "#e76e55", "#92cc41", "#f2d024"];
 
   // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
-  const [players] = useState<Player[]>([
+  const players: Player[] = [
     { ...currentPlayer, color: playerColors[0] },
-  ]);
+  ];
 
   // 게임 리스트
   const [games] = useState<Game[]>([

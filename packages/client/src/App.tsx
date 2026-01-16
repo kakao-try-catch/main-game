@@ -106,6 +106,7 @@ function AppContent() {
 
   const handleLobby = useCallback(() => {
     setGameEnded(false);
+    setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
     setCurrentScreen("lobby");
   }, []);
 

@@ -33,7 +33,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   const playerColors = ["#209cee", "#e76e55", "#92cc41", "#f2d024"];
 
   // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
-  const [players, setPlayers] = useState<Player[]>([
+  const [players] = useState<Player[]>([
     { ...currentPlayer, color: playerColors[0] },
   ]);
 
@@ -76,7 +76,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   const handleSettingChange = (
     gameId: string,
     setting: keyof GameSettings,
-    value: any
+    value: string | number | boolean
   ) => {
     setGameSettings((prev) => ({
       ...prev,
@@ -131,7 +131,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
           <div className="nes-container is-rounded player-section">
             <h2 className="section-title">플레이어</h2>
             <div className="player-list">
-              {players.map((player, index) => (
+              {players.map((player) => (
                 <div
                   key={player.id}
                   className="player-item"

@@ -14,7 +14,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [nickname, setNickname] = useState("");
   const [color, setColor] = useState("#209cee");
-  const [isHost, setIsHost] = useState(true);
+  const [isHost, setIsHost] = useState(false);
 
   const setUserInfo = (
     newNickname: string,

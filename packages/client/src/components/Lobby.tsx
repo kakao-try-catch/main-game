@@ -108,7 +108,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   };
 
   const handleCopyLink = () => {
-    // 나중에 구현
+    // TODO: 서버에서 받은 실제 초대 링크로 교체 필요
     const link = window.location.href;
     navigator.clipboard.writeText(link);
     showTooltip("초대 링크가 복사되었습니다!", "success");

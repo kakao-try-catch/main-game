@@ -3,6 +3,9 @@ import "nes.css/css/nes.min.css";
 import "../assets/fonts/Font.css";
 import "./LandingPage.css";
 
+const MAX_NICKNAME_LENGTH = 8;
+const TOOLTIP_DURATION = 2000;
+
 interface LandingPageProps {
   onStart: (nickname: string) => void;
 }
@@ -21,9 +24,9 @@ function LandingPage({ onStart }: LandingPageProps) {
 
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value.length > 8) {
+    if (value.length > MAX_NICKNAME_LENGTH) {
       setShowLengthTooltip(true);
-      setTimeout(() => setShowLengthTooltip(false), 2000);
+      setTimeout(() => setShowLengthTooltip(false), TOOLTIP_DURATION);
       return;
     }
     setNickname(value);
@@ -45,7 +48,7 @@ function LandingPage({ onStart }: LandingPageProps) {
                 placeholder="닉네임을 입력하세요"
                 value={nickname}
                 onChange={handleNicknameChange}
-                maxLength={8}
+                maxLength={MAX_NICKNAME_LENGTH}
                 required
               />
               {showLengthTooltip && (

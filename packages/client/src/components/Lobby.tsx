@@ -3,6 +3,12 @@ import "nes.css/css/nes.min.css";
 import "../assets/fonts/Font.css";
 import "./Lobby.css";
 
+const TOOLTIP_DURATION = 2000;
+const MIN_TIME_LIMIT = 30;
+const MAX_TIME_LIMIT = 300;
+const DEFAULT_TIME_LIMIT = 120;
+const MAX_PLAYERS = 4;
+
 interface Player {
   id: string;
   name: string;
@@ -91,14 +97,14 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     setTooltip({ show: true, message, type });
     setTimeout(() => {
       setTooltip({ show: false, message: "", type: "success" });
-    }, 2000);
+    }, TOOLTIP_DURATION);
   };
 
   const showTimeLimitTooltipForGame = (gameId: string) => {
     setShowTimeLimitTooltip((prev) => ({ ...prev, [gameId]: true }));
     setTimeout(() => {
       setShowTimeLimitTooltip((prev) => ({ ...prev, [gameId]: false }));
-    }, 2000);
+    }, TOOLTIP_DURATION);
   };
 
   const handleCopyLink = () => {
@@ -117,7 +123,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   };
 
   // 빈 슬롯 생성
-  const emptySlots = Array(4 - players.length).fill(null);
+  const emptySlots = Array(MAX_PLAYERS - players.length).fill(null);
 
   return (
     <div className="lobby-container">
@@ -237,7 +243,11 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                       const val = parseInt(
                                         e.currentTarget.value
                                       );
-                                      if (val && val >= 30 && val <= 300) {
+                                      if (
+                                        val &&
+                                        val >= MIN_TIME_LIMIT &&
+                                        val <= MAX_TIME_LIMIT
+                                      ) {
                                         e.currentTarget.blur();
                                       } else {
                                         showTimeLimitTooltipForGame(game.id);
@@ -245,7 +255,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                           handleSettingChange(
                                             game.id,
                                             "timeLimit",
-                                            120
+                                            DEFAULT_TIME_LIMIT
                                           );
                                         }, 100);
                                       }
@@ -253,18 +263,22 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                   }}
                                   className="nes-input is-small"
                                   placeholder="초"
-                                  min={30}
-                                  max={300}
+                                  min={MIN_TIME_LIMIT}
+                                  max={MAX_TIME_LIMIT}
                                   autoFocus
                                   onBlur={(e) => {
                                     const val = parseInt(e.target.value);
-                                    if (!val || val < 30 || val > 300) {
+                                    if (
+                                      !val ||
+                                      val < MIN_TIME_LIMIT ||
+                                      val > MAX_TIME_LIMIT
+                                    ) {
                                       showTimeLimitTooltipForGame(game.id);
                                       setTimeout(() => {
                                         handleSettingChange(
                                           game.id,
                                           "timeLimit",
-                                          120
+                                          DEFAULT_TIME_LIMIT
                                         );
                                       }, 100);
                                     }

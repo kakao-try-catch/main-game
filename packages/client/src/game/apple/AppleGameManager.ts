@@ -57,10 +57,10 @@ function hexStringToNumber(hex: string): number {
 function adjustBrightness(hexColor: string, brightnessOffset: number): number {
     const color = Phaser.Display.Color.HexStringToColor(hexColor);
     const hsv = Phaser.Display.Color.RGBToHSV(color.red, color.green, color.blue);
-    
+
     // 명도 조정 (0~1 범위, brightnessOffset는 0~100 범위로 가정)
     const newV = Math.max(0, Math.min(1, (hsv.v as number) - brightnessOffset / 100));
-    
+
     const rgb = Phaser.Display.Color.HSVToRGB(hsv.h as number, hsv.s as number, newV) as { r: number; g: number; b: number };
     return Phaser.Display.Color.GetColor(rgb.r, rgb.g, rgb.b);
 }
@@ -69,20 +69,20 @@ export default class AppleGameManager {
     private container: Phaser.GameObjects.Container | null = null;
     private readonly scene: Phaser.Scene;
     private readonly config: AppleGameConfig;
-    
+
     // 현재 유저의 플레이어 인덱스
     private currentPlayerIndex: number = 0;
 
     // 전체 사과 리스트
     private apples: applePrefab[] = [];
-    
+
     // 현재 선택된 사과들 (합이 10일시 이걸 apples에서 삭제함)
     private selectedApples: Set<applePrefab> = new Set();
-    
+
     // 타이머 관련
     private timerPrefab!: TimerPrefab;
     private timerSystem!: TimerSystem;
-    
+
     // 드래그 선택 해제용
     private detachDrag?: () => void;
 
@@ -188,7 +188,7 @@ export default class AppleGameManager {
      * 외부 모듈(예: 서버 통신 로직, 리플레이/분석 도구 등)에서
      * AppleGameManager.normalizeRect 를 사용할 수 있도록 남겨 둔 유틸리티 메소드입니다.
      */
-    public static normalizeRect(rect: Phaser.Geom.Rectangle): {x:number,y:number,w:number,h:number} {
+    public static normalizeRect(rect: Phaser.Geom.Rectangle): { x: number, y: number, w: number, h: number } {
         const ratio = window.__APPLE_GAME_RATIO || 1;
         // 항상 기준 해상도(1380x862)로 정규화
         return {
@@ -240,14 +240,14 @@ export default class AppleGameManager {
 
         // 2. 합이 10이면 사과 제거 및 점수 계산
         if (sum === 10) {
-            const score = this.selectedApples.size; 
+            const score = this.selectedApples.size;
 
             this.selectedApples.forEach(apple => {
-                apple.destroy();
+                apple.playFallAndDestroy();
             });
             // 삭제된 사과들을 리스트에서 한 번에 필터링
             this.apples = this.apples.filter(apple => apple.active);
-            
+
             // 점수 이벤트 발생
             this.scene.events.emit('appleScored', { points: score });
 
@@ -255,10 +255,10 @@ export default class AppleGameManager {
             // 프레임 숨기기 (삭제하지 않은 경우에만)
             this.selectedApples.forEach(apple => apple.setFrameVisible(false));
         }
-        
+
         this.selectedApples.clear();
     }
-    
+
     /** 타이머 시작 */
     private startTimer(): void {
         this.timerSystem = new TimerSystem(this.scene, this.timerPrefab, this);
@@ -278,7 +278,7 @@ export default class AppleGameManager {
         console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
     }
 
-    
+
     /** 현재 플레이어 인덱스 업데이트 */
     setCurrentPlayerIndex(index: number): void {
         this.currentPlayerIndex = index;
@@ -295,7 +295,7 @@ export default class AppleGameManager {
         const player = this.players[this.currentPlayerIndex];
         // 플레이어 데이터가 없으면 기본 색상 사용
         const colorHex = player?.color ?? AppleGameManager.DEFAULT_COLORS[this.currentPlayerIndex] ?? '#209cee';
-        
+
         this.currentPlayerColor = hexStringToNumber(colorHex);
         this.currentFrameColor = adjustBrightness(colorHex, AppleGameManager.FRAME_BRIGHTNESS_OFFSET);
         console.log(`🎨 플레이어 색상: ${colorHex}, 프레임: 0x${this.currentFrameColor.toString(16)}`);

@@ -42,10 +42,10 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
       this.appleFrame.visible = visible;
    }
 
-	/** 사과 프레임의 색상을 설정합니다. */
-	setFrameColor(color: number): void {
-		this.appleFrame.setTint ( color ) ;
-	}
+   /** 사과 프레임의 색상을 설정합니다. */
+   setFrameColor(color: number): void {
+      this.appleFrame.setTint(color);
+   }
 
    /** 사과의 숫자를 설정하고 텍스트에 반영합니다. */
    setNumber(num: number): void {
@@ -66,7 +66,53 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
       const worldY = this.y + 7 * ratio;
       return Phaser.Geom.Rectangle.Contains(rect, worldX, worldY);
    }
+   /** 사과가 떨어지는 애니메이션을 재생한 후 1초 뒤에 destroy합니다. */
+   playFallAndDestroy(): void {
+      // 프레임 숨기기
+      this.setFrameVisible(false);
 
+      // 랜덤 방향 (왼쪽 또는 오른쪽)
+      const horizontalDistance = Phaser.Math.Between(-150, 150);
+
+      // 포물선을 그리면서 떨어지는 애니메이션
+      // X축: 일정한 속도로 이동 (포물선의 수평 이동)
+      this.scene.tweens.add({
+         targets: this,
+         x: this.x + horizontalDistance,
+         duration: 1000,
+         ease: 'Linear'
+      });
+
+      // Y축: 포물선 궤적 (위로 올라갔다가 떨어짐)
+      // 1단계: 위로 올라감 (감속)
+      this.scene.tweens.add({
+         targets: this,
+         y: this.y - 50,  // 위로 50px 올라감
+         duration: 400,
+         ease: 'Quad.easeOut',
+         onComplete: () => {
+            // 2단계: 아래로 떨어짐 (가속)
+            this.scene.tweens.add({
+               targets: this,
+               y: this.y + 300,  // 아래로 떨어짐
+               duration: 600,
+               ease: 'Quad.easeIn'
+            });
+         }
+      });
+
+      // 회전 + 페이드 아웃
+      this.scene.tweens.add({
+         targets: this,
+         angle: Phaser.Math.Between(-360, 360),
+         alpha: 0,
+         duration: 1000,
+         ease: 'Linear',
+         onComplete: () => {
+            this.destroy();
+         }
+      });
+   }
    /* END-USER-CODE */
 }
 

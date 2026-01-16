@@ -98,6 +98,7 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby }) =
             className="nes-btn is-primary"
             style={buttonStyle}
             onClick={() => { playSFX('buttonClick'); onReplay(); }}
+            onMouseEnter={() => { playSFX('buttonHover'); }}
           >
             REPLAY
           </button>
@@ -106,6 +107,7 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby }) =
             className="nes-btn is-primary"
             style={buttonStyle}
             onClick={() => { playSFX('buttonClick'); onLobby(); }}
+            onMouseEnter={() => { playSFX('buttonHover'); }}
           >
             LOBBY
           </button>

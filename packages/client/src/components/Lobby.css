@@ -341,8 +341,9 @@
 }
 
 /* nes.css input 필드 outline 수정 */
-.nes-input {
-  box-shadow:
+/* CSS 변수로 box-shadow 정의 (성능 및 유지보수성 개선) */
+:root {
+  --nes-input-shadow-default:
     /* 검은색 외곽 테두리 */
     0 -4px 0 0 #000,
     0 4px 0 0 #000,
@@ -356,14 +357,10 @@
     0 -2px 0 0 #fff inset,
     0 2px 0 0 #fff inset,
     -2px 0 0 0 #fff inset,
-    2px 0 0 0 #fff inset !important;
-  outline: none !important;
-  border: 2px solid #fff !important;
-}
+    2px 0 0 0 #fff inset;
 
-.nes-input:focus {
-  box-shadow:
-    /* 파란색 외곽 테두리 (검은색 대신) */
+  --nes-input-shadow-focus:
+    /* 파란색 외곽 테두리 */
     0 -4px 0 0 #209cee,
     0 4px 0 0 #209cee,
     -4px 0 0 0 #209cee,
@@ -372,57 +369,30 @@
     4px -4px 0 0 #209cee,
     -4px 4px 0 0 #209cee,
     4px 4px 0 0 #209cee,
-    /* 하얀색 내부 테두리 (동일 유지) */
+    /* 하얀색 내부 테두리 */
     0 -2px 0 0 #fff inset,
     0 2px 0 0 #fff inset,
     -2px 0 0 0 #fff inset,
-    2px 0 0 0 #fff inset !important;
-  outline: none !important;
+    2px 0 0 0 #fff inset;
+}
+
+.nes-input {
+  box-shadow: var(--nes-input-shadow-default) !important;
+  /* 고대비 모드 접근성을 위해 transparent outline 사용 */
+  outline: 2px solid transparent !important;
   border: 2px solid #fff !important;
 }
 
+/* 모든 focus 관련 상태를 하나로 통합 (코드 중복 제거) */
+.nes-input:focus,
 .nes-input:active,
 .nes-input:focus-visible,
-.nes-input:focus-within {
-  box-shadow:
-    /* 파란색 외곽 테두리 (검은색 대신) */
-    0 -4px 0 0 #209cee,
-    0 4px 0 0 #209cee,
-    -4px 0 0 0 #209cee,
-    4px 0 0 0 #209cee,
-    -4px -4px 0 0 #209cee,
-    4px -4px 0 0 #209cee,
-    -4px 4px 0 0 #209cee,
-    4px 4px 0 0 #209cee,
-    /* 하얀색 내부 테두리 (동일 유지) */
-    0 -2px 0 0 #fff inset,
-    0 2px 0 0 #fff inset,
-    -2px 0 0 0 #fff inset,
-    2px 0 0 0 #fff inset !important;
-  outline: none !important;
-  border: 2px solid #fff !important;
-}
-
-/* 입력 중일 때도 outline 유지 */
+.nes-input:focus-within,
 .nes-input[type="text"]:focus,
 .nes-input[type="number"]:focus,
 .nes-input[type="text"]:active,
 .nes-input[type="number"]:active {
-  box-shadow:
-    /* 파란색 외곽 테두리 (검은색 대신) */
-    0 -4px 0 0 #209cee,
-    0 4px 0 0 #209cee,
-    -4px 0 0 0 #209cee,
-    4px 0 0 0 #209cee,
-    -4px -4px 0 0 #209cee,
-    4px -4px 0 0 #209cee,
-    -4px 4px 0 0 #209cee,
-    4px 4px 0 0 #209cee,
-    /* 하얀색 내부 테두리 (동일 유지) */
-    0 -2px 0 0 #fff inset,
-    0 2px 0 0 #fff inset,
-    -2px 0 0 0 #fff inset,
-    2px 0 0 0 #fff inset !important;
-  outline: none !important;
+  box-shadow: var(--nes-input-shadow-focus) !important;
+  outline: 2px solid transparent !important;
   border: 2px solid #fff !important;
 }

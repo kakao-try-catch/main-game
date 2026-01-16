@@ -9,14 +9,15 @@ interface SoundSettingProps {
 }
 
 const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
-  const { play, pause, isPlaying, setVolume, getVolume } = useSoundContext();
-  
+  const { play, pause, isPlaying, setVolume, volume } = useSoundContext();
+
   const [isHovered, setIsHovered] = useState(false);
   const [localVolume, setLocalVolume] = useState(0.5);
 
+  // volume state 변경 시 슬라이더 동기화
   useEffect(() => {
-    setLocalVolume(getVolume());
-  }, [getVolume]);
+    setLocalVolume(volume);
+  }, [volume]);
 
   useEffect(() => {
     if (gameReady && localVolume > 0) {
@@ -30,9 +31,6 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
     const newVol = parseFloat(e.target.value);
     setLocalVolume(newVol);
     setVolume(newVol);
-    
-    if (newVol > 0 && !isPlaying) play();
-    if (newVol === 0 && isPlaying) pause();
   };
 
   const togglePlay = () => {
@@ -45,16 +43,16 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
 
   return (
     <>
-      <div 
+      <div
         style={styles.container}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div onClick={togglePlay}>
           {isPlaying === true ? (
-            <img src={onIcon} style={styles.soundIcon} alt="On"/>
-          ) : ( 
-            <img src={offIcon} style={styles.soundIcon} alt="Off"/>)}
+            <img src={onIcon} style={styles.soundIcon} alt="On" />
+          ) : (
+            <img src={offIcon} style={styles.soundIcon} alt="Off" />)}
         </div>
 
         {isHovered && (
@@ -77,11 +75,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'flex-end',
     cursor: 'pointer',
-    padding: '10px', 
+    padding: '10px',
   },
-  soundIcon:{
-    width: '40px', 
-    height: '40px', 
+  soundIcon: {
+    width: '40px',
+    height: '40px',
     transition: 'all 0.3s ease',
   },
   pixelSlider: {

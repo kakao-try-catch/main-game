@@ -10,14 +10,14 @@ interface PlayerCardProps {
 export default function PlayerCard({ name = "NONE", score = 0, color = "#000" }: PlayerCardProps) {
   return (
     <div style={cardWrapperStyle}>
-        <div className="nes-container is-centered" style={{ ...contentLayout, padding: "4px 8px" }}>
-            <span style={{ color: color, fontSize: "28px" }}>
-                {name}
-            </span>
-            <span style={{ color: "#e76e55", fontSize: "28px" }}>
-                {score.toLocaleString()}
-            </span>
-        </div>
+      <div className="nes-container is-rounded is-centered" style={{ ...contentLayout, padding: "4px 8px" }}>
+        <span style={{ color: color, fontSize: "28px" }}>
+          {name}
+        </span>
+        <span style={{ color: "#e76e55", fontSize: "28px" }}>
+          {score.toLocaleString()}
+        </span>
+      </div>
     </div>
 
   );

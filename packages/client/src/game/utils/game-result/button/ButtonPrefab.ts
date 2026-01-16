@@ -4,16 +4,17 @@
 /* START OF COMPILED CODE */
 
 export default class ButtonPrefab extends Phaser.GameObjects.Container {
-
 	private shape!: Phaser.GameObjects.Rectangle;
 	private text!: Phaser.GameObjects.Text;
 	private onClick?: () => void;
+	private ratio: number;
 
-	constructor(scene: Phaser.Scene, x?: number, y?: number) {
-		super(scene, x ?? 0, y ?? 0);
+	constructor(scene: Phaser.Scene, x?: number, y?: number, ratio: number = 1) {
+		super(scene, (x ?? 0), (y ?? 0));
+		this.ratio = ratio;
 
 		// shape
-		this.shape = scene.add.rectangle(0, 1, 386, 136);
+		this.shape = scene.add.rectangle(0, 1 * ratio, 386 * ratio, 136 * ratio);
 		this.shape.isFilled = true;
 		this.shape.fillColor = 9530303;
 		this.add(this.shape);
@@ -21,13 +22,11 @@ export default class ButtonPrefab extends Phaser.GameObjects.Container {
 		// text
 		this.text = scene.add.text(0, 0, "", {});
 		this.text.setOrigin(0.5, 0.5);
-
-		this.text.setStyle({ "align": "center", "fontFamily": "Ariel", "fontSize": "80px", "fontStyle": "bold", "resolution": 5 });
+		this.text.setStyle({ "align": "center", "fontFamily": "Ariel", "fontSize": `${80 * ratio}px`, "fontStyle": "bold", "resolution": 5 });
 		this.add(this.text);
 
 		/* START-USER-CTR-CODE */
-		// Write your code here.
-		this.setSize(386, 136);
+		this.setSize(386 * ratio, 136 * ratio);
 		this.setInteractive({ useHandCursor: true })
 			.on('pointerover', () => this.onPointerOver())
 			.on('pointerout', () => this.onPointerOut())

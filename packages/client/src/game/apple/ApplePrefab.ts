@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Phaser from 'phaser';
 
 // You can write more code here
@@ -6,28 +7,25 @@ import Phaser from 'phaser';
 
 export default class ApplePrefab extends Phaser.GameObjects.Container {
 
-   constructor(scene: Phaser.Scene, x?: number, y?: number) {
+   constructor(scene: Phaser.Scene, x?: number, y?: number, scale: number = 1) {
       super(scene, x ?? 0, y ?? -7);
-
-      // appleFrame
-      const appleFrame = scene.add.image(-0.5, 5, "selectedApple");
+      // 기준 해상도에서의 오프셋/크기 * scale
+      const appleFrame = scene.add.image(-0.5, 5 * scale, "selectedApple");
       appleFrame.visible = false;
+      appleFrame.setScale(scale);
       this.add(appleFrame);
-      
       // apple
-      const apple = scene.add.image(0, 5, "apple");
+      const apple = scene.add.image(0, 5 * scale, "apple");
+      apple.setScale(scale);
       this.add(apple);
-
       // appleText
-      const appleText = scene.add.text(0, 15, "", {});
+      const appleText = scene.add.text(0, 15 * scale, "", {});
       appleText.setOrigin(0.5, 0.5);
       appleText.text = "0";
-      appleText.setStyle({ "align": "center", "fontSize": "50px", "fontFamily": "NeoDunggeunmo", "fontStyle": "bold" });
+      appleText.setStyle({ "align": "center", "fontSize": `${50 * scale}px`, "fontFamily": "NeoDunggeunmo", "fontStyle": "bold" });
       this.add(appleText);
-
       /* START-USER-CTR-CODE */
       this.appleFrame = appleFrame;
-      //this.appleShape = appleShape;
       this.appleText = appleText;
       /* END-USER-CTR-CODE */
    }
@@ -63,9 +61,9 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
    /** 주어진 사각형 범위 안에 이 사과가 있는지 확인합니다. */
    isInRect(rect: Phaser.Geom.Rectangle): boolean {
       // 사과의 월드 좌표 계산
+      const ratio = (window as any).__APPLE_GAME_RATIO || 1;
       const worldX = this.x;
-      const worldY = this.y + 7;  // appleShape의 로컬 y 오프셋
-
+      const worldY = this.y + 7 * ratio;
       return Phaser.Geom.Rectangle.Contains(rect, worldX, worldY);
    }
 

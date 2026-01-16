@@ -2,8 +2,14 @@ import Phaser from 'phaser';
 import applePrefab from './ApplePrefab';
 import TimerPrefab from '../utils/TimerPrefab';
 import TimerSystem from '../utils/TimerSystem';
-import { attachDragSelection } from '../utils/DragSelection';
-import type { PlayerResultData } from '../utils/game-result/GameResultPrefab';
+import { attachDragSelection } from '../utils/dragSelection';
+
+// Declare the global property for TypeScript
+declare global {
+    interface Window {
+        __APPLE_GAME_RATIO?: number;
+    }
+}
 
 /** 사과 게임 설정 */
 interface AppleGameConfig {
@@ -17,6 +23,7 @@ interface AppleGameConfig {
     maxNumber: number;      // 최대 숫자 (9)
     totalTime: number;      // 전체 게임 시간 (110초)
     playerCount: number;    // 플레이어 수 (1~4)
+    ratio: number;          // 스케일 비율
 }
 
 const DEFAULT_CONFIG: AppleGameConfig = {
@@ -30,6 +37,7 @@ const DEFAULT_CONFIG: AppleGameConfig = {
     maxNumber: 9,
     totalTime: 110,
     playerCount: 4,
+    ratio: 1,
 };
 
 /** 플레이어 데이터 */
@@ -58,6 +66,7 @@ function adjustBrightness(hexColor: string, brightnessOffset: number): number {
 }
 
 export default class AppleGameManager {
+    private container: Phaser.GameObjects.Container | null = null;
     private readonly scene: Phaser.Scene;
     private readonly config: AppleGameConfig;
     
@@ -95,10 +104,51 @@ export default class AppleGameManager {
     private currentPlayerColor: number = 0x209cee;
     private currentFrameColor: number = adjustBrightness('#209cee', AppleGameManager.FRAME_BRIGHTNESS_ADJUSTMENT);
 
-    constructor(scene: Phaser.Scene, timer: TimerPrefab, config: Partial<AppleGameConfig> = {}) {
+    constructor(scene: Phaser.Scene, timer: TimerPrefab | undefined, container?: Phaser.GameObjects.Container, config: Partial<AppleGameConfig> = {}) {
         this.scene = scene;
-        this.timerPrefab = timer;
-        this.config = { ...DEFAULT_CONFIG, ...config };
+        this.container = container ?? null;
+        // ratio 우선순위: config.ratio > window.__APPLE_GAME_RATIO > 1
+        const ratio = config.ratio ?? window.__APPLE_GAME_RATIO ?? 1;
+        const gridCols = config.gridCols ?? DEFAULT_CONFIG.gridCols;
+        const gridRows = config.gridRows ?? DEFAULT_CONFIG.gridRows;
+        // 기준값에 비율 곱
+        const baseX = 91 * ratio;
+        const baseY = 91 * ratio;
+        const spacingX = 73 * ratio;
+        const spacingY = 74 * ratio;
+        this.config = {
+            ...DEFAULT_CONFIG,
+            ...config,
+            gridCols,
+            gridRows,
+            baseX,
+            baseY,
+            spacingX,
+            spacingY,
+            ratio,
+        };
+        // 타이머바의 세로 길이를 Phaser 캔버스의 세로 길이에서 margin을 빼서 계산
+        const canvasWidth = (scene.sys.game.config.width as number) || window.innerWidth;
+        const canvasHeight = (scene.sys.game.config.height as number) || window.innerHeight;
+        const timerRatio = this.config.ratio;
+        const timerBarMarginTop = 70 * timerRatio; // px, 필요에 따라 조정
+        const timerBarMarginBottom = 65 * timerRatio; // px, 필요에 따라 조정
+        const timerBarCanvasHeight = canvasHeight - timerBarMarginTop - timerBarMarginBottom;
+        const timerBarWidth = 22 * timerRatio;
+        const timerBarMarginRight = 30 * timerRatio; // 오른쪽 마진
+        // x좌표: 캔버스 오른쪽 끝에서 마진과 타이머 바 width의 절반만큼 뺀 위치
+        const timerBarX = canvasWidth - timerBarMarginRight - timerBarWidth / 2;
+        console.log('[DEBUG] 캔버스 width:', canvasWidth, 'timerBarX:', timerBarX);
+
+        // TimerPrefab의 x, y, barHeight를 명확히 지정 (origin이 (0.5, 1)이므로 y를 아래로 내림)
+        const timerBarY = timerBarMarginTop + timerBarCanvasHeight;
+        this.timerPrefab = timer ?? new TimerPrefab(scene, timerBarX, timerBarY, timerBarCanvasHeight);
+        // 타이머를 컨테이너 또는 씬에 추가하여 화면에 보이게 함
+        if (this.container) {
+            this.container.add(this.timerPrefab);
+        } else {
+            this.scene.add.existing(this.timerPrefab);
+        }
     }
 
     /** 게임 초기화 및 시작 */
@@ -111,25 +161,42 @@ export default class AppleGameManager {
 
     /** 사과 그리드 생성 */
     private createApples(): void {
-        const { gridCols, gridRows, baseX, baseY, spacingX, spacingY, minNumber, maxNumber } = this.config;
-        
+        const { gridCols, gridRows, baseX, baseY, spacingX, spacingY, minNumber, maxNumber, ratio } = this.config;
         this.apples = [];
-        
         for (let col = 0; col < gridCols; col++) {
             for (let row = 0; row < gridRows; row++) {
                 const x = baseX + col * spacingX;
                 const y = baseY + row * spacingY;
-                
-                const apple = new applePrefab(this.scene, x, y);
-                this.scene.add.existing(apple);
-                
+                const apple = new applePrefab(this.scene, x, y, ratio);
+                if (this.container) {
+                    this.container.add(apple);
+                } else {
+                    this.scene.add.existing(apple);
+                }
                 // 랜덤 숫자 설정 (minNumber ~ maxNumber)
                 const randomNum = Phaser.Math.Between(minNumber, maxNumber);
                 apple.setNumber(randomNum);
-                
                 this.apples.push(apple);
             }
         }
+    }
+
+    /**
+     * 드래그 좌표를 0~1 범위로 정규화하여 서버 전송/동기화에 사용하기 위한 헬퍼입니다.
+     * 
+     * 현재 이 프로젝트 내부 코드에서는 직접 호출하지 않지만,
+     * 외부 모듈(예: 서버 통신 로직, 리플레이/분석 도구 등)에서
+     * AppleGameManager.normalizeRect 를 사용할 수 있도록 남겨 둔 유틸리티 메소드입니다.
+     */
+    public static normalizeRect(rect: Phaser.Geom.Rectangle): {x:number,y:number,w:number,h:number} {
+        const ratio = window.__APPLE_GAME_RATIO || 1;
+        // 항상 기준 해상도(1380x862)로 정규화
+        return {
+            x: rect.x / (1380 * ratio),
+            y: rect.y / (862 * ratio),
+            w: rect.width / (1380 * ratio),
+            h: rect.height / (862 * ratio),
+        };
     }
 
     /** 드래그 선택 박스 초기화 */
@@ -162,7 +229,7 @@ export default class AppleGameManager {
 
     /** 드래그 종료 시 호출 */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private onDragEnd(rect: Phaser.Geom.Rectangle): void {
+    private onDragEnd(_rect: Phaser.Geom.Rectangle): void {
         // 선택된 사과들의 숫자 합 계산
         let sum = 0;
         this.selectedApples.forEach(apple => {

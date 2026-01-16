@@ -137,31 +137,11 @@ function AppContent() {
   }
 
   return (
-    <div
-      className="App"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-      }}
-    >
-      <header
-        className="App-header"
-        style={{ width: "100%", textAlign: "left", marginLeft: 0 }}
-      >
-        {gameReady && (
-          <p
-            style={{
-              fontFamily: "NeoDunggeunmo",
-              fontSize: "24px",
-              textAlign: "left",
-              marginLeft: 0,
-            }}
-          >
-            마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록
-            하세요
-          </p>
-        )}
+    <div className="App" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw' }}>
+      <header className="App-header" style={{ width: '100%', textAlign: 'center', margin: '24px 0 0 0' }}>
+        {gameReady && <p style={{fontFamily: 'NeoDunggeunmo', fontSize: '24px', textAlign: 'center', margin: 0}}>
+          마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록 하세요
+        </p>}
       </header>
 
       <BGMProvider>
@@ -169,8 +149,15 @@ function AppContent() {
       </BGMProvider>
 
       <SocketCounter />
-
-      <div style={{ ...playerListStyle, marginLeft: 0 }}>
+      
+      <div
+        style={{
+          ...playerListStyle,
+          alignSelf: 'center',
+          justifyContent: 'center',
+          marginLeft: `0px`,
+        }}
+      >
         {players.slice(0, testPlayerCount).map((player) => (
           <PlayerCard
             key={player.id}
@@ -181,15 +168,7 @@ function AppContent() {
         ))}
       </div>
 
-      <main
-        className="game-container"
-        style={{
-          position: "relative",
-          display: "flex",
-          justifyContent: "flex-start",
-          alignItems: "flex-start",
-        }}
-      >
+      <main className="game-container" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
         {!gameEnded && (
           <PhaserGame
             playerCount={players.length}
@@ -205,6 +184,7 @@ function AppContent() {
             players={finalPlayers}
             onReplay={handleReplay}
             onLobby={handleLobby}
+            ratio={(window as any).__APPLE_GAME_RATIO || 1}
           />
         )}
       </main>
@@ -213,13 +193,12 @@ function AppContent() {
 }
 
 const playerListStyle: React.CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "16px",
-  marginLeft: "32px",
-  marginTop: "20px", // UI 간격 조정
-  alignSelf: "flex-start",
-  alignItems: "flex-start",
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '16px', 
+  marginTop: '20px', // UI 간격 조정
+  alignSelf: 'center',
+  justifyContent: 'center',
 };
 
 export default function App() {

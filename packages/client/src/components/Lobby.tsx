@@ -53,7 +53,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   >({
     apple: {
       mapSize: "normal",
-      timeLimit: 120,
+      timeLimit: 180,
       appleRange: "1-9",
       includeZero: false,
     },
@@ -106,7 +106,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
 
       const preset: AppleGamePreset = {
         gridSize,
-        timeLimit: settings.timeLimit === -1 ? 'manual' : (settings.timeLimit as 30 | 60 | 120),
+        timeLimit: settings.timeLimit === -1 ? 'manual' : (settings.timeLimit as 120 | 180 | 240),
         manualTime: settings.timeLimit === -1 ? undefined : settings.timeLimit,
         numberRange,
         includeZero: settings.includeZero || false,
@@ -232,8 +232,16 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
-                                    const val = parseInt(e.currentTarget.value);
+                                    let val = parseInt(e.currentTarget.value);
                                     if (val && val >= 30) {
+                                      if (val > 300) {
+                                        val = 300;
+                                        handleSettingChange(
+                                          game.id,
+                                          "timeLimit",
+                                          val
+                                        );
+                                      }
                                       e.currentTarget.blur();
                                     }
                                   }
@@ -241,15 +249,21 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 className="nes-input is-small"
                                 placeholder="초"
                                 min={30}
-                                max={600}
+                                max={300}
                                 autoFocus
                                 onBlur={(e) => {
-                                  const val = parseInt(e.target.value);
+                                  let val = parseInt(e.target.value);
                                   if (!val || val < 30) {
                                     handleSettingChange(
                                       game.id,
                                       "timeLimit",
                                       120
+                                    );
+                                  } else if (val > 300) {
+                                    handleSettingChange(
+                                      game.id,
+                                      "timeLimit",
+                                      300
                                     );
                                   }
                                 }}
@@ -267,9 +281,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 }}
                                 className="nes-select is-small"
                               >
-                                <option value={30}>30초</option>
-                                <option value={60}>60초</option>
                                 <option value={120}>120초</option>
+                                <option value={180}>180초</option>
+                                <option value={240}>240초</option>
                                 <option value={-1}>직접 입력</option>
                               </select>
                             )}

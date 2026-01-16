@@ -7,17 +7,18 @@ interface PlayerCardProps {
   color?: string;
 }
 
+export const getNameFontSize = (nameLength: number): string => {
+  if (nameLength <= 4) return "28px";
+  if (nameLength <= 6) return "24px";
+  return "20px"; // 7-8자
+};
+
 export default function PlayerCard({
   name = "NONE",
   score = 0,
   color = "#000",
 }: PlayerCardProps) {
   // 닉네임 길이에 따라 폰트 크기 조절
-  const getNameFontSize = (nameLength: number) => {
-    if (nameLength <= 4) return "28px";
-    if (nameLength <= 6) return "24px";
-    return "20px"; // 7-8자
-  };
 
   return (
     <div style={cardWrapperStyle}>

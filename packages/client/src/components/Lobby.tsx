@@ -279,72 +279,27 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 }}
                                 className="nes-input is-small"
                                 placeholder="초"
-                                min={30}
-                                max={300}
+                                min={MIN_TIME_LIMIT}
+                                max={MAX_TIME_LIMIT}
                                 autoFocus
                                 onBlur={(e) => {
-                                  let val = parseInt(e.target.value);
-                                  if (!val || val < 30) {
-                                    handleSettingChange(
-                                      game.id,
-                                      "timeLimit",
-                                      120
-                                    );
-                                  } else if (val > 300) {
-                                    handleSettingChange(
-                                      game.id,
-                                      "timeLimit",
-                                      300
-                                    );
-                                  }
-                                  onClick={(e) => e.stopPropagation()}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      const val = parseInt(
-                                        e.currentTarget.value
+                                  const val = parseInt(e.target.value);
+                                  if (
+                                    !val ||
+                                    val < MIN_TIME_LIMIT ||
+                                    val > MAX_TIME_LIMIT
+                                  ) {
+                                    showTimeLimitTooltipForGame(game.id);
+                                    setTimeout(() => {
+                                      handleSettingChange(
+                                        game.id,
+                                        "timeLimit",
+                                        DEFAULT_TIME_LIMIT
                                       );
-                                      if (
-                                        val &&
-                                        val >= MIN_TIME_LIMIT &&
-                                        val <= MAX_TIME_LIMIT
-                                      ) {
-                                        e.currentTarget.blur();
-                                      } else {
-                                        showTimeLimitTooltipForGame(game.id);
-                                        setTimeout(() => {
-                                          handleSettingChange(
-                                            game.id,
-                                            "timeLimit",
-                                            DEFAULT_TIME_LIMIT
-                                          );
-                                        }, 100);
-                                      }
-                                    }
-                                  }}
-                                  className="nes-input is-small"
-                                  placeholder="초"
-                                  min={MIN_TIME_LIMIT}
-                                  max={MAX_TIME_LIMIT}
-                                  autoFocus
-                                  onBlur={(e) => {
-                                    const val = parseInt(e.target.value);
-                                    if (
-                                      !val ||
-                                      val < MIN_TIME_LIMIT ||
-                                      val > MAX_TIME_LIMIT
-                                    ) {
-                                      showTimeLimitTooltipForGame(game.id);
-                                      setTimeout(() => {
-                                        handleSettingChange(
-                                          game.id,
-                                          "timeLimit",
-                                          DEFAULT_TIME_LIMIT
-                                        );
-                                      }, 100);
-                                    }
-                                  }}
-                                />
-                              </div>
+                                    }, 100);
+                                  }
+                                }}
+                              />
                             ) : (
                               <div className="nes-select is-small">
                                 <select

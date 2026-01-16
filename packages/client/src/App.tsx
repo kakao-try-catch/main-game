@@ -74,6 +74,7 @@ function AppContent() {
   const handleGameEnd = useCallback((endPlayers: (PlayerData & { playerIndex: number })[]) => {
     setFinalPlayers(endPlayers);
     setGameEnded(true);
+    playSFX('gameEnd');
   }, []);
 
   const handleReplay = useCallback(() => {

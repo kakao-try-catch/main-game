@@ -2,6 +2,7 @@ import React, { createContext, useContext, useRef, useCallback, useState, useEff
 import bgmFile from '../assets/sounds/testapplebgm.mp3';
 import appleDropSound from '../assets/sounds/SFX/appleDrop.mp3';
 import gameStartSound from '../assets/sounds/SFX/gameStart.mp3';
+import gameEndSound from '../assets/sounds/SFX/gameResult.mp3';
 import buttonClickSound from '../assets/sounds/SFX/buttonClick.mp3';
 
 // SFX 설정 타입
@@ -15,10 +16,12 @@ interface SFXConfig {
 const SFX_CONFIG: Record<string, SFXConfig> = {
   appleDrop: { file: appleDropSound, volume: 0.7, startTime: 0 },
   gameStart: { file: gameStartSound, volume: 0.8, startTime: 0 },
+  gameEnd: { file: gameEndSound, volume: 0.8, startTime: 0 },
   buttonClick: { file: buttonClickSound, volume: 1.0, startTime: 0.2 },
+
 };
 
-type SFXName = 'appleDrop' | 'gameStart' | 'buttonClick';
+type SFXName = 'appleDrop' | 'gameStart' | 'buttonClick' | 'gameEnd';
 
 interface SoundContextType {
   setVolume: (volume: number) => void;

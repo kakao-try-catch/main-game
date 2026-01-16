@@ -27,47 +27,45 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 
 	private rankPlayers: RankOnePlayerPrefab[] = [];
 
-	constructor(scene: Phaser.Scene, playerCount: number = 4, players: PlayerResultData[] = [], x?: number, y?: number) {
-		super(scene, x ?? 684, y ?? 283);
+	constructor(scene: Phaser.Scene, playerCount: number = 4, players: PlayerResultData[] = [], x?: number, y?: number, ratio: number = 1) {
+		super(scene, (x ?? 684) * ratio, (y ?? 283) * ratio);
 
 		// background
-		const background = scene.add.rectangle(36, 165, 1440, 896);
+		const background = scene.add.rectangle(36 * ratio, 165 * ratio, 1440 * ratio, 896 * ratio);
 		background.isFilled = true;
 		background.fillColor = 0;
 		background.fillAlpha = 0.4;
 		this.add(background);
 
 		// Frame
-		const frame = scene.add.rectangle(35, 146, 1041, 690);
+		const frame = scene.add.rectangle(35 * ratio, 146 * ratio, 1041 * ratio, 690 * ratio);
 		frame.isFilled = true;
 		frame.fillColor = 16184822;
 		frame.isStroked = true;
 		frame.strokeColor = 9530303;
-		frame.lineWidth = 10;
+		frame.lineWidth = 10 * ratio;
 		this.add(frame);
 
 		// TitleText
-		const titleText = scene.add.text(35, -90, "", {});
+		const titleText = scene.add.text(35 * ratio, -90 * ratio, "", {});
 		titleText.setOrigin(0.5, 1);
 		titleText.text = "APPLE GAME TOGETHER";
-		titleText.setStyle({ "align": "center", "color": "#000000ff", "fontFamily": "Arial", "fontSize": "60px", "fontStyle": "bold", "resolution": 5 });
+		titleText.setStyle({ "align": "center", "color": "#000000ff", "fontFamily": "Arial", "fontSize": `${60 * ratio}px`, "fontStyle": "bold", "resolution": 5 });
 		this.add(titleText);
 
-
 		/* START-USER-CTR-CODE */
-		// Write your code here.
-
 		// 순위 계산 및 정렬
 		const rankedPlayers = this.calculateRanks(players, playerCount);
 
-		//rank players
-		const spacing = 216;
-		const centerX = 39; // 가운데 정렬 기준점
+
+		// rank players
+		const spacing = 216 * ratio;
+		const centerX = 39 * ratio; // 가운데 정렬 기준점
 		const startX = centerX - ((playerCount - 1) * spacing) / 2;
 
 		for(let i = 0; i < rankedPlayers.length; i++) {
 			const player = rankedPlayers[i];
-			const rankPlayer = new RankOnePlayerPrefab(scene, startX + i * spacing, 29);
+			const rankPlayer = new RankOnePlayerPrefab(scene, startX + i * spacing, 29 * ratio, ratio);
 			rankPlayer
 				.setRank(player.rank)
 				.setPlayerName(player.name)
@@ -78,8 +76,9 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		}
 
 		
+
 		// ReplayButton
-		const replayButton = new ButtonPrefab(scene, -198, 347);
+		const replayButton = new ButtonPrefab(scene, -198 * ratio, 347 * ratio, ratio);
 		replayButton
 			.setText("REPLAY")
 			.setOnClick(() => {
@@ -88,7 +87,7 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 		this.add(replayButton);
 
 		// RoomButton
-		const roomButton = new ButtonPrefab(scene, 283, 347);
+		const roomButton = new ButtonPrefab(scene, 283 * ratio, 347 * ratio, ratio);
 		roomButton
 			.setText("LOBBY")
 			.setOnClick(() => {

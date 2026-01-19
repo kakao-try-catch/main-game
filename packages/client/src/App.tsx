@@ -1,6 +1,7 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { PhaserGame } from "./game/GameContainer";
-import { SoundProvider, useSoundContext } from './contexts/SoundContext';
+import { BGMProvider, useBGMContext } from './contexts/BGMContext';
+import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from "./contexts/UserContext";
 
 import PlayerCard from "./components/PlayerCard";
@@ -22,7 +23,8 @@ interface PlayerData {
 
 function AppContent() {
   const testPlayerCount = 4;
-  const { playSFX } = useSoundContext();
+  const { pause, play, reset } = useBGMContext();
+  const { playSFX } = useSFXContext();
 
   // 현재 유저 정보 (서버에서 받아올 예정)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -128,6 +130,16 @@ function AppContent() {
     setCurrentScreen("game");
   };
 
+  // BGM 제어: 로비에서는 정지, 게임에서는 재생
+  useEffect(() => {
+    if (currentScreen === "lobby") {
+      pause();
+    } else if (currentScreen === "game" && gameReady) {
+      reset(); // BGM을 처음부터 재생
+      play();
+    }
+  }, [currentScreen, gameReady, pause, play, reset]);
+
   // 랜딩 페이지 표시
   if (currentScreen === "landing") {
     return <LandingPage onStart={handleStart} />;
@@ -158,7 +170,7 @@ function AppContent() {
 
       <SocketCounter />
 
-      
+
       <div
         style={{
           ...playerListStyle,
@@ -216,10 +228,11 @@ const playerListStyle: React.CSSProperties = {
 export default function App() {
   return (
     <UserProvider>
-        <SoundProvider>
-           <AppContent />
-
-        </SoundProvider>
+      <BGMProvider>
+        <SFXProvider>
+          <AppContent />
+        </SFXProvider>
+      </BGMProvider>
     </UserProvider>
   );
 }

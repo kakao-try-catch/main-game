@@ -59,19 +59,15 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
           {isPlaying === true ? (
             <img src={onIcon} style={styles.soundIcon} alt="On" />
           ) : (
-            <img src={offIcon} style={styles.soundIcon} alt="Off" />)}
+            <img src={offIcon} style={styles.soundIcon} alt="Off" />
+          )}
         </div>
 
-
-        <label style={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            className="nes-checkbox"
-            checked={bgmEnabled}
-            onChange={(e) => setBgmEnabled(e.target.checked)}
-          />
-          <span style={styles.checkboxText}>BGM</span>
-        </label>
+        {isHovered && (
+          <div className="nes-container is-rounded" style={{ padding: "4px 8px" }}>
+            <input className="pixel-slider" type="range" min="0" max="1" step="0.05" value={localVolume} onChange={handleVolumeChange} />
+          </div>
+        )}
 
       </div>
     </>
@@ -99,18 +95,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: 12,
     background: '#d3d3d3',
     border: '3px solid #000',
-    borderRadius: 0
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginLeft: '12px',
-  },
-  checkboxText: {
-    fontSize: '14px',
-    fontWeight: 'bold',
-    userSelect: 'none' as const,
+    borderRadius: 0,
   },
 
 };

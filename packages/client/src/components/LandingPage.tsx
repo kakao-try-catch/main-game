@@ -1,7 +1,7 @@
-import { useState } from "react";
-import "nes.css/css/nes.min.css";
-import "../assets/fonts/Font.css";
-import "./LandingPage.css";
+import { useState } from 'react';
+import 'nes.css/css/nes.min.css';
+import '../assets/fonts/Font.css';
+import './LandingPage.css';
 
 const MAX_NICKNAME_LENGTH = 8;
 const TOOLTIP_DURATION = 2000;
@@ -11,7 +11,7 @@ interface LandingPageProps {
 }
 
 function LandingPage({ onStart }: LandingPageProps) {
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState('');
   const [showTooltip, setShowTooltip] = useState(false);
   const [showLengthTooltip, setShowLengthTooltip] = useState(false);
 
@@ -40,7 +40,7 @@ function LandingPage({ onStart }: LandingPageProps) {
         <form onSubmit={handleSubmit} className="landing-form">
           <div className="nes-field">
             <label htmlFor="nickname">닉네임</label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: 'relative' }}>
               <input
                 type="text"
                 id="nickname"

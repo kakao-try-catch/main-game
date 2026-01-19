@@ -25,7 +25,7 @@ function AppContent() {
   const { playSFX } = useSoundContext();
 
   // 현재 유저 정보 (서버에서 받아올 예정)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const { nickname, color, setUserInfo } = useUser();
   const [currentScreen, setCurrentScreen] = useState<
     'landing' | 'lobby' | 'game'
@@ -113,7 +113,7 @@ function AppContent() {
   const handleLobby = useCallback(() => {
     setGameEnded(false);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
-    setCurrentScreen("lobby");
+    setCurrentScreen('lobby');
   }, []);
 
   const handleStart = (inputNickname: string) => {

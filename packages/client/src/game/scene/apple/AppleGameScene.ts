@@ -1,7 +1,7 @@
-import Phaser from "phaser";
-import AppleGameManager from "./AppleGameManager";
-import type { AppleGamePreset } from "../../types/GamePreset";
-import { resolvePreset } from "../../types/GamePreset";
+import Phaser from 'phaser';
+import AppleGameManager from './AppleGameManager';
+import type { AppleGamePreset } from '../../types/GamePreset';
+import { resolvePreset } from '../../types/GamePreset';
 
 // You can write more code here
 
@@ -9,7 +9,7 @@ import { resolvePreset } from "../../types/GamePreset";
 
 export default class AppleGameScene extends Phaser.Scene {
   constructor() {
-    super("AppleGameScene");
+    super('AppleGameScene');
 
     /* START-USER-CTR-CODE */
     // Write your code here.
@@ -33,7 +33,7 @@ export default class AppleGameScene extends Phaser.Scene {
 
     // margin, 사과 그리드, 타이머 바 위치 계산은 create()에서 동적으로 수행
 
-    this.events.emit("scene-awake");
+    this.events.emit('scene-awake');
   }
 
   // private timer!: TimerPrefab;
@@ -125,7 +125,7 @@ export default class AppleGameScene extends Phaser.Scene {
       baseY,
     };
 
-    console.log("🎯 그리드 설정 계산:", {
+    console.log('🎯 그리드 설정 계산:', {
       gridCols,
       gridRows,
       appleSize: appleSize / ratio,
@@ -163,14 +163,14 @@ export default class AppleGameScene extends Phaser.Scene {
 
     // React에서 플레이어 데이터 업데이트 수신 (먼저 등록)
     this.events.on(
-      "updatePlayers",
+      'updatePlayers',
       (data: {
         playerCount: number;
         players: { id: string; name: string; score: number; color: string }[];
         currentPlayerIndex: number;
         preset?: AppleGamePreset;
       }) => {
-        console.log("📩 updatePlayers 이벤트 수신:", data);
+        console.log('📩 updatePlayers 이벤트 수신:', data);
 
         // 게임이 아직 초기화되지 않았으면 초기값 저장 후 초기화
         if (!this.isGameInitialized) {
@@ -195,9 +195,9 @@ export default class AppleGameScene extends Phaser.Scene {
             });
 
             console.log(
-              "🎮 프리셋 적용 (초기화 전):",
+              '🎮 프리셋 적용 (초기화 전):',
               data.preset,
-              "→",
+              '→',
               resolvedConfig,
             );
           }
@@ -212,7 +212,7 @@ export default class AppleGameScene extends Phaser.Scene {
 
           // 프리셋 변경 시 경고 (게임 재시작 필요)
           if (data.preset) {
-            console.warn("⚠️ 프리셋 변경은 게임 재시작 후 적용됩니다.");
+            console.warn('⚠️ 프리셋 변경은 게임 재시작 후 적용됩니다.');
           }
         }
       },

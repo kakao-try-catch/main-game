@@ -1,5 +1,5 @@
 * {
-  font-family: "NeoDunggeunmo", monospace !important;
+  font-family: 'NeoDunggeunmo', monospace !important;
 }
 
 .lobby-container {
@@ -256,7 +256,7 @@
 }
 
 .time-limit-tooltip::before {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 100%;
   left: 50%;
@@ -367,7 +367,7 @@
 }
 
 .button-tooltip::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: 50%;

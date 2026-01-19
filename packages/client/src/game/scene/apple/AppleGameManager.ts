@@ -1,8 +1,8 @@
-import Phaser from "phaser";
-import applePrefab from "./ApplePrefab";
-import TimerPrefab from "../../utils/TimerPrefab";
-import TimerSystem from "../../utils/TimerSystem";
-import { attachDragSelection } from "../../utils/dragSelection";
+import Phaser from 'phaser';
+import applePrefab from './ApplePrefab';
+import TimerPrefab from '../../utils/TimerPrefab';
+import TimerSystem from '../../utils/TimerSystem';
+import { attachDragSelection } from '../../utils/dragSelection';
 
 // Declare the global property for TypeScript
 declare global {
@@ -50,7 +50,7 @@ export interface PlayerData {
 
 /** HEX 색상을 숫자로 변환 */
 function hexStringToNumber(hex: string): number {
-  return parseInt(hex.replace("#", ""), 16);
+  return parseInt(hex.replace('#', ''), 16);
 }
 
 /** HSV에서 명도(V)를 조절한 색상 반환 */
@@ -98,10 +98,10 @@ export default class AppleGameManager {
 
   // 기본 플레이어 색상 (1P 파란색 기준)
   private static readonly DEFAULT_COLORS = [
-    "#209cee", // 1P 파란색
-    "#e76e55", // 2P 빨간색
-    "#92cc41", // 3P 초록색
-    "#f2d024", // 4P 노란색
+    '#209cee', // 1P 파란색
+    '#e76e55', // 2P 빨간색
+    '#92cc41', // 3P 초록색
+    '#f2d024', // 4P 노란색
   ];
 
   // 프레임 밝기 조절 값 (기본 플레이어 색상 대비)
@@ -110,7 +110,7 @@ export default class AppleGameManager {
   // 현재 플레이어 색상 (0x 형식) - 1P 파란색 기본값
   private currentPlayerColor: number = 0x209cee;
   private currentFrameColor: number = adjustBrightness(
-    "#209cee",
+    '#209cee',
     AppleGameManager.FRAME_BRIGHTNESS_ADJUSTMENT,
   );
 
@@ -158,7 +158,7 @@ export default class AppleGameManager {
     const timerBarMarginRight = 30 * timerRatio; // 오른쪽 마진
     // x좌표: 캔버스 오른쪽 끝에서 마진과 타이머 바 width의 절반만큼 뺀 위치
     const timerBarX = canvasWidth - timerBarMarginRight - timerBarWidth / 2;
-    console.log("[DEBUG] 캔버스 width:", canvasWidth, "timerBarX:", timerBarX);
+    console.log('[DEBUG] 캔버스 width:', canvasWidth, 'timerBarX:', timerBarX);
 
     // TimerPrefab의 x, y, barHeight를 명확히 지정 (origin이 (0.5, 1)이므로 y를 아래로 내림)
     const timerBarY = timerBarMarginTop + timerBarCanvasHeight;
@@ -177,7 +177,7 @@ export default class AppleGameManager {
   updateGameConfig(config: Partial<AppleGameConfig>): void {
     // 설정 업데이트
     Object.assign(this.config, config);
-    console.log("🎮 게임 설정 업데이트:", config);
+    console.log('🎮 게임 설정 업데이트:', config);
   }
 
   /** 게임 초기화 및 시작 */
@@ -304,7 +304,7 @@ export default class AppleGameManager {
       this.apples = this.apples.filter((apple) => apple.active);
 
       // 점수 이벤트 발생
-      this.scene.events.emit("appleScored", { points: score });
+      this.scene.events.emit('appleScored', { points: score });
     } else {
       // 프레임 숨기기 (삭제하지 않은 경우에만)
       this.selectedApples.forEach((apple) => apple.setFrameVisible(false));
@@ -328,8 +328,8 @@ export default class AppleGameManager {
       playerIndex: index,
     }));
     // React로 게임 종료 이벤트 전달
-    this.scene.events.emit("gameEnd", { players: playersWithIndex });
-    console.log("🎮 게임 종료! React로 이벤트 전달", playersWithIndex);
+    this.scene.events.emit('gameEnd', { players: playersWithIndex });
+    console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
   }
 
   /** 현재 플레이어 인덱스 업데이트 */
@@ -350,7 +350,7 @@ export default class AppleGameManager {
     const colorHex =
       player?.color ??
       AppleGameManager.DEFAULT_COLORS[this.currentPlayerIndex] ??
-      "#209cee";
+      '#209cee';
 
     this.currentPlayerColor = hexStringToNumber(colorHex);
     this.currentFrameColor = adjustBrightness(

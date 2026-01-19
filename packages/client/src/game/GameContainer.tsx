@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useLayoutEffect } from "react";
-import Phaser from "phaser";
-import { AppleGameScene } from "./scene/apple/AppleGameScene";
-import { BootScene } from "./scene/apple/BootScene";
-import type { AppleGamePreset } from "./types/GamePreset";
+import { useEffect, useRef, useLayoutEffect } from 'react';
+import Phaser from 'phaser';
+import { AppleGameScene } from './scene/apple/AppleGameScene';
+import { BootScene } from './scene/apple/BootScene';
+import type { AppleGamePreset } from './types/GamePreset';
 
 export interface PlayerData {
   id: string;
@@ -48,9 +48,9 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
   // 플레이어 데이터가 변경되면 씬에 전달
   useEffect(() => {
     if (!gameRef.current) return;
-    const appleGameScene = gameRef.current.scene.getScene("AppleGameScene");
+    const appleGameScene = gameRef.current.scene.getScene('AppleGameScene');
     if (appleGameScene) {
-      appleGameScene.events.emit("updatePlayers", {
+      appleGameScene.events.emit('updatePlayers', {
         playerCount,
         players,
         currentPlayerIndex,
@@ -69,8 +69,8 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       }
     }
     updateRatio();
-    window.addEventListener("resize", updateRatio);
-    return () => window.removeEventListener("resize", updateRatio);
+    window.addEventListener('resize', updateRatio);
+    return () => window.removeEventListener('resize', updateRatio);
   }, []);
 
   useEffect(() => {
@@ -96,10 +96,10 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       width: MAX_WIDTH * ratio,
       height: MAX_HEIGHT * ratio,
       parent: parentRef.current,
-      backgroundColor: "#F6F5F6",
+      backgroundColor: '#F6F5F6',
       scene: [BootScene, AppleGameScene],
       physics: {
-        default: "arcade",
+        default: 'arcade',
         arcade: {
           gravity: { y: 0, x: 0 },
           debug: false,
@@ -117,20 +117,20 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     let appleGameScene: Phaser.Scene | null = null;
     let appleScoredHandler: ((data: { points: number }) => void) | null = null;
 
-    game.events.once("ready", () => {
-      appleGameScene = game.scene.getScene("AppleGameScene");
+    game.events.once('ready', () => {
+      appleGameScene = game.scene.getScene('AppleGameScene');
       if (appleGameScene) {
         // 씬의 create()가 완료된 후에 이벤트 전달
         if (appleGameScene.scene.isActive()) {
-          appleGameScene.events.emit("updatePlayers", {
+          appleGameScene.events.emit('updatePlayers', {
             playerCount,
             players,
             currentPlayerIndex,
             preset,
           });
         } else {
-          appleGameScene.events.once("create", () => {
-            appleGameScene?.events.emit("updatePlayers", {
+          appleGameScene.events.once('create', () => {
+            appleGameScene?.events.emit('updatePlayers', {
               playerCount,
               players,
               currentPlayerIndex,
@@ -143,11 +143,11 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
           appleScoredHandler = (data: { points: number }) => {
             onAppleScored(data.points);
           };
-          appleGameScene.events.on("appleScored", appleScoredHandler);
+          appleGameScene.events.on('appleScored', appleScoredHandler);
         }
         if (onGameEnd) {
           appleGameScene.events.on(
-            "gameEnd",
+            'gameEnd',
             (data: { players: PlayerResultData[] }) => {
               onGameEnd(data.players);
             },
@@ -158,10 +158,10 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
 
     return () => {
       if (appleGameScene && appleScoredHandler) {
-        appleGameScene.events.off("appleScored", appleScoredHandler);
+        appleGameScene.events.off('appleScored', appleScoredHandler);
       }
       if (appleGameScene) {
-        appleGameScene.events.off("gameEnd");
+        appleGameScene.events.off('gameEnd');
       }
       game.destroy(true);
       gameRef.current = null;
@@ -191,12 +191,12 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     height: `${height}px`,
     maxWidth: `${MAX_WIDTH}px`,
     maxHeight: `${MAX_HEIGHT}px`,
-    minWidth: "320px",
-    minHeight: "200px",
-    margin: "0 auto",
-    display: "block",
-    background: "#222",
-    position: "relative",
+    minWidth: '320px',
+    minHeight: '200px',
+    margin: '0 auto',
+    display: 'block',
+    background: '#222',
+    position: 'relative',
   };
   return <div ref={parentRef} id="phaser-game" style={containerStyle} />;
 };

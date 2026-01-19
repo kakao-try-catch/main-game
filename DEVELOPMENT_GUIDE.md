@@ -1,6 +1,6 @@
 # Main Game 개발 가이드라인
 
-팀 프로젝트의 개발 환경 설정과 코드 작성 규칙을 안내합니다. (*임시임)
+팀 프로젝트의 개발 환경 설정과 코드 작성 규칙을 안내합니다. (\*임시임)
 
 ---
 
@@ -142,6 +142,7 @@ npm run format
 - `assets/`: 이미지, 오디오 파일 저장
 
 **TypeScript 설정:**
+
 - `tsconfig.json`: 기본 설정
 - `tsconfig.app.json`: 앱 컴파일 옵션
 - `tsconfig.node.json`: 빌드 도구 설정
@@ -242,14 +243,14 @@ export class AppleGameScene extends Phaser.Scene {
 
 ### 명명 규칙
 
-| 대상 | 규칙 | 예시 |
-|------|------|------|
-| 파일명 | PascalCase (.tsx, .ts) | `AppleGameScene.ts`, `GameContainer.tsx` |
-| 폴더명 | lowercase | `game`, `scene`, `components`, `utils` |
-| 변수명 | camelCase | `playerScore`, `gameConfig` |
-| 상수명 | UPPER_SNAKE_CASE | `MAX_PLAYERS`, `GAME_WIDTH` |
-| 인터페이스 | PascalCase (I 접두사 생략) | `GameState`, `PlayerProps` |
-| CSS 클래스 | kebab-case | `game-container`, `player-score` |
+| 대상       | 규칙                       | 예시                                     |
+| ---------- | -------------------------- | ---------------------------------------- |
+| 파일명     | PascalCase (.tsx, .ts)     | `AppleGameScene.ts`, `GameContainer.tsx` |
+| 폴더명     | lowercase                  | `game`, `scene`, `components`, `utils`   |
+| 변수명     | camelCase                  | `playerScore`, `gameConfig`              |
+| 상수명     | UPPER_SNAKE_CASE           | `MAX_PLAYERS`, `GAME_WIDTH`              |
+| 인터페이스 | PascalCase (I 접두사 생략) | `GameState`, `PlayerProps`               |
+| CSS 클래스 | kebab-case                 | `game-container`, `player-score`         |
 
 ### Import 순서
 
@@ -300,6 +301,7 @@ git checkout -b feature/your-feature-name
 ```
 
 **브랜치 이름 규칙:**
+
 - `feature/add-apple-game` (새 기능)
 - `fix/bug-fix-description` (버그 수정)
 - `refactor/code-cleanup` (리팩토링)
@@ -312,6 +314,7 @@ git commit -m "feat: add apple game scene"
 ```
 
 **커밋 메시지 규칙:**
+
 - `feat:` 새 기능
 - `fix:` 버그 수정
 - `refactor:` 코드 리팩토링
@@ -364,7 +367,7 @@ scene: [AppleGameScene, FlappyBirdsScene],
 
 ### Q3: 공통 타입을 `@main-game/common`에 추가하려면?
 
-**A:** 
+**A:**
 
 1. `packages/common/src/index.ts`에 타입 정의
 2. export 추가

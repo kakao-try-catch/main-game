@@ -1,8 +1,8 @@
-import { useState } from "react";
-import "nes.css/css/nes.min.css";
-import "../assets/fonts/Font.css";
-import "./Lobby.css";
-import type { AppleGamePreset } from "../game/types/GamePreset";
+import { useState } from 'react';
+import 'nes.css/css/nes.min.css';
+import '../assets/fonts/Font.css';
+import './Lobby.css';
+import type { AppleGamePreset } from '../game/types/GamePreset';
 
 const TOOLTIP_DURATION = 2000;
 const MIN_TIME_LIMIT = 30;
@@ -24,9 +24,9 @@ interface Game {
 }
 
 interface GameSettings {
-  mapSize?: "small" | "normal" | "large" | string;
+  mapSize?: 'small' | 'normal' | 'large' | string;
   timeLimit?: number;
-  appleRange?: "1-9" | "1-5" | string;
+  appleRange?: '1-9' | '1-5' | string;
   includeZero?: boolean;
 }
 
@@ -37,26 +37,24 @@ interface LobbyProps {
 
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   // 플레이어 색깔 (들어온 순서대로)
-  const playerColors = ["#209cee", "#e76e55", "#92cc41", "#f2d024"];
+  const playerColors = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
 
   // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
-  const players: Player[] = [
-    { ...currentPlayer, color: playerColors[0] },
-  ];
+  const players: Player[] = [{ ...currentPlayer, color: playerColors[0] }];
 
   // 게임 리스트
   const [games] = useState<Game[]>([
-    { id: "apple", name: "다같이 사과 게임", thumbnail: "🍎" },
-    { id: "flappy", name: "다같이 플래피 버드", thumbnail: "🐦" },
-    { id: "minesweeper", name: "다같이 지뢰찾기", thumbnail: "💣" },
+    { id: 'apple', name: '다같이 사과 게임', thumbnail: '🍎' },
+    { id: 'flappy', name: '다같이 플래피 버드', thumbnail: '🐦' },
+    { id: 'minesweeper', name: '다같이 지뢰찾기', thumbnail: '💣' },
   ]);
 
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{
     show: boolean;
     message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
+    type: 'success' | 'error';
+  }>({ show: false, message: '', type: 'success' });
   const [showButtonTooltip, setShowButtonTooltip] = useState(false);
   const [showTimeLimitTooltip, setShowTimeLimitTooltip] = useState<
     Record<string, boolean>
@@ -67,9 +65,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     Record<string, GameSettings>
   >({
     apple: {
-      mapSize: "normal",
+      mapSize: 'normal',
       timeLimit: 120,
-      appleRange: "1-9",
+      appleRange: '1-9',
       includeZero: false,
     },
     flappy: {},
@@ -83,7 +81,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   const handleSettingChange = (
     gameId: string,
     setting: keyof GameSettings,
-    value: string | number | boolean
+    value: string | number | boolean,
   ) => {
     setGameSettings((prev) => ({
       ...prev,
@@ -93,11 +91,11 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
 
   const showTooltip = (
     message: string,
-    type: "success" | "error" = "success"
+    type: 'success' | 'error' = 'success',
   ) => {
     setTooltip({ show: true, message, type });
     setTimeout(() => {
-      setTooltip({ show: false, message: "", type: "success" });
+      setTooltip({ show: false, message: '', type: 'success' });
     }, TOOLTIP_DURATION);
   };
 
@@ -112,17 +110,17 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     // TODO: 서버에서 받은 실제 초대 링크로 교체 필요
     const link = window.location.href;
     navigator.clipboard.writeText(link);
-    showTooltip("초대 링크가 복사되었습니다!", "success");
+    showTooltip('초대 링크가 복사되었습니다!', 'success');
   };
 
   const handleStartGame = () => {
     if (!selectedGame) {
-      showTooltip("게임을 선택해주세요!", "error");
+      showTooltip('게임을 선택해주세요!', 'error');
       return;
     }
 
     // 사과 게임 설정을 프리셋으로 변환
-    if (selectedGame === "apple") {
+    if (selectedGame === 'apple') {
       const settings = gameSettings.apple;
 
       // mapSize를 gridSize로 변환
@@ -138,7 +136,10 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
 
       const preset: AppleGamePreset = {
         gridSize,
-        timeLimit: settings.timeLimit === -1 ? 'manual' : (settings.timeLimit as 120 | 180 | 240),
+        timeLimit:
+          settings.timeLimit === -1
+            ? 'manual'
+            : (settings.timeLimit as 120 | 180 | 240),
         manualTime: settings.timeLimit === -1 ? undefined : settings.timeLimit,
         numberRange,
         includeZero: settings.includeZero || false,
@@ -200,15 +201,17 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                 return (
                   <div
                     key={game.id}
-                    className={`game-item ${selectedGame === game.id ? "selected" : ""
-                      } ${selectedGame && selectedGame !== game.id ? "dimmed" : ""
-                      }`}
+                    className={`game-item ${
+                      selectedGame === game.id ? 'selected' : ''
+                    } ${
+                      selectedGame && selectedGame !== game.id ? 'dimmed' : ''
+                    }`}
                     onClick={() => handleSelectGame(game.id)}
                   >
                     <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
                       <h3 className="game-name">{game.name}</h3>
-                      {game.id === "apple" ? (
+                      {game.id === 'apple' ? (
                         <div
                           className="settings-edit"
                           onClick={(e) => {
@@ -226,8 +229,8 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 onChange={(e) =>
                                   handleSettingChange(
                                     game.id,
-                                    "mapSize",
-                                    e.target.value
+                                    'mapSize',
+                                    e.target.value,
                                   )
                                 }
                               >
@@ -240,37 +243,37 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           <div className="setting-item time-limit-setting">
                             <label>제한 시간:</label>
                             {settings.timeLimit === -1 ||
-                              (![120, 180, 240].includes(
-                                settings.timeLimit || 0
-                              ) &&
-                                settings.timeLimit !== undefined) ? (
+                            (![120, 180, 240].includes(
+                              settings.timeLimit || 0,
+                            ) &&
+                              settings.timeLimit !== undefined) ? (
                               <input
                                 type="number"
                                 value={
                                   settings.timeLimit === -1
-                                    ? ""
+                                    ? ''
                                     : settings.timeLimit
                                 }
                                 onChange={(e) =>
                                   handleSettingChange(
                                     game.id,
-                                    "timeLimit",
+                                    'timeLimit',
                                     e.target.value
                                       ? parseInt(e.target.value)
-                                      : -1
+                                      : -1,
                                   )
                                 }
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
+                                  if (e.key === 'Enter') {
                                     let val = parseInt(e.currentTarget.value);
                                     if (val && val >= 30) {
                                       if (val > 300) {
                                         val = 300;
                                         handleSettingChange(
                                           game.id,
-                                          "timeLimit",
-                                          val
+                                          'timeLimit',
+                                          val,
                                         );
                                       }
                                       e.currentTarget.blur();
@@ -293,8 +296,8 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                     setTimeout(() => {
                                       handleSettingChange(
                                         game.id,
-                                        "timeLimit",
-                                        DEFAULT_TIME_LIMIT
+                                        'timeLimit',
+                                        DEFAULT_TIME_LIMIT,
                                       );
                                     }, 100);
                                   }
@@ -308,8 +311,8 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                     const val = parseInt(e.target.value);
                                     handleSettingChange(
                                       game.id,
-                                      "timeLimit",
-                                      val
+                                      'timeLimit',
+                                      val,
                                     );
                                   }}
                                 >
@@ -334,8 +337,8 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 onChange={(e) =>
                                   handleSettingChange(
                                     game.id,
-                                    "appleRange",
-                                    e.target.value
+                                    'appleRange',
+                                    e.target.value,
                                   )
                                 }
                               >
@@ -348,12 +351,12 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                             <label>0 생성:</label>
                             <div className="nes-select is-small">
                               <select
-                                value={settings.includeZero ? "O" : "X"}
+                                value={settings.includeZero ? 'O' : 'X'}
                                 onChange={(e) =>
                                   handleSettingChange(
                                     game.id,
-                                    "includeZero",
-                                    e.target.value === "O"
+                                    'includeZero',
+                                    e.target.value === 'O',
                                   )
                                 }
                               >

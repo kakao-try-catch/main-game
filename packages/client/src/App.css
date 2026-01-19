@@ -1,9 +1,9 @@
 .nes-btn {
-    border-image-slice: 2;
-    border-image-width: 2;
-    border-image-repeat: stretch;
-    border-image-source: url('data:image/svg+xml;utf8,<svg version="1.1" width="5" height="5" xmlns="http://www.w3.org/2000/svg"><path d="M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z" fill="rgb(33,37,41)" /></svg>');
-    border-image-outset: 2;
+  border-image-slice: 2;
+  border-image-width: 2;
+  border-image-repeat: stretch;
+  border-image-source: url('data:image/svg+xml;utf8,<svg version="1.1" width="5" height="5" xmlns="http://www.w3.org/2000/svg"><path d="M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z" fill="rgb(33,37,41)" /></svg>');
+  border-image-outset: 2;
 }
 
 /* 리액트 컴포넌트 CSS 파일 또는 전역 CSS */
@@ -15,14 +15,17 @@
   border-image-width: 0;
   border-image-outset: 0;
   border-image-repeat: stretch;
-  
+
   /* 2. 기본 border 제거 (필요 시 CSS 변수로 덮어쓰기 가능) */
   border-style: var(--nes-rounded-border-style, none);
-  
+
   /* 3. 배경색과 여백 설정 (CSS 변수로 쉽게 커스터마이즈 가능) */
   /* NES.css 컨테이너는 기본 배경이 흰색입니다. 필요시 --nes-rounded-bg를 설정하세요. */
-  background-color: var(--nes-rounded-bg, #fff); 
-  margin: var(--nes-rounded-container-margin, 4px); /* 기본 4px, 커스텀 여백은 CSS 변수로 설정 */
+  background-color: var(--nes-rounded-bg, #fff);
+  margin: var(
+    --nes-rounded-container-margin,
+    4px
+  ); /* 기본 4px, 커스텀 여백은 CSS 변수로 설정 */
 
   /* 4. Box-shadow로 픽셀 스타일의 테두리 구현 */
   /* 원리: 상, 하, 좌, 우로 각각 4px 두께의 그림자를 주어
@@ -30,28 +33,27 @@
      (NES 스타일의 모서리 픽셀 제거 효과는 포함되어 있지 않습니다.)
   */
   --nes-rounded-border-color: #212529;
-  box-shadow: 
-      -4px 0 0 0 var(--nes-rounded-border-color),  /* 왼쪽 테두리 */
-       4px 0 0 0 var(--nes-rounded-border-color),  /* 오른쪽 테두리 */
-       0 -4px 0 0 var(--nes-rounded-border-color), /* 위쪽 테두리 */
-       0 4px 0 0 var(--nes-rounded-border-color);  /* 아래쪽 테두리 */
+  box-shadow:
+    -4px 0 0 0 var(--nes-rounded-border-color),
+    /* 왼쪽 테두리 */ 4px 0 0 0 var(--nes-rounded-border-color),
+    /* 오른쪽 테두리 */ 0 -4px 0 0 var(--nes-rounded-border-color),
+    /* 위쪽 테두리 */ 0 4px 0 0 var(--nes-rounded-border-color); /* 아래쪽 테두리 */
 }
 
 /* 검은색 테마용 기본 라운드 컨테이너 스타일 (.nes-container.is-rounded.is-dark 전체에 적용됨, 필요 시 주석 처리하거나 커스터마이즈 가능) */
 .nes-container.is-rounded.is-dark {
   background-color: #212529; /* 내부 배경 */
   color: #fff; /* 글자색 */
-  
+
   /* 테두리 색상은 흰색 등으로 변경 */
-  box-shadow: 
-      -4px 0 0 0 #fff, 
-       4px 0 0 0 #fff, 
-       0 -4px 0 0 #fff, 
-       0 4px 0 0 #fff;
+  box-shadow:
+    -4px 0 0 0 #fff,
+    4px 0 0 0 #fff,
+    0 -4px 0 0 #fff,
+    0 4px 0 0 #fff;
 }
 
 /* 나머지는 원래 내용 */
-
 
 .App {
   min-height: 100vh;
@@ -73,7 +75,7 @@
 }
 
 .App-header p {
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .game-container {
@@ -98,7 +100,7 @@
 .game-controls button {
   padding: 10px 20px;
   font-size: 16px;
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   border: none;
   border-radius: 5px;

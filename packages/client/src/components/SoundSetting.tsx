@@ -52,15 +52,26 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
           {isPlaying === true ? (
             <img src={onIcon} style={styles.soundIcon} alt="On" />
           ) : (
-            <img src={offIcon} style={styles.soundIcon} alt="Off" />)}
+            <img src={offIcon} style={styles.soundIcon} alt="Off" />
+          )}
         </div>
 
         {isHovered && (
-          <div className="nes-container is-rounded" style={{ padding: "4px 8px" }}>
-            <input className="pixel-slider" type="range" min="0" max="1" step="0.05" value={localVolume} onChange={handleVolumeChange} />
+          <div
+            className="nes-container is-rounded"
+            style={{ padding: '4px 8px' }}
+          >
+            <input
+              className="pixel-slider"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={localVolume}
+              onChange={handleVolumeChange}
+            />
           </div>
         )}
-
       </div>
     </>
   );
@@ -88,9 +99,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer',
     background: '#d3d3d3',
     border: '3px solid #000',
-    borderRadius: 0
+    borderRadius: 0,
   },
-
 };
 
 export default SoundSetting;

@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useRef, useCallback, useState, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useRef,
+  useCallback,
+  useState,
+  useEffect,
+} from 'react';
 import bgmFile from '../assets/sounds/testapplebgm.mp3';
 import appleDropSound from '../assets/sounds/SFX/appleDrop.mp3';
 import gameStartSound from '../assets/sounds/SFX/gameStart.mp3';
@@ -22,7 +29,12 @@ const SFX_CONFIG: Record<string, SFXConfig> = {
   buttonHover: { file: buttonHoverSound, volume: 1.0, startTime: 0 },
 };
 
-type SFXName = 'appleDrop' | 'gameStart' | 'buttonClick' | 'gameEnd' | 'buttonHover';
+type SFXName =
+  | 'appleDrop'
+  | 'gameStart'
+  | 'buttonClick'
+  | 'gameEnd'
+  | 'buttonHover';
 
 interface SoundContextType {
   setVolume: (volume: number) => void;
@@ -36,7 +48,9 @@ interface SoundContextType {
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
-export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sfxMapRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const sfxBaseVolumesRef = useRef<Map<string, number>>(new Map()); // 각 SFX의 기본 볼륨 저장
@@ -69,7 +83,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // 정리
       audio.pause();
       audio.src = '';
-      sfxMapRef.current.forEach(sfx => {
+      sfxMapRef.current.forEach((sfx) => {
         sfx.src = '';
       });
       sfxMapRef.current.clear();
@@ -81,7 +95,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!audioRef.current) return;
 
     if (isPlaying && isInitialized) {
-      audioRef.current.play().catch((e) => console.log("재생 실패:", e));
+      audioRef.current.play().catch((e) => console.log('재생 실패:', e));
     } else if (!isPlaying && isInitialized) {
       audioRef.current.pause();
       setVolume(0);
@@ -134,16 +148,21 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   // 범용 SFX 재생 함수
-  const playSFX = useCallback((soundName: SFXName, allowOverlap = true, startTime?: number) => {
-    const sfx = sfxMapRef.current.get(soundName);
-    if (sfx) {
-      if (!allowOverlap && !sfx.paused) return; // 이미 재생 중이면 무시
-      // startTime이 지정되지 않으면 설정된 기본값 사용
-      const defaultStartTime = sfxStartTimesRef.current.get(soundName) ?? 0;
-      sfx.currentTime = startTime ?? defaultStartTime;
-      sfx.play().catch((e) => console.log(`SFX "${soundName}" 재생 실패:`, e));
-    }
-  }, []);
+  const playSFX = useCallback(
+    (soundName: SFXName, allowOverlap = true, startTime?: number) => {
+      const sfx = sfxMapRef.current.get(soundName);
+      if (sfx) {
+        if (!allowOverlap && !sfx.paused) return; // 이미 재생 중이면 무시
+        // startTime이 지정되지 않으면 설정된 기본값 사용
+        const defaultStartTime = sfxStartTimesRef.current.get(soundName) ?? 0;
+        sfx.currentTime = startTime ?? defaultStartTime;
+        sfx
+          .play()
+          .catch((e) => console.log(`SFX "${soundName}" 재생 실패:`, e));
+      }
+    },
+    [],
+  );
 
   const value: SoundContextType = {
     setVolume,
@@ -155,7 +174,9 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     playSFX,
   };
 
-  return <SoundContext.Provider value={value}>{children}</SoundContext.Provider>;
+  return (
+    <SoundContext.Provider value={value}>{children}</SoundContext.Provider>
+  );
 };
 
 export const useSoundContext = () => {

@@ -1,17 +1,17 @@
-import { useState, useCallback, useRef } from "react";
-import { PhaserGame } from "./game/GameContainer";
+import { useState, useCallback, useRef } from 'react';
+import { PhaserGame } from './game/GameContainer';
 import { SoundProvider, useSoundContext } from './contexts/SoundContext';
-import { UserProvider, useUser } from "./contexts/UserContext";
+import { UserProvider, useUser } from './contexts/UserContext';
 
-import PlayerCard from "./components/PlayerCard";
-import GameResult from "./game/utils/game-result/GameResult";
-import SocketCounter from "./components/SocketCounter";
-import SoundSetting from "./components/SoundSetting";
-import LandingPage from "./components/LandingPage";
-import Lobby from "./components/Lobby";
+import PlayerCard from './components/PlayerCard';
+import GameResult from './game/utils/game-result/GameResult';
+import SocketCounter from './components/SocketCounter';
+import SoundSetting from './components/SoundSetting';
+import LandingPage from './components/LandingPage';
+import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/GamePreset';
 
-import "./App.css";
+import './App.css';
 
 interface PlayerData {
   id: string;
@@ -25,11 +25,11 @@ function AppContent() {
   const { playSFX } = useSoundContext();
 
   // 현재 유저 정보 (서버에서 받아올 예정)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const { nickname, color, setUserInfo } = useUser();
   const [currentScreen, setCurrentScreen] = useState<
-    "landing" | "lobby" | "game"
-  >("landing");
+    'landing' | 'lobby' | 'game'
+  >('landing');
 
   // 현재 유저 정보 (서버에서 받아올 예정)
   const [currentUser, setCurrentUser] = useState<{
@@ -38,9 +38,9 @@ function AppContent() {
     name: string;
     isHost: boolean;
   }>({
-    id: "id_1",
+    id: 'id_1',
     playerIndex: 0,
-    name: nickname || "1P",
+    name: nickname || '1P',
     isHost: false, // 방장 여부는 서버/방 생성 로직에서 결정됨
   });
 
@@ -51,48 +51,54 @@ function AppContent() {
   >([]);
   const gameRef = useRef<Phaser.Game | null>(null);
   const [players, setPlayers] = useState<PlayerData[]>([
-    { id: "id_1", name: nickname || "1P", score: 0, color: color || "#209cee" },
-    { id: "id_2", name: "2P", score: 0, color: "#e76e55" },
-    { id: "id_3", name: "3P", score: 0, color: "#92cc41" },
-    { id: "id_4", name: "4P", score: 0, color: "#f2d024" },
+    { id: 'id_1', name: nickname || '1P', score: 0, color: color || '#209cee' },
+    { id: 'id_2', name: '2P', score: 0, color: '#e76e55' },
+    { id: 'id_3', name: '3P', score: 0, color: '#92cc41' },
+    { id: 'id_4', name: '4P', score: 0, color: '#f2d024' },
   ]);
 
   // 프리셋 설정 (로비에서 받아옴)
-  const [currentPreset, setCurrentPreset] = useState<AppleGamePreset | undefined>(undefined);
-
+  const [currentPreset, setCurrentPreset] = useState<
+    AppleGamePreset | undefined
+  >(undefined);
 
   // 점수 증가 함수
   const handleAddScore = (playerId: string, pointsToAdd: number) => {
-    setPlayers(prevPlayers =>
-      prevPlayers.map(player =>
+    setPlayers((prevPlayers) =>
+      prevPlayers.map((player) =>
         player.id === playerId
           ? { ...player, score: player.score + pointsToAdd }
-          : player
-      )
+          : player,
+      ),
     );
   };
 
-  const handleAppleScored = useCallback((points: number) => {
-    try {
-      handleAddScore(currentUser.id, points);
-      playSFX('appleDrop');
-    } catch (error) {
-      console.error('Apple scored handler error:', error);
-    }
-  }, [currentUser.id, playSFX]);
-
+  const handleAppleScored = useCallback(
+    (points: number) => {
+      try {
+        handleAddScore(currentUser.id, points);
+        playSFX('appleDrop');
+      } catch (error) {
+        console.error('Apple scored handler error:', error);
+      }
+    },
+    [currentUser.id, playSFX],
+  );
 
   const handleGameReady = useCallback((game: Phaser.Game) => {
-    console.log("Phaser game is ready!", game);
+    console.log('Phaser game is ready!', game);
     gameRef.current = game;
     setGameReady(true);
   }, []);
 
-  const handleGameEnd = useCallback((endPlayers: (PlayerData & { playerIndex: number })[]) => {
-    setFinalPlayers(endPlayers);
-    setGameEnded(true);
-    playSFX('gameEnd');
-  }, []);
+  const handleGameEnd = useCallback(
+    (endPlayers: (PlayerData & { playerIndex: number })[]) => {
+      setFinalPlayers(endPlayers);
+      setGameEnded(true);
+      playSFX('gameEnd');
+    },
+    [],
+  );
 
   const handleReplay = useCallback(() => {
     setGameEnded(false);
@@ -107,41 +113,41 @@ function AppContent() {
   const handleLobby = useCallback(() => {
     setGameEnded(false);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
-    setCurrentScreen("lobby");
+    setCurrentScreen('lobby');
   }, []);
 
   const handleStart = (inputNickname: string) => {
-    const userColor = "#209cee"; // 처음 유저는 파란색
+    const userColor = '#209cee'; // 처음 유저는 파란색
     setUserInfo(inputNickname, userColor, true);
     setCurrentUser((prev) => ({ ...prev, name: inputNickname }));
     setPlayers((prev) =>
       prev.map((player, index) =>
         index === 0
           ? { ...player, name: inputNickname, color: userColor }
-          : player
-      )
+          : player,
+      ),
     );
-    setCurrentScreen("lobby");
+    setCurrentScreen('lobby');
   };
 
   const handleGameStart = (preset: AppleGamePreset) => {
     setCurrentPreset(preset);
-    setCurrentScreen("game");
+    setCurrentScreen('game');
   };
 
   // 랜딩 페이지 표시
-  if (currentScreen === "landing") {
+  if (currentScreen === 'landing') {
     return <LandingPage onStart={handleStart} />;
   }
 
   // 로비 표시
-  if (currentScreen === "lobby") {
+  if (currentScreen === 'lobby') {
     return (
       <Lobby
         currentPlayer={{
           id: currentUser.id,
           name: currentUser.name,
-          color: "#209cee",
+          color: '#209cee',
           isHost: currentUser.isHost,
         }}
         onGameStart={handleGameStart}
@@ -150,16 +156,38 @@ function AppContent() {
   }
 
   return (
-    <div className="App" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw' }}>
-      <header className="App-header" style={{ width: '100%', textAlign: 'center', margin: '24px 0 0 0' }}>
-        {gameReady && <p style={{ fontFamily: 'NeoDunggeunmo', fontSize: '24px', textAlign: 'center', margin: 0 }}>
-          마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록 하세요
-        </p>}
+    <div
+      className="App"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        width: '100vw',
+      }}
+    >
+      <header
+        className="App-header"
+        style={{ width: '100%', textAlign: 'center', margin: '24px 0 0 0' }}
+      >
+        {gameReady && (
+          <p
+            style={{
+              fontFamily: 'NeoDunggeunmo',
+              fontSize: '24px',
+              textAlign: 'center',
+              margin: 0,
+            }}
+          >
+            마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록
+            하세요
+          </p>
+        )}
       </header>
 
       <SocketCounter />
 
-      
       <div
         style={{
           ...playerListStyle,
@@ -179,7 +207,16 @@ function AppContent() {
         <SoundSetting gameReady={gameReady} />
       </div>
 
-      <main className="game-container" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+      <main
+        className="game-container"
+        style={{
+          position: 'relative',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+        }}
+      >
         {!gameEnded && currentPreset && (
           <PhaserGame
             playerCount={players.length}
@@ -204,7 +241,6 @@ function AppContent() {
   );
 }
 
-
 const playerListStyle: React.CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
@@ -217,10 +253,9 @@ const playerListStyle: React.CSSProperties = {
 export default function App() {
   return (
     <UserProvider>
-        <SoundProvider>
-           <AppContent />
-
-        </SoundProvider>
+      <SoundProvider>
+        <AppContent />
+      </SoundProvider>
     </UserProvider>
   );
 }

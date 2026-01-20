@@ -1,13 +1,13 @@
 import { io, Socket } from "socket.io-client";
 import { type ServerPacket } from "../../../common/src/packets.ts";
-import { handleServerPacket } from "./unifiedHandler.ts";
+// import { handleServerPacket } from "./clientHandler.ts";
 
 class SocketManager {
   private socket: Socket | null = null;
 
   connect(url: string) {
     // [중요] 이미 소켓이 생성되어 있고 연결 중이라면 중복 실행 방지
-    if (this.socket && (this.socket.connected || this.socket.connecting)) {
+    if (this.socket && this.socket.connected) {
       return;
     }
 
@@ -21,7 +21,7 @@ class SocketManager {
       // 패킷 구조가 { type, ...data } 형태라면 그대로 전달
       // 모든 수신 데이터는 ServerPacket 규격을 따름을 명시
       const packet = { type: eventName, ...data } as ServerPacket;
-      handleServerPacket(packet);
+      // handleServerPacket(packet);
     });
 
     this.socket.on("connect", () => console.log("Connected! url:", url));

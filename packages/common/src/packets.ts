@@ -4,6 +4,20 @@ export enum SystemPacketType {
   JOIN_ROOM = "JOIN_ROOM",
   ROOM_UPDATE = "ROOM_UPDATE",
   SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
+  GAME_CONFIG_UPDATE_REQ = "GAME_CONFIG_UPDATE_REQ",
+  GAME_CONFIG_UPDATE = "GAME_CONFIG_UPDATE",
+}
+
+export enum GameType {
+  APPLE_GAME = "APPLE_GAME",
+  FLAFFY_BIRD = "FLAFFY_BIRD",
+  MINESWEEPER = "MINESWEEPER",
+}
+
+export enum MapSize {
+  SMALL = "SMALL",
+  MEDIUM = "MEDIUM",
+  LARGE = "LARGE",
 }
 
 export enum GamePacketType {
@@ -34,7 +48,7 @@ export interface JoinRoomPacket {
 
 export interface RoomUpdatePacket {
   type: SystemPacketType.ROOM_UPDATE;
-  playerNames: { order: number, playerName: string, color: string }[];
+  playerNames: { order: number; playerName: string; color: string }[];
 }
 
 export interface SystemMessagePacket {
@@ -42,11 +56,34 @@ export interface SystemMessagePacket {
   message: string;
 }
 
+export interface AppleGameConfig {
+  mapSize: MapSize;
+  time: number;
+  generation: number;
+  zero: boolean;
+}
+
+export type GameConfig = AppleGameConfig;
+
+export interface GameConfigUpdateReqPacket {
+  type: SystemPacketType.GAME_CONFIG_UPDATE_REQ;
+  selectedGameType: GameType;
+  gameConfig: GameConfig;
+}
+
+export interface GameConfigUpdatePacket {
+  type: SystemPacketType.GAME_CONFIG_UPDATE;
+  selectedGameType: GameType;
+  gameConfig: GameConfig;
+}
+
 export type SystemPacket =
   | UpdateNumberPacket
   | JoinRoomPacket
   | RoomUpdatePacket
-  | SystemMessagePacket;
+  | SystemMessagePacket
+  | GameConfigUpdateReqPacket
+  | GameConfigUpdatePacket;
 
 // --- GAME PACKETS ---
 export interface SetFieldPacket {

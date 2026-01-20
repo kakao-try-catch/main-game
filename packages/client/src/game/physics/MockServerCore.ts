@@ -29,7 +29,7 @@ export class MockServerCore {
     private readonly BIRD_RADIUS = 20;
     private readonly FLAP_VELOCITY = -8;
     private readonly CHAIN_LENGTH = 100;
-    private readonly CHAIN_STIFFNESS = 0.4;
+    private readonly CHAIN_STIFFNESS = 0.15;  // 0.4 → 0.15로 감소 (끌고가는 힘 약화)
     private readonly CHAIN_DAMPING = 0.1;
 
     constructor(socket: MockSocket) {

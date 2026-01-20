@@ -138,25 +138,48 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 	 * 입력 처리 설정
 	 */
 	private setupInput() {
-		// 스페이스바
+		// 스페이스바 - 내 새 (기본)
 		this.input.keyboard?.on('keydown-SPACE', () => {
-			this.handleFlap();
+			this.handleFlap(this.myPlayerId);
 		});
 
-		// 마우스 클릭
+		// 마우스 클릭 - 내 새 (기본)
 		this.input.on('pointerdown', () => {
-			this.handleFlap();
+			this.handleFlap(this.myPlayerId);
 		});
+
+		// Q키 - Bird 0 (가장 뒤)
+		this.input.keyboard?.on('keydown-Q', () => {
+			this.handleFlap('0');
+		});
+
+		// W키 - Bird 1
+		this.input.keyboard?.on('keydown-W', () => {
+			this.handleFlap('1');
+		});
+
+		// E키 - Bird 2
+		this.input.keyboard?.on('keydown-E', () => {
+			this.handleFlap('2');
+		});
+
+		// R키 - Bird 3 (가장 앞)
+		this.input.keyboard?.on('keydown-R', () => {
+			this.handleFlap('3');
+		});
+
+		console.log('[FlappyBirdScene2] 키보드 매핑: Q=Bird0(뒤), W=Bird1, E=Bird2, R=Bird3(앞), Space/Click=내 새');
 	}
 
 	/**
 	 * Flap 처리
 	 */
-	private handleFlap() {
+	private handleFlap(playerId: PlayerId) {
 		this.socket.emit('flap', {
-			playerId: this.myPlayerId,
+			playerId: playerId,
 			timestamp: Date.now()
 		});
+		console.log(`[FlappyBirdScene2] Bird ${playerId} Flap!`);
 	}
 
 	/**

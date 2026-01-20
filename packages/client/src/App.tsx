@@ -137,15 +137,12 @@ function AppContent() {
     setCurrentScreen('game');
   };
 
-  // BGM 제어: 로비에서는 정지, 게임에서는 재생
+  // BGM 제어: 화면 전환 시 로비(또는 비게임 화면)에서는 정지
   useEffect(() => {
-    if (currentScreen === 'lobby') {
+    if (currentScreen === 'lobby' || currentScreen === 'landing') {
       pause();
-    } else if (currentScreen === 'game' && gameReady) {
-      reset(); // BGM을 처음부터 재생
-      play();
     }
-  }, [currentScreen, gameReady, pause, play, reset]);
+  }, [currentScreen, pause]);
 
   // 랜딩 페이지 표시
   if (currentScreen === 'landing') {

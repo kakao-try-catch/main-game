@@ -18,8 +18,6 @@ export default function PlayerCard({
   score = 0,
   color = '#000',
 }: PlayerCardProps) {
-  // 닉네임 길이에 따라 폰트 크기 조절
-
   return (
     <div style={cardWrapperStyle}>
       <div
@@ -29,6 +27,7 @@ export default function PlayerCard({
           padding: '4px 8px',
           minHeight: '80px',
           height: '80px',
+          backgroundColor: '#ffffff',
         }}
       >
         <div style={nameContainerStyle}>
@@ -52,6 +51,8 @@ export default function PlayerCard({
 
 const cardWrapperStyle: React.CSSProperties = {
   width: '180px',
+  minWidth: '180px',
+  maxWidth: '180px',
   fontFamily: 'NeoDunggeunmo',
 };
 

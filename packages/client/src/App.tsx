@@ -175,17 +175,18 @@ function AppContent() {
         justifyContent: 'center',
         minHeight: '100vh',
         width: '100vw',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       }}
     >
       <header
         className="App-header"
-        style={{ width: '100%', textAlign: 'center', margin: '24px 0 0 0' }}
+        style={{ width: '100%', textAlign: 'center', margin: '8px 0 0 0' }}
       >
         {gameReady && (
           <p
             style={{
               fontFamily: 'NeoDunggeunmo',
-              fontSize: '24px',
+              fontSize: '18px',
               textAlign: 'center',
               margin: 0,
             }}
@@ -258,8 +259,8 @@ function AppContent() {
 const playerListStyle: React.CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
-  gap: '16px',
-  marginTop: '20px', // UI 간격 조정
+  gap: '12px',
+  marginTop: '8px', // UI 간격 조정
   alignSelf: 'center',
   justifyContent: 'center',
 };

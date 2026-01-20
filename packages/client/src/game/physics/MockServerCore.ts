@@ -6,7 +6,9 @@ import { MockSocket } from '../network/MockSocket';
  * 충돌 카테고리
  */
 const CATEGORY_BIRD = 0x0001;
+const CATEGORY_PIPE = 0x0002;
 const CATEGORY_GROUND = 0x0004;
+
 /**
  * MockServerCore - 서버 역할을 대신하는 로컬 물리 엔진
  * 실제 서버 개발 완료 시 이 로직을 서버로 이전할 수 있습니다.
@@ -218,6 +220,23 @@ export class MockServerCore {
         }
 
         return ropes;
+    }
+
+    /**
+   * 충돌 감지
+   */
+    private checkCollisions() {
+        // 모든 새에 대해 충돌 검사
+        for (const bird of this.birds) {
+            // 바닥과의 충돌
+            if (this.ground && bird.position.y + this.BIRD_RADIUS >= this.ground.position.y - 50) {
+                this.handleGameOver('ground_collision');
+                return;
+            }
+
+            // 파이프와의 충돌 (나중에 추가)
+            // TODO: 파이프 구현 후 충돌 감지 추가
+        }
     }
 
     /**

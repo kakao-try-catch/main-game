@@ -3,6 +3,7 @@ import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
 import type { AppleGamePreset } from '../game/types/GamePreset';
+import SoundSetting from './SoundSetting';
 
 const TOOLTIP_DURATION = 2000;
 const MIN_TIME_LIMIT = 30;
@@ -394,6 +395,18 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       {tooltip.show && (
         <div className={`lobby-tooltip ${tooltip.type}`}>{tooltip.message}</div>
       )}
+
+      {/* 소리 설정 */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: 1000,
+        }}
+      >
+        <SoundSetting />
+      </div>
 
       {/* 하단: 버튼들 */}
       <div className="lobby-footer">

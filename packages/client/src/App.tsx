@@ -97,9 +97,10 @@ function AppContent() {
     (endPlayers: (PlayerData & { playerIndex: number })[]) => {
       setFinalPlayers(endPlayers);
       setGameEnded(true);
-      playSFX('gameEnd');
+      playSFX('appleGameEnd');
+      pause(); // 게임 종료 시 BGM 중지
     },
-    [],
+    [playSFX, pause],
   );
 
   const handleReplay = useCallback(() => {
@@ -137,12 +138,12 @@ function AppContent() {
     setCurrentScreen('game');
   };
 
-  // BGM 제어: 화면 전환 시 로비(또는 비게임 화면)에서는 정지
+  // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {
-    if (currentScreen === 'lobby' || currentScreen === 'landing') {
+    if (gameEnded) {
       pause();
     }
-  }, [currentScreen, pause]);
+  }, [gameEnded, pause]);
 
   // 랜딩 페이지 표시
   if (currentScreen === 'landing') {
@@ -203,6 +204,7 @@ function AppContent() {
           alignSelf: 'center',
           justifyContent: 'center',
           marginLeft: `0px`,
+          position: 'relative',
         }}
       >
         {players.slice(0, testPlayerCount).map((player) => (
@@ -242,7 +244,10 @@ function AppContent() {
             players={finalPlayers}
             onReplay={handleReplay}
             onLobby={handleLobby}
-            ratio={(window as any).__APPLE_GAME_RATIO || 1}
+            ratio={
+              (window as Window & { __APPLE_GAME_RATIO?: number })
+                .__APPLE_GAME_RATIO || 1
+            }
           />
         )}
       </main>

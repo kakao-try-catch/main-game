@@ -97,9 +97,12 @@ export class MockServerCore {
         const spacing = 120;
 
         for (let i = 0; i < 4; i++) {
+            // 각 새에 약간의 Y 오프셋을 주어 초기 장력 생성 (물리 안정화)
+            const yOffset = i * 3; // 0, 5, 10, 15 픽셀 차이
+
             const bird = Matter.Bodies.circle(
                 startX + i * spacing,
-                startY,
+                startY + yOffset,  // 약간씩 다른 높이에서 시작
                 this.BIRD_RADIUS,
                 {
                     density: 0.001,
@@ -118,7 +121,7 @@ export class MockServerCore {
             Matter.World.add(this.world, bird);
         }
 
-        console.log('[MockServerCore] 4개의 새 생성 완료');
+        console.log('[MockServerCore] 4개의 새 생성 완료 (초기 장력 적용)');
     }
 
     /**

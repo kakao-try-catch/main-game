@@ -53,8 +53,14 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 		if (isMockMode() && this.socket instanceof MockSocket) {
 			this.mockServerCore = new MockServerCore(this.socket as MockSocket);
 			this.mockServerCore.initialize();
-			this.mockServerCore.start();
-			console.log('[FlappyBirdScene2] Mock 모드로 실행 중');
+
+			// 1초 후 물리 엔진 시작 (초기화 시간 확보)
+			setTimeout(() => {
+				this.mockServerCore?.start();
+				console.log('[FlappyBirdScene2] 물리 엔진 시작 (1초 딜레이 후)');
+			}, 1000);
+
+			console.log('[FlappyBirdScene2] Mock 모드로 실행 중 (1초 후 시작)');
 		}
 
 		// 4개의 새 스프라이트 생성

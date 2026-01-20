@@ -137,11 +137,11 @@ export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, pla
   // 요구사항에 '게임 시작' 명시적 로직은 없지만, TEST를 위해
   // 접속 시 바로 시작하거나 일정 인원에서 시작하도록 설정.
   // 일단 인원 1명이라도 들어오면 바로 시작하도록 해서 테스트 용이하게 함 (개발중)
-  if (session.status === 'waiting') {
-    session.startGame();
-  } else if (session.status === 'playing') {
-    // 이미 진행중이면 현재 상태 전송 (Reconnection logic)
-    socket.emit(GamePacketType.SET_FIELD, { type: GamePacketType.SET_FIELD, apples: session.apples });
-    socket.emit(GamePacketType.SET_TIME, { type: GamePacketType.SET_TIME, limitTime: session.timeLeft });
-  }
+  // if (session.status === 'waiting') {
+  //   session.startGame();
+  // } else if (session.status === 'playing') {
+  //   // 이미 진행중이면 현재 상태 전송 (Reconnection logic)
+  //   socket.emit(GamePacketType.SET_FIELD, { type: GamePacketType.SET_FIELD, apples: session.apples });
+  //   socket.emit(GamePacketType.SET_TIME, { type: GamePacketType.SET_TIME, limitTime: session.timeLeft });
+  // }
 }

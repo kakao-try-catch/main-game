@@ -1,7 +1,9 @@
-import { useState, useCallback, useRef } from "react";
-import { PhaserGame } from "./game/GameContainer";
-import { SoundProvider, useSoundContext } from './contexts/SoundContext';
-import { UserProvider, useUser } from "./contexts/UserContext";
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { PhaserGame } from './game/GameContainer';
+import { SoundProvider } from './contexts/SoundContext';
+import { BGMProvider, useBGMContext } from './contexts/BGMContext';
+import { SFXProvider, useSFXContext } from './contexts/SFXContext';
+import { UserProvider, useUser } from './contexts/UserContext';
 
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
@@ -138,9 +140,9 @@ function AppContent() {
 
   // BGM 제어: 로비에서는 정지, 게임에서는 재생
   useEffect(() => {
-    if (currentScreen === "lobby") {
+    if (currentScreen === 'lobby') {
       pause();
-    } else if (currentScreen === "game" && gameReady) {
+    } else if (currentScreen === 'game' && gameReady) {
       reset(); // BGM을 처음부터 재생
       play();
     }
@@ -198,7 +200,6 @@ function AppContent() {
       </header>
 
       <SocketCounter />
-
 
       <div
         style={{
@@ -265,10 +266,11 @@ const playerListStyle: React.CSSProperties = {
 export default function App() {
   return (
     <UserProvider>
-        <SoundProvider>
-           <AppContent />
-
-        </SoundProvider>
+      <BGMProvider>
+        <SFXProvider>
+          <AppContent />
+        </SFXProvider>
+      </BGMProvider>
     </UserProvider>
   );
 }

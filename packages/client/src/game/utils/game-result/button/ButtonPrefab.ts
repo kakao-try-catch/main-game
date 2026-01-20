@@ -19,13 +19,13 @@ export default class ButtonPrefab extends Phaser.GameObjects.Container {
     this.add(this.shape);
 
     // text
-    this.text = scene.add.text(0, 0, "", {});
+    this.text = scene.add.text(0, 0, '', {});
     this.text.setOrigin(0.5, 0.5);
     this.text.setStyle({
-      align: "center",
-      fontFamily: "Ariel",
+      align: 'center',
+      fontFamily: 'Ariel',
       fontSize: `${80 * ratio}px`,
-      fontStyle: "bold",
+      fontStyle: 'bold',
       resolution: 5,
     });
     this.add(this.text);
@@ -33,10 +33,10 @@ export default class ButtonPrefab extends Phaser.GameObjects.Container {
     /* START-USER-CTR-CODE */
     this.setSize(386 * ratio, 136 * ratio);
     this.setInteractive({ useHandCursor: true })
-      .on("pointerover", () => this.onPointerOver())
-      .on("pointerout", () => this.onPointerOut())
-      .on("pointerdown", () => this.onPointerDown())
-      .on("pointerup", () => this.onPointerUp());
+      .on('pointerover', () => this.onPointerOver())
+      .on('pointerout', () => this.onPointerOut())
+      .on('pointerdown', () => this.onPointerDown())
+      .on('pointerup', () => this.onPointerUp());
     /* END-USER-CTR-CODE */
   }
 
@@ -62,12 +62,12 @@ export default class ButtonPrefab extends Phaser.GameObjects.Container {
 
   private onPointerOver(): void {
     this.shape.fillColor = 0x7a9fd1; // 밝은 색으로 변경
-    this.scene.game.canvas.style.cursor = "pointer";
+    this.scene.game.canvas.style.cursor = 'pointer';
   }
 
   private onPointerOut(): void {
     this.shape.fillColor = 9530303; // 원래 색으로 복원
-    this.scene.game.canvas.style.cursor = "default";
+    this.scene.game.canvas.style.cursor = 'default';
   }
 
   private onPointerDown(): void {

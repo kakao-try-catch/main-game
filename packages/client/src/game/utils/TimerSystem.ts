@@ -10,14 +10,14 @@ function lerpColor(a: number[], b: number[], t: number): number[] {
 function rgbToHex([r, g, b]: number[]): number {
   return (r << 16) + (g << 8) + b;
 }
-import Phaser from "phaser";
-import timerPrefab from "./TimerPrefab";
-import AppleGameManager from "../scene/apple/AppleGameManager";
+import Phaser from 'phaser';
+import timerPrefab from './TimerPrefab';
+import AppleGameManager from '../scene/apple/AppleGameManager';
 
 /** 타이머 이벤트 타입 */
 export const TimerEvents = {
-  TICK: "timer:tick",
-  COMPLETE: "timer:complete",
+  TICK: 'timer:tick',
+  COMPLETE: 'timer:complete',
 } as const;
 
 export default class TimerSystem {
@@ -62,16 +62,16 @@ export default class TimerSystem {
     this.visibilityChangeHandler = () => {
       if (document.hidden) {
         // 탭이 비활성화됨
-        console.log("⏸️ 탭 비활성화 - 타이머 계속 실행 중");
+        console.log('⏸️ 탭 비활성화 - 타이머 계속 실행 중');
       } else {
         // 탭이 다시 활성화됨 - 타이머 동기화
         if (!this.isFinished && !this.isPaused) {
           this.syncTimer();
-          console.log("▶️ 탭 활성화 - 타이머 동기화 완료");
+          console.log('▶️ 탭 활성화 - 타이머 동기화 완료');
         }
       }
     };
-    document.addEventListener("visibilitychange", this.visibilityChangeHandler);
+    document.addEventListener('visibilitychange', this.visibilityChangeHandler);
   }
 
   /** 타이머 동기화 (탭 전환 후 복귀 시) */
@@ -174,7 +174,7 @@ export default class TimerSystem {
     this.isFinished = true;
     this.stop();
 
-    console.log("⏱️ 타이머 종료! 시간이 모두 소진되었습니다.");
+    console.log('⏱️ 타이머 종료! 시간이 모두 소진되었습니다.');
     this.scene.events.emit(TimerEvents.COMPLETE);
     this.appleGameManager?.gameEnd();
   }
@@ -184,7 +184,7 @@ export default class TimerSystem {
     if (this.isFinished || this.isPaused) return;
     this.isPaused = true;
     this.pausedTimestamp = Date.now();
-    console.log("⏸️ 타이머 일시정지");
+    console.log('⏸️ 타이머 일시정지');
   }
 
   /** 타이머 재개 */
@@ -215,7 +215,7 @@ export default class TimerSystem {
     // Visibility change 리스너 제거
     if (this.visibilityChangeHandler) {
       document.removeEventListener(
-        "visibilitychange",
+        'visibilitychange',
         this.visibilityChangeHandler,
       );
       this.visibilityChangeHandler = undefined;

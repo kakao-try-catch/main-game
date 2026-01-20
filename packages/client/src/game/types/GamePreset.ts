@@ -3,13 +3,13 @@
  */
 
 /** 사과 생성 개수 프리셋 */
-export type AppleGridSize = "S" | "M" | "L" | "manual";
+export type AppleGridSize = 'S' | 'M' | 'L' | 'manual';
 
 /** 제한 시간 프리셋 */
-export type TimeLimit = 120 | 180 | 240 | "manual";
+export type TimeLimit = 120 | 180 | 240 | 'manual';
 
 /** 사과 숫자 범위 프리셋 */
-export type NumberRange = "1-9" | "1-5" | "1-3";
+export type NumberRange = '1-9' | '1-5' | '1-3';
 
 /** 사과 게임 프리셋 설정 */
 export interface AppleGamePreset {
@@ -42,9 +42,9 @@ export interface ResolvedGameConfig {
 
 /** 기본 프리셋 (현재 상태) */
 export const DEFAULT_PRESET: AppleGamePreset = {
-  gridSize: "M",
+  gridSize: 'M',
   timeLimit: 120,
-  numberRange: "1-9",
+  numberRange: '1-9',
   includeZero: false,
 };
 
@@ -55,19 +55,19 @@ export function resolvePreset(preset: AppleGamePreset): ResolvedGameConfig {
   let gridRows: number;
 
   switch (preset.gridSize) {
-    case "S":
+    case 'S':
       gridCols = 16;
       gridRows = 8;
       break;
-    case "M":
+    case 'M':
       gridCols = 20;
       gridRows = 10;
       break;
-    case "L":
+    case 'L':
       gridCols = 30;
       gridRows = 15;
       break;
-    case "manual":
+    case 'manual':
       gridCols = preset.manualCols ?? 20;
       gridRows = preset.manualRows ?? 10;
       break;
@@ -75,7 +75,7 @@ export function resolvePreset(preset: AppleGamePreset): ResolvedGameConfig {
 
   // 2. 제한 시간 결정
   let totalTime: number;
-  if (preset.timeLimit === "manual") {
+  if (preset.timeLimit === 'manual') {
     totalTime = preset.manualTime ?? 120;
   } else {
     totalTime = preset.timeLimit;
@@ -86,15 +86,15 @@ export function resolvePreset(preset: AppleGamePreset): ResolvedGameConfig {
   let maxNumber: number;
 
   switch (preset.numberRange) {
-    case "1-3":
+    case '1-3':
       minNumber = 1;
       maxNumber = 3;
       break;
-    case "1-5":
+    case '1-5':
       minNumber = 1;
       maxNumber = 5;
       break;
-    case "1-9":
+    case '1-9':
       minNumber = 1;
       maxNumber = 9;
       break;

@@ -10,7 +10,15 @@ interface SoundSettingProps {
 }
 
 const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
-  const { play, pause, isPlaying, setVolume: setBGMVolume, volume, bgmEnabled, setBgmEnabled } = useBGMContext();
+  const {
+    play,
+    pause,
+    isPlaying,
+    setVolume: setBGMVolume,
+    volume,
+    bgmEnabled,
+    setBgmEnabled,
+  } = useBGMContext();
   const { setVolume: setSFXVolume } = useSFXContext();
   const [isHovered, setIsHovered] = useState(false);
   const [localVolume, setLocalVolume] = useState(0.5);
@@ -51,8 +59,19 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
         onMouseLeave={() => setIsHovered(false)}
       >
         {isHovered && (
-          <div className="nes-container is-rounded" style={{ padding: "4px 8px" }}>
-            <input className="pixel-slider" type="range" min="0" max="1" step="0.05" value={localVolume} onChange={handleVolumeChange} />
+          <div
+            className="nes-container is-rounded"
+            style={{ padding: '4px 8px' }}
+          >
+            <input
+              className="pixel-slider"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={localVolume}
+              onChange={handleVolumeChange}
+            />
           </div>
         )}
         <div onClick={togglePlay}>
@@ -63,12 +82,15 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
           )}
         </div>
 
-        {isHovered && (
-          <div className="nes-container is-rounded" style={{ padding: "4px 8px" }}>
-            <input className="pixel-slider" type="range" min="0" max="1" step="0.05" value={localVolume} onChange={handleVolumeChange} />
-          </div>
-        )}
-
+        <label style={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            className="nes-checkbox"
+            checked={bgmEnabled}
+            onChange={(e) => setBgmEnabled(e.target.checked)}
+          />
+          <span style={styles.checkboxText}>BGM</span>
+        </label>
       </div>
     </>
   );
@@ -97,7 +119,18 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: '3px solid #000',
     borderRadius: 0,
   },
-
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginLeft: '12px',
+  },
+  checkboxText: {
+    fontSize: '14px',
+    fontWeight: 'bold',
+    userSelect: 'none' as const,
+    color: '#000',
+  },
 };
 
 export default SoundSetting;

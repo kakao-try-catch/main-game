@@ -20,6 +20,13 @@ export enum GamePacketType {
 type PlayerId = string;
 type AppleIndex = number;
 
+export interface PlayerData {
+  order: number;
+  playerName: string;
+  color: string;
+  score: number; // User requested score to be in PlayerData
+}
+
 // --- SYSTEM PACKETS ---
 export interface UpdateNumberPacket {
   type: SystemPacketType.UPDATE_NUMBER;
@@ -34,7 +41,7 @@ export interface JoinRoomPacket {
 
 export interface RoomUpdatePacket {
   type: SystemPacketType.ROOM_UPDATE;
-  playerNames: { order: number, playerName: string, color: string }[];
+  players: PlayerData[];
 }
 
 export interface SystemMessagePacket {

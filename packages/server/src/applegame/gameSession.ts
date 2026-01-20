@@ -1,6 +1,6 @@
 
 import { APPLE_GAME_CONFIG } from "../../../common/src/config";
-import { GamePacketType, DropCellIndexPacket, TimeEndPacket, SetFieldPacket, SetTimePacket } from "../../../common/src/packets";
+import { GamePacketType, DropCellIndexPacket, TimeEndPacket, SetFieldPacket, SetTimePacket, PlayerData } from "../../../common/src/packets";
 
 export type GameStatus = "waiting" | "playing" | "ended";
 
@@ -141,7 +141,20 @@ export class GameSession {
     }
   }
 
+  public getPlayers(): PlayerData[] {
+    return Array.from(this.players.values())
+      .sort((a, b) => a.order - b.order)
+      .map(p => ({
+        order: p.order,
+        playerName: p.name,
+        color: p.color,
+        score: p.score
+      }));
+  }
+
   public getPlayerCount() {
     return this.players.size;
   }
+
+
 }

@@ -39,9 +39,15 @@ export interface JoinRoomPacket {
   playerName: string;
 }
 
+export enum RoomUpdateType {
+  INIT = 0,
+  JOIN = 1,
+}
+
 export interface RoomUpdatePacket {
   type: SystemPacketType.ROOM_UPDATE;
   players: PlayerData[];
+  updateType: RoomUpdateType;
 }
 
 export interface SystemMessagePacket {

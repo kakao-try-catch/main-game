@@ -5,7 +5,7 @@ import {
   handleClientPacket,
   handleDisconnect,
 } from "./applegame/serverHandler";
-import { SystemPacketType } from "../../common/src/packets";
+import { ServerPacket, SystemPacketType } from "../../common/src/packets";
 
 console.log("Game server starting...");
 
@@ -45,7 +45,7 @@ io.on("connection", (socket: Socket) => {
 
   socket.onAny((eventName, data) => {
     // console.log(`Event: ${eventName}`, data);
-    const packet = { type: eventName, ...data };
+    const packet = { type: eventName, ...data } as ServerPacket;
     handleClientPacket(io, socket, packet);
   });
 

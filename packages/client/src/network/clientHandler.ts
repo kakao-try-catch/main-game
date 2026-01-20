@@ -21,7 +21,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
 
     case SystemPacketType.ROOM_UPDATE:
       // store.setPlayerNames(packet.playerNames);
-      console.log("ROOM_UPDATE packet received:", packet.playerNames);
+      console.log("ROOM_UPDATE packet received:", packet.players, packet.updateType);
       break;
 
     case SystemPacketType.SYSTEM_MESSAGE:

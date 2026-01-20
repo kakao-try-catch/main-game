@@ -66,6 +66,9 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 		// 4개의 새 스프라이트 생성
 		this.createBirds();
 
+		// 바닥 그리기
+		this.createGroundUI();
+
 		// 3개의 밧줄 그래픽 생성
 		this.createRopes();
 
@@ -107,6 +110,23 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 		}
 
 		console.log('[FlappyBirdScene2] 4개의 새 생성 완료');
+	}
+
+	/**
+	 * 바닥 그래픽 생성 (물리 콜라이더 위치와 동기화)
+	 */
+	private createGroundUI() {
+		// 땅의 높이를 98px로 설정 (896 - 98 = 798)
+		const ground = this.add.rectangle(0, 798, 1440, 98);
+		ground.setOrigin(0, 0);
+		ground.isFilled = true;
+		ground.fillColor = 0xDEB887; // BurlyWood 색상
+
+		// 바닥에 선 추가
+		const line = this.add.rectangle(0, 798, 1440, 4);
+		line.setOrigin(0, 0);
+		line.isFilled = true;
+		line.fillColor = 0x8B4513; // SaddleBrown 색상
 	}
 
 	/**

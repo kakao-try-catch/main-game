@@ -76,7 +76,9 @@ export class MockServerCore {
      * 바닥 생성
      */
     private createGround() {
-        this.ground = Matter.Bodies.rectangle(400, 850, 1440, 100, {
+        // x: 720 (1440의 중앙), y: 847 (896 - 49), width: 1440, height: 98
+        // 상단 표면은 896 - 98 = 798 입니다.
+        this.ground = Matter.Bodies.rectangle(720, 847, 1440, 98, {
             isStatic: true,
             label: 'ground',
             collisionFilter: {

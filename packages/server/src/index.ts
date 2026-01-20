@@ -1,37 +1,60 @@
-// 서버 메인 파일
-// 게임 서버 로직을 여기서 초기화하세요
+import { createServer } from "node:http";
+import { Server, Socket } from "socket.io";
+import {
+  joinPlayerToGame,
+  handleClientPacket,
+  handleDisconnect,
+} from "./applegame/serverHandler";
+import { SystemPacketType } from "../../common/src/packets";
 
-console.log('Game server starting...');
+console.log("Game server starting...");
 
-import { createServer } from 'node:http';
-import { Server, Socket } from 'socket.io';
+const ROOM_ID = "HARDCODED_ROOM_1";
+const MAX_PLAYERS = 4;
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
-    cors: {
-        origin: "http://localhost:5173", // 모든 도메인 허용 (프론트 주소가 다를 것이므로?)
-        methods: ["GET", "POST"]
-    }
+  cors: {
+    // todo 다른 플레이어 참여 어떻게?
+    origin: "http://localhost:5173", // 모든 도메인 허용 (프론트 주소가 다를 것이므로?)
+    methods: ["GET", "POST"],
+  },
+  transports: ["websocket"], // 서버도 웹소켓만 허용하도록 일치시킴
 });
 
-io.on('connection', (socket: Socket) => {
-  console.log(`클라이언트 접속! ${socket.id}`);
-  
-  let count = 1;
+io.on("connection", (socket: Socket) => {
+  console.log(`[접속] 클라이언트: ${socket.id}`);
 
-  // 1초마다 숫자 1씩 증가시켜 전송
-  const timer = setInterval(() => {
-    socket.emit('update_number', count++);
-    console.log(`Sent to ${socket.id}: ${count - 1}`);
-  }, 1000);
+  // Auto Join
+  // 클라이언트에서 닉네임 정보를 handshake query로 보내면 좋겠지만,
+  // 지금은 임시로 Socket ID를 이름으로 사용
+  // 실제로는 클라이언트가 JOIN 요청을 보내는게 맞음.
+  // 하지만 기존 로직 유지하여 접속 시 바로 조인 시도.
 
-  // 연결이 끊기면 타이머 종료 (메모리 누수 방지)
-  socket.on('disconnect', () => {
-    clearInterval(timer);
+  // 방 인원 체크 logic moved to 'joinPlayerToGame' internally or we check here
+  const room = io.sockets.adapter.rooms.get(ROOM_ID);
+  const numClients = room ? room.size : 0;
+
+  if (numClients < MAX_PLAYERS) {
+    joinPlayerToGame(io, socket, ROOM_ID, `Player_${socket.id.substr(0, 4)}`);
+  } else {
+    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "Room is full" });
+    socket.disconnect();
+    return;
+  }
+
+  socket.onAny((eventName, data) => {
+    // console.log(`Event: ${eventName}`, data);
+    const packet = { type: eventName, ...data };
+    handleClientPacket(io, socket, packet);
+  });
+
+  socket.on("disconnect", () => {
     console.log(`접속 종료: ${socket.id}`);
+    handleDisconnect(socket.id);
   });
 });
 
 httpServer.listen(3000, () => {
-  console.log('🚀 소켓 서버가 3000번 포트에서 대기 중...');
+  console.log("🚀 소켓 서버가 3000번 포트에서 대기 중...");
 });

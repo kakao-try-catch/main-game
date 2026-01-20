@@ -1,23 +1,17 @@
 // src/SocketCounter.tsx
-import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import { useEffect } from 'react';
+import { useGameStore } from '../store/gameStore';
+import { socketManager } from '../network/socket';
 
 export default function SocketCounter() {
-  // 1. 상태 변수 선언 (count라는 변수를 0으로 시작, setCount로 변경)
-  const [count, setCount] = useState(0);
+  const count = useGameStore((state) => state.count);
 
   useEffect(() => {
-    // 2. 컴포넌트가 나타날 때 소켓 연결
-    const socket = io('http://localhost:3000');
+    // 테스트를 위해 최초 1회만 연결 실행
+    socketManager.connect('http://localhost:3000');
 
-    socket.on('update_number', (data: number) => {
-      setCount(data); // 서버에서 받은 숫자로 count 업데이트
-    });
-
-    // 3. 컴포넌트가 사라질 때 소켓 연결 해제 (정리 작업)
-    return () => {
-      socket.disconnect();
-    };
+    // 테스트 종료(컴포넌트 제거) 시 연결을 완전히 끊고 싶다면 주석 해제
+    return () => socketManager.disconnect();
   }, []);
 
   // 4. 화면에 그려질 모양 (HTML과 비슷함)

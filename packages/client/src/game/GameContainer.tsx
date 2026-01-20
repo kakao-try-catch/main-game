@@ -35,7 +35,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
   onGameReady,
   onAppleScored,
   onGameEnd,
-  playerCount = 4,
+  playerCount = 2,
   players = [],
   currentPlayerIndex = 0,
   preset,

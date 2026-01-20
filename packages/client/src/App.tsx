@@ -22,7 +22,7 @@ interface PlayerData {
 }
 
 function AppContent() {
-  const testPlayerCount = 4;
+  const testPlayerCount = 2;
   const { pause } = useBGMContext();
   const { playSFX } = useSFXContext();
 
@@ -234,8 +234,8 @@ function AppContent() {
         {/* ⭐ 수정: currentPreset 조건 제거 (플래피버드는 프리셋 불필요) */}
         {!gameEnded && (
           <PhaserGame
-            playerCount={players.length}
-            players={players}
+            playerCount={testPlayerCount}
+            players={players.slice(0, testPlayerCount)}
             currentPlayerIndex={currentUser.playerIndex}
             preset={currentPreset}
             onAppleScored={handleAppleScored}

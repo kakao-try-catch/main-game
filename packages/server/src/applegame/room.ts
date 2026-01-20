@@ -1,3 +1,5 @@
+// 미완
+
 // 서버 메모리 상의 게임 방 상태 예시
 interface GameRoom {
   apples: number[]; // 초기 생성된 사과 숫자들 [9, 1, 4, 6, ...]

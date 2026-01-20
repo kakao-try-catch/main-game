@@ -25,16 +25,16 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady = false }) => {
   };
 
   const [localBGMVolume, setLocalBGMVolume] = useState(() =>
-    getStoredVolume('bgmVolume', 1.0),
+    getStoredVolume('bgmVolume', 0.5),
   );
   const [localSFXVolume, setLocalSFXVolume] = useState(() =>
-    getStoredVolume('sfxVolume', 1.0),
+    getStoredVolume('sfxVolume', 0.5),
   );
   const [previousBGMVolume, setPreviousBGMVolume] = useState(() =>
-    getStoredVolume('previousBGMVolume', 1.0),
+    getStoredVolume('previousBGMVolume', 0.5),
   );
   const [previousSFXVolume, setPreviousSFXVolume] = useState(() =>
-    getStoredVolume('previousSFXVolume', 1.0),
+    getStoredVolume('previousSFXVolume', 0.5),
   );
 
   // 초기 볼륨 설정 (컴포넌트 마운트 시)

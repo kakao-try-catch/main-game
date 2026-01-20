@@ -81,8 +81,11 @@ export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, pla
   let session = sessions.get(roomId);
   if (!session) {
     session = new GameSession(roomId, (packet: ServerPacket) => {
+      // packet에서 type과 나머지 데이터를 분리
+      const { type, ...payload } = packet;
+
       // Broadcast callback
-      io.to(roomId).emit(packet.type, packet);
+      io.to(roomId).emit(packet.type, payload);
     });
     sessions.set(roomId, session);
     console.log(`Created new Game Session for ${roomId}`);

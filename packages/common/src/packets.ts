@@ -2,6 +2,8 @@
 export enum SystemPacketType {
   UPDATE_NUMBER = "UPDATE_NUMBER",
   JOIN_ROOM = "JOIN_ROOM",
+  ROOM_UPDATE = "ROOM_UPDATE",
+  SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
 }
 
 export enum GamePacketType {
@@ -27,9 +29,24 @@ export interface JoinRoomPacket {
   type: SystemPacketType.JOIN_ROOM;
   playerId: PlayerId;
   roomId: string;
+  playerName: string;
 }
 
-export type SystemPacket = UpdateNumberPacket | JoinRoomPacket;
+export interface RoomUpdatePacket {
+  type: SystemPacketType.ROOM_UPDATE;
+  playerNames: string[];
+}
+
+export interface SystemMessagePacket {
+  type: SystemPacketType.SYSTEM_MESSAGE;
+  message: string;
+}
+
+export type SystemPacket =
+  | UpdateNumberPacket
+  | JoinRoomPacket
+  | RoomUpdatePacket
+  | SystemMessagePacket;
 
 // --- GAME PACKETS ---
 export interface SetFieldPacket {

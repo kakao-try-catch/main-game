@@ -12,6 +12,11 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 	private socket: any;
 	private mockServerCore?: MockServerCore;
 	private myPlayerId: PlayerId = '0';
+
+	// 새 스프라이트
+	private birdSprites: Phaser.GameObjects.Ellipse[] = [];
+	private targetPositions: BirdPosition[] = [];
+
 	// 밧줄
 	private ropes: Phaser.GameObjects.Graphics[] = [];
 
@@ -66,6 +71,35 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 
 		console.log('[FlappyBirdScene2] 씬 생성 완료');
 	}
+
+	/**
+	 * 4개의 새 생성
+	 */
+	private createBirds() {
+		const colors = [0xff6b6b, 0x4ecdc4, 0xffe66d, 0x95e1d3];
+
+		for (let i = 0; i < 4; i++) {
+			const bird = this.add.ellipse(200 + i * 120, 300, 40, 40);
+			bird.setStrokeStyle(3, 0xffffff);
+			bird.isFilled = true;
+			bird.fillColor = colors[i];
+
+			this.birdSprites.push(bird);
+
+			// 초기 타겟 위치 설정
+			this.targetPositions.push({
+				playerId: String(i) as PlayerId,
+				x: 200 + i * 120,
+				y: 300,
+				velocityX: 0,
+				velocityY: 0,
+				angle: 0
+			});
+		}
+
+		console.log('[FlappyBirdScene2] 4개의 새 생성 완료');
+	}
+
 	/**
 	 * 3개의 밧줄 그래픽 생성
 	 */

@@ -194,6 +194,12 @@ export class MockServerCore {
         // 밧줄 정점 계산
         const ropes: RopeData[] = this.calculateRopePoints();
 
+        // 클라이언트로 브로드캐스트
+        this.socket.emit('update_positions', {
+            timestamp: Date.now(),
+            birds,
+            ropes
+        });
     }
 
     /**
@@ -236,6 +242,39 @@ export class MockServerCore {
 
             // 파이프와의 충돌 (나중에 추가)
             // TODO: 파이프 구현 후 충돌 감지 추가
+        }
+    }
+
+    /**
+     * 게임 오버 처리
+     */
+    private handleGameOver(reason: 'pipe_collision' | 'ground_collision') {
+        this.stop();
+
+        this.socket.emit('game_over', {
+            reason,
+            finalScore: this.score,
+            collidedPlayerId: '0', // TODO: 실제 충돌한 플레이어 ID 계산
+            timestamp: Date.now()
+        });
+
+        console.log(`[MockServerCore] 게임 오버: ${reason}`);
+    }
+
+    /**
+     * 클라이언트 이벤트 처리
+     */
+    handleClientEvent(event: string, data: any) {
+        switch (event) {
+            case 'flap':
+                this.handleFlap(data.playerId);
+                break;
+            case 'restart_game':
+                this.initialize();
+                this.start();
+                break;
+            default:
+                console.log(`[MockServerCore] 알 수 없는 이벤트: ${event}`);
         }
     }
 

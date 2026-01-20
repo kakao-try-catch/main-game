@@ -22,6 +22,19 @@ export class MockSocket {
      * 서버로 이벤트 전송 (레이턴시 시뮬레이션 포함)
      */
     emit(event: string, data?: any): boolean {
+        // 레이턴시 시뮬레이션
+        setTimeout(() => {
+            if (this.serverCore) {
+                this.serverCore.handleClientEvent(event, data);
+            }
+
+            // 로컬 이벤트 리스너 호출
+            const listeners = this.eventListeners.get(event);
+            if (listeners) {
+                listeners.forEach(callback => callback(data));
+            }
+        }, this.latencyMs);
+
         return true;
     }
 
@@ -60,5 +73,13 @@ export class MockSocket {
     disconnect() {
         console.log('[MockSocket] 연결 해제됨');
         this.eventListeners.clear();
+    }
+
+    /**
+     * 레이턴시 설정 (테스트용)
+     */
+    setLatency(ms: number) {
+        this.latencyMs = ms;
+        console.log(`[MockSocket] 레이턴시 설정: ${ms}ms`);
     }
 }

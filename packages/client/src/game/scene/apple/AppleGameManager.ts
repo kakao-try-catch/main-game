@@ -3,6 +3,8 @@ import applePrefab from './ApplePrefab';
 import TimerPrefab from '../../utils/TimerPrefab';
 import TimerSystem from '../../utils/TimerSystem';
 import { attachDragSelection } from '../../utils/dragSelection';
+import { socketManager } from '../../../network/socket';
+import { GamePacketType } from '../../../../../common/src/packets';
 
 // Declare the global property for TypeScript
 declare global {
@@ -82,6 +84,9 @@ export default class AppleGameManager {
 
   // 전체 사과 리스트
   private apples: applePrefab[] = [];
+
+  // 사과 인덱스 맵 (사과 -> 인덱스)
+  private appleIndexMap: Map<applePrefab, number> = new Map();
 
   // 현재 선택된 사과들 (합이 10일시 이걸 apples에서 삭제함)
   private selectedApples: Set<applePrefab> = new Set();
@@ -213,6 +218,8 @@ export default class AppleGameManager {
     }
 
     this.apples = [];
+    this.appleIndexMap.clear();
+    let index = 0;
     for (let col = 0; col < gridCols; col++) {
       for (let row = 0; row < gridRows; row++) {
         const x = baseX + col * spacingX;
@@ -227,6 +234,8 @@ export default class AppleGameManager {
         const randomNum = Phaser.Math.Between(minNumber, maxNumber);
         apple.setNumber(randomNum);
         this.apples.push(apple);
+        this.appleIndexMap.set(apple, index);
+        index++;
       }
     }
   }
@@ -293,8 +302,25 @@ export default class AppleGameManager {
 
     console.log(`선택된 사과 수: ${this.selectedApples.size}, 합계: ${sum}`);
 
-    // 2. 합이 10이면 사과 제거 및 점수 계산
+    // 합이 10이면 CONFIRM_DRAG_AREA 패킷 전송
     if (sum === 10) {
+      // 선택된 사과들의 인덱스 수집
+      const indices: number[] = [];
+      this.selectedApples.forEach((apple) => {
+        const index = this.appleIndexMap.get(apple);
+        if (index !== undefined) {
+          indices.push(index);
+        }
+      });
+
+      // 패킷 전송
+      socketManager.send({
+        type: GamePacketType.CONFIRM_DRAG_AREA,
+        indices,
+      });
+
+      console.log('📤 CONFIRM_DRAG_AREA 패킷 전송:', indices);
+
       const score = this.selectedApples.size;
 
       this.selectedApples.forEach((apple) => {

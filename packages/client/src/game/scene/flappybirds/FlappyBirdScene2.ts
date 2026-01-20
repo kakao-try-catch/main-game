@@ -69,6 +69,9 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 		// 3개의 밧줄 그래픽 생성
 		this.createRopes();
 
+		// 초기 밧줄 그리기 (물리 엔진 시작 전에도 보이도록)
+		this.drawInitialRopes();
+
 		// 소켓 이벤트 리스너
 		this.setupSocketListeners();
 
@@ -112,7 +115,7 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 	private createRopes() {
 		for (let i = 0; i < 3; i++) {
 			const rope = this.add.graphics();
-			rope.setDepth(-1); // 새 뒤에 렌더링
+			rope.setDepth(0); // 새와 같은 레벨에 렌더링 (depth -1은 보이지 않음)
 			this.ropes.push(rope);
 		}
 
@@ -126,11 +129,6 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 		// 위치 업데이트 수신
 		this.socket.on('update_positions', (data: UpdatePositionsEvent) => {
 			this.targetPositions = data.birds;
-
-			// 밧줄 업데이트
-			if (data.ropes) {
-				this.updateRopes(data.ropes);
-			}
 		});
 
 		// 게임 오버
@@ -189,27 +187,34 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 	}
 
 	/**
-	 * 밧줄 업데이트
+	 * 초기 밧줄 그리기 (물리 엔진 시작 전)
 	 */
-	private updateRopes(ropes: any[]) {
-		for (let i = 0; i < Math.min(ropes.length, this.ropes.length); i++) {
+	private drawInitialRopes() {
+		console.log('[FlappyBirdScene2] 초기 밧줄 그리기 시작');
+		console.log(`[FlappyBirdScene2] ropes.length: ${this.ropes.length}, birdSprites.length: ${this.birdSprites.length}`);
+
+		// 새 스프라이트의 초기 위치를 기반으로 밧줄 그리기
+		for (let i = 0; i < this.ropes.length; i++) {
 			const rope = this.ropes[i];
-			const points = ropes[i].points;
+			const birdA = this.birdSprites[i];
+			const birdB = this.birdSprites[i + 1];
 
-			rope.clear();
-			rope.lineStyle(3, 0x8b4513, 1); // 갈색 밧줄
+			console.log(`[FlappyBirdScene2] Rope ${i}: birdA=${birdA ? `(${birdA.x}, ${birdA.y})` : 'null'}, birdB=${birdB ? `(${birdB.x}, ${birdB.y})` : 'null'}`);
 
-			if (points && points.length > 1) {
+			if (birdA && birdB) {
+				rope.clear();
+				rope.lineStyle(4, 0xffffff, 1);
 				rope.beginPath();
-				rope.moveTo(points[0].x, points[0].y);
-
-				for (let j = 1; j < points.length; j++) {
-					rope.lineTo(points[j].x, points[j].y);
-				}
-
+				rope.moveTo(birdA.x, birdA.y);
+				rope.lineTo(birdB.x, birdB.y);
 				rope.strokePath();
+				console.log(`[FlappyBirdScene2] Rope ${i} 그리기 완료: (${birdA.x}, ${birdA.y}) → (${birdB.x}, ${birdB.y})`);
+			} else {
+				console.warn(`[FlappyBirdScene2] Rope ${i} 그리기 실패: birdA 또는 birdB가 없음`);
 			}
 		}
+
+		console.log('[FlappyBirdScene2] 초기 밧줄 그리기 완료');
 	}
 
 	update(_time: number, _delta: number) {
@@ -226,6 +231,29 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 				// 회전 (속도 기반)
 				const angle = Phaser.Math.Clamp(target.velocityY * 3, -30, 90);
 				sprite.rotation = Phaser.Math.DegToRad(angle);
+			}
+		}
+
+		// 밧줄을 클라이언트 측 새 스프라이트 위치로 직접 그리기 (레이턴시 없음)
+		this.drawRopesFromSprites();
+	}
+
+	/**
+	 * 클라이언트 측 새 스프라이트 위치로 밧줄 그리기
+	 */
+	private drawRopesFromSprites() {
+		for (let i = 0; i < this.ropes.length; i++) {
+			const rope = this.ropes[i];
+			const birdA = this.birdSprites[i];
+			const birdB = this.birdSprites[i + 1];
+
+			if (birdA && birdB) {
+				rope.clear();
+				rope.lineStyle(4, 0xffffff, 1);
+				rope.beginPath();
+				rope.moveTo(birdA.x, birdA.y);
+				rope.lineTo(birdB.x, birdB.y);
+				rope.strokePath();
 			}
 		}
 	}

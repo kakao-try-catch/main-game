@@ -14,28 +14,9 @@ export default class upPipePrefab extends Phaser.GameObjects.Container {
 		pipe_bottom_1.isFilled = true;
 		pipe_bottom_1.fillColor = 3380533;
 		this.add(pipe_bottom_1);
+		this.pipeBottom = pipe_bottom_1;
 
-		// pipe_top_1
-		const pipe_top_1 = scene.add.rectangle(0, 170, 150, 20);
-		pipe_top_1.setOrigin(0.5, 1);
-		pipe_top_1.isFilled = true;
-		pipe_top_1.fillColor = 3380533;
-		this.add(pipe_top_1);
 
-		// b2body_1
-		const b2body_1 = b2CreateBody((this.scene as any).worldId, { 
-			...b2DefaultBodyDef(), 
-			position: pxmVec2(this.x, -this.y), 
-			fixedRotation: true
-		});
-
-		// add b2body_1 to this
-		AddSpriteToWorld((this.scene as any).worldId, this, { bodyId: b2body_1 });
-
-		// col_pipe_big
-		const col_pipe_big = b2CreatePolygonShape(b2body_1, { 
-			...b2DefaultShapeDef()
-		}, b2MakeBox(pxm(64), pxm(100)));
 
 		/* START-USER-CTR-CODE */
 		// Write your code here.
@@ -44,7 +25,27 @@ export default class upPipePrefab extends Phaser.GameObjects.Container {
 
 	/* START-USER-CODE */
 
-	// Write your code here.
+	private pipeBottom: Phaser.GameObjects.Rectangle;
+
+	/**
+	 * 위쪽 파이프의 두께(너비)를 설정합니다.
+	 * @param thickness 파이프의 새로운 두께 (픽셀 단위)
+	 */
+	setThickness(thickness: number): void {
+		if (this.pipeBottom) {
+			this.pipeBottom.width = thickness;
+		}
+	}
+
+	/**
+	 * 위쪽 파이프의 높이를 설정합니다.
+	 * @param height 파이프의 새로운 높이 (픽셀 단위)
+	 */
+	setHeight(height: number): void {
+		if (this.pipeBottom) {
+			this.pipeBottom.height = height;
+		}
+	}
 
 	/* END-USER-CODE */
 }

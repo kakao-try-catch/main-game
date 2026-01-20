@@ -17,7 +17,6 @@ export class MockServerCore {
     private engine: Matter.Engine;
     private world: Matter.World;
     private birds: Matter.Body[] = [];
-    private constraints: Matter.Constraint[] = [];
     private ground: Matter.Body | null = null;
     private socket: MockSocket;
     private updateInterval: number | null = null;
@@ -29,9 +28,7 @@ export class MockServerCore {
     private readonly GRAVITY_Y = 0.8;
     private readonly BIRD_RADIUS = 20;
     private readonly FLAP_VELOCITY = -8;
-    private readonly CHAIN_LENGTH = 100;
-    private readonly CHAIN_STIFFNESS = 0.15;  // 0.4 → 0.15로 감소 (끌고가는 힘 약화)
-    private readonly CHAIN_DAMPING = 0.1;
+    private readonly FORWARD_SPEED = 3;  // 오른쪽으로 비행하는 기본 속도
 
     constructor(socket: MockSocket) {
         this.socket = socket;
@@ -66,7 +63,6 @@ export class MockServerCore {
         // 기존 객체 제거
         Matter.World.clear(this.world, false);
         this.birds = [];
-        this.constraints = [];
         this.score = 0;
 
         // 바닥 생성
@@ -75,10 +71,9 @@ export class MockServerCore {
         // 설정된 플레이어 수만큼 새 생성
         this.createBirds(this.playerCount);
 
-        // 체인으로 연결
-        this.createChainConstraints();
+        // ※ 이제 고정된 Constraint 대신 update 루프에서 동적인 장력을 계산하여 적용합니다.
 
-        console.log('[MockServerCore] 게임 초기화 완료');
+        console.log('[MockServerCore] 게임 초기화 완료 (가변 장력 시스템 적용)');
     }
 
     /**
@@ -117,13 +112,13 @@ export class MockServerCore {
                 this.BIRD_RADIUS,
                 {
                     density: 0.001,
-                    restitution: 0,
-                    friction: 0,
-                    frictionAir: 0.01,
+                    restitution: 0.5,
+                    friction: 0.1,
+                    frictionAir: 0.05, // 공기 저항을 높여 물리적 안정성 확보
                     label: 'bird',
                     collisionFilter: {
                         category: CATEGORY_BIRD,
-                        mask: CATEGORY_PIPE | CATEGORY_GROUND
+                        mask: CATEGORY_BIRD | CATEGORY_PIPE | CATEGORY_GROUND
                     }
                 }
             );
@@ -133,29 +128,6 @@ export class MockServerCore {
         }
 
         console.log(`[MockServerCore] ${count}개의 새 생성 완료 (초기 장력 적용)`);
-    }
-
-    /**
-     * 체인 연결 생성
-     */
-    private createChainConstraints() {
-        for (let i = 0; i < this.birds.length - 1; i++) {
-            const constraint = Matter.Constraint.create({
-                bodyA: this.birds[i],
-                bodyB: this.birds[i + 1],
-                length: this.CHAIN_LENGTH,
-                stiffness: this.CHAIN_STIFFNESS,
-                damping: this.CHAIN_DAMPING,
-                render: {
-                    visible: false
-                }
-            });
-
-            this.constraints.push(constraint);
-            Matter.World.add(this.world, constraint);
-        }
-
-        console.log(`[MockServerCore] ${this.constraints.length}개의 체인 생성 완료`);
     }
 
     /**
@@ -189,13 +161,24 @@ export class MockServerCore {
      * 물리 업데이트 및 브로드캐스트
      */
     private update() {
-        // Matter.js 물리 연산
+        // 0. 모든 새에게 일정한 전진 속도 부여 (공기 저항을 이기고 계속 전진)
+        for (const bird of this.birds) {
+            Matter.Body.setVelocity(bird, {
+                x: this.FORWARD_SPEED,
+                y: bird.velocity.y
+            });
+        }
+
+        // 1. 가변 장력 적용 (밧줄이 팽팽할수록 상대를 세게 당김)
+        this.applyDynamicTension();
+
+        // 2. Matter.js 물리 연산
         Matter.Engine.update(this.engine, 1000 / 60);
 
-        // 충돌 감지
+        // 3. 충돌 감지
         this.checkCollisions();
 
-        // 위치 데이터 생성
+        // 4. 위치 데이터 생성
         const birds: BirdPosition[] = this.birds.map((bird, index) => ({
             playerId: String(index) as PlayerId,
             x: bird.position.x,
@@ -205,15 +188,55 @@ export class MockServerCore {
             angle: bird.angle * (180 / Math.PI)
         }));
 
-        // 밧줄 정점 계산
+        // 5. 밧줄 정점 계산
         const ropes: RopeData[] = this.calculateRopePoints();
 
-        // 클라이언트로 브로드캐스트
+        // 6. 클라이언트로 브로드캐스트
         this.socket.emit('update_positions', {
             timestamp: Date.now(),
             birds,
             ropes
         });
+    }
+
+    /**
+     * 동적 장력 계산 및 적용
+     * 거리가 멀수록(팽팽할수록) 서로를 당기는 힘이 강해집니다.
+     */
+    private applyDynamicTension() {
+        const IDEAL_LENGTH = 100;    // 밧줄의 기본 여유 길이
+        const STIFFNESS_BASE = 0.0001; // 힘의 기본 세기 (오버슛 방지를 위해 하향)
+
+        for (let i = 0; i < this.birds.length - 1; i++) {
+            const birdA = this.birds[i];
+            const birdB = this.birds[i + 1];
+
+            const dx = birdB.position.x - birdA.position.x;
+            const dy = birdB.position.y - birdA.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // 1. 인장력(Tension) 계산: 거리가 IDEAL_LENGTH보다 멀어지면 발생
+            if (distance > IDEAL_LENGTH) {
+                // 선형 스프링 공식 적용 (안정적)
+                const stretch = distance - IDEAL_LENGTH;
+                const forceMagnitude = stretch * STIFFNESS_BASE;
+
+                const ux = dx / distance;
+                const uy = dy / distance;
+
+                // Bird A를 Bird B 쪽으로 당김
+                Matter.Body.applyForce(birdA, birdA.position, {
+                    x: ux * forceMagnitude,
+                    y: uy * forceMagnitude
+                });
+
+                // Bird B를 Bird A 쪽으로 당김
+                Matter.Body.applyForce(birdB, birdB.position, {
+                    x: -ux * forceMagnitude,
+                    y: -uy * forceMagnitude
+                });
+            }
+        }
     }
 
     /**

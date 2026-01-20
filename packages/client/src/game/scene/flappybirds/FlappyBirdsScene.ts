@@ -21,6 +21,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	private birdSprites: Phaser.GameObjects.Ellipse[] = [];
 	private targetPositions: BirdPosition[] = [];
 
+	// 배경 및 바닥 (무한 스크롤용)
+	private groundTile!: Phaser.GameObjects.TileSprite;
+	private groundLine!: Phaser.GameObjects.Rectangle;
+	private focusX: number = 0; // 카메라 추적용 부드러운 중심점 X
+
 	// 밧줄
 	private ropes: Phaser.GameObjects.Graphics[] = [];
 
@@ -33,16 +38,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	}
 
 	editorCreate(): void {
-
-		// GameContainer의 크기에 맞춰 배경 생성 (1440 x 896)
 		const width = 1440;
 		const height = 896;
 
-		// background
-		const background = this.add.rectangle(0, 0, width, height);
+		// 고정 배경색 (카메라를 따라다님)
+		const background = this.add.rectangle(0, 0, width, height, 0x46D1FD);
 		background.setOrigin(0, 0);
-		background.isFilled = true;
-		background.fillColor = 4630671;
+		background.setScrollFactor(0);
 
 		this.events.emit("scene-awake");
 	}
@@ -140,20 +142,31 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	}
 
 	/**
-	 * 바닥 그래픽 생성 (물리 콜라이더 위치와 동기화)
+	 * 바닥 그래픽 생성 (무한 스크롤 TileSprite 방식)
 	 */
 	private createGroundUI() {
 		// 땅의 높이를 98px로 설정 (896 - 98 = 798)
-		const ground = this.add.rectangle(0, 798, 1440, 98);
-		ground.setOrigin(0, 0);
-		ground.isFilled = true;
-		ground.fillColor = 0xDEB887; // BurlyWood 색상
+		// TileSprite를 사용하여 카메라 이동 시 패턴이 반복되게 함
+		this.groundTile = this.add.tileSprite(0, 798, 1440, 98, "");
+		this.groundTile.setOrigin(0, 0);
+		this.groundTile.setScrollFactor(0); // 실제 이동은 update()에서 tilePositionX로 제어
 
-		// 바닥에 선 추가
-		const line = this.add.rectangle(0, 798, 1440, 4);
-		line.setOrigin(0, 0);
-		line.isFilled = true;
-		line.fillColor = 0x8B4513; // SaddleBrown 색상
+		// 바닥 색상 (패턴 대신 색상 채우기용 텍스처 생성)
+		if (!this.textures.exists('groundTexture')) {
+			const canvas = this.textures.createCanvas('groundTexture', 64, 98);
+			if (canvas) {
+				const ctx = canvas.getContext();
+				ctx.fillStyle = '#DEB887'; // BurlyWood
+				ctx.fillRect(0, 0, 64, 98);
+				canvas.update();
+			}
+		}
+		this.groundTile.setTexture('groundTexture');
+
+		// 바닥 상단 갈색 선
+		this.groundLine = this.add.rectangle(0, 798, 1440, 4, 0x8B4513);
+		this.groundLine.setOrigin(0, 0);
+		this.groundLine.setScrollFactor(0);
 	}
 
 	/**
@@ -282,28 +295,50 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	}
 
 	update(_time: number, _delta: number) {
-		// 파이프 매니저 업데이트 (파이프를 왼쪽으로 이동)
+		// 1. 파이프 매니저 업데이트 (카메라 위치 기반 재활용 처리)
 		if (this.pipeManager) {
 			this.pipeManager.update(_delta);
 		}
 
-		// 선형 보간으로 부드러운 이동
+		// 2. 새들 위치 업데이트 및 평균 중심점 계산
+		let totalX = 0;
+		let birdCount = 0;
+
 		for (let i = 0; i < this.birdSprites.length; i++) {
 			const sprite = this.birdSprites[i];
 			const target = this.targetPositions[i];
 
 			if (target) {
-				// 위치 보간
+				// 서버 데이터를 기반으로 스프라이트 위치 보간
 				sprite.x = Phaser.Math.Linear(sprite.x, target.x, 0.3);
 				sprite.y = Phaser.Math.Linear(sprite.y, target.y, 0.3);
 
-				// 회전 (속도 기반)
+				// 회전 애니메이션
 				const angle = Phaser.Math.Clamp(target.velocityY * 3, -30, 90);
 				sprite.rotation = Phaser.Math.DegToRad(angle);
+
+				totalX += sprite.x;
+				birdCount++;
 			}
 		}
 
-		// 밧줄을 클라이언트 측 새 스프라이트 위치로 직접 그리기 (레이턴시 없음)
+		// 3. 카메라 추적 (새들의 평균 위치를 부드럽게 따라감)
+		if (birdCount > 0) {
+			const avgX = totalX / birdCount;
+			// focusX를 새들의 평균 X로 부드럽게 보간 (lerp)
+			this.focusX = Phaser.Math.Linear(this.focusX, avgX, 0.1);
+
+			// 새들이 화면의 약 1/3 지점(400px)에 위치하도록 카메라 스크롤 설정
+			const centerXOffset = 400;
+			this.cameras.main.scrollX = Math.max(0, this.focusX - centerXOffset);
+
+			// 바닥 스크롤 효과 (바닥은 카메라 이동량에 맞춰 타일 위치 변경)
+			if (this.groundTile) {
+				this.groundTile.tilePositionX = this.cameras.main.scrollX;
+			}
+		}
+
+		// 4. 밧줄 그리기
 		this.drawRopesFromSprites();
 	}
 

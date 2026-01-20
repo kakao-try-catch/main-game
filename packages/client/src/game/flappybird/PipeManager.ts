@@ -12,9 +12,8 @@ export default class PipeManager {
     // 파이프 설정 (생성자에서 화면 크기에 맞춰 계산됨)
     private PIPE_GAP: number = 200;              // 위아래 파이프 사이 간격
     private MIN_PIPE_HEIGHT: number = 100;       // 최소 파이프 높이
-    private PIPE_SPEED: number = 200;            // 파이프 이동 속도 (픽셀/초)
     private PIPE_SPAWN_DISTANCE: number = 400;   // 파이프 간 거리
-    private PIPE_START_X: number = 1400;         // 파이프 시작 X 위치
+    private PIPE_START_X: number = 800;          // 파이프 시작 X 위치 (새들과 가깝게 조정)
     private PIPE_THICKNESS: number = 120;        // 파이프 두께
 
     private screenWidth: number;
@@ -30,8 +29,7 @@ export default class PipeManager {
         this.MIN_PIPE_HEIGHT = this.screenHeight * 0.15;     // 높이의 15%
         this.PIPE_SPAWN_DISTANCE = this.screenWidth * 0.35;  // 너비의 35%
         this.PIPE_THICKNESS = this.screenWidth * 0.1;        // 너비의 10%
-        this.PIPE_SPEED = this.screenWidth * 0.2;            // 초당 너비의 20% 이동
-        this.PIPE_START_X = this.screenWidth + this.PIPE_THICKNESS;
+        this.PIPE_START_X = 800;
 
         // 초기 파이프 세트 생성
         this.createInitialPipes();
@@ -70,16 +68,9 @@ export default class PipeManager {
      * 매 프레임마다 호출되어 파이프들을 업데이트합니다.
      * @param delta - 이전 프레임으로부터 경과한 시간 (밀리초)
      */
-    update(delta: number): void {
-        const deltaSeconds = delta / 1000;
-        const moveDistance = this.PIPE_SPEED * deltaSeconds;
-
-        // 모든 파이프를 왼쪽으로 이동
-        for (const pipe of this.pipes) {
-            pipe.x -= moveDistance;
-        }
-
-        // 화면 왼쪽 밖으로 나간 파이프 재사용
+    update(_delta: number): void {
+        // 더 이상 파이프를 직접 이동시키지 않습니다 (카메라가 이동하므로).
+        // 화면 뒤로 넘어간 파이프만 재활용합니다.
         this.recyclePipes();
     }
 
@@ -87,6 +78,8 @@ export default class PipeManager {
      * 화면 밖으로 나간 파이프를 재사용합니다.
      */
     private recyclePipes(): void {
+        const cameraX = this.scene.cameras.main.scrollX;
+
         // 가장 오른쪽에 있는 파이프의 X 좌표 찾기
         let rightmostX = -Infinity;
         for (const pipe of this.pipes) {
@@ -95,11 +88,11 @@ export default class PipeManager {
             }
         }
 
-        // 화면 왼쪽 경계 (파이프가 완전히 사라지는 지점)
-        const leftBoundary = -this.PIPE_THICKNESS;
+        // 카메라 왼쪽 경계 (화면 밖으로 완전히 나간 지점)
+        const leftBoundary = cameraX - this.PIPE_THICKNESS;
 
         for (const pipe of this.pipes) {
-            // 파이프가 화면 왼쪽 밖으로 완전히 나갔는지 확인
+            // 파이프가 카메라 왼쪽 밖으로 완전히 나갔는지 확인
             if (pipe.x < leftBoundary) {
                 // 가장 오른쪽 파이프 뒤에 배치
                 const newX = rightmostX + this.PIPE_SPAWN_DISTANCE;
@@ -137,10 +130,9 @@ export default class PipeManager {
     }
 
     /**
-     * 파이프 이동 속도를 설정합니다.
-     * @param speed - 새로운 속도
+     * 파이프 이동 속도를 설정합니다 (사용되지 않음)
      */
-    setPipeSpeed(speed: number): void {
-        this.PIPE_SPEED = speed;
+    setPipeSpeed(_speed: number): void {
+        // 카메라 이동 방식으로 변경되어 사용하지 않음
     }
 }

@@ -22,7 +22,7 @@ interface PlayerData {
 }
 
 function AppContent() {
-  const testPlayerCount = 2;
+  const testPlayerCount = 4;
   const { pause } = useBGMContext();
   const { playSFX } = useSFXContext();
 

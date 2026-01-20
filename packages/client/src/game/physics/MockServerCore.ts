@@ -3,6 +3,10 @@ import type { BirdPosition, RopeData, PlayerId } from '../types/flappybird.types
 import { MockSocket } from '../network/MockSocket';
 
 /**
+ * 충돌 카테고리
+ */
+const CATEGORY_GROUND = 0x0004;
+/**
  * MockServerCore - 서버 역할을 대신하는 로컬 물리 엔진
  * 실제 서버 개발 완료 시 이 로직을 서버로 이전할 수 있습니다.
  */
@@ -46,6 +50,34 @@ export class MockServerCore {
         this.birds = [];
         this.constraints = [];
         this.score = 0;
+
+        // 바닥 생성
+        this.createGround();
+
+        // 4개의 새 생성
+        this.createBirds();
+
+        // 체인으로 연결
+        this.createChainConstraints();
+
+        console.log('[MockServerCore] 게임 초기화 완료');
+    }
+
+    /**
+     * 바닥 생성
+     */
+    private createGround() {
+        this.ground = Matter.Bodies.rectangle(400, 850, 1440, 100, {
+            isStatic: true,
+            label: 'ground',
+            collisionFilter: {
+                category: CATEGORY_GROUND,
+                mask: CATEGORY_BIRD
+            }
+        });
+
+        Matter.World.add(this.world, this.ground);
+    }
 
     }
     /**

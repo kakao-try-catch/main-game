@@ -3,7 +3,7 @@
 
 /* START OF COMPILED CODE */
 
-export default class upPipePrefab extends Phaser.GameObjects.Container {
+export default class UpPipePrefab extends Phaser.GameObjects.Container {
 
 	constructor(scene: Phaser.Scene, x?: number, y?: number, xargs?: any) {
 		super(scene, x ?? 0, y ?? 0);

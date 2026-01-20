@@ -95,43 +95,27 @@ export default class PipeManager {
             }
         }
 
+        // 화면 왼쪽 경계 (파이프가 완전히 사라지는 지점)
+        const leftBoundary = -this.PIPE_THICKNESS;
+
         for (const pipe of this.pipes) {
             // 파이프가 화면 왼쪽 밖으로 완전히 나갔는지 확인
-            if (pipe.x < -100) {
+            if (pipe.x < leftBoundary) {
                 // 가장 오른쪽 파이프 뒤에 배치
                 const newX = rightmostX + this.PIPE_SPAWN_DISTANCE;
 
-                // 파이프를 재생성하여 랜덤한 높이 적용
-                this.regeneratePipe(pipe, newX);
+                // 객체 풀링: 파이프를 파괴하지 않고 위치와 높이만 재설정
+                pipe.x = newX;
+                pipe.initPipe({
+                    pipeGap: this.PIPE_GAP,
+                    minPipeHeight: this.MIN_PIPE_HEIGHT,
+                    pipeThickness: this.PIPE_THICKNESS,
+                    screenHeight: this.screenHeight
+                });
 
-                // rightmostX 업데이트
+                // rightmostX 업데이트 (다음 파이프가 이 뒤에 붙을 수 있도록)
                 rightmostX = newX;
             }
-        }
-    }
-
-    /**
-     * 파이프를 재생성하여 새로운 랜덤 높이를 적용합니다.
-     * @param pipe - 재생성할 파이프
-     * @param x - 새로운 X 좌표
-     */
-    private regeneratePipe(pipe: PipePrefab, x: number): void {
-        // 기존 파이프 제거
-        pipe.destroy();
-
-        // 새 파이프 생성
-        const newPipe = PipePrefab.createPipeSet(
-            this.scene,
-            x,
-            this.PIPE_GAP,
-            this.MIN_PIPE_HEIGHT,
-            this.PIPE_THICKNESS
-        );
-
-        // 배열에서 교체
-        const index = this.pipes.indexOf(pipe);
-        if (index !== -1) {
-            this.pipes[index] = newPipe;
         }
     }
 
@@ -157,6 +141,6 @@ export default class PipeManager {
      * @param speed - 새로운 속도
      */
     setPipeSpeed(speed: number): void {
-        (this as any).PIPE_SPEED = speed;
+        this.PIPE_SPEED = speed;
     }
 }

@@ -10,12 +10,39 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
 	constructor(scene: Phaser.Scene, x?: number, y?: number, xargs?: any) {
 		super(scene, x ?? 0, y ?? 0);
 
-		// xargs에서 설정값 추출 (기본값 설정)
-		const config = xargs || {};
-		const pipeGap = config.pipeGap ?? 200;
-		const minPipeHeight = config.minPipeHeight ?? 100;
-		const pipeThickness = config.pipeThickness ?? 128;
-		const screenHeight = config.screenHeight ?? scene.cameras.main.height;
+		// up pipe_container (위쪽 파이프)
+		this.upPipe = new UpPipePrefab(scene, 0, 0);
+		this.add(this.upPipe);
+
+		// down pipe_container (아래쪽 파이프)
+		this.downPipe = new DownPipePrefab(scene, 0, 0);
+		this.add(this.downPipe);
+
+		if (xargs) {
+			this.initPipe(xargs);
+		}
+
+		/* START-USER-CTR-CODE */
+		// Write your code here.
+		/* END-USER-CTR-CODE */
+	}
+
+	/* START-USER-CODE */
+
+	private upPipe: UpPipePrefab;
+	private downPipe: DownPipePrefab;
+
+	/**
+	 * 파이프의 높이와 간격을 초기화하거나 재설정합니다.
+	 * 객체 풀링 시 재사용을 위해 사용됩니다.
+	 */
+	public initPipe(config: {
+		pipeGap: number,
+		minPipeHeight: number,
+		pipeThickness: number,
+		screenHeight: number
+	}): void {
+		const { pipeGap, minPipeHeight, pipeThickness, screenHeight } = config;
 
 		// 랜덤한 간격 위치 결정 (새가 통과할 공간의 중심)
 		const gapY = Phaser.Math.Between(
@@ -29,24 +56,15 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
 		// 아래쪽 파이프 높이 계산
 		const bottomPipeHeight = screenHeight - (gapY + pipeGap / 2);
 
-		// up pipe_container (위쪽 파이프)
-		const up_pipe_container = new UpPipePrefab(scene, 0, 0);
-		up_pipe_container.setHeight(topPipeHeight);
-		up_pipe_container.setThickness(pipeThickness);
-		this.add(up_pipe_container);
+		// 위쪽 파이프 설정
+		this.upPipe.setHeight(topPipeHeight);
+		this.upPipe.setThickness(pipeThickness);
 
-		// down pipe_container (아래쪽 파이프)
-		const down_pipe_container = new DownPipePrefab(scene, 0, gapY + pipeGap / 2);
-		down_pipe_container.setHeight(bottomPipeHeight);
-		down_pipe_container.setThickness(pipeThickness);
-		this.add(down_pipe_container);
-
-		/* START-USER-CTR-CODE */
-		// Write your code here.
-		/* END-USER-CTR-CODE */
+		// 아래쪽 파이프 설정
+		this.downPipe.y = gapY + pipeGap / 2;
+		this.downPipe.setHeight(bottomPipeHeight);
+		this.downPipe.setThickness(pipeThickness);
 	}
-
-	/* START-USER-CODE */
 
 	/**
 	 * 파이프 세트를 생성하는 정적 팩토리 메서드

@@ -4,10 +4,17 @@ import { GamePacketType, DropCellIndexPacket, TimeEndPacket, SetFieldPacket, Set
 
 export type GameStatus = "waiting" | "playing" | "ended";
 
+const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
+
+// PlayerData imported from packets
+
+// 상태 관리 해야 함.
 export interface PlayerState {
-  id: string;
+  id: string; // Socket ID
   name: string;
   score: number;
+  order: number;
+  color: string;
 }
 
 export class GameSession {
@@ -24,7 +31,17 @@ export class GameSession {
 
   public addPlayer(id: string, name: string) {
     if (this.players.has(id)) return;
-    this.players.set(id, { id, name, score: 0 });
+
+    const order = this.players.size;
+    const color = PLAYER_COLORS[order % PLAYER_COLORS.length]; // 순서대로 부여 (4명 넘으면 순환 or 에러처리는 나중에)
+
+    this.players.set(id, {
+      id,
+      name,
+      score: 0,
+      order,
+      color
+    });
   }
 
   public removePlayer(id: string) {

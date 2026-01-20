@@ -26,6 +26,9 @@ export class MockServerCore {
     private readonly GRAVITY_Y = 0.8;
     private readonly BIRD_RADIUS = 20;
     private readonly FLAP_VELOCITY = -8;
+    private readonly CHAIN_LENGTH = 100;
+    private readonly CHAIN_STIFFNESS = 0.4;
+    private readonly CHAIN_DAMPING = 0.1;
 
     constructor(socket: MockSocket) {
         this.socket = socket;
@@ -115,6 +118,30 @@ export class MockServerCore {
 
         console.log('[MockServerCore] 4개의 새 생성 완료');
     }
+
+    /**
+     * 체인 연결 생성
+     */
+    private createChainConstraints() {
+        for (let i = 0; i < this.birds.length - 1; i++) {
+            const constraint = Matter.Constraint.create({
+                bodyA: this.birds[i],
+                bodyB: this.birds[i + 1],
+                length: this.CHAIN_LENGTH,
+                stiffness: this.CHAIN_STIFFNESS,
+                damping: this.CHAIN_DAMPING,
+                render: {
+                    visible: false
+                }
+            });
+
+            this.constraints.push(constraint);
+            Matter.World.add(this.world, constraint);
+        }
+
+        console.log(`[MockServerCore] ${this.constraints.length}개의 체인 생성 완료`);
+    }
+
     /**
      * 게임 시작 (60fps 물리 업데이트)
      */
@@ -162,7 +189,37 @@ export class MockServerCore {
             angle: bird.angle * (180 / Math.PI)
         }));
 
+        // 밧줄 정점 계산
+        const ropes: RopeData[] = this.calculateRopePoints();
+
     }
+
+    /**
+     * 밧줄 정점 계산 (선형 보간)
+     */
+    private calculateRopePoints(): RopeData[] {
+        const ropes: RopeData[] = [];
+        const segments = 10;
+
+        for (let i = 0; i < this.birds.length - 1; i++) {
+            const birdA = this.birds[i];
+            const birdB = this.birds[i + 1];
+            const points: { x: number; y: number }[] = [];
+
+            for (let j = 0; j <= segments; j++) {
+                const t = j / segments;
+                points.push({
+                    x: birdA.position.x + (birdB.position.x - birdA.position.x) * t,
+                    y: birdA.position.y + (birdB.position.y - birdA.position.y) * t
+                });
+            }
+
+            ropes.push({ points });
+        }
+
+        return ropes;
+    }
+
     /**
      * Flap 처리
      */

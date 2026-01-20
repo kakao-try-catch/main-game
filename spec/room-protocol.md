@@ -1,4 +1,4 @@
-# Join Room Protocol
+# JOIN_ROOM (ServerBound)
 플레이어가 방에 입장할 때 서버로 보내는 프로토콜입니다.
 
 playerid: string # 플레이어 id (socket id)
@@ -13,3 +13,4 @@ playerName: string # 플레이어 이름 (서버가 알아야 함)
 players: PlayerData[] # 플레이어 정보를 담은 배열
 
 PlayerData는 { order: number, playerName: string, color: string } 으로 구성되어 있음.
+

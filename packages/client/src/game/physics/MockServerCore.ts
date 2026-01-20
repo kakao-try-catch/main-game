@@ -5,6 +5,7 @@ import { MockSocket } from '../network/MockSocket';
 /**
  * 충돌 카테고리
  */
+const CATEGORY_BIRD = 0x0001;
 const CATEGORY_GROUND = 0x0004;
 /**
  * MockServerCore - 서버 역할을 대신하는 로컬 물리 엔진
@@ -23,6 +24,9 @@ export class MockServerCore {
 
     // 물리 파라미터
     private readonly GRAVITY_Y = 0.8;
+    private readonly BIRD_RADIUS = 20;
+    private readonly FLAP_VELOCITY = -8;
+
     constructor(socket: MockSocket) {
         this.socket = socket;
         socket.setServerCore(this);
@@ -79,6 +83,37 @@ export class MockServerCore {
         Matter.World.add(this.world, this.ground);
     }
 
+    /**
+     * 4개의 새 생성
+     */
+    private createBirds() {
+        const startX = 200;
+        const startY = 300;
+        const spacing = 120;
+
+        for (let i = 0; i < 4; i++) {
+            const bird = Matter.Bodies.circle(
+                startX + i * spacing,
+                startY,
+                this.BIRD_RADIUS,
+                {
+                    density: 0.001,
+                    restitution: 0,
+                    friction: 0,
+                    frictionAir: 0.01,
+                    label: 'bird',
+                    collisionFilter: {
+                        category: CATEGORY_BIRD,
+                        mask: CATEGORY_PIPE | CATEGORY_GROUND
+                    }
+                }
+            );
+
+            this.birds.push(bird);
+            Matter.World.add(this.world, bird);
+        }
+
+        console.log('[MockServerCore] 4개의 새 생성 완료');
     }
     /**
      * 게임 시작 (60fps 물리 업데이트)
@@ -116,7 +151,35 @@ export class MockServerCore {
 
         // 충돌 감지
         this.checkCollisions();
+
+        // 위치 데이터 생성
+        const birds: BirdPosition[] = this.birds.map((bird, index) => ({
+            playerId: String(index) as PlayerId,
+            x: bird.position.x,
+            y: bird.position.y,
+            velocityX: bird.velocity.x,
+            velocityY: bird.velocity.y,
+            angle: bird.angle * (180 / Math.PI)
+        }));
+
     }
+    /**
+     * Flap 처리
+     */
+    private handleFlap(playerId: PlayerId) {
+        const birdIndex = parseInt(playerId);
+        if (birdIndex >= 0 && birdIndex < this.birds.length) {
+            const bird = this.birds[birdIndex];
+
+            Matter.Body.setVelocity(bird, {
+                x: bird.velocity.x,
+                y: this.FLAP_VELOCITY
+            });
+
+            console.log(`[MockServerCore] Player ${playerId} Flap!`);
+        }
+    }
+
     /**
      * 정리
      */

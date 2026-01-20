@@ -86,10 +86,10 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady }) => {
           <input
             type="checkbox"
             className="nes-checkbox"
-            checked={bgmEnabled}
-            onChange={(e) => setBgmEnabled(e.target.checked)}
+            checked={!bgmEnabled}
+            onChange={(e) => setBgmEnabled(!e.target.checked)}
           />
-          <span style={styles.checkboxText}>BGM</span>
+          <span style={styles.checkboxText}>Mute BGM</span>
         </label>
       </div>
     </>

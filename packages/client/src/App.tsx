@@ -23,7 +23,7 @@ interface PlayerData {
 
 function AppContent() {
   const testPlayerCount = 4;
-  const { pause, play, reset } = useBGMContext();
+  const { pause, reset } = useBGMContext();
   const { playSFX } = useSFXContext();
 
   // 현재 유저 정보 (서버에서 받아올 예정)

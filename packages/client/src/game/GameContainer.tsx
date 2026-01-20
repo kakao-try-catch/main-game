@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
-// ⭐ 수정: AppleGameScene 대신 FlappyBirdScene2 사용
-import FlappyBirdScene2 from './scene/flappybirds/FlappyBirdScene2';
+// ⭐ 수정: AppleGameScene 대신 FlappyBirdsScene 사용
+import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import type { AppleGamePreset } from './types/GamePreset';
 
 export interface PlayerData {
@@ -50,7 +50,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
   // 플레이어 데이터가 변경되면 씬에 전달
   useEffect(() => {
     if (!gameRef.current) return;
-    const flappyBirdScene = gameRef.current.scene.getScene('FlappyBirdScene2');
+    const flappyBirdScene = gameRef.current.scene.getScene('FlappyBirdsScene');
     if (flappyBirdScene) {
       flappyBirdScene.events.emit('updatePlayers', {
         playerCount,
@@ -100,7 +100,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       height: MAX_HEIGHT * ratio,
       parent: parentRef.current,
       backgroundColor: '#46D1FD',
-      scene: [FlappyBirdScene2],
+      scene: [FlappyBirdsScene],
       physics: {
         default: 'matter',
         matter: {
@@ -117,12 +117,12 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       onGameReady(game);
     }
 
-    // ⭐ 수정: FlappyBirdScene2 사용
+    // ⭐ 수정: FlappyBirdsScene 사용
     let flappyBirdScene: Phaser.Scene | null = null;
     let appleScoredHandler: ((data: { points: number }) => void) | null = null;
 
     game.events.once('ready', () => {
-      flappyBirdScene = game.scene.getScene('FlappyBirdScene2');
+      flappyBirdScene = game.scene.getScene('FlappyBirdsScene');
       if (flappyBirdScene) {
         // 씬의 create()가 완료된 후에 이벤트 전달
         if (flappyBirdScene.scene.isActive()) {

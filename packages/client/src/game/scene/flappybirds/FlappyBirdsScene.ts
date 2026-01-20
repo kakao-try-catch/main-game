@@ -15,6 +15,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	private mockServerCore?: MockServerCore;
 	private myPlayerId: PlayerId = '0';
 	private pipeManager?: PipeManager;
+	private playerCount: number = 4;
 
 	// 새 스프라이트
 	private birdSprites: Phaser.GameObjects.Ellipse[] = [];
@@ -59,9 +60,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		// 파이프 매니저 생성
 		this.pipeManager = new PipeManager(this);
 
+		// 소켓 이벤트 리스너 (updatePlayers를 먼저 받기 위해 setupSocketListeners 호출)
+		this.setupSocketListeners();
+
 		// Mock 모드인 경우 MockServerCore 생성
 		if (isMockMode() && this.socket instanceof MockSocket) {
 			this.mockServerCore = new MockServerCore(this.socket as MockSocket);
+			this.mockServerCore.setPlayerCount(this.playerCount); // 플레이어 수 설정
 			this.mockServerCore.initialize();
 
 			// 1초 후 물리 엔진 시작 (초기화 시간 확보)
@@ -70,23 +75,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 				console.log('[FlappyBirdsScene] 물리 엔진 시작 (1초 딜레이 후)');
 			}, 1000);
 
-			console.log('[FlappyBirdsScene] Mock 모드로 실행 중 (1초 후 시작)');
+			console.log(`[FlappyBirdsScene] Mock 모드로 실행 중 (플레이어: ${this.playerCount}명)`);
 		}
 
-		// 4개의 새 스프라이트 생성
-		this.createBirds();
-
-		// 바닥 그리기
-		this.createGroundUI();
-
-		// 3개의 밧줄 그래픽 생성
-		this.createRopes();
-
-		// 초기 밧줄 그리기 (물리 엔진 시작 전에도 보이도록)
-		this.drawInitialRopes();
-
-		// 소켓 이벤트 리스너
-		this.setupSocketListeners();
+		// 초기 게임 객체 생성
+		this.setupGame();
 
 		// 입력 처리
 		this.setupInput();
@@ -95,16 +88,40 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	}
 
 	/**
-	 * 4개의 새 생성
+	 * 게임 객체 초기화 (새, 바닥, 밧줄)
 	 */
-	private createBirds() {
+	private setupGame() {
+		// 기존 객체 제거
+		this.birdSprites.forEach(bird => bird.destroy());
+		this.ropes.forEach(rope => rope.destroy());
+		this.birdSprites = [];
+		this.ropes = [];
+		this.targetPositions = [];
+
+		// 새 생성
+		this.createBirds(this.playerCount);
+
+		// 바닥 그리기
+		this.createGroundUI();
+
+		// 밧줄 생성
+		this.createRopes(this.playerCount);
+
+		// 초기 밧줄 그리기
+		this.drawInitialRopes();
+	}
+
+	/**
+	 * 새 생성
+	 */
+	private createBirds(count: number) {
 		const colors = [0xff6b6b, 0x4ecdc4, 0xffe66d, 0x95e1d3];
 
-		for (let i = 0; i < 4; i++) {
+		for (let i = 0; i < count; i++) {
 			const bird = this.add.ellipse(200 + i * 120, 300, 40, 40);
 			bird.setStrokeStyle(3, 0xffffff);
 			bird.isFilled = true;
-			bird.fillColor = colors[i];
+			bird.fillColor = colors[i % colors.length];
 
 			this.birdSprites.push(bird);
 
@@ -119,7 +136,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			});
 		}
 
-		console.log('[FlappyBirdsScene] 4개의 새 생성 완료');
+		console.log(`[FlappyBirdsScene] ${count}개의 새 생성 완료`);
 	}
 
 	/**
@@ -140,22 +157,39 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	}
 
 	/**
-	 * 3개의 밧줄 그래픽 생성
+	 * 밧줄 그래픽 생성
 	 */
-	private createRopes() {
-		for (let i = 0; i < 3; i++) {
+	private createRopes(playerCount: number) {
+		const ropeCount = Math.max(0, playerCount - 1);
+		for (let i = 0; i < ropeCount; i++) {
 			const rope = this.add.graphics();
 			rope.setDepth(0); // 새와 같은 레벨에 렌더링 (depth -1은 보이지 않음)
 			this.ropes.push(rope);
 		}
 
-		console.log('[FlappyBirdsScene] 3개의 밧줄 생성 완료');
+		console.log(`[FlappyBirdsScene] ${ropeCount}개의 밧줄 생성 완료`);
 	}
 
 	/**
 	 * 소켓 이벤트 리스너 설정
 	 */
 	private setupSocketListeners() {
+		// 플레이어 정보 업데이트 (인원수 조절 등)
+		this.events.on('updatePlayers', (data: any) => {
+			console.log(`[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`);
+			const oldPlayerCount = this.playerCount;
+			this.playerCount = data.playerCount || 4;
+
+			// 인원수가 변경된 경우 게임 객체 재설정
+			if (oldPlayerCount !== this.playerCount) {
+				if (this.mockServerCore) {
+					this.mockServerCore.setPlayerCount(this.playerCount);
+					this.mockServerCore.initialize();
+				}
+				this.setupGame();
+			}
+		});
+
 		// 위치 업데이트 수신
 		this.socket.on('update_positions', (data: UpdatePositionsEvent) => {
 			this.targetPositions = data.birds;

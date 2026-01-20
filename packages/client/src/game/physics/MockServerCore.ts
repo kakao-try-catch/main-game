@@ -23,6 +23,7 @@ export class MockServerCore {
     private updateInterval: number | null = null;
     private score: number = 0;
     private isRunning: boolean = false;
+    private playerCount: number = 4;
 
     // 물리 파라미터
     private readonly GRAVITY_Y = 0.8;
@@ -51,6 +52,14 @@ export class MockServerCore {
     }
 
     /**
+     * 플레이어 수 설정
+     */
+    setPlayerCount(count: number) {
+        this.playerCount = count;
+        console.log(`[MockServerCore] 플레이어 수 설정: ${count}`);
+    }
+
+    /**
      * 게임 초기화
      */
     initialize() {
@@ -63,8 +72,8 @@ export class MockServerCore {
         // 바닥 생성
         this.createGround();
 
-        // 4개의 새 생성
-        this.createBirds();
+        // 설정된 플레이어 수만큼 새 생성
+        this.createBirds(this.playerCount);
 
         // 체인으로 연결
         this.createChainConstraints();
@@ -91,14 +100,14 @@ export class MockServerCore {
     }
 
     /**
-     * 4개의 새 생성
+     * 새 생성
      */
-    private createBirds() {
+    private createBirds(count: number) {
         const startX = 200;
         const startY = 300;
         const spacing = 120;
 
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < count; i++) {
             // 각 새에 약간의 Y 오프셋을 주어 초기 장력 생성 (물리 안정화)
             const yOffset = i * 3; // 0, 5, 10, 15 픽셀 차이
 
@@ -123,7 +132,7 @@ export class MockServerCore {
             Matter.World.add(this.world, bird);
         }
 
-        console.log('[MockServerCore] 4개의 새 생성 완료 (초기 장력 적용)');
+        console.log(`[MockServerCore] ${count}개의 새 생성 완료 (초기 장력 적용)`);
     }
 
     /**

@@ -1,0 +1,43 @@
+{
+    "id": "278daa46-e33f-45bb-a394-038a274682ad",
+    "sceneType": "SCENE",
+    "settings": {
+        "exportClass": true,
+        "preloadPackFiles": [],
+        "createMethodName": "editorCreate",
+        "sceneKey": "FlappyBirdScene2",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 1440,
+        "borderHeight": 896
+    },
+    "displayList": [
+        {
+            "type": "Rectangle",
+            "id": "daea572d-a892-491a-a0c8-995222875833",
+            "label": "rectangle_1",
+            "originX": 0,
+            "originY": 0,
+            "isFilled": true,
+            "fillColor": "#46a88f",
+            "width": 1440,
+            "height": 896
+        },
+        {
+            "type": "Ellipse",
+            "id": "dc7f0f18-feac-40f1-b814-927fba04c75f",
+            "label": "bird",
+            "x": 560,
+            "y": 506,
+            "isFilled": true,
+            "width": 80,
+            "height": 80
+        }
+    ],
+    "plainObjects": [],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

@@ -14,6 +14,7 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
 		const config = xargs || {};
 		const pipeGap = config.pipeGap ?? 200;
 		const minPipeHeight = config.minPipeHeight ?? 100;
+		const pipeThickness = config.pipeThickness ?? 128;
 		const screenHeight = config.screenHeight ?? scene.cameras.main.height;
 
 		// 랜덤한 간격 위치 결정 (새가 통과할 공간의 중심)
@@ -31,11 +32,13 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
 		// up pipe_container (위쪽 파이프)
 		const up_pipe_container = new UpPipePrefab(scene, 0, 0);
 		up_pipe_container.setHeight(topPipeHeight);
+		up_pipe_container.setThickness(pipeThickness);
 		this.add(up_pipe_container);
 
 		// down pipe_container (아래쪽 파이프)
 		const down_pipe_container = new DownPipePrefab(scene, 0, gapY + pipeGap / 2);
 		down_pipe_container.setHeight(bottomPipeHeight);
+		down_pipe_container.setThickness(pipeThickness);
 		this.add(down_pipe_container);
 
 		/* START-USER-CTR-CODE */
@@ -57,11 +60,13 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
 		scene: Phaser.Scene,
 		x: number,
 		pipeGap: number,
-		minPipeHeight: number
+		minPipeHeight: number,
+		pipeThickness: number
 	): PipePrefab {
 		const config = {
 			pipeGap,
 			minPipeHeight,
+			pipeThickness,
 			screenHeight: scene.cameras.main.height
 		};
 		const pipeSet = new PipePrefab(scene, x, 0, config);

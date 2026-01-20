@@ -3,9 +3,15 @@
 
 /* START OF COMPILED CODE */
 
+import { getSocket, isMockMode } from '../../network/socketService';
+import { MockSocket } from '../../network/MockSocket';
+import { MockServerCore } from '../../physics/MockServerCore';
 import type { BirdPosition, UpdatePositionsEvent, GameOverEvent, PlayerId } from '../../types/flappybird.types';
 
 export default class FlappyBirdScene2 extends Phaser.Scene {
+	private socket: any;
+	private mockServerCore?: MockServerCore;
+	private myPlayerId: PlayerId = '0';
 	// 밧줄
 	private ropes: Phaser.GameObjects.Graphics[] = [];
 
@@ -35,9 +41,28 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 	create() {
 		this.editorCreate();
 
+		// 소켓 연결
+		this.socket = getSocket();
+
+		// Mock 모드인 경우 MockServerCore 생성
+		if (isMockMode() && this.socket instanceof MockSocket) {
+			this.mockServerCore = new MockServerCore(this.socket as MockSocket);
+			this.mockServerCore.initialize();
+			this.mockServerCore.start();
+			console.log('[FlappyBirdScene2] Mock 모드로 실행 중');
+		}
+
+		// 4개의 새 스프라이트 생성
+		this.createBirds();
 
 		// 3개의 밧줄 그래픽 생성
 		this.createRopes();
+
+		// 소켓 이벤트 리스너
+		this.setupSocketListeners();
+
+		// 입력 처리
+		this.setupInput();
 
 		console.log('[FlappyBirdScene2] 씬 생성 완료');
 	}
@@ -53,6 +78,53 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 
 		console.log('[FlappyBirdScene2] 3개의 밧줄 생성 완료');
 	}
+
+	/**
+	 * 소켓 이벤트 리스너 설정
+	 */
+	private setupSocketListeners() {
+		// 위치 업데이트 수신
+		this.socket.on('update_positions', (data: UpdatePositionsEvent) => {
+			this.targetPositions = data.birds;
+
+			// 밧줄 업데이트
+			if (data.ropes) {
+				this.updateRopes(data.ropes);
+			}
+		});
+
+		// 게임 오버
+		this.socket.on('game_over', (data: GameOverEvent) => {
+			console.log(`[FlappyBirdScene2] 게임 오버: ${data.reason}, 점수: ${data.finalScore}`);
+			// TODO: 게임 오버 UI 표시
+		});
+	}
+
+	/**
+	 * 입력 처리 설정
+	 */
+	private setupInput() {
+		// 스페이스바
+		this.input.keyboard?.on('keydown-SPACE', () => {
+			this.handleFlap();
+		});
+
+		// 마우스 클릭
+		this.input.on('pointerdown', () => {
+			this.handleFlap();
+		});
+	}
+
+	/**
+	 * Flap 처리
+	 */
+	private handleFlap() {
+		this.socket.emit('flap', {
+			playerId: this.myPlayerId,
+			timestamp: Date.now()
+		});
+	}
+
 	/**
 	 * 밧줄 업데이트
 	 */
@@ -93,6 +165,18 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 				sprite.rotation = Phaser.Math.DegToRad(angle);
 			}
 		}
+	}
+
+	/**
+	 * 씬 종료 시 정리
+	 */
+	shutdown() {
+		if (this.mockServerCore) {
+			this.mockServerCore.destroy();
+		}
+
+		this.socket.off('update_positions');
+		this.socket.off('game_over');
 	}
 
 	/* END-USER-CODE */

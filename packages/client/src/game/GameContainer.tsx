@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
-import { AppleGameScene } from './scene/apple/AppleGameScene';
-import { BootScene } from './scene/apple/BootScene';
+// ⭐ 수정: AppleGameScene 대신 FlappyBirdScene2 사용
+import FlappyBirdScene2 from './scene/flappybirds/FlappyBirdScene2';
 import type { AppleGamePreset } from './types/GamePreset';
 
 export interface PlayerData {
@@ -42,15 +42,17 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
-  const MAX_WIDTH = 1379;
-  const MAX_HEIGHT = 859;
+
+  // ⭐ 수정: 플래피버드 화면 크기
+  const MAX_WIDTH = 1440;
+  const MAX_HEIGHT = 896;
 
   // 플레이어 데이터가 변경되면 씬에 전달
   useEffect(() => {
     if (!gameRef.current) return;
-    const appleGameScene = gameRef.current.scene.getScene('AppleGameScene');
-    if (appleGameScene) {
-      appleGameScene.events.emit('updatePlayers', {
+    const flappyBirdScene = gameRef.current.scene.getScene('FlappyBirdScene2');
+    if (flappyBirdScene) {
+      flappyBirdScene.events.emit('updatePlayers', {
         playerCount,
         players,
         currentPlayerIndex,
@@ -91,17 +93,18 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     if (!ratio || ratio <= 0) ratio = 1;
     (window as any).__APPLE_GAME_RATIO = ratio;
 
+    // ⭐ 수정: Matter.js 물리 엔진 사용
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       width: MAX_WIDTH * ratio,
       height: MAX_HEIGHT * ratio,
       parent: parentRef.current,
-      backgroundColor: '#F6F5F6',
-      scene: [BootScene, AppleGameScene],
+      backgroundColor: '#46D1FD',
+      scene: [FlappyBirdScene2],
       physics: {
-        default: 'arcade',
-        arcade: {
-          gravity: { y: 0, x: 0 },
+        default: 'matter',
+        matter: {
+          gravity: { x: 0, y: 0.8 },
           debug: false,
         },
       },
@@ -114,23 +117,24 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       onGameReady(game);
     }
 
-    let appleGameScene: Phaser.Scene | null = null;
+    // ⭐ 수정: FlappyBirdScene2 사용
+    let flappyBirdScene: Phaser.Scene | null = null;
     let appleScoredHandler: ((data: { points: number }) => void) | null = null;
 
     game.events.once('ready', () => {
-      appleGameScene = game.scene.getScene('AppleGameScene');
-      if (appleGameScene) {
+      flappyBirdScene = game.scene.getScene('FlappyBirdScene2');
+      if (flappyBirdScene) {
         // 씬의 create()가 완료된 후에 이벤트 전달
-        if (appleGameScene.scene.isActive()) {
-          appleGameScene.events.emit('updatePlayers', {
+        if (flappyBirdScene.scene.isActive()) {
+          flappyBirdScene.events.emit('updatePlayers', {
             playerCount,
             players,
             currentPlayerIndex,
             preset,
           });
         } else {
-          appleGameScene.events.once('create', () => {
-            appleGameScene?.events.emit('updatePlayers', {
+          flappyBirdScene.events.once('create', () => {
+            flappyBirdScene?.events.emit('updatePlayers', {
               playerCount,
               players,
               currentPlayerIndex,
@@ -143,10 +147,10 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
           appleScoredHandler = (data: { points: number }) => {
             onAppleScored(data.points);
           };
-          appleGameScene.events.on('appleScored', appleScoredHandler);
+          flappyBirdScene.events.on('appleScored', appleScoredHandler);
         }
         if (onGameEnd) {
-          appleGameScene.events.on(
+          flappyBirdScene.events.on(
             'gameEnd',
             (data: { players: PlayerResultData[] }) => {
               onGameEnd(data.players);
@@ -157,11 +161,11 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     });
 
     return () => {
-      if (appleGameScene && appleScoredHandler) {
-        appleGameScene.events.off('appleScored', appleScoredHandler);
+      if (flappyBirdScene && appleScoredHandler) {
+        flappyBirdScene.events.off('appleScored', appleScoredHandler);
       }
-      if (appleGameScene) {
-        appleGameScene.events.off('gameEnd');
+      if (flappyBirdScene) {
+        flappyBirdScene.events.off('gameEnd');
       }
       game.destroy(true);
       gameRef.current = null;

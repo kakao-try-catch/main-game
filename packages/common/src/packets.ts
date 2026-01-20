@@ -34,7 +34,7 @@ export interface JoinRoomPacket {
 
 export interface RoomUpdatePacket {
   type: SystemPacketType.ROOM_UPDATE;
-  playerNames: string[];
+  playerNames: { order: number, playerName: string, color: string }[];
 }
 
 export interface SystemMessagePacket {

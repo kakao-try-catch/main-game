@@ -1,16 +1,13 @@
 
 // You can write more code here
 import Phaser from 'phaser';
-import PipePrefab from '../../flappybird/PipePrefab';
+import PipeManager from '../../flappybird/PipeManager';
 
 /* START OF COMPILED CODE */
 
 export default class FlappyBirdsScene extends Phaser.Scene {
 
-	// 파이프 설정 상수
-	private readonly PIPE_GAP = 200;         // 위아래 파이프 사이 간격
-	private readonly MIN_PIPE_HEIGHT = 100;  // 최소 파이프 높이
-
+	private pipeManager!: PipeManager;
 
 	constructor() {
 		super("FlappyBirdsScene");
@@ -45,8 +42,15 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	create() {
 		this.editorCreate();
 
-		// 파이프 세트 생성 예시
-		PipePrefab.createPipeSet(this, 800, this.PIPE_GAP, this.MIN_PIPE_HEIGHT);
+		// 파이프 매니저 생성
+		this.pipeManager = new PipeManager(this);
+	}
+
+	update(_time: number, delta: number): void {
+		// 파이프 매니저 업데이트 (파이프를 왼쪽으로 이동)
+		if (this.pipeManager) {
+			this.pipeManager.update(delta);
+		}
 	}
 
 	/* END-USER-CODE */

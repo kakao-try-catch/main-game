@@ -1,5 +1,5 @@
-import { createContext, useContext, useState } from "react";
-import type { ReactNode } from "react";
+import { createContext, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
 
 // Fast refresh 경고는 개발 환경에서만 발생하며 실제 동작에는 영향이 없습니다.
 interface UserContextType {
@@ -12,14 +12,14 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [nickname, setNickname] = useState("");
-  const [color, setColor] = useState("#209cee");
+  const [nickname, setNickname] = useState('');
+  const [color, setColor] = useState('#209cee');
   const [isHost, setIsHost] = useState(false);
 
   const setUserInfo = (
     newNickname: string,
     newColor: string,
-    newIsHost: boolean
+    newIsHost: boolean,
   ) => {
     setNickname(newNickname);
     setColor(newColor);
@@ -36,7 +36,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
-    throw new Error("useUser must be used within a UserProvider");
+    throw new Error('useUser must be used within a UserProvider');
   }
   return context;
 };

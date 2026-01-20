@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
-import { AppleGameScene } from './scene/AppleGameScene';
-import { BootScene } from './scene/BootScene';
+import { AppleGameScene } from './scene/apple/AppleGameScene';
+import { BootScene } from './scene/apple/BootScene';
 import type { AppleGamePreset } from './types/GamePreset';
 
 export interface PlayerData {
@@ -31,7 +31,15 @@ interface PhaserGameProps {
   preset?: AppleGamePreset;
 }
 
-export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScored, onGameEnd, playerCount = 4, players = [], currentPlayerIndex = 0, preset }) => {
+export const PhaserGame: React.FC<PhaserGameProps> = ({
+  onGameReady,
+  onAppleScored,
+  onGameEnd,
+  playerCount = 4,
+  players = [],
+  currentPlayerIndex = 0,
+  preset,
+}) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const MAX_WIDTH = 1379;
@@ -42,7 +50,12 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
     if (!gameRef.current) return;
     const appleGameScene = gameRef.current.scene.getScene('AppleGameScene');
     if (appleGameScene) {
-      appleGameScene.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex, preset });
+      appleGameScene.events.emit('updatePlayers', {
+        playerCount,
+        players,
+        currentPlayerIndex,
+        preset,
+      });
     }
   }, [playerCount, players, currentPlayerIndex, preset]);
 
@@ -89,9 +102,9 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
         default: 'arcade',
         arcade: {
           gravity: { y: 0, x: 0 },
-          debug: false
-        }
-      }
+          debug: false,
+        },
+      },
     };
 
     const game = new Phaser.Game(config);
@@ -109,10 +122,20 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
       if (appleGameScene) {
         // 씬의 create()가 완료된 후에 이벤트 전달
         if (appleGameScene.scene.isActive()) {
-          appleGameScene.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex, preset });
+          appleGameScene.events.emit('updatePlayers', {
+            playerCount,
+            players,
+            currentPlayerIndex,
+            preset,
+          });
         } else {
           appleGameScene.events.once('create', () => {
-            appleGameScene?.events.emit('updatePlayers', { playerCount, players, currentPlayerIndex, preset });
+            appleGameScene?.events.emit('updatePlayers', {
+              playerCount,
+              players,
+              currentPlayerIndex,
+              preset,
+            });
           });
         }
 
@@ -123,9 +146,12 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ onGameReady, onAppleScor
           appleGameScene.events.on('appleScored', appleScoredHandler);
         }
         if (onGameEnd) {
-          appleGameScene.events.on('gameEnd', (data: { players: PlayerResultData[] }) => {
-            onGameEnd(data.players);
-          });
+          appleGameScene.events.on(
+            'gameEnd',
+            (data: { players: PlayerResultData[] }) => {
+              onGameEnd(data.players);
+            },
+          );
         }
       }
     });

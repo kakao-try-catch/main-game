@@ -1,5 +1,5 @@
 * {
-  font-family: "NeoDunggeunmo", monospace !important;
+  font-family: 'NeoDunggeunmo', monospace !important;
 }
 
 .landing-container {
@@ -88,7 +88,7 @@
 }
 
 .tooltip::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: 50%;
@@ -113,7 +113,7 @@
 }
 
 .length-tooltip::before {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 100%;
   left: 20px;

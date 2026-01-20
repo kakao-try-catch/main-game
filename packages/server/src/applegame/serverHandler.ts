@@ -6,6 +6,7 @@ import {
   ServerPacket,
   GamePacket,
   RoomUpdatePacket,
+  RoomUpdateType,
 } from "../../../common/src/packets";
 import { GameSession } from "./gameSession";
 
@@ -112,12 +113,20 @@ export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, pla
   playerRooms.set(socket.id, roomId);
   session.addPlayer(socket.id, playerName);
 
-  // 이거 ROOM_UPDATE 여야 함.
-  const roomUpdatePacket: RoomUpdatePacket = {
+  const roomUpdatePacket2Player: RoomUpdatePacket = {
     type: SystemPacketType.ROOM_UPDATE,
     players: session.getPlayers(),
+    updateType: RoomUpdateType.INIT,
   };
-  io.to(roomId).emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket);
+  socket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Player);
+
+  // Send JOIN to existing players
+  const roomUpdatePacket2Others: RoomUpdatePacket = {
+    type: SystemPacketType.ROOM_UPDATE,
+    players: session.getPlayers(),
+    updateType: RoomUpdateType.JOIN,
+  };
+  socket.to(roomId).emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Others);
 
   // 만약 방이 꽉 찼거나 특정 조건 만족 시 게임 시작?
   // 현재는 자동 시작 or 수동 시작. 일단 자동 시작 로직 예시:

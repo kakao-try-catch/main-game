@@ -73,7 +73,7 @@ export default class AppleGameScene extends Phaser.Scene {
       timerBarMarginRight -
       2 * margin -
       extraLeftMargin;
-    const availableHeight = canvasHeight - 2 * margin - 130 * ratio; // 상단 UI 공간 고려
+    const availableHeight = canvasHeight - 2 * margin - 80 * ratio; // 상단 UI 공간 고려
 
     // 그리드에 맞는 사과 크기와 간격 계산
     // 가로와 세로를 독립적으로 계산
@@ -114,7 +114,7 @@ export default class AppleGameScene extends Phaser.Scene {
     // 왼쪽 정렬 (추가 여백 포함)
     const baseX =
       margin + extraLeftMargin + (availableWidth - totalGridWidth) / 2;
-    const baseY = margin + 70 * ratio; // 상단 여백
+    const baseY = margin + 30 * ratio; // 상단 여백 축소
 
     this._appleGridConfig = {
       baseX,

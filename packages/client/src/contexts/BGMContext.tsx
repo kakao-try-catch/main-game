@@ -6,33 +6,20 @@ import React, {
   useState,
   useEffect,
 } from 'react';
-import appleGameBGM from '../assets/sounds/testapplebgm.mp3';
-
-// BGM 설정 타입
-interface BGMConfig {
-  file: string;
-  volume?: number;
-}
-
-// BGM 목록
-const BGM_CONFIG: Record<string, BGMConfig> = {
-  appleGame: { file: appleGameBGM, volume: 1.0 },
-};
-
-type BGMName = 'appleGame';
+import { BGM_CONFIG, type BGMName } from '../config/soundConfig';
 
 interface BGMContextType {
   setVolume: (volume: number) => void;
   getVolume: () => number;
-  volume: number; // 현재 볼륨 state
+  volume: number;
   play: () => void;
   pause: () => void;
-  reset: () => void; // BGM을 처음부터 재생
-  loadBGM: (bgmName: BGMName) => void; // BGM 로드 및 전환
-  currentBGM: BGMName | null; // 현재 재생 중인 BGM
+  reset: () => void;
+  loadBGM: (bgmName: BGMName) => void;
+  currentBGM: BGMName | null;
   isPlaying: boolean;
-  bgmEnabled: boolean; // BGM 활성화 여부 (pause/play)
-  setBgmEnabled: (enabled: boolean) => void; // BGM pause/play 토글
+  bgmEnabled: boolean;
+  setBgmEnabled: (enabled: boolean) => void;
 }
 
 const BGMContext = createContext<BGMContextType | undefined>(undefined);
@@ -41,35 +28,40 @@ export const BGMProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const bgmMapRef = useRef<Map<string, HTMLAudioElement>>(new Map());
-  const bgmBaseVolumesRef = useRef<Map<string, number>>(new Map()); // 각 BGM의 기본 볼륨 저장
+  const bgmBaseVolumesRef = useRef<Map<string, number>>(new Map());
 
-  const [isInitialized, setIsInitialized] = useState(false); // 브라우저 권한 획득 여부
-  const [currentBGM, setCurrentBGM] = useState<BGMName | null>('appleGame'); // 현재 재생 중인 BGM
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [currentBGM, setCurrentBGM] = useState<BGMName | null>('lobby'); // 기본값: 로비 BGM
   const [isPlaying, setIsPlaying] = useState(false);
-  const [masterVolume, setMasterVolume] = useState(0.5); // 마스터 볼륨 (0~1)
-  const [bgmEnabled, setBgmEnabled] = useState(true); // BGM 재생 여부 (pause/play)
+  const [masterVolume, setMasterVolume] = useState(0.5);
+  const [bgmEnabled, setBgmEnabled] = useState(true);
 
   // 초기 BGM 로드
   useEffect(() => {
-    if (currentBGM && !bgmMapRef.current.has(currentBGM)) {
+    const currentMap = bgmMapRef.current;
+    const currentBaseVolumes = bgmBaseVolumesRef.current;
+
+    if (currentBGM && !currentMap.has(currentBGM)) {
       const config = BGM_CONFIG[currentBGM];
       const bgmAudio = new Audio(config.file);
       bgmAudio.loop = true;
       const baseVolume = config.volume ?? 1.0;
       bgmAudio.volume = baseVolume * masterVolume;
-      bgmMapRef.current.set(currentBGM, bgmAudio);
-      bgmBaseVolumesRef.current.set(currentBGM, baseVolume);
+      currentMap.set(currentBGM, bgmAudio);
+      currentBaseVolumes.set(currentBGM, baseVolume);
       console.log(`초기 BGM "${currentBGM}" 로드 완료`);
     }
 
     return () => {
       // 정리
-      bgmMapRef.current.forEach((bgm) => {
+      currentMap.forEach((bgm) => {
         bgm.pause();
         bgm.src = '';
       });
-      bgmMapRef.current.clear();
+      currentMap.clear();
+      currentBaseVolumes.clear();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentBGM]);
 
   // BGM 볼륨 계산
@@ -99,19 +91,22 @@ export const BGMProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [isPlaying, isInitialized, currentBGM, bgmEnabled, calculateBGMVolume]);
 
   // BGM 로드 함수
-  const loadBGMIfNeeded = useCallback((bgmName: BGMName) => {
-    if (!bgmMapRef.current.has(bgmName)) {
-      const config = BGM_CONFIG[bgmName];
-      const bgmAudio = new Audio(config.file);
-      bgmAudio.loop = true;
-      const baseVolume = config.volume ?? 1.0;
-      bgmAudio.volume = baseVolume * masterVolume;
-      bgmMapRef.current.set(bgmName, bgmAudio);
-      bgmBaseVolumesRef.current.set(bgmName, baseVolume);
-      console.log(`BGM "${bgmName}" 로드 완료`);
-    }
-    return bgmMapRef.current.get(bgmName)!;
-  }, []);
+  const loadBGMIfNeeded = useCallback(
+    (bgmName: BGMName) => {
+      if (!bgmMapRef.current.has(bgmName)) {
+        const config = BGM_CONFIG[bgmName];
+        const bgmAudio = new Audio(config.file);
+        bgmAudio.loop = true;
+        const baseVolume = config.volume ?? 1.0;
+        bgmAudio.volume = baseVolume * masterVolume;
+        bgmMapRef.current.set(bgmName, bgmAudio);
+        bgmBaseVolumesRef.current.set(bgmName, baseVolume);
+        console.log(`BGM "${bgmName}" 로드 완료`);
+      }
+      return bgmMapRef.current.get(bgmName)!;
+    },
+    [masterVolume],
+  );
 
   // 사용자 상호작용 감지 (권한 따기)
   const handleUserInteraction = useCallback(() => {

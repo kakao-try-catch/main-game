@@ -1,19 +1,82 @@
-/* 픽셀 슬라이더 기본 */
+/* 사운드 설정 컨테이너 */
+.sound-setting-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 180px;
+  padding: 8px;
+  background: #fff;
+  border: 4px solid #000;
+}
+
+/* 사운드 컨트롤 행 (BGM, SFX) */
+.sound-control-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 사운드 아이콘 래퍼 */
+.sound-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sound-icon {
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s ease;
+}
+
+.sound-icon:hover {
+  transform: scale(1.1);
+}
+
+/* 사운드 레이블 */
+.sound-label {
+  font-family: 'NeoDunggeunmo', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  color: #000;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+/* 슬라이더 래퍼 */
+.slider-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* 픽셀 슬라이더 */
 .pixel-slider {
   -webkit-appearance: none;
   appearance: none;
-  width: 130px;
-  height: 14px;
+  width: 100%;
+  height: 10px;
   background: #d3d3d3;
-  border: 3px solid #000;
+  border: 2px solid #000;
+  cursor: pointer;
 }
 
 .pixel-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
-  margin-left: -2px;
+  width: 14px;
+  height: 14px;
   background: #fff;
-  border: 3px solid #000;
+  border: 2px solid #000;
+  cursor: pointer;
+}
+
+.pixel-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 2px solid #000;
+  cursor: pointer;
 }

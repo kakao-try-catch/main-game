@@ -6,46 +6,19 @@ import React, {
   useState,
   useEffect,
 } from 'react';
-import appleDropSound from '../assets/sounds/SFX/appleDrop.mp3';
-import gameStartSound from '../assets/sounds/SFX/gameStart.mp3';
-import gameEndSound from '../assets/sounds/SFX/gameResult.mp3';
-import buttonClickSound from '../assets/sounds/SFX/buttonClick.mp3';
-import buttonHoverSound from '../assets/sounds/SFX/buttonHover.mp3';
-
-// SFX 설정 타입
-interface SFXConfig {
-  file: string;
-  volume?: number;
-  startTime?: number; // 재생 시작 시점 (초 단위)
-}
-
-// SFX 목록
-const SFX_CONFIG: Record<string, SFXConfig> = {
-  appleDrop: { file: appleDropSound, volume: 0.7, startTime: 0 },
-  gameStart: { file: gameStartSound, volume: 0.8, startTime: 0 },
-  gameEnd: { file: gameEndSound, volume: 0.8, startTime: 0 },
-  buttonClick: { file: buttonClickSound, volume: 1.0, startTime: 0.2 },
-  buttonHover: { file: buttonHoverSound, volume: 1.0, startTime: 0 },
-};
-
-type SFXName =
-  | 'appleDrop'
-  | 'gameStart'
-  | 'buttonClick'
-  | 'gameEnd'
-  | 'buttonHover';
+import { SFX_CONFIG, type SFXName } from '../config/soundConfig';
 
 interface SFXContextType {
   setVolume: (volume: number) => void;
   getVolume: () => number;
-  volume: number; // 현재 볼륨 state
+  volume: number;
   playSFX: (
     soundName: SFXName,
     allowOverlap?: boolean,
     startTime?: number,
   ) => void;
-  sfxEnabled: boolean; // SFX 활성화 여부
-  setSfxEnabled: (enabled: boolean) => void; // SFX 활성화/비활성화 토글
+  sfxEnabled: boolean;
+  setSfxEnabled: (enabled: boolean) => void;
 }
 
 const SFXContext = createContext<SFXContextType | undefined>(undefined);
@@ -62,25 +35,32 @@ export const SFXProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // SFX 오디오 객체 생성 (초기화)
   useEffect(() => {
+    const currentMap = sfxMapRef.current;
+    const currentBaseVolumes = sfxBaseVolumesRef.current;
+    const currentStartTimes = sfxStartTimesRef.current;
+
     // SFX 초기화 - 모든 SFX를 미리 로드
     Object.entries(SFX_CONFIG).forEach(([name, config]) => {
       const sfxAudio = new Audio(config.file);
       const baseVolume = config.volume ?? 0.7;
       const startTime = config.startTime ?? 0;
       sfxAudio.volume = baseVolume * masterVolume;
-      sfxMapRef.current.set(name, sfxAudio);
-      sfxBaseVolumesRef.current.set(name, baseVolume); // 기본 볼륨 저장
-      sfxStartTimesRef.current.set(name, startTime); // 시작 시점 저장
+      currentMap.set(name, sfxAudio);
+      currentBaseVolumes.set(name, baseVolume); // 기본 볼륨 저장
+      currentStartTimes.set(name, startTime); // 시작 시점 저장
     });
 
     return () => {
       // 정리
-      sfxMapRef.current.forEach((sfx) => {
+      currentMap.forEach((sfx) => {
         sfx.src = '';
       });
-      sfxMapRef.current.clear();
+      currentMap.clear();
+      currentBaseVolumes.clear();
+      currentStartTimes.clear();
     };
-  }, [masterVolume]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // SFX 볼륨 업데이트
   useEffect(() => {

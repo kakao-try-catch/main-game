@@ -3,6 +3,7 @@ import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
 import type { AppleGamePreset } from '../game/types/GamePreset';
+import SoundSetting from './SoundSetting';
 
 const TOOLTIP_DURATION = 2000;
 const MIN_TIME_LIMIT = 30;
@@ -266,18 +267,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
-                                    let val = parseInt(e.currentTarget.value);
-                                    if (val && val >= 30) {
-                                      if (val > 300) {
-                                        val = 300;
-                                        handleSettingChange(
-                                          game.id,
-                                          'timeLimit',
-                                          val,
-                                        );
-                                      }
-                                      e.currentTarget.blur();
-                                    }
+                                    e.currentTarget.blur();
                                   }
                                 }}
                                 className="nes-input is-small"
@@ -287,8 +277,14 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 autoFocus
                                 onBlur={(e) => {
                                   const val = parseInt(e.target.value);
-                                  if (
-                                    !val ||
+                                  if (!e.target.value) {
+                                    // 빈 값이면 셀렉트로 돌아가기
+                                    handleSettingChange(
+                                      game.id,
+                                      'timeLimit',
+                                      DEFAULT_TIME_LIMIT,
+                                    );
+                                  } else if (
                                     val < MIN_TIME_LIMIT ||
                                     val > MAX_TIME_LIMIT
                                   ) {
@@ -394,6 +390,18 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       {tooltip.show && (
         <div className={`lobby-tooltip ${tooltip.type}`}>{tooltip.message}</div>
       )}
+
+      {/* 소리 설정 */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: 1000,
+        }}
+      >
+        <SoundSetting />
+      </div>
 
       {/* 하단: 버튼들 */}
       <div className="lobby-footer">

@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import Phaser from 'phaser';
 
 export interface DragSelectionOptions {
   fillColor?: number;
@@ -11,7 +11,7 @@ export interface DragSelectionOptions {
 }
 
 const DEFAULT_OPTIONS: Required<
-  Omit<DragSelectionOptions, "onDrag" | "onDragEnd">
+  Omit<DragSelectionOptions, 'onDrag' | 'onDragEnd'>
 > = {
   fillColor: 0xffff00,
   fillAlpha: 0.4,
@@ -77,15 +77,15 @@ export function attachDragSelection(
   };
 
   // 이벤트 등록
-  scene.input.on("pointerdown", onPointerDown);
-  scene.input.on("pointermove", onPointerMove);
-  scene.input.on("pointerup", onPointerUp);
+  scene.input.on('pointerdown', onPointerDown);
+  scene.input.on('pointermove', onPointerMove);
+  scene.input.on('pointerup', onPointerUp);
 
   // 해제 함수 반환
   return () => {
-    scene.input.off("pointerdown", onPointerDown);
-    scene.input.off("pointermove", onPointerMove);
-    scene.input.off("pointerup", onPointerUp);
+    scene.input.off('pointerdown', onPointerDown);
+    scene.input.off('pointermove', onPointerMove);
+    scene.input.off('pointerup', onPointerUp);
     graphics.destroy();
   };
 }

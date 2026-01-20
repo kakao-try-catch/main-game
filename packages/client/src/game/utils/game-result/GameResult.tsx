@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import 'nes.css/css/nes.min.css';
-import { useSoundContext } from '../../../contexts/SoundContext';
+import { useSFXContext } from '../../../contexts/SFXContext';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
 type CrownSvgProps = { fill: string; style?: React.CSSProperties };
@@ -65,24 +65,28 @@ function getRankHeight(rank: number): number {
 }
 
 function getCrownProps(rank: number): { visible: boolean; fill: string } {
-  if (rank === 1) return { visible: true, fill: "#FAA629" };
-  if (rank === 2) return { visible: true, fill: "#A7AFB3" };
-  return { visible: false, fill: "none" };
+  if (rank === 1) return { visible: true, fill: '#FAA629' };
+  if (rank === 2) return { visible: true, fill: '#A7AFB3' };
+  return { visible: false, fill: 'none' };
 }
 
-
-const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, ratio: propRatio }) => {
-  const { playSFX } = useSoundContext();
+const GameResult: React.FC<GameResultProps> = ({
+  players,
+  onReplay,
+  onLobby,
+  ratio: propRatio,
+}) => {
+  const { playSFX } = useSFXContext();
   // 기준 해상도 대비 현재 비율 (사과 게임과 동일)
   const ratio = propRatio ?? ((window as any).__APPLE_GAME_RATIO || 1);
   const rankedPlayers = calculateRanks(players);
 
   // 닉네임 길이에 따라 폰트 크기 조절
   const getNameFontSize = (nameLength: number) => {
-    if (nameLength <= 3) return "48px";
-    if (nameLength <= 5) return "40px";
-    if (nameLength <= 7) return "34px";
-    return "28px"; // 8자
+    if (nameLength <= 3) return '48px';
+    if (nameLength <= 5) return '40px';
+    if (nameLength <= 7) return '34px';
+    return '28px'; // 8자
   };
 
   return (
@@ -108,14 +112,30 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, rat
                 style={{
                   ...getRankItemStyle(ratio),
                   marginLeft: idx === 0 ? 0 : -5 * ratio,
-                }}>
+                }}
+              >
                 {crown.visible && (
-                  <CrownSvg style={{ ...getCrownStyle(ratio), marginTop: 0, marginBottom: 3 * ratio }} fill={crown.fill} />
+                  <CrownSvg
+                    style={{
+                      ...getCrownStyle(ratio),
+                      marginTop: 0,
+                      marginBottom: 3 * ratio,
+                    }}
+                    fill={crown.fill}
+                  />
                 )}
-                <div style={{ ...getPlayerNameStyle(ratio), marginTop: 0, fontSize: getNameFontSize(player.name.length),
-                    whiteSpace: "nowrap",
-                    maxWidth: "210px",
-                    textAlign: "center", }}>{player.name}</div>
+                <div
+                  style={{
+                    ...getPlayerNameStyle(ratio),
+                    marginTop: 0,
+                    fontSize: getNameFontSize(player.name.length),
+                    whiteSpace: 'nowrap',
+                    maxWidth: '210px',
+                    textAlign: 'center',
+                  }}
+                >
+                  {player.name}
+                </div>
                 <div
                   style={{
                     ...getRankBarStyle(ratio),
@@ -134,8 +154,13 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, rat
             type="button"
             className="nes-btn is-primary"
             style={getButtonStyle(ratio)}
-            onClick={() => { playSFX('buttonClick'); onReplay(); }}
-            onMouseEnter={() => { playSFX('buttonHover'); }}
+            onClick={() => {
+              playSFX('buttonClick');
+              onReplay();
+            }}
+            onMouseEnter={() => {
+              playSFX('buttonHover');
+            }}
           >
             REPLAY
           </button>
@@ -143,8 +168,13 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, rat
             type="button"
             className="nes-btn is-primary"
             style={getButtonStyle(ratio)}
-            onClick={() => { playSFX('buttonClick'); onLobby(); }}
-            onMouseEnter={() => { playSFX('buttonHover'); }}
+            onClick={() => {
+              playSFX('buttonClick');
+              onLobby();
+            }}
+            onMouseEnter={() => {
+              playSFX('buttonHover');
+            }}
           >
             LOBBY
           </button>
@@ -153,7 +183,6 @@ const GameResult: React.FC<GameResultProps> = ({ players, onReplay, onLobby, rat
     </div>
   );
 };
-
 
 // 비율(ratio) 기반 스타일 함수들
 function getOverlayStyle(): React.CSSProperties {

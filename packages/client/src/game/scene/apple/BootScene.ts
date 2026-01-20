@@ -1,11 +1,11 @@
-import Phaser from "phaser";
+import Phaser from 'phaser';
 // Vite: import asset pack file as URL so Phaser can fetch it at runtime
 
-import assetPackUrl from "../../../assets/asset-pack.json?url";
+import assetPackUrl from '../../../assets/asset-pack.json?url';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
-    super("BootScene");
+    super('BootScene');
   }
 
   private loadingText?: Phaser.GameObjects.Text;
@@ -28,13 +28,13 @@ export class BootScene extends Phaser.Scene {
       .text(
         this.cameras.main.centerX,
         this.cameras.main.centerY,
-        "LOADING...",
+        'LOADING...',
         {
-          fontFamily: "NeoDunggeunmo, Arial",
-          fontSize: "48px",
-          color: "#000000",
-          align: "center",
-          stroke: "#b7997e",
+          fontFamily: 'NeoDunggeunmo, Arial',
+          fontSize: '48px',
+          color: '#000000',
+          align: 'center',
+          stroke: '#b7997e',
           strokeThickness: 4,
         },
       )
@@ -42,7 +42,7 @@ export class BootScene extends Phaser.Scene {
 
     // Load Phaser Editor 2D asset pack if present
     if (assetPackUrl) {
-      this.load.pack("asset-pack", assetPackUrl);
+      this.load.pack('asset-pack', assetPackUrl);
     }
   }
 
@@ -51,6 +51,6 @@ export class BootScene extends Phaser.Scene {
     if (this.loadingText) this.loadingText.destroy();
     if (this.loadingBg) this.loadingBg.destroy();
     // Proceed to main scene once assets (if any) are ready
-    this.scene.start("AppleGameScene");
+    this.scene.start('AppleGameScene');
   }
 }

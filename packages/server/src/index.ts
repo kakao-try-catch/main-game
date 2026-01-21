@@ -38,3 +38,29 @@ io.on("connection", (socket: Socket) => {
 httpServer.listen(3000, () => {
   console.log("🚀 소켓 서버가 3000번 포트에서 대기 중...");
 });
+
+// 프로세스 종료 방지 및 에러 로그 기록
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+process.on("exit", (code) => {
+  console.log(`[Server] Process exiting with code: ${code}`);
+  if (code !== 0) {
+    console.trace("Exit Trace:");
+  }
+});
+
+process.on("SIGINT", () => {
+  console.log("[Server] Received SIGINT (Ctrl+C)");
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  console.log("[Server] Received SIGTERM");
+  process.exit(0);
+});

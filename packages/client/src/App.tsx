@@ -136,30 +136,35 @@ function AppContent() {
     );
 
     const joinRoomPacket = {
-      type: SystemPacketType.JOIN_ROOM,
-      playerId: socketManager.getId() ?? "",
+      type: SystemPacketType.JOIN_ROOM || 'JOIN_ROOM',
+      playerId: socketManager.getId() ?? '',
       roomId: 'HARDCODED_ROOM_1',
       playerName: inputNickname,
-    } as const;
+    } as any;
     socketManager.send(joinRoomPacket);
-    console.log("JOIN_ROOM sent: ", joinRoomPacket);
+    console.log('JOIN_ROOM sent: ', joinRoomPacket);
     // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
     setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
   };
 
   const handleGameStart = (preset: AppleGamePreset) => {
-    setCurrentPreset(preset);
-    setCurrentScreen('game');
-  };
 
   // 소켓 연결부
   useEffect(() => {
     console.log("서버와의 연결 시도");
     socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
+    const gameStartReq = {
+      type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
+    };
+    socketManager.send(gameStartReq);
+    console.log('GAME_START_REQ sent: ', gameStartReq);
 
     // 테스트 종료(컴포넌트 제거) 시 연결을 완전히 끊고 싶다면 주석 해제
     return () => socketManager.disconnect();
   }, []);
+    setCurrentPreset(preset); // todo game_config_update 
+    setCurrentScreen('game'); // todo ready_scene
+  };
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {

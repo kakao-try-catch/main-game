@@ -1,11 +1,8 @@
 // src/SocketCounter.tsx
-import { useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { socketManager } from '../network/socket';
 
 export default function SocketCounter() {
-  // const count = useGameStore((state) => state.count);
-
+  const count = useGameStore((state) => state.count);
 
   // 4. 화면에 그려질 모양 (HTML과 비슷함)
   return (

@@ -6,11 +6,11 @@ export default class ButtonPrefab extends Phaser.GameObjects.Container {
   private shape!: Phaser.GameObjects.Rectangle;
   private text!: Phaser.GameObjects.Text;
   private onClick?: () => void;
-  private ratio: number;
+  private _ratio: number;
 
   constructor(scene: Phaser.Scene, x?: number, y?: number, ratio: number = 1) {
     super(scene, x ?? 0, y ?? 0);
-    this.ratio = ratio;
+    this._ratio = ratio;
 
     // shape
     this.shape = scene.add.rectangle(0, 1 * ratio, 386 * ratio, 136 * ratio);

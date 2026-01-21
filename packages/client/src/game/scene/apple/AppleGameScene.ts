@@ -48,7 +48,7 @@ export default class AppleGameScene extends Phaser.Scene {
     baseY: number;
   };
   private isGameInitialized: boolean = false;
-  private currentPreset?: AppleGamePreset;
+  private _currentPreset?: AppleGamePreset;
 
   /* START-USER-CODE */
 
@@ -178,7 +178,7 @@ export default class AppleGameScene extends Phaser.Scene {
         if (!this.isGameInitialized) {
           // 프리셋이 있으면 게임 설정 업데이트 (초기화 전에!)
           if (data.preset) {
-            this.currentPreset = data.preset;
+            this._currentPreset = data.preset;
             const resolvedConfig = resolvePreset(data.preset);
 
             // 그리드 크기에 맞춰 레이아웃 재계산

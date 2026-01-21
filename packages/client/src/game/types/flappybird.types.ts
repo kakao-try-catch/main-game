@@ -33,6 +33,16 @@ export interface RopeData {
     }[];
 }
 
+// 파이프 데이터
+export interface PipeData {
+    id: string;           // 파이프 고유 ID
+    x: number;            // 파이프 X 좌표
+    gapY: number;         // 간격 중심 Y 좌표 (서버에서 랜덤 생성)
+    width: number;        // 파이프 너비
+    gap: number;          // 위아래 파이프 사이 간격
+    passed: boolean;      // 점수 획등 여부
+}
+
 // 서버 → 클라이언트: 연결 성공
 export interface ConnectedEvent {
     playerId: PlayerId;
@@ -67,6 +77,7 @@ export interface UpdatePositionsEvent {
     timestamp: number;
     birds: BirdPosition[];
     ropes: RopeData[];
+    pipes: PipeData[];
 }
 
 // 서버 → 클라이언트: 점수 업데이트

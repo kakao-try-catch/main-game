@@ -1,5 +1,6 @@
 import Matter from 'matter-js';
-import type { BirdPosition, RopeData, PlayerId } from '../types/flappybird.types';
+import type { BirdPosition, RopeData, PlayerId, PipeData } from '../types/flappybird.types';
+import type { ResolvedFlappyBirdConfig } from '../types/FlappyBirdGamePreset';
 import { MockSocket } from '../network/MockSocket';
 
 /**
@@ -24,6 +25,12 @@ export class MockServerCore {
     private isRunning: boolean = false;
     private playerCount: number = 4;
 
+    // 파이프 관련
+    private pipes: PipeData[] = [];
+    private nextPipeId: number = 0;
+    private screenWidth: number = 1440;
+    private screenHeight: number = 896;
+
     // 물리 파라미터
     private readonly GRAVITY_Y = 1.2; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
     private readonly BIRD_WIDTH = 80; // 57 * 1.4 (해상도 변경 반영)
@@ -36,6 +43,14 @@ export class MockServerCore {
     private readonly IDEAL_LENGTH = 120;  // 밧줄의 기본 여유 길이
     private readonly ROPE_STIFFNESS = 0.3; // 밧줄 장력 최대치 근사값
     private readonly ROPE_SOFTNESS = 50;   // 장력 완화 계수 (로그 함수 대체용)
+
+    // 파이프 파라미터
+    private readonly PIPE_WIDTH = 80;
+    private readonly PIPE_GAP = 200;
+    private pipeSpacing: number = 400;  // 파이프 간 거리
+
+    // 파이프 속도 관리
+    private pipeSpeed: number = 3;  // 파이프 속도
 
     constructor(socket: MockSocket) {
         this.socket = socket;
@@ -68,13 +83,22 @@ export class MockServerCore {
 
     /**
      * 게임 초기화
+     * @param config 게임 설정
      */
-    initialize() {
+    initialize(config?: ResolvedFlappyBirdConfig) {
         // 기존 객체 제거
         Matter.World.clear(this.world, false);
         this.birds = [];
         this.score = 0;
         this.isGameOverState = false;
+        this.pipes = [];
+        this.nextPipeId = 0;
+
+        // 설정 적용
+        if (config) {
+            this.pipeSpeed = config.pipeSpeed;
+            this.pipeSpacing = config.pipeSpacing;
+        }
 
         // 바닥 생성
         this.createGround();
@@ -84,7 +108,8 @@ export class MockServerCore {
 
         // ※ 이제 고정된 Constraint 대신 update 루프에서 동적인 장력을 계산하여 적용합니다.
 
-        console.log('[MockServerCore] 게임 초기화 완료 (가변 장력 시스템 적용)');
+
+        console.log('[MockServerCore] 게임 초기화 완료');
     }
 
     /**
@@ -190,6 +215,11 @@ export class MockServerCore {
                 });
                 continue;
             }
+        // 파이프 업데이트
+        this.updatePipes();
+
+        // 충돌 감지
+        this.checkCollisions();
 
             // 카메라 스크롤 속도(1.5)를 기준으로 밸런스 조정
             const STALL_SPEED = 1.5;
@@ -234,7 +264,8 @@ export class MockServerCore {
         this.socket.emit('update_positions', {
             timestamp: Date.now(),
             birds,
-            ropes
+            ropes,
+            pipes: this.pipes
         });
     }
 
@@ -379,6 +410,52 @@ export class MockServerCore {
 
             console.log(`[MockServerCore] Player ${playerId} Flap!`);
         }
+    }
+
+    private createPipe(x: number) {
+        const minGapY = this.screenHeight * 0.1;
+        const maxGapY = this.screenHeight * 0.5;
+        const gapY = minGapY + Math.random() * (maxGapY - minGapY);
+
+        const pipe: PipeData = {
+            id: `pipe_${this.nextPipeId++}`,
+            x,
+            gapY,
+            width: this.PIPE_WIDTH,
+            gap: this.PIPE_GAP,
+            passed: false
+        };
+
+        this.pipes.push(pipe);
+    }
+
+    private updatePipes() {
+        // 파이프 이동 (일정한 속도 유지)
+        for (const pipe of this.pipes) {
+            pipe.x -= this.pipeSpeed;
+        }
+
+        // 화면 밖으로 나간 파이프 제거
+        this.pipes = this.pipes.filter(pipe => pipe.x > -this.PIPE_WIDTH);
+
+        // 거리 기반 파이프 생성 (일정한 간격 유지)
+        // 마지막 파이프가 없거나, 마지막 파이프가 충분히 왼쪽으로 이동했을 때 새 파이프 생성
+        const shouldSpawnPipe = this.pipes.length === 0 ||
+            this.pipes[this.pipes.length - 1].x <= this.screenWidth - this.pipeSpacing;
+
+        if (shouldSpawnPipe) {
+            this.createPipe(this.screenWidth + this.PIPE_WIDTH);
+        }
+    }
+
+    /**
+     * 현재 게임 설정 조회
+     */
+    getGameConfig(): ResolvedFlappyBirdConfig {
+        return {
+            pipeSpeed: this.pipeSpeed,
+            pipeSpacing: this.pipeSpacing,
+        };
     }
 
     /**

@@ -56,7 +56,8 @@ export function handleClientPacket(io: Server, socket: Socket, packet: ServerPac
       // 방장 검증 (order 0인 경우 방장으로 간주)
       const player = session.players.get(socket.id);
       if (player && player.order === 0) {
-        session.startGame();
+        // session.startGame();
+        console.log("Game started");
       } else {
         socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "방장만 게임을 시작할 수 있습니다." });
       }

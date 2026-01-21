@@ -11,8 +11,10 @@ import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/GamePreset';
+import { SystemPacketType } from '../../common/src/packets';
 
 import './App.css';
+import { socketManager } from './network/socket';
 
 interface PlayerData {
   id: string;
@@ -63,6 +65,7 @@ function AppContent() {
   const [currentPreset, setCurrentPreset] = useState<
     AppleGamePreset | undefined
   >(undefined);
+
 
   // 점수 증가 함수
   const handleAddScore = (playerId: string, pointsToAdd: number) => {
@@ -119,6 +122,7 @@ function AppContent() {
     setCurrentScreen('lobby');
   }, []);
 
+  // 닉네임 설정하고 시작 버튼 누를 때 동작
   const handleStart = (inputNickname: string) => {
     const userColor = '#209cee'; // 처음 유저는 파란색
     setUserInfo(inputNickname, userColor, true);
@@ -130,13 +134,32 @@ function AppContent() {
           : player,
       ),
     );
-    setCurrentScreen('lobby');
+
+    const joinRoomPacket = {
+      type: SystemPacketType.JOIN_ROOM,
+      playerId: socketManager.getId() ?? "",
+      roomId: 'HARDCODED_ROOM_1',
+      playerName: inputNickname,
+    } as const;
+    socketManager.send(joinRoomPacket);
+    console.log("JOIN_ROOM sent: ", joinRoomPacket);
+    // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
+    // setCurrentScreen('lobby');
   };
 
   const handleGameStart = (preset: AppleGamePreset) => {
     setCurrentPreset(preset);
     setCurrentScreen('game');
   };
+
+  // 소켓 연결부
+  useEffect(() => {
+    console.log("서버와의 연결 시도");
+    socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
+
+    // 테스트 종료(컴포넌트 제거) 시 연결을 완전히 끊고 싶다면 주석 해제
+    return () => socketManager.disconnect();
+  }, []);
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {

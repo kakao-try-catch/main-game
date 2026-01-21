@@ -54,7 +54,9 @@ export function handleClientPacket(io: Server, socket: Socket, packet: ServerPac
   switch (packet.type) {
     case SystemPacketType.GAME_START_REQ: {
       // 방장 검증 (order 0인 경우 방장으로 간주)
+      console.log("game start req received. socketid: " + socket.id);
       const player = session.players.get(socket.id);
+      console.log("player: " + player);
       if (player && player.order === 0) {
         // session.startGame();
         console.log("Game started");

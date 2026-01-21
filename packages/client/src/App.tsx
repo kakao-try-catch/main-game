@@ -35,7 +35,7 @@ function AppContent() {
   // ⭐ 수정: 'landing' → 'game' (플래피버드 바로 시작)
   const [currentScreen, setCurrentScreen] = useState<
     'landing' | 'lobby' | 'game'
-  >('game');
+  >('landing');
 
   // 현재 유저 정보 (서버에서 받아올 예정)
   const [currentUser, setCurrentUser] = useState<{

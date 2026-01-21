@@ -66,6 +66,7 @@ function AppContent() {
     AppleGamePreset | undefined
   >(undefined);
 
+
   // 점수 증가 함수
   const handleAddScore = (playerId: string, pointsToAdd: number) => {
     setPlayers((prevPlayers) =>
@@ -134,12 +135,14 @@ function AppContent() {
       ),
     );
 
-    socketManager.send({
+    const joinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,
       playerId: socketManager.getId() ?? "",
       roomId: 'HARDCODED_ROOM_1',
       playerName: inputNickname,
-    });
+    } as const;
+    socketManager.send(joinRoomPacket);
+    console.log("JOIN_ROOM sent: ", joinRoomPacket);
     // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
     // setCurrentScreen('lobby');
   };

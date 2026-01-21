@@ -32,6 +32,11 @@ export class MockServerCore {
     private readonly FORWARD_SPEED = 3; // 전진 순항 속도 밸런스 조정
     private isGameOverState: boolean = false; // 게임 오버 상태 추적
 
+    // 밧줄 물리 파라미터
+    private readonly IDEAL_LENGTH = 120;  // 밧줄의 기본 여유 길이
+    private readonly ROPE_STIFFNESS = 0.3; // 밧줄 장력 최대치 근사값
+    private readonly ROPE_SOFTNESS = 50;   // 장력 완화 계수 (로그 함수 대체용)
+
     constructor(socket: MockSocket) {
         this.socket = socket;
         socket.setServerCore(this);
@@ -238,9 +243,6 @@ export class MockServerCore {
      * 거리가 멀수록(팽팽할수록) 서로를 당기는 힘이 강해집니다.
      */
     private applyDynamicTension() {
-        const IDEAL_LENGTH = 120;    // 밧줄의 여유 길이를 좀 더 늘려 자주 팽팽해지는 것 방지
-        const STIFFNESS_LOG = 0.05;  // 로그 기반 탄성 계수
-
         for (let i = 0; i < this.birds.length - 1; i++) {
             const birdA = this.birds[i];
             const birdB = this.birds[i + 1];
@@ -249,12 +251,13 @@ export class MockServerCore {
             const dy = birdB.position.y - birdA.position.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // 1. 인장력(Tension) 계산: 로그 함수를 사용하여 늘어날수록 부드럽게 힘이 커지도록 설정
-            if (distance > IDEAL_LENGTH) {
-                const stretch = distance - IDEAL_LENGTH;
+            // 1. 인장력(Tension) 계산: 유리 함수(Rational Function)를 사용하여 로그 함수와 유사한 곡선 구현
+            // 연산 비용이 높은 Math.log 대신 (x * a) / (x + b) 형태의 산술 연산으로 대체
+            if (distance > this.IDEAL_LENGTH) {
+                const stretch = distance - this.IDEAL_LENGTH;
 
-                // 로그 함수 기반: Math.log(1 + stretch)는 초기에 부드럽게 늘어나고 확 당겨지는 느낌을 줄임
-                const forceMagnitude = Math.log(1 + stretch) * STIFFNESS_LOG;
+                // (stretch * 0.3) / (stretch + 50) 은 0.05 * log(1+stretch)와 매우 유사한 감쇠 곡선을 가짐
+                const forceMagnitude = (stretch * this.ROPE_STIFFNESS) / (stretch + this.ROPE_SOFTNESS);
 
                 const ux = dx / distance;
                 const uy = dy / distance;

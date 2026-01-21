@@ -1,5 +1,6 @@
 import Matter from 'matter-js';
 import type { BirdPosition, RopeData, PlayerId, PipeData } from '../types/flappybird.types';
+import type { ResolvedFlappyBirdConfig } from '../types/FlappyBirdGamePreset';
 import { MockSocket } from '../network/MockSocket';
 
 /**
@@ -28,7 +29,6 @@ export class MockServerCore {
     // 파이프 관련
     private pipes: PipeData[] = [];
     private nextPipeId: number = 0;
-    private lastPipeSpawnTime: number = 0;
     private screenWidth: number = 1440;
     private screenHeight: number = 896;
 
@@ -43,8 +43,10 @@ export class MockServerCore {
     // 파이프 파라미터
     private readonly PIPE_WIDTH = 80;
     private readonly PIPE_GAP = 200;
-    private readonly PIPE_SPAWN_INTERVAL = 2000;
-    private readonly PIPE_SPEED = 3;
+    private pipeSpacing: number = 400;  // 파이프 간 거리
+
+    // 파이프 속도 관리
+    private pipeSpeed: number = 3;  // 파이프 속도
 
     constructor(socket: MockSocket) {
         this.socket = socket;
@@ -74,8 +76,9 @@ export class MockServerCore {
 
     /**
      * 게임 초기화
+     * @param config 게임 설정
      */
-    initialize() {
+    initialize(config?: ResolvedFlappyBirdConfig) {
         // 기존 객체 제거
         Matter.World.clear(this.world, false);
         this.birds = [];
@@ -83,7 +86,12 @@ export class MockServerCore {
         this.score = 0;
         this.pipes = [];
         this.nextPipeId = 0;
-        this.lastPipeSpawnTime = 0;
+
+        // 설정 적용
+        if (config) {
+            this.pipeSpeed = config.pipeSpeed;
+            this.pipeSpacing = config.pipeSpacing;
+        }
 
         // 바닥 생성
         this.createGround();
@@ -348,18 +356,32 @@ export class MockServerCore {
     }
 
     private updatePipes() {
-        const currentTime = Date.now();
-
+        // 파이프 이동 (일정한 속도 유지)
         for (const pipe of this.pipes) {
-            pipe.x -= this.PIPE_SPEED;
+            pipe.x -= this.pipeSpeed;
         }
 
+        // 화면 밖으로 나간 파이프 제거
         this.pipes = this.pipes.filter(pipe => pipe.x > -this.PIPE_WIDTH);
 
-        if (currentTime - this.lastPipeSpawnTime >= this.PIPE_SPAWN_INTERVAL) {
+        // 거리 기반 파이프 생성 (일정한 간격 유지)
+        // 마지막 파이프가 없거나, 마지막 파이프가 충분히 왼쪽으로 이동했을 때 새 파이프 생성
+        const shouldSpawnPipe = this.pipes.length === 0 ||
+            this.pipes[this.pipes.length - 1].x <= this.screenWidth - this.pipeSpacing;
+
+        if (shouldSpawnPipe) {
             this.createPipe(this.screenWidth + this.PIPE_WIDTH);
-            this.lastPipeSpawnTime = currentTime;
         }
+    }
+
+    /**
+     * 현재 게임 설정 조회
+     */
+    getGameConfig(): ResolvedFlappyBirdConfig {
+        return {
+            pipeSpeed: this.pipeSpeed,
+            pipeSpacing: this.pipeSpacing,
+        };
     }
 
     /**

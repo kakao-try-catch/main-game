@@ -2,7 +2,7 @@ import { useState } from 'react';
 import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
-import type { AppleGamePreset } from '../game/types/GamePreset';
+import type { AppleGamePreset } from '../game/types/AppleGamePreset';
 import SoundSetting from './SoundSetting';
 
 const TOOLTIP_DURATION = 2000;

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { UnifiedGameContainer } from './game/UnifiedGameContainer';
+import { GameContainer } from './game/GameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
@@ -9,7 +9,7 @@ import GameResult from './game/utils/game-result/GameResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
-import type { AppleGamePreset } from './game/types/GamePreset';
+import type { AppleGamePreset } from './game/types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
 import { SystemPacketType } from '../../common/src/packets';
 
@@ -225,24 +225,7 @@ function AppContent() {
           margin: '0',
           flexShrink: 0,
         }}
-      >
-        {gameReady && (
-          <p
-            style={{
-              fontFamily: 'NeoDunggeunmo',
-              fontSize: '16px',
-              textAlign: 'center',
-              margin: '2px 0',
-            }}
-          >
-            {currentGameType === 'apple'
-              ? '마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록 하세요'
-              : currentGameType === 'flappy'
-                ? '스페이스바나 마우스 클릭으로 새를 날게 하세요! (Q/W/E/R로 개별 새 조종)'
-                : '게임을 플레이하세요'}
-          </p>
-        )}
-      </header>
+      />
 
       {/* <SocketCounter /> */}
 
@@ -288,7 +271,6 @@ function AppContent() {
           alignItems: 'center',
           width: '100%',
           flex: 4,
-          backgroundColor: currentGameType === 'flappy' ? '#46d1fd' : '#fff',
           margin: 0,
           padding: 0,
           minHeight: 0,
@@ -297,7 +279,7 @@ function AppContent() {
         }}
       >
         {!gameEnded && currentGameType && (
-          <UnifiedGameContainer
+          <GameContainer
             gameType={currentGameType}
             playerCount={players.length}
             players={players}

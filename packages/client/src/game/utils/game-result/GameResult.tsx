@@ -2,6 +2,7 @@
 import React from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
+import type { PlayerResultData } from '../../types/common';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
 type CrownSvgProps = { fill: string; style?: React.CSSProperties };
@@ -21,14 +22,6 @@ const CrownSvg: React.FC<CrownSvgProps> = ({ fill, style }) => (
     />
   </svg>
 );
-
-interface PlayerResultData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-  playerIndex: number;
-}
 
 interface RankedPlayer extends PlayerResultData {
   rank: number;

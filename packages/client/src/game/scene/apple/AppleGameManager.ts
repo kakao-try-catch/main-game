@@ -6,6 +6,7 @@ import { attachDragSelection } from '../../utils/dragSelection';
 import { socketManager } from '../../../network/socket';
 import { GamePacketType } from '../../../../../common/src/packets';
 import type { PlayerData } from '../../types/common';
+import { hexStringToNumber, adjustBrightness } from '../../utils/colorUtils';
 
 // Declare the global property for TypeScript
 declare global {
@@ -42,30 +43,6 @@ const DEFAULT_CONFIG: AppleGameConfig = {
   playerCount: 4,
   ratio: 1,
 };
-
-/** HEX 색상을 숫자로 변환 */
-function hexStringToNumber(hex: string): number {
-  return parseInt(hex.replace('#', ''), 16);
-}
-
-/** HSV에서 명도(V)를 조절한 색상 반환 */
-function adjustBrightness(hexColor: string, brightnessOffset: number): number {
-  const color = Phaser.Display.Color.HexStringToColor(hexColor);
-  const hsv = Phaser.Display.Color.RGBToHSV(color.red, color.green, color.blue);
-
-  // 명도 조정 (0~1 범위, brightnessOffset는 0~100 범위로 가정)
-  const newV = Math.max(
-    0,
-    Math.min(1, (hsv.v as number) - brightnessOffset / 100),
-  );
-
-  const rgb = Phaser.Display.Color.HSVToRGB(
-    hsv.h as number,
-    hsv.s as number,
-    newV,
-  ) as { r: number; g: number; b: number };
-  return Phaser.Display.Color.GetColor(rgb.r, rgb.g, rgb.b);
-}
 
 export default class AppleGameManager {
   private container: Phaser.GameObjects.Container | null = null;

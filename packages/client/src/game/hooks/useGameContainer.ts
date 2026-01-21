@@ -2,13 +2,13 @@
 import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
 
-interface GameContainerConfig {
+export interface GameContainerConfig {
   sceneName: string;
   sceneClasses: (typeof Phaser.Scene)[];
   maxWidth: number;
   maxHeight: number;
   backgroundColor: string;
-  ratioKey: '__APPLE_GAME_RATIO' | '__FLAPPY_GAME_RATIO';
+  ratioKey: '__APPLE_GAME_RATIO' | '__FLAPPY_GAME_RATIO' | '__GAME_RATIO';
   onGameReady?: (game: Phaser.Game) => void;
   setupSceneEvents?: (scene: Phaser.Scene) => void | (() => void);
 }
@@ -20,9 +20,15 @@ interface GameContainerData {
   preset: any;
 }
 
+interface GameContainerOptions {
+  enabled?: boolean;
+  onGameReady?: (game: Phaser.Game) => void;
+}
+
 export function useGameContainer(
   config: GameContainerConfig,
   data: GameContainerData,
+  options: GameContainerOptions = {},
 ) {
   const {
     sceneName,
@@ -31,9 +37,10 @@ export function useGameContainer(
     maxHeight,
     backgroundColor,
     ratioKey,
-    onGameReady,
     setupSceneEvents,
   } = config;
+
+  const { enabled = true, onGameReady } = options;
 
   const { playerCount, players, currentPlayerIndex, preset } = data;
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -66,7 +73,7 @@ export function useGameContainer(
   }, [maxWidth, ratioKey]);
 
   useEffect(() => {
-    if (gameRef.current || !parentRef.current) return;
+    if (!enabled || gameRef.current || !parentRef.current) return;
 
     let parentWidth = parentRef.current?.offsetWidth || 0;
     let parentHeight = parentRef.current?.offsetHeight || 0;
@@ -137,7 +144,7 @@ export function useGameContainer(
       gameRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onGameReady]);
+  }, [onGameReady, enabled]);
 
   const aspectRatio = maxWidth / maxHeight;
   const vw = Math.min(window.innerWidth, maxWidth);

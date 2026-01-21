@@ -1,24 +1,12 @@
 import RankOnePlayerPrefab from './rank/RankOnePlayerPrefab';
 import ButtonPrefab from './button/ButtonPrefab';
+import type { PlayerResultData } from '../../types/common';
+import { hexStringToNumber } from '../colorUtils';
 // You can write more code here
-
-/** 플레이어 데이터 인터페이스 */
-export interface PlayerResultData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-  playerIndex: number; // 원래 플레이어 번호 (0~3)
-}
 
 /** 순위가 매겨진 플레이어 데이터 */
 interface RankedPlayer extends PlayerResultData {
   rank: number; // 1~4
-}
-
-/** HEX 색상 문자열을 숫자로 변환 */
-function hexStringToNumber(hex: string): number {
-  return parseInt(hex.replace('#', ''), 16);
 }
 
 /* START OF COMPILED CODE */

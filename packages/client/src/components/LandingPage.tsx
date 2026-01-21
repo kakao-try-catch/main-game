@@ -26,7 +26,7 @@ function LandingPage({ onStart }: LandingPageProps) {
     const value = e.target.value;
     if (value.length > MAX_NICKNAME_LENGTH) {
       setShowLengthTooltip(true);
-      setTimeout(() => setShowLengthTooltip(false), TOOLTIP_DURATION);
+      setTimeout(() => setShowLengthTooltip(false), CONSTANTS.TOOLTIP_DURATION);
       return;
     }
     setNickname(value);

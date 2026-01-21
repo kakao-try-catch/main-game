@@ -96,7 +96,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       width: MAX_WIDTH * ratio,
       height: MAX_HEIGHT * ratio,
       parent: parentRef.current,
-      backgroundColor: '#F6F5F6',
+      backgroundColor: '#FFFFFF',
       scene: [BootScene, AppleGameScene],
       physics: {
         default: 'arcade',
@@ -171,9 +171,9 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
 
   // 화면 크기에 따라 1380:862 비율을 유지하는 스타일
   const aspectRatio = MAX_WIDTH / MAX_HEIGHT;
-  // 항상 반응형으로 설정, 최대 크기 제한
+  // 부모 컨테이너 크기를 고려한 반응형 설정
   const vw = Math.min(window.innerWidth, MAX_WIDTH);
-  const vh = Math.min(window.innerHeight - 150, MAX_HEIGHT); // React UI 높이를 고려하여 150px 마진 추가
+  const vh = Math.min(window.innerHeight * 0.8, MAX_HEIGHT); // 80% 영역 내에서 계산
   let width, height;
   width = vw;
   height = vw / aspectRatio;
@@ -189,14 +189,15 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
   const containerStyle: React.CSSProperties = {
     width: `${width}px`,
     height: `${height}px`,
-    maxWidth: `${MAX_WIDTH}px`,
-    maxHeight: `${MAX_HEIGHT}px`,
+    maxWidth: '100%',
+    maxHeight: '100%',
     minWidth: '320px',
     minHeight: '200px',
     margin: '0 auto',
     display: 'block',
-    background: '#222',
+    background: '#fff',
     position: 'relative',
+    border: '4px solid #fff',
   };
   return <div ref={parentRef} id="phaser-game" style={containerStyle} />;
 };

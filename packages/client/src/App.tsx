@@ -171,24 +171,30 @@ function AppContent() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
+        height: '100vh',
         width: '100vw',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        overflow: 'hidden',
+        margin: 0,
+        padding: 0,
       }}
     >
       <header
         className="App-header"
-        style={{ width: '100%', textAlign: 'center', margin: '8px 0 0 0' }}
+        style={{
+          width: '100%',
+          textAlign: 'center',
+          margin: '0',
+          flexShrink: 0,
+        }}
       >
         {gameReady && (
           <p
             style={{
               fontFamily: 'NeoDunggeunmo',
-              fontSize: '18px',
+              fontSize: '16px',
               textAlign: 'center',
-              margin: 0,
+              margin: '2px 0',
             }}
           >
             마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록
@@ -199,34 +205,54 @@ function AppContent() {
 
       <SocketCounter />
 
+      {/* 상단 영역 */}
       <div
         style={{
-          ...playerListStyle,
-          alignSelf: 'center',
+          width: '100%',
+          flex: 1,
+          display: 'flex',
           justifyContent: 'center',
-          marginLeft: `0px`,
-          position: 'relative',
+          alignItems: 'flex-start',
+          marginTop: '4px',
+          overflow: 'auto',
+          minHeight: 0,
         }}
       >
-        {players.slice(0, testPlayerCount).map((player) => (
-          <PlayerCard
-            key={player.id}
-            name={player.name}
-            score={player.score}
-            color={player.color}
-          />
-        ))}
-        <SoundSetting gameReady={gameReady} />
+        <div
+          style={{
+            ...playerListStyle,
+            marginLeft: `0px`,
+            position: 'relative',
+            marginTop: '0px',
+          }}
+        >
+          {players.slice(0, testPlayerCount).map((player) => (
+            <PlayerCard
+              key={player.id}
+              name={player.name}
+              score={player.score}
+              color={player.color}
+            />
+          ))}
+          <SoundSetting gameReady={gameReady} />
+        </div>
       </div>
 
+      {/* 하단 영역 */}
       <main
         className="game-container"
         style={{
-          position: 'relative',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           width: '100%',
+          flex: 4,
+          backgroundColor: '#fff',
+          margin: 0,
+          padding: 0,
+          minHeight: 0,
+          maxHeight: '80vh',
+          overflow: 'hidden',
         }}
       >
         {!gameEnded && currentPreset && (
@@ -259,8 +285,8 @@ function AppContent() {
 const playerListStyle: React.CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
-  gap: '12px',
-  marginTop: '8px', // UI 간격 조정
+  gap: '8px',
+  marginTop: '0px',
   alignSelf: 'center',
   justifyContent: 'center',
 };

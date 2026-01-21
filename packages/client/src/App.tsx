@@ -11,8 +11,10 @@ import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/GamePreset';
+import { SystemPacketType } from '../../common/src/packets';
 
 import './App.css';
+import { socketManager } from './network/socket';
 
 interface PlayerData {
   id: string;
@@ -119,6 +121,7 @@ function AppContent() {
     setCurrentScreen('lobby');
   }, []);
 
+  // 닉네임 설정하고 시작 버튼 누를 때 동작
   const handleStart = (inputNickname: string) => {
     const userColor = '#209cee'; // 처음 유저는 파란색
     setUserInfo(inputNickname, userColor, true);
@@ -130,7 +133,15 @@ function AppContent() {
           : player,
       ),
     );
-    setCurrentScreen('lobby');
+
+    socketManager.send({
+      type: SystemPacketType.JOIN_ROOM,
+      playerId: socketManager.getId() ?? "",
+      roomId: 'HARDCODED_ROOM_1',
+      playerName: inputNickname,
+    });
+    // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
+    // setCurrentScreen('lobby');
   };
 
   const handleGameStart = (preset: AppleGamePreset) => {

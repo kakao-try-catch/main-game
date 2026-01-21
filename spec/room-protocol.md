@@ -18,10 +18,10 @@ PlayerData는 { order: number, playerName: string, color: string } 으로 구성
 # GAME_CONFIG_UPDATE_REQ (ServerBound)
 방장이 서버로 게임 설정 변경을 요청할 때 사용됩니다.
 
-selected_game_type: string # 게임 타입
+selectedGameType: string # 게임 타입
 game_config: config # 게임 구성 설정
 
-string에 들어가는 game_type은 enum으로 정의되어야 함.
+string에 들어가는 selectedGameType은 enum으로 정의되어야 함.
 APPLE_GAME, FLAPPY_BIRD, MINESWEEPER
 
 config는 게임마다 다를 수 있지만 일단 사과게임을 우선적으로 처리합니다.
@@ -34,16 +34,21 @@ zero: boolean # 0 생성 여부
 # GAME_CONFIG_UPDATE (ClientBound)
 방장이 게임 설정을 변경했을 때 모든 플레이어에게 전달됩니다.
 
-selected_game_type: string # 게임 타입
-game_config: config # 게임 구성 설정
+- selectedGameType: GameType # 게임 타입
+- gameConfig: config # 게임 구성 설정 (사과게임 콘피그는 packets.ts에 있는 AppleGameConfig 사용)
 
 config는 게임마다 다를 수 있지만 일단 사과게임을 우선적으로 처리합니다.
-map_size: small, medium, large enum # 맵 크기
-time: number #서버측도 검증해야 함. 클라측 검증 로직을 서버측도 가져오기?
-generation: 0/1 #0은 쉬움. 1~9 숫자 생성, 1은 어려움. 1~5 숫자 생성
-zero: boolean # 0 생성 여부
+- mapSize: small, medium, large enum # 맵 크기
+- time: number #서버측도 검증해야 함. 클라측 검증 로직을 서버측도 가져오기?
+- generation: 0/1 #0은 쉬움. 1~9 숫자 생성, 1은 어려움. 1~5 숫자 생성
+- zero: boolean # 0 생성 여부
 
 # GAME_START_REQ (ServerBound)
 방장이 현재 설정으로 게임 시작을 요청할 때 사용됩니다.
 서버측은 방장인지 검증 후 현재 상태로 게임을 시작합니다.
 서버측 해당 패킷을 보낸 socket의 id를 기반으로 room을 찾고 접속 여부, 방장 여부 등을 검증 후 게임 시작 처리를 준비합니다.
+
+# READY_SCENE
+클라이언트가 이 패킷을 받아야 실제 게임 화면을 구성합니다. (기존 setCurrentScreen('game')으로 게임 화면으로 넘어가는 부분)
+
+- selectedGameType: GameType # 게임 타입 (packets.ts에 있는 GameType 사용하면 됨.)

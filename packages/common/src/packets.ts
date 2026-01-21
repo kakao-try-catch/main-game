@@ -7,6 +7,7 @@ export enum SystemPacketType {
   GAME_CONFIG_UPDATE_REQ = "GAME_CONFIG_UPDATE_REQ",
   GAME_CONFIG_UPDATE = "GAME_CONFIG_UPDATE",
   GAME_START_REQ = "GAME_START_REQ",
+  READY_SCENE = "READY_SCENE",
 }
 
 export enum GameType {
@@ -95,6 +96,11 @@ export interface GameStartReqPacket {
   type: SystemPacketType.GAME_START_REQ;
 }
 
+export interface ReadyScenePacket {
+  type: SystemPacketType.READY_SCENE;
+  selectedGameType: GameType;
+}
+
 export type SystemPacket =
   | UpdateNumberPacket
   | JoinRoomPacket
@@ -102,7 +108,8 @@ export type SystemPacket =
   | SystemMessagePacket
   | GameConfigUpdateReqPacket
   | GameConfigUpdatePacket
-  | GameStartReqPacket;
+  | GameStartReqPacket
+  | ReadyScenePacket;
 
 // --- GAME PACKETS ---
 export interface SetFieldPacket {

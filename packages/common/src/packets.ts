@@ -6,6 +6,7 @@ export enum SystemPacketType {
   SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
   GAME_CONFIG_UPDATE_REQ = "GAME_CONFIG_UPDATE_REQ",
   GAME_CONFIG_UPDATE = "GAME_CONFIG_UPDATE",
+  GAME_START_REQ = "GAME_START_REQ",
 }
 
 export enum GameType {
@@ -90,13 +91,18 @@ export interface GameConfigUpdatePacket {
   gameConfig: GameConfig;
 }
 
+export interface GameStartReqPacket {
+  type: SystemPacketType.GAME_START_REQ;
+}
+
 export type SystemPacket =
   | UpdateNumberPacket
   | JoinRoomPacket
   | RoomUpdatePacket
   | SystemMessagePacket
   | GameConfigUpdateReqPacket
-  | GameConfigUpdatePacket;
+  | GameConfigUpdatePacket
+  | GameStartReqPacket;
 
 // --- GAME PACKETS ---
 export interface SetFieldPacket {

@@ -40,26 +40,28 @@ export function handleDisconnect(socketId: string) {
 }
 
 export function handleClientPacket(io: Server, socket: Socket, packet: ServerPacket) {
-  //  const roomId = playerRooms.get(socket.id);
-  //
-  //  // 만약 System Packet인 JOIN_ROOM이 온다면 처리 (기존 index.ts 로직 대체 가능성 고려)
-  //  // 현재 구조상 index.ts에서 socket.join을 하고 있음.
-  //  // 여기서는 이미 Join된 상태라고 가정하고 게임 패킷만 처리하거나,
-  //  // JOIN_ROOM 패킷을 받아서 처리하도록 구조화 가능.
-  //
-  //  if (!roomId) {
-  //    // 방에 없는 상태에서 게임 패킷을 보내면 무시/에러
-  //    // 단, JOIN 관련 패킷은 예외여야 함
-  //    return;
-  //  }
-  //
-  //  const session = sessions.get(roomId);
-  //  if (!session) return;
+  if (packet.type === SystemPacketType.JOIN_ROOM) {
+    joinPlayerToGame(io, socket, packet.roomId, packet.playerName);
+    return;
+  }
+
+  const roomId = playerRooms.get(socket.id);
+  if (!roomId) return;
+
+  const session = sessions.get(roomId);
+  if (!session) return;
 
   switch (packet.type) {
-    case SystemPacketType.JOIN_ROOM:
-      joinPlayerToGame(io, socket, packet.roomId, packet.playerName);
+    case SystemPacketType.GAME_START_REQ: {
+      // 방장 검증 (order 0인 경우 방장으로 간주)
+      const player = session.players.get(socket.id);
+      if (player && player.order === 0) {
+        session.startGame();
+      } else {
+        socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "방장만 게임을 시작할 수 있습니다." });
+      }
       break;
+    }
 
     case GamePacketType.DRAWING_DRAG_AREA:
       // 브로드캐스트 (나 제외)

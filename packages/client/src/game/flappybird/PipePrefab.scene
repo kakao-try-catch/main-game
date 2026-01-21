@@ -1,0 +1,61 @@
+{
+    "id": "d40f4423-fb29-402d-8706-f0e6a305d45b",
+    "settings": {
+        "createMethodName": "",
+        "preloadMethodName": "",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "exportClass": true,
+        "autoImport": false,
+        "importFileExtension": false,
+        "generateAwakeHandler": false,
+        "compilerInsertSpaces": false,
+        "compilerTabSize": 4,
+        "borderWidth": 1440,
+        "borderHeight": 896,
+        "borderX": 0,
+        "borderY": 0
+    },
+    "sceneType": "PREFAB",
+    "displayList": [
+        {
+            "unlock": [
+                "x",
+                "y"
+            ],
+            "type": "Container",
+            "id": "4a3b379d-0a76-406b-af97-7f4cba82c376",
+            "label": "Pipe",
+            "x": 0,
+            "y": 0,
+            "list": [
+                {
+                    "prefabId": "3d68ccba-1e50-4241-a9dc-5d81eee90cf4",
+                    "id": "9efbecdb-fc17-4d6c-ab8e-97428b62b24a",
+                    "unlock": [
+                        "x",
+                        "y"
+                    ],
+                    "label": "down pipe_container",
+                    "x": 0,
+                    "y": 720
+                },
+                {
+                    "prefabId": "62278415-6c92-473c-96be-cdadd920fb18",
+                    "id": "6164822f-ba04-4a84-8ebf-09c94220626d",
+                    "unlock": [
+                        "x",
+                        "y"
+                    ],
+                    "label": "up pipe_container",
+                    "x": 0,
+                    "y": 0
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "app": "Phaser Editor 2D - Scene Editor",
+        "url": "https://phasereditor2d.com",
+        "contentType": "phasereditor2d.core.scene.SceneContentType"
+    }
+}

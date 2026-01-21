@@ -1,11 +1,11 @@
 {
-    "id": "f66f6109-690b-49d7-919e-7c04a63837e1",
+    "id": "278daa46-e33f-45bb-a394-038a274682ad",
     "sceneType": "SCENE",
     "settings": {
         "exportClass": true,
         "preloadPackFiles": [],
         "createMethodName": "editorCreate",
-        "sceneKey": "FlappyBirdsScene",
+        "sceneKey": "FlappyBirdScene2",
         "compilerOutputLanguage": "TYPE_SCRIPT",
         "borderWidth": 1440,
         "borderHeight": 896
@@ -13,36 +13,24 @@
     "displayList": [
         {
             "type": "Rectangle",
-            "id": "f17f7018-49db-41ab-a761-65ab7535308d",
-            "label": "background",
+            "id": "daea572d-a892-491a-a0c8-995222875833",
+            "label": "rectangle_1",
             "originX": 0,
             "originY": 0,
             "isFilled": true,
-            "fillColor": "#6abcd8",
+            "fillColor": "#46a88f",
             "width": 1440,
             "height": 896
         },
         {
             "type": "Ellipse",
-            "id": "80ced311-0d8f-49ca-ac88-5579a6e9f506",
+            "id": "dc7f0f18-feac-40f1-b814-927fba04c75f",
             "label": "bird",
-            "x": 599,
-            "y": 467,
+            "x": 560,
+            "y": 506,
             "isFilled": true,
-            "fillColor": "#f0e668",
-            "width": 75,
-            "height": 75
-        },
-        {
-            "prefabId": "d40f4423-fb29-402d-8706-f0e6a305d45b",
-            "id": "6a3a9495-5ac0-471a-ad61-bee845c6786e",
-            "unlock": [
-                "x",
-                "y"
-            ],
-            "label": "Pipe",
-            "x": 1212,
-            "y": 7
+            "width": 80,
+            "height": 80
         }
     ],
     "plainObjects": [],

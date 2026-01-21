@@ -161,10 +161,17 @@ export class MockServerCore {
      * 물리 업데이트 및 브로드캐스트
      */
     private update() {
-        // 0. 모든 새에게 일정한 전진 속도 부여 (공기 저항을 이기고 계속 전진)
+        // 0. 전진 속도 조절: 위로 갈 때는 전진하고, 아래로 떨어질 때는 수직 낙하 유도
         for (const bird of this.birds) {
+            // Y 속도가 양수(하강)일 때는 목표 X 속도를 0으로, 아니면 FORWARD_SPEED로 설정
+            const targetX = bird.velocity.y > 0.5 ? 0 : this.FORWARD_SPEED;
+
+            // 현재 X 속도를 목표 X 속도로 부드럽게 전환 (0.15 비율)
+            const currentX = bird.velocity.x;
+            const newX = currentX + (targetX - currentX) * 0.15;
+
             Matter.Body.setVelocity(bird, {
-                x: this.FORWARD_SPEED,
+                x: newX,
                 y: bird.velocity.y
             });
         }

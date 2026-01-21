@@ -330,8 +330,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 				sprite.x = Phaser.Math.Linear(sprite.x, target.x, 0.3);
 				sprite.y = Phaser.Math.Linear(sprite.y, target.y, 0.3);
 
-				// 회전 애니메이션
-				const angle = Phaser.Math.Clamp(target.velocityY * 3, -30, 90);
+				// 회전 애니메이션 (추락 시 수직으로 더 빨리 꺾이도록 배율 조정)
+				const angle = Phaser.Math.Clamp(target.velocityY * 10, -30, 90);
 				sprite.rotation = Phaser.Math.DegToRad(angle);
 
 				totalX += sprite.x;

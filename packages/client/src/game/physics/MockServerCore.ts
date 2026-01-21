@@ -352,22 +352,24 @@ export class MockServerCore {
             }
 
             // 2. 파이프와의 충돌
+            const birdX = bird.position.x;
+            const birdY = bird.position.y;
+            const halfBirdW = this.BIRD_WIDTH / 2;
+            const halfBirdH = this.BIRD_HEIGHT / 2;
+
             for (const pipe of this.pipes) {
-                // 파이프 좌우 범위 확인
-                const birdLeft = bird.position.x - (this.BIRD_WIDTH / 2);
-                const birdRight = bird.position.x + (this.BIRD_WIDTH / 2);
-                const pipeLeft = pipe.x - (pipe.width / 2);
-                const pipeRight = pipe.x + (pipe.width / 2);
+                const halfPipeW = pipe.width / 2;
 
-                if (birdRight > pipeLeft && birdLeft < pipeRight) {
-                    // 파이프 상하 범위 확인 (Gap 사이가 아닌 부분)
-                    const birdTop = bird.position.y - (this.BIRD_HEIGHT / 2);
-                    const birdBottom = bird.position.y + (this.BIRD_HEIGHT / 2);
-                    const gapTop = pipe.gapY;
-                    const gapBottom = pipe.gapY + pipe.gap;
+                // X축 겹침 확인
+                if (birdX + halfBirdW > pipe.x - halfPipeW && birdX - halfBirdW < pipe.x + halfPipeW) {
+                    const gapTop = pipe.gapY - pipe.gap / 2;
+                    const gapBottom = pipe.gapY + pipe.gap / 2;
 
-                    if (birdTop < gapTop || birdBottom > gapBottom) {
+                    // 상단 파이프 충돌 (새의 상단이 갭 상단보다 위에 있을 때)
+                    // 하단 파이프 충돌 (새의 하단이 갭 하단보다 아래에 있을 때)
+                    if (birdY - halfBirdH < gapTop || birdY + halfBirdH > gapBottom) {
                         this.handleGameOver('pipe_collision', String(i) as PlayerId);
+                        return; // 한 명이라도 부딪히면 종료
                     }
                 }
             }

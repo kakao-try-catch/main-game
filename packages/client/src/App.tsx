@@ -31,8 +31,6 @@ function AppContent() {
   // 현재 유저 정보 (서버에서 받아올 예정)
 
   const { nickname, color, setUserInfo } = useUser();
-
-  // ⭐ 수정: 'landing' → 'game' (플래피버드 바로 시작)
   const [currentScreen, setCurrentScreen] = useState<
     'landing' | 'lobby' | 'game'
   >('landing');
@@ -228,7 +226,7 @@ function AppContent() {
         )}
       </header>
 
-      <SocketCounter />
+      {/* <SocketCounter /> */}
 
       {/* 상단 영역 */}
       <div
@@ -280,11 +278,10 @@ function AppContent() {
           overflow: 'hidden',
         }}
       >
-        {/* ⭐ 수정: currentPreset 조건 제거 (플래피버드는 프리셋 불필요) */}
-        {!gameEnded && (
+        {!gameEnded && currentPreset && (
           <PhaserGame
-            playerCount={testPlayerCount}
-            players={players.slice(0, testPlayerCount)}
+            playerCount={players.length}
+            players={players}
             currentPlayerIndex={currentUser.playerIndex}
             preset={currentPreset}
             onAppleScored={handleAppleScored}

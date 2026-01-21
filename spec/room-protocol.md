@@ -22,7 +22,7 @@ selected_game_type: string # 게임 타입
 game_config: config # 게임 구성 설정
 
 string에 들어가는 game_type은 enum으로 정의되어야 함.
-APPLE_GAME, FLAFFY_BIRD, MINESWEEPER
+APPLE_GAME, FLAPPY_BIRD, MINESWEEPER
 
 config는 게임마다 다를 수 있지만 일단 사과게임을 우선적으로 처리합니다.
 map_size: small, medium, large enum # 맵 크기

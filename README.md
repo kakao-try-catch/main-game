@@ -67,7 +67,7 @@ VITE v7.2.4  ready in XXX ms
 | ------------------- | ------------------------------------------------ |
 | `pnpm install`      | 프로젝트 의존성 설치                             |
 | `pnpm dev`          | 개발 서버 실행 (포트 5173)                       |
-| `pnpm build`        | 프로덕션 빌드 생성 (common → client → server 순) |
+| `pnpm build`        | 모노레포 패키지 프로덕션 빌드 생성              |
 | `pnpm preview`      | 빌드된 앱 미리보기                               |
 | `pnpm lint`         | ESLint로 코드 검사                               |
 | `pnpm format`       | Prettier로 코드 포맷팅                           |

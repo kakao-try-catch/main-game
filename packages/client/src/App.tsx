@@ -220,7 +220,7 @@ function AppContent() {
         )}
       </header>
 
-      <SocketCounter />
+      {/* <SocketCounter /> */}
 
       <div
         style={{

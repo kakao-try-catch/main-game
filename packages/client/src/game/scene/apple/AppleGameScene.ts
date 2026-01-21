@@ -28,7 +28,7 @@ export default class AppleGameScene extends Phaser.Scene {
     const background = this.add.rectangle(0, 0, 1380 * ratio, 862 * ratio);
     background.setOrigin(0, 0);
     background.isFilled = true;
-    background.fillColor = 0xf6f5f6;
+    background.fillColor = 0xffffff;
     this.gameContainer.add(background);
 
     // margin, 사과 그리드, 타이머 바 위치 계산은 create()에서 동적으로 수행
@@ -48,7 +48,7 @@ export default class AppleGameScene extends Phaser.Scene {
     baseY: number;
   };
   private isGameInitialized: boolean = false;
-  private currentPreset?: AppleGamePreset;
+  private _currentPreset?: AppleGamePreset;
 
   /* START-USER-CODE */
 
@@ -73,7 +73,9 @@ export default class AppleGameScene extends Phaser.Scene {
       timerBarMarginRight -
       2 * margin -
       extraLeftMargin;
-    const availableHeight = canvasHeight - 2 * margin - 80 * ratio; // 상단 UI 공간 고려
+    // 타이머와 동일한 상하 여백 사용 (50 * ratio)
+    const verticalMargin = 50 * ratio;
+    const availableHeight = canvasHeight - 2 * verticalMargin;
 
     // 그리드에 맞는 사과 크기와 간격 계산
     // 가로와 세로를 독립적으로 계산
@@ -114,7 +116,7 @@ export default class AppleGameScene extends Phaser.Scene {
     // 왼쪽 정렬 (추가 여백 포함)
     const baseX =
       margin + extraLeftMargin + (availableWidth - totalGridWidth) / 2;
-    const baseY = margin + 30 * ratio; // 상단 여백 축소
+    const baseY = verticalMargin; // 타이머와 동일한 상단 여백
 
     this._appleGridConfig = {
       baseX,
@@ -176,7 +178,7 @@ export default class AppleGameScene extends Phaser.Scene {
         if (!this.isGameInitialized) {
           // 프리셋이 있으면 게임 설정 업데이트 (초기화 전에!)
           if (data.preset) {
-            this.currentPreset = data.preset;
+            this._currentPreset = data.preset;
             const resolvedConfig = resolvePreset(data.preset);
 
             // 그리드 크기에 맞춰 레이아웃 재계산

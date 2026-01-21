@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { type ServerPacket } from "../../../common/src/packets.ts";
-// import { handleServerPacket } from "./clientHandler.ts";
+import { handleServerPacket } from "./clientHandler.ts";
 
 class SocketManager {
   private socket: Socket | null = null;
@@ -21,7 +21,7 @@ class SocketManager {
       // 패킷 구조가 { type, ...data } 형태라면 그대로 전달
       // 모든 수신 데이터는 ServerPacket 규격을 따름을 명시
       const packet = { type: eventName, ...data } as ServerPacket;
-      // handleServerPacket(packet);
+      handleServerPacket(packet);
     });
 
     this.socket.on("connect", () => console.log("Connected! url:", url));
@@ -40,6 +40,11 @@ class SocketManager {
       this.socket.disconnect();
       this.socket = null;
     }
+  }
+
+  getId() {
+    if (!this.socket) return null;
+    return this.socket.id;
   }
 }
 

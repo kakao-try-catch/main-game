@@ -3,16 +3,16 @@ import {
   GamePacketType,
   type ServerPacket,
 } from "../../../common/src/packets.ts";
-import { useDebugStore, useAppleGameStore } from "../store/store.ts";
+//import { useDebugStore, useAppleGameStore } from "../store/store.ts";
 
 export const handleServerPacket = (packet: ServerPacket) => {
-  const appleGameStore = useAppleGameStore.getState();
+  //const appleGameStore = useAppleGameStore.getState();
 
   switch (packet.type) {
     // --- System Logic ---
     case SystemPacketType.UPDATE_NUMBER:
-      const debugStore = useDebugStore.getState();
-      debugStore.setCount(packet.number);
+      //const debugStore = useDebugStore.getState();
+      //debugStore.setCount(packet.number);
       break;
 
     case SystemPacketType.JOIN_ROOM:
@@ -43,7 +43,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       // store.removeApples(packet.indices, packet.winnerId);
       // 점수 업데이트 (누적 점수라고 가정)
       // packet에 totalScore가 있다면 사용
-      // appleGameStore.updateScore(packet.winnerId, packet.totalScore); 
+      // appleGameStore.updateScore(packet.winnerId, packet.totalScore);
       break;
 
     case GamePacketType.SET_TIME:

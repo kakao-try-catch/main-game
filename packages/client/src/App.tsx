@@ -11,8 +11,10 @@ import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/GamePreset';
+import { SystemPacketType } from '../../common/src/packets';
 
 import './App.css';
+import { socketManager } from './network/socket';
 
 interface PlayerData {
   id: string;
@@ -65,6 +67,7 @@ function AppContent() {
   const [currentPreset, setCurrentPreset] = useState<
     AppleGamePreset | undefined
   >(undefined);
+
 
   // 점수 증가 함수
   const handleAddScore = (playerId: string, pointsToAdd: number) => {
@@ -121,6 +124,7 @@ function AppContent() {
     setCurrentScreen('lobby');
   }, []);
 
+  // 닉네임 설정하고 시작 버튼 누를 때 동작
   const handleStart = (inputNickname: string) => {
     const userColor = '#209cee'; // 처음 유저는 파란색
     setUserInfo(inputNickname, userColor, true);
@@ -132,13 +136,32 @@ function AppContent() {
           : player,
       ),
     );
-    setCurrentScreen('lobby');
+
+    const joinRoomPacket = {
+      type: SystemPacketType.JOIN_ROOM,
+      playerId: socketManager.getId() ?? "",
+      roomId: 'HARDCODED_ROOM_1',
+      playerName: inputNickname,
+    } as const;
+    socketManager.send(joinRoomPacket);
+    console.log("JOIN_ROOM sent: ", joinRoomPacket);
+    // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
+    setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
   };
 
   const handleGameStart = (preset: AppleGamePreset) => {
     setCurrentPreset(preset);
     setCurrentScreen('game');
   };
+
+  // 소켓 연결부
+  useEffect(() => {
+    console.log("서버와의 연결 시도");
+    socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
+
+    // 테스트 종료(컴포넌트 제거) 시 연결을 완전히 끊고 싶다면 주석 해제
+    return () => socketManager.disconnect();
+  }, []);
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {
@@ -173,24 +196,30 @@ function AppContent() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
+        height: '100vh',
         width: '100vw',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        overflow: 'hidden',
+        margin: 0,
+        padding: 0,
       }}
     >
       <header
         className="App-header"
-        style={{ width: '100%', textAlign: 'center', margin: '8px 0 0 0' }}
+        style={{
+          width: '100%',
+          textAlign: 'center',
+          margin: '0',
+          flexShrink: 0,
+        }}
       >
         {gameReady && (
           <p
             style={{
               fontFamily: 'NeoDunggeunmo',
-              fontSize: '18px',
+              fontSize: '16px',
               textAlign: 'center',
-              margin: 0,
+              margin: '2px 0',
             }}
           >
             마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록
@@ -201,34 +230,54 @@ function AppContent() {
 
       <SocketCounter />
 
+      {/* 상단 영역 */}
       <div
         style={{
-          ...playerListStyle,
-          alignSelf: 'center',
+          width: '100%',
+          flex: 1,
+          display: 'flex',
           justifyContent: 'center',
-          marginLeft: `0px`,
-          position: 'relative',
+          alignItems: 'flex-start',
+          marginTop: '4px',
+          overflow: 'auto',
+          minHeight: 0,
         }}
       >
-        {players.slice(0, testPlayerCount).map((player) => (
-          <PlayerCard
-            key={player.id}
-            name={player.name}
-            score={player.score}
-            color={player.color}
-          />
-        ))}
-        <SoundSetting gameReady={gameReady} />
+        <div
+          style={{
+            ...playerListStyle,
+            marginLeft: `0px`,
+            position: 'relative',
+            marginTop: '0px',
+          }}
+        >
+          {players.slice(0, testPlayerCount).map((player) => (
+            <PlayerCard
+              key={player.id}
+              name={player.name}
+              score={player.score}
+              color={player.color}
+            />
+          ))}
+          <SoundSetting gameReady={gameReady} />
+        </div>
       </div>
 
+      {/* 하단 영역 */}
       <main
         className="game-container"
         style={{
-          position: 'relative',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           width: '100%',
+          flex: 4,
+          backgroundColor: '#fff',
+          margin: 0,
+          padding: 0,
+          minHeight: 0,
+          maxHeight: '80vh',
+          overflow: 'hidden',
         }}
       >
         {/* ⭐ 수정: currentPreset 조건 제거 (플래피버드는 프리셋 불필요) */}
@@ -262,8 +311,8 @@ function AppContent() {
 const playerListStyle: React.CSSProperties = {
   display: 'flex',
   flexWrap: 'wrap',
-  gap: '12px',
-  marginTop: '8px', // UI 간격 조정
+  gap: '8px',
+  marginTop: '0px',
   alignSelf: 'center',
   justifyContent: 'center',
 };

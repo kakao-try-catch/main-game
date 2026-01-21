@@ -372,6 +372,12 @@ export class MockServerCore {
                         return; // 한 명이라도 부딪히면 종료
                     }
                 }
+
+                // 통과 판정 (새의 X 좌표가 파이프의 오른쪽 끝을 지났을 때)
+                const playerId = String(i) as PlayerId;
+                if (!pipe.passedPlayers.includes(playerId) && birdX > pipe.x) {
+                    pipe.passedPlayers.push(playerId);
+                }
             }
         }
     }
@@ -442,7 +448,8 @@ export class MockServerCore {
             gapY,
             width: this.PIPE_WIDTH,
             gap: this.PIPE_GAP,
-            passed: false
+            passed: false,
+            passedPlayers: []
         };
 
         this.pipes.push(pipe);

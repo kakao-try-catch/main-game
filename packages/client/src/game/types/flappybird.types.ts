@@ -40,7 +40,8 @@ export interface PipeData {
     gapY: number;         // 간격 중심 Y 좌표 (서버에서 랜덤 생성)
     width: number;        // 파이프 너비
     gap: number;          // 위아래 파이프 사이 간격
-    passed: boolean;      // 점수 획등 여부
+    passed: boolean;      // 점수 획득 여부
+    passedPlayers: PlayerId[]; // 통과한 플레이어 ID 목록
 }
 
 // 서버 → 클라이언트: 연결 성공

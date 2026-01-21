@@ -5,6 +5,7 @@ import TimerSystem from '../../utils/TimerSystem';
 import { attachDragSelection } from '../../utils/dragSelection';
 import { socketManager } from '../../../network/socket';
 import { GamePacketType } from '../../../../../common/src/packets';
+import type { PlayerData } from '../../types/common';
 
 // Declare the global property for TypeScript
 declare global {
@@ -41,14 +42,6 @@ const DEFAULT_CONFIG: AppleGameConfig = {
   playerCount: 4,
   ratio: 1,
 };
-
-/** 플레이어 데이터 */
-export interface PlayerData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-}
 
 /** HEX 색상을 숫자로 변환 */
 function hexStringToNumber(hex: string): number {

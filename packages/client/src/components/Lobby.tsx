@@ -3,48 +3,29 @@ import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
 import type { AppleGamePreset } from '../game/types/AppleGamePreset';
+import type {
+  LobbyPlayer,
+  Game,
+  GameSettings,
+  LobbyProps,
+} from '../game/types/common';
+import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 
-const TOOLTIP_DURATION = 2000;
-const MIN_TIME_LIMIT = 30;
-const MAX_TIME_LIMIT = 300;
-const DEFAULT_TIME_LIMIT = 120;
-const MAX_PLAYERS = 4;
-
-interface Player {
-  id: string;
-  name: string;
-  color: string;
-  isHost: boolean;
-}
-
-interface Game {
-  id: string;
-  name: string;
-  thumbnail: string;
-}
-
-interface GameSettings {
-  mapSize?: 'small' | 'normal' | 'large' | string;
-  timeLimit?: number;
-  appleRange?: '1-9' | '1-5' | string;
-  includeZero?: boolean;
-}
-
-interface LobbyProps {
-  currentPlayer: Player;
-  onGameStart: (
-    gameType: string,
-    preset: AppleGamePreset | Record<string, unknown>,
-  ) => void;
-}
+const {
+  PLAYER_COLORS,
+  MAX_PLAYERS,
+  TOOLTIP_DURATION,
+  MIN_TIME_LIMIT,
+  MAX_TIME_LIMIT,
+  DEFAULT_TIME_LIMIT,
+} = CONSTANTS;
 
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
-  // 플레이어 색깔 (들어온 순서대로)
-  const playerColors = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
-
   // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
-  const players: Player[] = [{ ...currentPlayer, color: playerColors[0] }];
+  const players: LobbyPlayer[] = [
+    { ...currentPlayer, color: PLAYER_COLORS[0] },
+  ];
 
   // 게임 리스트
   const [games] = useState<Game[]>([

@@ -11,17 +11,19 @@ import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import type {
+  PlayerData,
+  PlayerResultData,
+  GameType,
+  CurrentUser,
+} from './game/types/common';
+import { CONSTANTS } from './game/types/common';
 import { SystemPacketType } from '../../common/src/packets';
 
 import './App.css';
 import { socketManager } from './network/socket';
 
-interface PlayerData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-}
+const { PLAYER_COLORS } = CONSTANTS;
 
 function AppContent() {
   const testPlayerCount = 4;
@@ -36,12 +38,7 @@ function AppContent() {
   >('landing');
 
   // 현재 유저 정보 (서버에서 받아올 예정)
-  const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    playerIndex: number;
-    name: string;
-    isHost: boolean;
-  }>({
+  const [currentUser, setCurrentUser] = useState<CurrentUser>({
     id: 'id_1',
     playerIndex: 0,
     name: nickname || '1P',
@@ -50,21 +47,24 @@ function AppContent() {
 
   const [gameReady, setGameReady] = useState(false);
   const [gameEnded, setGameEnded] = useState(false);
-  const [finalPlayers, setFinalPlayers] = useState<
-    (PlayerData & { playerIndex: number })[]
-  >([]);
+  const [finalPlayers, setFinalPlayers] = useState<PlayerResultData[]>([]);
   const gameRef = useRef<Phaser.Game | null>(null);
   const [players, setPlayers] = useState<PlayerData[]>([
-    { id: 'id_1', name: nickname || '1P', score: 0, color: color || '#209cee' },
-    { id: 'id_2', name: '2P', score: 0, color: '#e76e55' },
-    { id: 'id_3', name: '3P', score: 0, color: '#92cc41' },
-    { id: 'id_4', name: '4P', score: 0, color: '#f2d024' },
+    {
+      id: 'id_1',
+      name: nickname || '1P',
+      score: 0,
+      color: color || PLAYER_COLORS[0],
+    },
+    { id: 'id_2', name: '2P', score: 0, color: PLAYER_COLORS[1] },
+    { id: 'id_3', name: '3P', score: 0, color: PLAYER_COLORS[2] },
+    { id: 'id_4', name: '4P', score: 0, color: PLAYER_COLORS[3] },
   ]);
 
   // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
-  const [currentGameType, setCurrentGameType] = useState<
-    'apple' | 'flappy' | 'minesweeper' | undefined
-  >(undefined);
+  const [currentGameType, setCurrentGameType] = useState<GameType | undefined>(
+    undefined,
+  );
   const [applePreset, setApplePreset] = useState<AppleGamePreset | undefined>(
     undefined,
   );
@@ -129,7 +129,7 @@ function AppContent() {
 
   // 닉네임 설정하고 시작 버튼 누를 때 동작
   const handleStart = (inputNickname: string) => {
-    const userColor = '#209cee'; // 처음 유저는 파란색
+    const userColor = PLAYER_COLORS[0]; // 처음 유저는 첫 번째 색상
     setUserInfo(inputNickname, userColor, true);
     setCurrentUser((prev) => ({ ...prev, name: inputNickname }));
     setPlayers((prev) =>
@@ -152,11 +152,8 @@ function AppContent() {
     setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
   };
 
-  const handleGameStart = (
-    gameType: string,
-    preset: AppleGamePreset | FlappyBirdGamePreset | Record<string, unknown>,
-  ) => {
-    setCurrentGameType(gameType as 'apple' | 'flappy' | 'minesweeper');
+  const handleGameStart = (gameType: string, preset: unknown) => {
+    setCurrentGameType(gameType as GameType);
 
     if (gameType === 'apple') {
       setApplePreset(preset as AppleGamePreset);

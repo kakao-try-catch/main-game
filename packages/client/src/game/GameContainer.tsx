@@ -2,24 +2,10 @@ import { AppleGameContainer } from './AppleGameContainer';
 import { FlappyBirdGameContainer } from './FlappyBirdGameContainer';
 import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
-
-export interface PlayerData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-}
-
-interface PlayerResultData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-  playerIndex: number;
-}
+import type { PlayerData, PlayerResultData, GameType } from './types/common';
 
 interface GameContainerProps {
-  gameType: 'apple' | 'flappy' | 'minesweeper';
+  gameType: GameType;
   onGameReady?: (game: Phaser.Game) => void;
   onAppleScored?: (points: number) => void;
   onGameEnd?: (players: PlayerResultData[]) => void;

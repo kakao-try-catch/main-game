@@ -1,24 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useLayoutEffect } from 'react';
-import Phaser from 'phaser';
+import { useGameContainer } from './hooks/useGameContainer';
 import { AppleGameScene } from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import type { AppleGamePreset } from './types/AppleGamePreset';
-
-export interface PlayerData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-}
-
-interface PlayerResultData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-  playerIndex: number;
-}
+import type { PlayerData, PlayerResultData } from './types/common';
 
 interface AppleGameContainerProps {
   onGameReady?: (game: Phaser.Game) => void;
@@ -27,7 +11,6 @@ interface AppleGameContainerProps {
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
-  /** 게임 프리셋 설정 (로비에서 설정) */
   preset?: AppleGamePreset;
 }
 
@@ -40,166 +23,40 @@ export const AppleGameContainer: React.FC<AppleGameContainerProps> = ({
   currentPlayerIndex = 0,
   preset,
 }) => {
-  const gameRef = useRef<Phaser.Game | null>(null);
-  const parentRef = useRef<HTMLDivElement>(null);
-  const MAX_WIDTH = 1379;
-  const MAX_HEIGHT = 859;
-
-  // 플레이어 데이터가 변경되면 씬에 전달
-  useEffect(() => {
-    if (!gameRef.current) return;
-    const appleGameScene = gameRef.current.scene.getScene('AppleGameScene');
-    if (appleGameScene) {
-      appleGameScene.events.emit('updatePlayers', {
-        playerCount,
-        players,
-        currentPlayerIndex,
-        preset,
-      });
-    }
-  }, [playerCount, players, currentPlayerIndex, preset]);
-
-  // 부모 div 크기 변화 감지 (리사이즈 대응)
-  useLayoutEffect(() => {
-    function updateRatio() {
-      if (parentRef.current) {
-        const width = Math.min(parentRef.current.clientWidth, MAX_WIDTH);
-        const ratio = width / MAX_WIDTH;
-        (window as Window).__APPLE_GAME_RATIO = ratio;
-      }
-    }
-    updateRatio();
-    window.addEventListener('resize', updateRatio);
-    return () => window.removeEventListener('resize', updateRatio);
-  }, []);
-
-  useEffect(() => {
-    if (gameRef.current || !parentRef.current) return;
-
-    // 실제 컨테이너 크기에 맞춰 ratio 계산
-    let parentWidth = parentRef.current?.offsetWidth || 0;
-    let parentHeight = parentRef.current?.offsetHeight || 0;
-    // fallback: window 크기 사용
-    if (!parentWidth || !parentHeight) {
-      parentWidth = window.innerWidth;
-      parentHeight = window.innerHeight;
-    }
-
-    parentWidth = Math.min(parentWidth, MAX_WIDTH);
-    parentHeight = Math.min(parentHeight, MAX_HEIGHT);
-    let ratio = Math.min(parentWidth / MAX_WIDTH, parentHeight / MAX_HEIGHT);
-    if (!ratio || ratio <= 0) ratio = 1;
-    (window as any).__APPLE_GAME_RATIO = ratio;
-
-    const config: Phaser.Types.Core.GameConfig = {
-      type: Phaser.AUTO,
-      width: MAX_WIDTH * ratio,
-      height: MAX_HEIGHT * ratio,
-      parent: parentRef.current,
+  const { parentRef, containerStyle } = useGameContainer(
+    {
+      sceneName: 'AppleGameScene',
+      sceneClasses: [BootScene, AppleGameScene],
+      maxWidth: 1379,
+      maxHeight: 859,
       backgroundColor: '#FFFFFF',
-      scene: [BootScene, AppleGameScene],
-      physics: {
-        default: 'arcade',
-        arcade: {
-          gravity: { y: 0, x: 0 },
-          debug: false,
-        },
-      },
-    };
-
-    const game = new Phaser.Game(config);
-    gameRef.current = game;
-
-    if (onGameReady) {
-      onGameReady(game);
-    }
-
-    let appleGameScene: Phaser.Scene | null = null;
-    let appleScoredHandler: ((data: { points: number }) => void) | null = null;
-
-    game.events.once('ready', () => {
-      appleGameScene = game.scene.getScene('AppleGameScene');
-      if (appleGameScene) {
-        // 씬의 create()가 완료된 후에 이벤트 전달
-        if (appleGameScene.scene.isActive()) {
-          appleGameScene.events.emit('updatePlayers', {
-            playerCount,
-            players,
-            currentPlayerIndex,
-            preset,
-          });
-        } else {
-          appleGameScene.events.once('create', () => {
-            appleGameScene?.events.emit('updatePlayers', {
-              playerCount,
-              players,
-              currentPlayerIndex,
-              preset,
-            });
-          });
-        }
-
+      ratioKey: '__APPLE_GAME_RATIO',
+      onGameReady,
+      setupSceneEvents: (scene) => {
         if (onAppleScored) {
-          appleScoredHandler = (data: { points: number }) => {
+          const appleScoredHandler = (data: { points: number }) => {
             onAppleScored(data.points);
           };
-          appleGameScene.events.on('appleScored', appleScoredHandler);
-        }
-        if (onGameEnd) {
-          appleGameScene.events.on(
-            'gameEnd',
-            (data: { players: PlayerResultData[] }) => {
+          scene.events.on('appleScored', appleScoredHandler);
+
+          if (onGameEnd) {
+            const gameEndHandler = (data: { players: PlayerResultData[] }) => {
               onGameEnd(data.players);
-            },
-          );
+            };
+            scene.events.on('gameEnd', gameEndHandler);
+          }
+
+          return () => {
+            scene.events.off('appleScored', appleScoredHandler);
+            if (onGameEnd) {
+              scene.events.off('gameEnd');
+            }
+          };
         }
-      }
-    });
-
-    return () => {
-      if (appleGameScene && appleScoredHandler) {
-        appleGameScene.events.off('appleScored', appleScoredHandler);
-      }
-      if (appleGameScene) {
-        appleGameScene.events.off('gameEnd');
-      }
-      game.destroy(true);
-      gameRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onGameReady, onAppleScored]);
-
-  // 화면 크기에 따라 1380:862 비율을 유지하는 스타일
-  const aspectRatio = MAX_WIDTH / MAX_HEIGHT;
-  // 부모 컨테이너 크기를 고려한 반응형 설정
-  const vw = Math.min(window.innerWidth, MAX_WIDTH);
-  const vh = Math.min(window.innerHeight * 0.8, MAX_HEIGHT); // 80% 영역 내에서 계산
-  let width, height;
-  width = vw;
-  height = vw / aspectRatio;
-  if (height > vh) {
-    height = vh;
-    width = vh * aspectRatio;
-  }
-  const ratio = width / MAX_WIDTH;
-  // window.__APPLE_GAME_RATIO를 항상 갱신
-  useLayoutEffect(() => {
-    (window as any).__APPLE_GAME_RATIO = ratio;
-  }, [ratio]);
-
-  const containerStyle: React.CSSProperties = {
-    width: `${width}px`,
-    height: `${height}px`,
-    maxWidth: '100%',
-    maxHeight: '100%',
-    minWidth: '320px',
-    minHeight: '200px',
-    margin: '0 auto',
-    display: 'block',
-    background: '#fff',
-    position: 'relative',
-    border: '4px solid #fff',
-  };
+      },
+    },
+    { playerCount, players, currentPlayerIndex, preset },
+  );
 
   return <div ref={parentRef} id="apple-game" style={containerStyle} />;
 };

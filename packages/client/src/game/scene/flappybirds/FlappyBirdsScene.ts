@@ -41,9 +41,20 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		/* END-USER-CTR-CODE */
 	}
 
+	private getRatio(): number {
+		return (window as any).__APPLE_GAME_RATIO || 1;
+	}
+
+	private getScale(): number {
+		// MockServerCore가 1440x896 기준이므로, 이를 Phaser 컨테이너 기준(1380x862)으로 맞춤
+		// 1380/1440 = 0.95833, 862/896 = 0.96205... 거의 비슷함
+		return this.getRatio() * (1380 / 1440);
+	}
+
 	editorCreate(): void {
-		const width = 1440;
-		const height = 896;
+		const ratio = this.getRatio();
+		const width = 1380 * ratio;
+		const height = 862 * ratio;
 
 		// 고정 배경색 (카메라를 따라다님)
 		const background = this.add.rectangle(0, 0, width, height, 0x46D1FD);
@@ -135,20 +146,23 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	 * 새 생성
 	 */
 	private createBirds(count: number) {
+		const scale = this.getScale();
 		for (let i = 0; i < count; i++) {
 			// 플레이어 번호에 맞는 이미지 선택 (1, 2, 3, 4 순환)
 			const birdKey = `flappybird_${(i % 4) + 1}`;
-			const bird = this.add.sprite(200 + i * 120, 300, birdKey);
+			const initialX = (200 + i * 120) * scale;
+			const initialY = 300 * scale;
+			const bird = this.add.sprite(initialX, initialY, birdKey);
 
 			// 드로잉 오더 설정: 첫 번째 플레이어가 맨 앞으로 (index 0의 depth가 가장 높도록)
 			bird.setDepth(100 - i);
 
 			// 크기 조정 (기존보다 축소: 80x50)
-			bird.setDisplaySize(80, 50);
+			bird.setDisplaySize(80 * scale, 50 * scale);
 
 			this.birdSprites.push(bird);
 
-			// 초기 타겟 위치 설정
+			// 초기 타겟 위치 설정 (서버 좌표계 1440 기준 그대로 저장)
 			this.targetPositions.push({
 				playerId: String(i) as PlayerId,
 				x: 200 + i * 120,
@@ -159,26 +173,32 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			});
 		}
 
-		console.log(`[FlappyBirdsScene] ${count}개의 새(스프라이트) 생성 완료`);
+		console.log(`[FlappyBirdsScene] ${count}개의 새(스프라이트) 생성 완료 (scale: ${scale})`);
 	}
 
 	/**
 	 * 바닥 그래픽 생성 (무한 스크롤 TileSprite 방식)
 	 */
 	private createGroundUI() {
+		const ratio = this.getRatio();
+		const scale = this.getScale();
+		const width = 1380 * ratio;
+		const groundY = 798 * scale;
+		const groundHeight = 98 * scale;
+
 		// 땅의 높이를 98px로 설정 (896 - 98 = 798)
 		// TileSprite를 사용하여 카메라 이동 시 패턴이 반복되게 함
-		this.groundTile = this.add.tileSprite(0, 798, 1440, 98, "");
+		this.groundTile = this.add.tileSprite(0, groundY, width, groundHeight, "");
 		this.groundTile.setOrigin(0, 0);
 		this.groundTile.setScrollFactor(0); // 실제 이동은 update()에서 tilePositionX로 제어
 
 		// 바닥 색상 (패턴 대신 색상 채우기용 텍스처 생성)
 		if (!this.textures.exists('groundTexture')) {
-			const canvas = this.textures.createCanvas('groundTexture', 64, 98);
+			const canvas = this.textures.createCanvas('groundTexture', 64, 128); // 넉넉하게 생성
 			if (canvas) {
 				const ctx = canvas.getContext();
 				ctx.fillStyle = '#DEB887'; // BurlyWood
-				ctx.fillRect(0, 0, 64, 98);
+				ctx.fillRect(0, 0, 64, 128);
 				canvas.update();
 			}
 		}
@@ -186,7 +206,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		this.groundTile.setDepth(200); // 모든 요소보다 위쪽
 
 		// 바닥 상단 갈색 선
-		this.groundLine = this.add.rectangle(0, 798, 1440, 4, 0x8B4513);
+		this.groundLine = this.add.rectangle(0, groundY, width, 4 * scale, 0x8B4513);
 		this.groundLine.setOrigin(0, 0);
 		this.groundLine.setScrollFactor(0);
 		this.groundLine.setDepth(200);
@@ -312,13 +332,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			console.log(`[FlappyBirdsScene] Rope ${i}: birdA=${birdA ? `(${birdA.x}, ${birdA.y})` : 'null'}, birdB=${birdB ? `(${birdB.x}, ${birdB.y})` : 'null'}`);
 
 			if (birdA && birdB) {
+				const scale = this.getScale();
 				rope.clear();
-				rope.lineStyle(6, 0x8B4513, 1); // 고전적인 갈색 밧줄
+				rope.lineStyle(6 * scale, 0x8B4513, 1); // 고전적인 갈색 밧줄
 				rope.beginPath();
 				rope.moveTo(birdA.x, birdA.y);
 				rope.lineTo(birdB.x, birdB.y);
 				rope.strokePath();
-				console.log(`[FlappyBirdsScene] Rope ${i} 그리기 완료: (${birdA.x}, ${birdA.y}) → (${birdB.x}, ${birdB.y})`);
 			} else {
 				console.warn(`[FlappyBirdsScene] Rope ${i} 그리기 실패: birdA 또는 birdB가 없음`);
 			}
@@ -329,20 +349,21 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
 	update(_time: number, _delta: number) {
 		// 선형 보간으로 부드러운 이동
+		const scale = this.getScale();
 		for (let i = 0; i < this.birdSprites.length; i++) {
 			const sprite = this.birdSprites[i];
 			const target = this.targetPositions[i];
 
 			if (target) {
-				// 서버 데이터를 기반으로 스프라이트 위치 보간
-				sprite.x = Phaser.Math.Linear(sprite.x, target.x, 0.3);
-				sprite.y = Phaser.Math.Linear(sprite.y, target.y, 0.3);
+				// 서버 데이터를 기반으로 스프라이트 위치 보간 (scale 적용)
+				sprite.x = Phaser.Math.Linear(sprite.x, target.x * scale, 0.3);
+				sprite.y = Phaser.Math.Linear(sprite.y, target.y * scale, 0.3);
 
 				// 회전 애니메이션 (추락 시 수직으로 더 빨리 꺾이도록 배율 조정)
 				let angle = Phaser.Math.Clamp(target.velocityY * 10, -30, 90);
 
 				// 게임 오버 상태에서 바닥 부근에 있으면 수직 상태(90도) 유지
-				if (this.isGameOver && sprite.y > 700) {
+				if (this.isGameOver && sprite.y > 700 * scale) {
 					angle = 90;
 				}
 
@@ -352,7 +373,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
 		// 3. 지면 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
 		if (this.gameStarted && !this.isGameOver) {
-			const SPEED_PX_PER_SECOND = 90; // 서버의 pipeSpeed(1.5/frame)와 동기화
+			const SPEED_PX_PER_SECOND = 90 * scale; // 서버의 pipeSpeed(1.5/frame)와 동기화
 
 			// 바닥 스크롤 효과 (카메라가 고정되어 있으므로 tilePositionX를 직접 증가)
 			if (this.groundTile) {
@@ -363,7 +384,15 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		// 4. 밧줄 그리기
 		// 파이프 업데이트
 		if (this.targetPipes.length > 0 && this.pipeManager) {
-			this.pipeManager.updateFromServer(this.targetPipes);
+			// 파이프 데이터를 scale에 맞춰 변환
+			const scaledPipes = this.targetPipes.map(p => ({
+				...p,
+				x: p.x * scale,
+				gapY: p.gapY * scale,
+				gap: p.gap * scale,
+				width: p.width * scale
+			}));
+			this.pipeManager.updateFromServer(scaledPipes);
 		}
 
 		// 밧줄을 클라이언트 측 새 스프라이트 위치로 직접 그리기 (레이턴시 없음)
@@ -374,10 +403,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	 * 클라이언트 측 새 스프라이트 위치 및 관성을 이용한 밧줄 그리기 (느슨할 때만 처짐)
 	 */
 	private drawRopesFromSprites() {
-		const GRAVITY = 1.5;          // 밧줄의 자체 중력 (0.6 -> 1.5 상향)
-		const STIFFNESS = 0.3;        // 밧줄 관성 복원력 (0.25 -> 0.3)
-		const DAMPING = 0.8;          // 진동 감쇄
-		const MAX_ROPE_LENGTH = 120;  // 서버 IDEAL_LENGTH와 동일하게 120으로 상향
+		const scale = this.getScale();
+		const GRAVITY = 1.5 * scale;          // 밧줄의 자체 중력
+		const STIFFNESS = 0.3;                // 밧줄 관성 복원력
+		const DAMPING = 0.8;                  // 진동 감쇄
+		const MAX_ROPE_LENGTH = 120 * scale;  // 밧줄 최대 길이
 
 		for (let i = 0; i < this.ropes.length; i++) {
 			const rope = this.ropes[i];
@@ -408,7 +438,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 				midPoint.y += midPoint.vy;
 
 				rope.clear();
-				rope.lineStyle(6, 0x8B4513, 0.9); // 고전적인 갈색 밧줄
+				rope.lineStyle(6 * scale, 0x8B4513, 0.9); // 고전적인 갈색 밧줄
 
 				// 2차 베지어 곡선을 사용하여 부드러운 처짐 표현
 				const curve = new Phaser.Curves.QuadraticBezier(

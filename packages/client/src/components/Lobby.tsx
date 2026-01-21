@@ -203,11 +203,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                 return (
                   <div
                     key={game.id}
-                    className={`game-item ${
-                      selectedGame === game.id ? 'selected' : ''
-                    } ${
-                      selectedGame && selectedGame !== game.id ? 'dimmed' : ''
-                    }`}
+                    className={`game-item ${selectedGame === game.id ? 'selected' : ''
+                      } ${selectedGame && selectedGame !== game.id ? 'dimmed' : ''
+                      }`}
                     onClick={() => handleSelectGame(game.id)}
                   >
                     <div className="game-thumbnail">{game.thumbnail}</div>
@@ -245,10 +243,10 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           <div className="setting-item time-limit-setting">
                             <label>제한 시간:</label>
                             {settings.timeLimit === -1 ||
-                            (![120, 180, 240].includes(
-                              settings.timeLimit || 0,
-                            ) &&
-                              settings.timeLimit !== undefined) ? (
+                              (![120, 180, 240].includes(
+                                settings.timeLimit || 0,
+                              ) &&
+                                settings.timeLimit !== undefined) ? (
                               <input
                                 type="number"
                                 value={

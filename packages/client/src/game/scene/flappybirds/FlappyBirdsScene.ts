@@ -350,16 +350,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			}
 		}
 
-		// 3. 카메라 강제 스크롤 (게임이 시작된 경우에만 전진)
-		if (this.gameStarted) {
-			// 서버의 최소 전진 속도(1.5/frame @ 60fps = 90px/s)와 정확히 동기화
-			// 프레임률(Hz)에 상관없이 초당 90픽셀을 이동하도록 _delta 사용
-			const SCROLL_SPEED_PER_SECOND = 90;
-			this.cameras.main.scrollX += (SCROLL_SPEED_PER_SECOND * _delta) / 1000;
+		// 3. 지면 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
+		if (this.gameStarted && !this.isGameOver) {
+			const SPEED_PX_PER_SECOND = 90; // 서버의 pipeSpeed(1.5/frame)와 동기화
 
-			// 바닥 스크롤 효과 (바닥은 카메라 이동량에 맞춰 타일 위치 변경)
+			// 바닥 스크롤 효과 (카메라가 고정되어 있으므로 tilePositionX를 직접 증가)
 			if (this.groundTile) {
-				this.groundTile.tilePositionX = this.cameras.main.scrollX;
+				this.groundTile.tilePositionX += (SPEED_PX_PER_SECOND * _delta) / 1000;
 			}
 		}
 

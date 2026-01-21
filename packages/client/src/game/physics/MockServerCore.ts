@@ -36,11 +36,10 @@ export class MockServerCore {
     private readonly BIRD_WIDTH = 80; // 57 * 1.4 (해상도 변경 반영)
     private readonly BIRD_HEIGHT = 50; // 36 * 1.4 (해상도 변경 반영)
     private readonly FLAP_VELOCITY = -10; // 플랩 정도
-    private readonly FORWARD_SPEED = 3; // 전진 순항 속도 밸런스 조정
     private isGameOverState: boolean = false; // 게임 오버 상태 추적
 
     // 밧줄 물리 파라미터
-    private readonly IDEAL_LENGTH = 120;  // 밧줄의 기본 여유 길이
+    private readonly IDEAL_LENGTH = 100;  // 밧줄 여유 길이 단축 (120 -> 100)
     private readonly ROPE_STIFFNESS = 0.3; // 밧줄 장력 최대치 근사값
     private readonly ROPE_SOFTNESS = 50;   // 장력 완화 계수 (로그 함수 대체용)
 
@@ -49,8 +48,8 @@ export class MockServerCore {
     private readonly PIPE_GAP = 200;
     private pipeSpacing: number = 400;  // 파이프 간 거리
 
-    // 파이프 속도 관리
-    private pipeSpeed: number = 3;  // 파이프 속도
+    // 파이프 속도 관리 (원래 속도 1.5로 복구)
+    private pipeSpeed: number = 1.5;
 
     constructor(socket: MockSocket) {
         this.socket = socket;
@@ -136,9 +135,9 @@ export class MockServerCore {
      * 새 생성
      */
     private createBirds(count: number) {
-        const startX = 200;
+        const startX = 250; // 좀 더 앞쪽에서 시작
         const startY = 300;
-        const spacing = 120;
+        const spacing = 90; // 새들 사이 간격을 촘촘하게 (120 -> 90)
 
         for (let i = 0; i < count; i++) {
             // 각 새에 약간의 Y 오프셋을 주어 초기 장력 생성 (물리 안정화)
@@ -159,7 +158,7 @@ export class MockServerCore {
                     label: 'bird',
                     collisionFilter: {
                         category: CATEGORY_BIRD,
-                        mask: CATEGORY_BIRD | CATEGORY_PIPE | CATEGORY_GROUND
+                        mask: CATEGORY_BIRD | CATEGORY_PIPE | CATEGORY_GROUND // 서로 튕겨나가도록 다시 추가 (게임오버는 아님)
                     }
                 }
             );
@@ -202,40 +201,38 @@ export class MockServerCore {
      * 물리 업데이트 및 브로드캐스트
      */
     private update() {
-        // 0. 전진 속도 조절
+        // 1. 파이프 업데이트 (전체 상태에 대해 한 번만)
+        this.updatePipes();
+
+        // 2. 개별 새 물리 제어
         for (const bird of this.birds) {
-            // 이미 바닥에 고정(static)된 새는 물리 계산 제외
             if (bird.isStatic) continue;
 
             if (this.isGameOverState) {
-                // 게임 오버 시에는 전진 속도를 서서히 줄임
+                // 게임 오버 시에는 수평 속도를 서서히 줄임
                 Matter.Body.setVelocity(bird, {
                     x: bird.velocity.x * 0.95,
                     y: bird.velocity.y
                 });
                 continue;
             }
-        // 파이프 업데이트
-        this.updatePipes();
 
-        // 충돌 감지
-        this.checkCollisions();
+            // 고정된 위치(startX)로 돌아가려는 복원력 적용 (관성을 위해 점진적으로 조정)
+            const birdIndex = this.birds.indexOf(bird);
+            const startX = 250 + birdIndex * 90; // 줄어든 간격 반영
+            const currentX = bird.position.x;
 
-            // 카메라 스크롤 속도(1.5)를 기준으로 밸런스 조정
-            const STALL_SPEED = 1.5;
-            const targetX = bird.velocity.y > 0.5 ? STALL_SPEED : this.FORWARD_SPEED;
-
-            // 현재 X 속도를 목표 X 속도로 전환 (0.1 비율로 더 부드럽게)
-            const currentX = bird.velocity.x;
-            const newX = currentX + (targetX - currentX) * 0.1;
+            // 복원력과 저항의 밸런스 조정 (0.1로 높여 더 쫀득하게 복귀)
+            const targetRestoringVX = (startX - currentX) * 0.1;
+            const newVX = bird.velocity.x * 0.85 + targetRestoringVX;
 
             Matter.Body.setVelocity(bird, {
-                x: newX,
+                x: newVX,
                 y: bird.velocity.y
             });
         }
 
-        // 1. 가변 장력 적용 (밧줄이 팽팽할수록 상대를 세게 당김)
+        // 3. 가변 장력 적용
         this.applyDynamicTension();
 
         // 2. 물리 서브스테핑 (바닥 뚫림 현상 완벽 차단)
@@ -338,21 +335,41 @@ export class MockServerCore {
    * 충돌 감지
    */
     private checkCollisions() {
-        // 모든 새에 대해 충돌 검사
         for (let i = 0; i < this.birds.length; i++) {
             const bird = this.birds[i];
-            // 바닥과의 충돌 (상단 표면 798 기준)
+            if (bird.isStatic) continue;
+
+            // 1. 바닥과의 충돌 (상단 표면 798 기준)
             if (bird.position.y + (this.BIRD_HEIGHT / 2) >= 798) {
-                // 충돌 시 위치 보정 및 물리 완전 정지 (isStatic)
                 Matter.Body.setPosition(bird, {
                     x: bird.position.x,
                     y: 798 - (this.BIRD_HEIGHT / 2)
                 });
                 Matter.Body.setVelocity(bird, { x: 0, y: 0 });
-                Matter.Body.setStatic(bird, true); // <--- 물리 엔진에서 제외 (뚫림 방지 핵심)
-
+                Matter.Body.setStatic(bird, true);
                 this.handleGameOver('ground_collision', String(i) as PlayerId);
-                // 여기서 return 하지 않고 다른 새들도 체크하여 바닥에 멈추게 함
+                continue;
+            }
+
+            // 2. 파이프와의 충돌
+            for (const pipe of this.pipes) {
+                // 파이프 좌우 범위 확인
+                const birdLeft = bird.position.x - (this.BIRD_WIDTH / 2);
+                const birdRight = bird.position.x + (this.BIRD_WIDTH / 2);
+                const pipeLeft = pipe.x - (pipe.width / 2);
+                const pipeRight = pipe.x + (pipe.width / 2);
+
+                if (birdRight > pipeLeft && birdLeft < pipeRight) {
+                    // 파이프 상하 범위 확인 (Gap 사이가 아닌 부분)
+                    const birdTop = bird.position.y - (this.BIRD_HEIGHT / 2);
+                    const birdBottom = bird.position.y + (this.BIRD_HEIGHT / 2);
+                    const gapTop = pipe.gapY;
+                    const gapBottom = pipe.gapY + pipe.gap;
+
+                    if (birdTop < gapTop || birdBottom > gapBottom) {
+                        this.handleGameOver('pipe_collision', String(i) as PlayerId);
+                    }
+                }
             }
         }
     }
@@ -404,7 +421,7 @@ export class MockServerCore {
             const bird = this.birds[birdIndex];
 
             Matter.Body.setVelocity(bird, {
-                x: bird.velocity.x,
+                x: bird.velocity.x + 5.0, // 전진 파워 대폭 강화 (2.5 -> 5.0)
                 y: this.FLAP_VELOCITY
             });
 
@@ -430,6 +447,8 @@ export class MockServerCore {
     }
 
     private updatePipes() {
+        if (this.isGameOverState) return; // 게임 오버 시 파이프 정지
+
         // 파이프 이동 (일정한 속도 유지)
         for (const pipe of this.pipes) {
             pipe.x -= this.pipeSpeed;

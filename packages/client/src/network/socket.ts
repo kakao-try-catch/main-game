@@ -24,19 +24,23 @@ class SocketManager {
       handleServerPacket(packet);
     });
 
-    this.socket.on("connect", () => console.log("Connected! url:", url));
-    this.socket.on("disconnect", () => console.log("Disconnected! url:", url));
+    this.socket.on("connect", () => console.log("[SocketManager] Connected! url:", url));
+    this.socket.on("disconnect", (reason) => console.log("[SocketManager] Disconnected! reason:", reason, "url:", url));
   }
 
   // 서버로 데이터 전송할 때 사용하는 메서드
   send(packet: ServerPacket) {
-    if (!this.socket) return;
+    if (!this.socket) {
+      console.warn("[SocketManager] Cannot send packet: socket is null");
+      return;
+    }
     const { type, ...data } = packet;
     this.socket.emit(type, data);
   }
 
   disconnect() {
     if (this.socket) {
+      console.log("[SocketManager] Disconnecting...");
       this.socket.disconnect();
       this.socket = null;
     }

@@ -18,7 +18,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	private playerCount: number = 4;
 
 	// 새 스프라이트
-	private birdSprites: Phaser.GameObjects.Ellipse[] = [];
+	private birdSprites: Phaser.GameObjects.Sprite[] = [];
 	private targetPositions: BirdPosition[] = [];
 
 	// 배경 및 바닥 (무한 스크롤용)
@@ -28,6 +28,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
 	// 밧줄
 	private ropes: Phaser.GameObjects.Graphics[] = [];
+	private ropeMidPoints: { y: number, vy: number }[] = []; // 밧줄 중간 지점의 관성 데이터
 
 	constructor() {
 		super("FlappyBirdsScene");
@@ -52,6 +53,14 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	/* START-USER-CODE */
 
 	// Write your code here
+
+	preload() {
+		// 새 이미지 프리로드
+		this.load.image('flappybird_1', 'src/assets/images/flappybird_1.png');
+		this.load.image('flappybird_2', 'src/assets/images/flappybird_2.png');
+		this.load.image('flappybird_3', 'src/assets/images/flappybird_3.png');
+		this.load.image('flappybird_4', 'src/assets/images/flappybird_4.png');
+	}
 
 	create() {
 		this.editorCreate();
@@ -117,13 +126,16 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	 * 새 생성
 	 */
 	private createBirds(count: number) {
-		const colors = [0xff6b6b, 0x4ecdc4, 0xffe66d, 0x95e1d3];
-
 		for (let i = 0; i < count; i++) {
-			const bird = this.add.ellipse(200 + i * 120, 300, 40, 40);
-			bird.setStrokeStyle(3, 0xffffff);
-			bird.isFilled = true;
-			bird.fillColor = colors[i % colors.length];
+			// 플레이어 번호에 맞는 이미지 선택 (1, 2, 3, 4 순환)
+			const birdKey = `flappybird_${(i % 4) + 1}`;
+			const bird = this.add.sprite(200 + i * 120, 300, birdKey);
+
+			// 드로잉 오더 설정: 첫 번째 플레이어가 맨 앞으로 (index 0의 depth가 가장 높도록)
+			bird.setDepth(100 - i);
+
+			// 크기 조정 (2배 확대: 40x40 -> 80x80)
+			bird.setDisplaySize(80, 80);
 
 			this.birdSprites.push(bird);
 
@@ -138,7 +150,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			});
 		}
 
-		console.log(`[FlappyBirdsScene] ${count}개의 새 생성 완료`);
+		console.log(`[FlappyBirdsScene] ${count}개의 새(스프라이트) 생성 완료`);
 	}
 
 	/**
@@ -162,11 +174,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			}
 		}
 		this.groundTile.setTexture('groundTexture');
+		this.groundTile.setDepth(200); // 모든 요소보다 위쪽
 
 		// 바닥 상단 갈색 선
 		this.groundLine = this.add.rectangle(0, 798, 1440, 4, 0x8B4513);
 		this.groundLine.setOrigin(0, 0);
 		this.groundLine.setScrollFactor(0);
+		this.groundLine.setDepth(200);
 	}
 
 	/**
@@ -176,8 +190,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		const ropeCount = Math.max(0, playerCount - 1);
 		for (let i = 0; i < ropeCount; i++) {
 			const rope = this.add.graphics();
-			rope.setDepth(0); // 새와 같은 레벨에 렌더링 (depth -1은 보이지 않음)
+			rope.setDepth(10); // 새(depth 100~97)보다 뒤쪽에 렌더링
 			this.ropes.push(rope);
+
+			// 초기 관성 데이터 초기화
+			this.ropeMidPoints.push({ y: 300, vy: 0 });
 		}
 
 		console.log(`[FlappyBirdsScene] ${ropeCount}개의 밧줄 생성 완료`);
@@ -343,21 +360,57 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	}
 
 	/**
-	 * 클라이언트 측 새 스프라이트 위치로 밧줄 그리기
+	 * 클라이언트 측 새 스프라이트 위치 및 관성을 이용한 밧줄 그리기 (느슨할 때만 처짐)
 	 */
 	private drawRopesFromSprites() {
+		const GRAVITY = 0.6;          // 밧줄의 자체 중력
+		const STIFFNESS = 0.2;        // 팽팽해질 때 복원되는 세기 상향
+		const DAMPING = 0.8;          // 진동 감쇄
+		const MAX_ROPE_LENGTH = 100;  // 밧줄의 물리적 최대 길이 (서버 IDEAL_LENGTH와 동일)
+
 		for (let i = 0; i < this.ropes.length; i++) {
 			const rope = this.ropes[i];
 			const birdA = this.birdSprites[i];
 			const birdB = this.birdSprites[i + 1];
+			const midPoint = this.ropeMidPoints[i];
 
-			if (birdA && birdB) {
+			if (birdA && birdB && midPoint) {
+				const distance = Phaser.Math.Distance.Between(birdA.x, birdA.y, birdB.x, birdB.y);
+
+				// 1. 거리에 따른 처짐량 계산
+				// 거리가 MAX_ROPE_LENGTH 이상이면 처짐량 타겟은 0 (팽팽하게 직선이 됨)
+				// 거리가 그보다 짧으면 남는 길이만큼 아래로 처짐 발생
+				let sagTarget = 2; // 완전히 팽팽할 때도 아주 미세한 곡률을 주어 자연스럽게 표현
+
+				if (distance < MAX_ROPE_LENGTH) {
+					// 밧줄의 기하학적 처짐 깊이 계산
+					// 베지어 곡선은 직선보다 짧게 그려지므로 1.4배의 보정 계수를 곱해 
+					// 팽팽할 때와 늘어졌을 때의 시각적 길이를 일정하게 유지합니다.
+					const baseSag = Math.sqrt(Math.pow(MAX_ROPE_LENGTH / 2, 2) - Math.pow(distance / 2, 2));
+					sagTarget = baseSag * 1.4;
+				}
+
+				// 2. 물리적 타겟 위치 계산
+				const targetMidX = (birdA.x + birdB.x) / 2;
+				const targetMidY = (birdA.y + birdB.y) / 2 + sagTarget;
+
+				// 3. 관성 물리 시뮬레이션
+				const ay = (targetMidY - midPoint.y) * STIFFNESS + GRAVITY;
+				midPoint.vy = (midPoint.vy + ay) * DAMPING;
+				midPoint.y += midPoint.vy;
+
 				rope.clear();
-				rope.lineStyle(4, 0xffffff, 1);
-				rope.beginPath();
-				rope.moveTo(birdA.x, birdA.y);
-				rope.lineTo(birdB.x, birdB.y);
-				rope.strokePath();
+				rope.lineStyle(5, 0xffffff, 0.85);
+
+				// 2차 베지어 곡선을 사용하여 부드러운 처짐 표현
+				const curve = new Phaser.Curves.QuadraticBezier(
+					new Phaser.Math.Vector2(birdA.x, birdA.y),
+					new Phaser.Math.Vector2(targetMidX, midPoint.y),
+					new Phaser.Math.Vector2(birdB.x, birdB.y)
+				);
+
+				const points = curve.getPoints(16);
+				rope.strokePoints(points);
 			}
 		}
 	}

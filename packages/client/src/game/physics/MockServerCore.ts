@@ -26,7 +26,7 @@ export class MockServerCore {
 
     // 물리 파라미터
     private readonly GRAVITY_Y = 0.8;
-    private readonly BIRD_RADIUS = 20;
+    private readonly BIRD_RADIUS = 40; // 2배 확대 (20 -> 40)
     private readonly FLAP_VELOCITY = -8;
     private readonly FORWARD_SPEED = 3;  // 오른쪽으로 비행하는 기본 속도
 

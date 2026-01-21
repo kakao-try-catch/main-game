@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
-import { AppleGameScene } from './scene/apple/AppleGameScene';
-import { BootScene } from './scene/apple/BootScene';
-import type { AppleGamePreset } from './types/AppleGamePreset';
+import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
+import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 
 export interface PlayerData {
   id: string;
@@ -12,29 +11,18 @@ export interface PlayerData {
   color: string;
 }
 
-interface PlayerResultData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-  playerIndex: number;
-}
-
-interface PhaserGameProps {
+interface FlappyBirdGameProps {
   onGameReady?: (game: Phaser.Game) => void;
-  onAppleScored?: (points: number) => void;
-  onGameEnd?: (players: PlayerResultData[]) => void;
+  onGameOver?: (data: { reason: string; finalScore: number }) => void;
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
-  /** 게임 프리셋 설정 (로비에서 설정) */
-  preset?: AppleGamePreset;
+  preset?: FlappyBirdGamePreset;
 }
 
-export const PhaserGame: React.FC<PhaserGameProps> = ({
+export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
   onGameReady,
-  onAppleScored,
-  onGameEnd,
+  onGameOver,
   playerCount = 4,
   players = [],
   currentPlayerIndex = 0,
@@ -42,15 +30,15 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
-  const MAX_WIDTH = 1379;
-  const MAX_HEIGHT = 859;
+  const MAX_WIDTH = 1440;
+  const MAX_HEIGHT = 896;
 
   // 플레이어 데이터가 변경되면 씬에 전달
   useEffect(() => {
     if (!gameRef.current) return;
-    const appleGameScene = gameRef.current.scene.getScene('AppleGameScene');
-    if (appleGameScene) {
-      appleGameScene.events.emit('updatePlayers', {
+    const flappyScene = gameRef.current.scene.getScene('FlappyBirdsScene');
+    if (flappyScene) {
+      flappyScene.events.emit('updatePlayers', {
         playerCount,
         players,
         currentPlayerIndex,
@@ -65,7 +53,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       if (parentRef.current) {
         const width = Math.min(parentRef.current.clientWidth, MAX_WIDTH);
         const ratio = width / MAX_WIDTH;
-        (window as Window).__APPLE_GAME_RATIO = ratio;
+        (window as any).__FLAPPY_GAME_RATIO = ratio;
       }
     }
     updateRatio();
@@ -89,15 +77,15 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     parentHeight = Math.min(parentHeight, MAX_HEIGHT);
     let ratio = Math.min(parentWidth / MAX_WIDTH, parentHeight / MAX_HEIGHT);
     if (!ratio || ratio <= 0) ratio = 1;
-    (window as any).__APPLE_GAME_RATIO = ratio;
+    (window as any).__FLAPPY_GAME_RATIO = ratio;
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       width: MAX_WIDTH * ratio,
       height: MAX_HEIGHT * ratio,
       parent: parentRef.current,
-      backgroundColor: '#FFFFFF',
-      scene: [BootScene, AppleGameScene],
+      backgroundColor: '#46d1fd',
+      scene: [FlappyBirdsScene],
       physics: {
         default: 'arcade',
         arcade: {
@@ -114,23 +102,25 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       onGameReady(game);
     }
 
-    let appleGameScene: Phaser.Scene | null = null;
-    let appleScoredHandler: ((data: { points: number }) => void) | null = null;
+    let flappyScene: Phaser.Scene | null = null;
+    let gameOverHandler:
+      | ((data: { reason: string; finalScore: number }) => void)
+      | null = null;
 
     game.events.once('ready', () => {
-      appleGameScene = game.scene.getScene('AppleGameScene');
-      if (appleGameScene) {
+      flappyScene = game.scene.getScene('FlappyBirdsScene');
+      if (flappyScene) {
         // 씬의 create()가 완료된 후에 이벤트 전달
-        if (appleGameScene.scene.isActive()) {
-          appleGameScene.events.emit('updatePlayers', {
+        if (flappyScene.scene.isActive()) {
+          flappyScene.events.emit('updatePlayers', {
             playerCount,
             players,
             currentPlayerIndex,
             preset,
           });
         } else {
-          appleGameScene.events.once('create', () => {
-            appleGameScene?.events.emit('updatePlayers', {
+          flappyScene.events.once('create', () => {
+            flappyScene?.events.emit('updatePlayers', {
               playerCount,
               players,
               currentPlayerIndex,
@@ -139,41 +129,29 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
           });
         }
 
-        if (onAppleScored) {
-          appleScoredHandler = (data: { points: number }) => {
-            onAppleScored(data.points);
+        if (onGameOver) {
+          gameOverHandler = (data: { reason: string; finalScore: number }) => {
+            onGameOver(data);
           };
-          appleGameScene.events.on('appleScored', appleScoredHandler);
-        }
-        if (onGameEnd) {
-          appleGameScene.events.on(
-            'gameEnd',
-            (data: { players: PlayerResultData[] }) => {
-              onGameEnd(data.players);
-            },
-          );
+          flappyScene.events.on('game_over', gameOverHandler);
         }
       }
     });
 
     return () => {
-      if (appleGameScene && appleScoredHandler) {
-        appleGameScene.events.off('appleScored', appleScoredHandler);
-      }
-      if (appleGameScene) {
-        appleGameScene.events.off('gameEnd');
+      if (flappyScene && gameOverHandler) {
+        flappyScene.events.off('game_over', gameOverHandler);
       }
       game.destroy(true);
       gameRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onGameReady, onAppleScored]);
+  }, [onGameReady, onGameOver]);
 
-  // 화면 크기에 따라 1380:862 비율을 유지하는 스타일
+  // 화면 크기에 따라 1440:896 비율을 유지하는 스타일
   const aspectRatio = MAX_WIDTH / MAX_HEIGHT;
-  // 부모 컨테이너 크기를 고려한 반응형 설정
   const vw = Math.min(window.innerWidth, MAX_WIDTH);
-  const vh = Math.min(window.innerHeight * 0.8, MAX_HEIGHT); // 80% 영역 내에서 계산
+  const vh = Math.min(window.innerHeight * 0.8, MAX_HEIGHT);
   let width, height;
   width = vw;
   height = vw / aspectRatio;
@@ -182,10 +160,11 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     width = vh * aspectRatio;
   }
   const ratio = width / MAX_WIDTH;
-  // window.__APPLE_GAME_RATIO를 항상 갱신
+
   useLayoutEffect(() => {
-    (window as any).__APPLE_GAME_RATIO = ratio;
+    (window as any).__FLAPPY_GAME_RATIO = ratio;
   }, [ratio]);
+
   const containerStyle: React.CSSProperties = {
     width: `${width}px`,
     height: `${height}px`,
@@ -195,9 +174,10 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
     minHeight: '200px',
     margin: '0 auto',
     display: 'block',
-    background: '#fff',
+    background: '#46d1fd',
     position: 'relative',
     border: '4px solid #fff',
   };
-  return <div ref={parentRef} id="phaser-game" style={containerStyle} />;
+
+  return <div ref={parentRef} id="flappy-game" style={containerStyle} />;
 };

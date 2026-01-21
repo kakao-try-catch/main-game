@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import AppleGameManager from './AppleGameManager';
-import type { AppleGamePreset } from '../../types/GamePreset';
-import { resolvePreset } from '../../types/GamePreset';
+import type { AppleGamePreset } from '../../types/AppleGamePreset';
+import { resolvePreset } from '../../types/AppleGamePreset';
 
 // You can write more code here
 

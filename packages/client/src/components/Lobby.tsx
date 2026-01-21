@@ -33,7 +33,10 @@ interface GameSettings {
 
 interface LobbyProps {
   currentPlayer: Player;
-  onGameStart: (preset: AppleGamePreset) => void;
+  onGameStart: (
+    gameType: string,
+    preset: AppleGamePreset | Record<string, unknown>,
+  ) => void;
 }
 
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
@@ -146,7 +149,17 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
         includeZero: settings.includeZero || false,
       };
 
-      onGameStart(preset);
+      onGameStart('apple', preset);
+    } else if (selectedGame === 'flappy') {
+      // 플래피 버드 기본 프리셋
+      const preset = {
+        pipeSpeed: 'normal' as const,
+        pipeSpacing: 'normal' as const,
+      };
+      onGameStart('flappy', preset);
+    } else if (selectedGame === 'minesweeper') {
+      // 지뢰찾기는 아직 구현되지 않음
+      onGameStart('minesweeper', {});
     }
   };
 

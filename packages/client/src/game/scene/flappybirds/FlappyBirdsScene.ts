@@ -8,7 +8,7 @@ import { getSocket, isMockMode } from '../../network/socketService';
 import { MockSocket } from '../../network/MockSocket';
 import { MockServerCore } from '../../physics/MockServerCore';
 import type { BirdPosition, UpdatePositionsEvent, GameOverEvent, PlayerId } from '../../types/flappybird.types';
-import PipeManager from '../../flappybird/PipeManager';
+import PipeManager from './PipeManager';
 
 export default class FlappyBirdsScene extends Phaser.Scene {
 	private socket: any;

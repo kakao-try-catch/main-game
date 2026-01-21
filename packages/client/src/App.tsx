@@ -1,16 +1,16 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { PhaserGame } from './game/GameContainer';
+import { UnifiedGameContainer } from './game/UnifiedGameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
 
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
-import SocketCounter from './components/SocketCounter';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/GamePreset';
+import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
 import { SystemPacketType } from '../../common/src/packets';
 
 import './App.css';
@@ -61,11 +61,16 @@ function AppContent() {
     { id: 'id_4', name: '4P', score: 0, color: '#f2d024' },
   ]);
 
-  // 프리셋 설정 (로비에서 받아옴)
-  const [currentPreset, setCurrentPreset] = useState<
-    AppleGamePreset | undefined
+  // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
+  const [currentGameType, setCurrentGameType] = useState<
+    'apple' | 'flappy' | 'minesweeper' | undefined
   >(undefined);
-
+  const [applePreset, setApplePreset] = useState<AppleGamePreset | undefined>(
+    undefined,
+  );
+  const [flappyPreset, setFlappyPreset] = useState<
+    FlappyBirdGamePreset | undefined
+  >(undefined);
 
   // 점수 증가 함수
   const handleAddScore = (playerId: string, pointsToAdd: number) => {
@@ -137,24 +142,34 @@ function AppContent() {
 
     const joinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,
-      playerId: socketManager.getId() ?? "",
+      playerId: socketManager.getId() ?? '',
       roomId: 'HARDCODED_ROOM_1',
       playerName: inputNickname,
     } as const;
     socketManager.send(joinRoomPacket);
-    console.log("JOIN_ROOM sent: ", joinRoomPacket);
+    console.log('JOIN_ROOM sent: ', joinRoomPacket);
     // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
     setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
   };
 
-  const handleGameStart = (preset: AppleGamePreset) => {
-    setCurrentPreset(preset);
+  const handleGameStart = (
+    gameType: string,
+    preset: AppleGamePreset | FlappyBirdGamePreset | Record<string, unknown>,
+  ) => {
+    setCurrentGameType(gameType as 'apple' | 'flappy' | 'minesweeper');
+
+    if (gameType === 'apple') {
+      setApplePreset(preset as AppleGamePreset);
+    } else if (gameType === 'flappy') {
+      setFlappyPreset(preset as FlappyBirdGamePreset);
+    }
+
     setCurrentScreen('game');
   };
 
   // 소켓 연결부
   useEffect(() => {
-    console.log("서버와의 연결 시도");
+    console.log('서버와의 연결 시도');
     socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
 
     // 테스트 종료(컴포넌트 제거) 시 연결을 완전히 끊고 싶다면 주석 해제
@@ -220,8 +235,11 @@ function AppContent() {
               margin: '2px 0',
             }}
           >
-            마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록
-            하세요
+            {currentGameType === 'apple'
+              ? '마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록 하세요'
+              : currentGameType === 'flappy'
+                ? '스페이스바나 마우스 클릭으로 새를 날게 하세요! (Q/W/E/R로 개별 새 조종)'
+                : '게임을 플레이하세요'}
           </p>
         )}
       </header>
@@ -270,7 +288,7 @@ function AppContent() {
           alignItems: 'center',
           width: '100%',
           flex: 4,
-          backgroundColor: '#fff',
+          backgroundColor: currentGameType === 'flappy' ? '#46d1fd' : '#fff',
           margin: 0,
           padding: 0,
           minHeight: 0,
@@ -278,12 +296,14 @@ function AppContent() {
           overflow: 'hidden',
         }}
       >
-        {!gameEnded && currentPreset && (
-          <PhaserGame
+        {!gameEnded && currentGameType && (
+          <UnifiedGameContainer
+            gameType={currentGameType}
             playerCount={players.length}
             players={players}
             currentPlayerIndex={currentUser.playerIndex}
-            preset={currentPreset}
+            applePreset={applePreset}
+            flappyPreset={flappyPreset}
             onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
             onGameReady={handleGameReady}

@@ -1,35 +1,36 @@
 // --- ENUMS ---
 export enum SystemPacketType {
-  UPDATE_NUMBER = "UPDATE_NUMBER",
-  JOIN_ROOM = "JOIN_ROOM",
-  ROOM_UPDATE = "ROOM_UPDATE",
-  SYSTEM_MESSAGE = "SYSTEM_MESSAGE",
-  GAME_CONFIG_UPDATE_REQ = "GAME_CONFIG_UPDATE_REQ",
-  GAME_CONFIG_UPDATE = "GAME_CONFIG_UPDATE",
-  GAME_START_REQ = "GAME_START_REQ",
-  READY_SCENE = "READY_SCENE",
+  UPDATE_NUMBER = 'UPDATE_NUMBER',
+  JOIN_ROOM = 'JOIN_ROOM',
+  ROOM_UPDATE = 'ROOM_UPDATE',
+  SYSTEM_MESSAGE = 'SYSTEM_MESSAGE',
+  GAME_CONFIG_UPDATE_REQ = 'GAME_CONFIG_UPDATE_REQ',
+  GAME_CONFIG_UPDATE = 'GAME_CONFIG_UPDATE',
+  GAME_START_REQ = 'GAME_START_REQ',
+  READY_SCENE = 'READY_SCENE',
+  UPDATE_SCORE = 'UPDATE_SCORE',
 }
 
 export enum GameType {
-  APPLE_GAME = "APPLE_GAME",
-  FLAPPY_BIRD = "FLAPPY_BIRD",
-  MINESWEEPER = "MINESWEEPER",
+  APPLE_GAME = 'APPLE_GAME',
+  FLAPPY_BIRD = 'FLAPPY_BIRD',
+  MINESWEEPER = 'MINESWEEPER',
 }
 
 export enum MapSize {
-  SMALL = "SMALL",
-  MEDIUM = "MEDIUM",
-  LARGE = "LARGE",
+  SMALL = 'SMALL',
+  MEDIUM = 'MEDIUM',
+  LARGE = 'LARGE',
 }
 
 export enum GamePacketType {
-  SET_FIELD = "SET_FIELD",
-  SET_TIME = "SET_TIME",
-  UPDATE_DRAG_AREA = "UPDATE_DRAG_AREA",
-  DROP_CELL_INDEX = "DROP_CELL_INDEX",
-  TIME_END = "TIME_END",
-  CONFIRM_DRAG_AREA = "CONFIRM_DRAG_AREA",
-  DRAWING_DRAG_AREA = "DRAWING_DRAG_AREA",
+  SET_FIELD = 'SET_FIELD',
+  SET_TIME = 'SET_TIME',
+  UPDATE_DRAG_AREA = 'UPDATE_DRAG_AREA',
+  DROP_CELL_INDEX = 'DROP_CELL_INDEX',
+  TIME_END = 'TIME_END',
+  CONFIRM_DRAG_AREA = 'CONFIRM_DRAG_AREA',
+  DRAWING_DRAG_AREA = 'DRAWING_DRAG_AREA',
 }
 
 // --- COMMON TYPES ---
@@ -41,6 +42,16 @@ export interface PlayerData {
   playerName: string;
   color: string;
   score: number; // User requested score to be in PlayerData
+}
+
+export interface ReportCard {
+  score: number;
+}
+
+export interface AppleGameReportCard extends ReportCard {}
+
+export interface MineSweeperReportCard extends ReportCard {
+  flags: number;
 }
 
 // --- SYSTEM PACKETS ---
@@ -101,6 +112,12 @@ export interface ReadyScenePacket {
   selectedGameType: GameType;
 }
 
+export interface UpdateScorePacket {
+  type: SystemPacketType.UPDATE_SCORE;
+  playerOrder: number;
+  reportCard: ReportCard[];
+}
+
 export type SystemPacket =
   | UpdateNumberPacket
   | JoinRoomPacket
@@ -109,7 +126,8 @@ export type SystemPacket =
   | GameConfigUpdateReqPacket
   | GameConfigUpdatePacket
   | GameStartReqPacket
-  | ReadyScenePacket;
+  | ReadyScenePacket
+  | UpdateScorePacket;
 
 // --- GAME PACKETS ---
 export interface SetFieldPacket {

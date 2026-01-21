@@ -16,6 +16,8 @@ class SocketManager {
       reconnectionAttempts: 5,
     });
 
+    console.log("[SocketManager] io url called: " + url);
+
     // 통합 핸들러 연결
     this.socket.onAny((eventName, data) => {
       // 패킷 구조가 { type, ...data } 형태라면 그대로 전달
@@ -53,3 +55,4 @@ class SocketManager {
 }
 
 export const socketManager = new SocketManager();
+socketManager.connect('http://localhost:3000');

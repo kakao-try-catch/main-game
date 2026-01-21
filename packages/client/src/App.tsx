@@ -149,19 +149,12 @@ function AppContent() {
 
   const handleGameStart = (preset: AppleGamePreset) => {
 
-  // 소켓 연결부
-  useEffect(() => {
-    console.log("서버와의 연결 시도");
-    socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
+
     const gameStartReq = {
       type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
-    };
+    } as any;
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
-
-    // 테스트 종료(컴포넌트 제거) 시 연결을 완전히 끊고 싶다면 주석 해제
-    return () => socketManager.disconnect();
-  }, []);
     setCurrentPreset(preset); // todo game_config_update 
     setCurrentScreen('game'); // todo ready_scene
   };

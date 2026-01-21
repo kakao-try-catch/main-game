@@ -42,3 +42,8 @@ map_size: small, medium, large enum # 맵 크기
 time: number #서버측도 검증해야 함. 클라측 검증 로직을 서버측도 가져오기?
 generation: 0/1 #0은 쉬움. 1~9 숫자 생성, 1은 어려움. 1~5 숫자 생성
 zero: boolean # 0 생성 여부
+
+# GAME_START_REQ (ServerBound)
+방장이 현재 설정으로 게임 시작을 요청할 때 사용됩니다.
+서버측은 방장인지 검증 후 현재 상태로 게임을 시작합니다.
+서버측 해당 패킷을 보낸 socket의 id를 기반으로 room을 찾고 접속 여부, 방장 여부 등을 검증 후 게임 시작 처리를 준비합니다.

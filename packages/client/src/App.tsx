@@ -226,7 +226,7 @@ function AppContent() {
         )}
       </header>
 
-      <SocketCounter />
+      {/* <SocketCounter /> */}
 
       {/* 상단 영역 */}
       <div

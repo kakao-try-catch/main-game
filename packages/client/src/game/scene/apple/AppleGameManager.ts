@@ -155,8 +155,8 @@ export default class AppleGameManager {
     const canvasHeight =
       (scene.sys.game.config.height as number) || window.innerHeight;
     const timerRatio = this.config.ratio;
-    const timerBarMarginTop = 70 * timerRatio; // px, 필요에 따라 조정
-    const timerBarMarginBottom = 65 * timerRatio; // px, 필요에 따라 조정
+    const timerBarMarginTop = 50 * timerRatio; // px, 상하 여백 증가
+    const timerBarMarginBottom = 50 * timerRatio; // px, 상하 여백 증가
     const timerBarCanvasHeight =
       canvasHeight - timerBarMarginTop - timerBarMarginBottom;
     const timerBarWidth = 22 * timerRatio;

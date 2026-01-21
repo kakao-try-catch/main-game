@@ -82,7 +82,10 @@ export function handleClientPacket(io: Server, socket: Socket, packet: ServerPac
 }
 
 // index.ts에서 호출할 초기화/조인 헬퍼
+const MAX_PLAYERS_PER_ROOM = 4;
 export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, playerName: string) {
+  roomId = "HARDCODED_ROOM_1"; // todo: 강제로 하드코드된 방으로 넣기. 나중엔 지워야 함.
+  console.log(`[Server] Player ${playerName} (${socket.id}) joining room ${roomId}`);
   // 중복 조인 방지
   //  if (playerRooms.has(socket.id)) {
   //    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "이미 방에 참여 중입니다." });
@@ -102,9 +105,19 @@ export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, pla
     console.log(`Created new Game Session for ${roomId}`);
   }
 
+  const room = io.sockets.adapter.rooms.get(roomId);
+  const numClients = room ? room.size : 0;
+
+  // todo: 여기 방 numClients 랑 session.getPlayerCount() 둘 역할 중복되어서 정리해야 함
+  if (numClients >= MAX_PLAYERS_PER_ROOM) {
+    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "Room is full" });
+    socket.disconnect();
+    return;
+  }
   // 방 인원 검사 해야 함.
-  if (session.getPlayerCount() >= 4) {
+  if (session.getPlayerCount() >= MAX_PLAYERS_PER_ROOM) {
     socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "방이 꽉 찼습니다." });
+    socket.disconnect();
     return;
   }
 

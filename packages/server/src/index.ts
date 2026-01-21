@@ -9,9 +9,6 @@ import { ServerPacket, SystemPacketType } from "../../common/src/packets";
 
 console.log("Game server starting...");
 
-const ROOM_ID = "HARDCODED_ROOM_1";
-const MAX_PLAYERS = 4;
-
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
@@ -25,23 +22,6 @@ const io = new Server(httpServer, {
 io.on("connection", (socket: Socket) => {
   console.log(`[접속] 클라이언트: ${socket.id}`);
 
-  // Auto Join
-  // 클라이언트에서 닉네임 정보를 handshake query로 보내면 좋겠지만,
-  // 지금은 임시로 Socket ID를 이름으로 사용
-  // 실제로는 클라이언트가 JOIN 요청을 보내는게 맞음.
-  // 하지만 기존 로직 유지하여 접속 시 바로 조인 시도.
-
-  // 방 인원 체크 logic moved to 'joinPlayerToGame' internally or we check here
-  const room = io.sockets.adapter.rooms.get(ROOM_ID);
-  const numClients = room ? room.size : 0;
-
-  if (numClients < MAX_PLAYERS) {
-    joinPlayerToGame(io, socket, ROOM_ID, `Player_${socket.id.substr(0, 4)}`);
-  } else {
-    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "Room is full" });
-    socket.disconnect();
-    return;
-  }
 
   socket.onAny((eventName, data) => {
     // console.log(`Event: ${eventName}`, data);

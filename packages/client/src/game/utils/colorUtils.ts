@@ -14,7 +14,7 @@ export function adjustBrightness(
   const hsv = Phaser.Display.Color.RGBToHSV(color.red, color.green, color.blue);
   const newBrightness = Phaser.Math.Clamp(hsv.v + brightnessOffset, 0, 1);
   const rgbColor = Phaser.Display.Color.HSVToRGB(hsv.h, hsv.s, newBrightness);
-  
+
   // HSVToRGB는 ColorObject를 반환하므로 타입 캐스팅
   const rgb = rgbColor as { r: number; g: number; b: number };
   return Phaser.Display.Color.GetColor(rgb.r, rgb.g, rgb.b);

@@ -73,20 +73,16 @@ function AppContent() {
   >(undefined);
 
   // 점수 증가 함수
-  const handleAddScore = (playerId: string, pointsToAdd: number) => {
-    setPlayers((prevPlayers) =>
-      prevPlayers.map((player) =>
-        player.id === playerId
-          ? { ...player, score: player.score + pointsToAdd }
-          : player,
-      ),
-    );
-  };
-
   const handleAppleScored = useCallback(
     (points: number) => {
       try {
-        handleAddScore(currentUser.id, points);
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((player) =>
+            player.id === currentUser.id
+              ? { ...player, score: player.score + points }
+              : player,
+          ),
+        );
         playSFX('appleDrop');
       } catch (error) {
         console.error('Apple scored handler error:', error);

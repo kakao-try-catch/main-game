@@ -52,3 +52,18 @@ config는 게임마다 다를 수 있지만 일단 사과게임을 우선적으�
 클라이언트가 이 패킷을 받아야 실제 게임 화면을 구성합니다. (기존 setCurrentScreen('game')으로 게임 화면으로 넘어가는 부분)
 
 - selectedGameType: GameType # 게임 타입 (packets.ts에 있는 GameType 사용하면 됨.)
+
+# UPDATE_SCORE (ClientBound)
+클라이언트의 점수판을 업데이트 합니다.
+
+- playerOrder: number # 점수를 업데이트할 플레이어 order
+- reportCard: ReportCard[] # 해당 플레이어가 나타내는 점수판
+
+ReportCard = AppleGameReportCard | MineSweeperReportCard;
+AppleGameReportCard = {
+    score: number,
+};
+MineSweeperReportCard = {
+    score: number,
+    flags: number,
+}

@@ -8,6 +8,7 @@ export enum SystemPacketType {
   GAME_CONFIG_UPDATE = "GAME_CONFIG_UPDATE",
   GAME_START_REQ = "GAME_START_REQ",
   READY_SCENE = "READY_SCENE",
+  UPDATE_SCORE = "UPDATE_SCORE",
 }
 
 export enum GameType {
@@ -41,6 +42,17 @@ export interface PlayerData {
   playerName: string;
   color: string;
   score: number; // User requested score to be in PlayerData
+}
+
+export interface ReportCard {
+  score: number;
+}
+
+export interface AppleGameReportCard extends ReportCard {
+}
+
+export interface MineSweeperReportCard extends ReportCard {
+  flags: number;
 }
 
 // --- SYSTEM PACKETS ---
@@ -101,6 +113,12 @@ export interface ReadyScenePacket {
   selectedGameType: GameType;
 }
 
+export interface UpdateScorePacket {
+  type: SystemPacketType.UPDATE_SCORE;
+  playerOrder: number;
+  reportCard: ReportCard[];
+}
+
 export type SystemPacket =
   | UpdateNumberPacket
   | JoinRoomPacket
@@ -109,7 +127,8 @@ export type SystemPacket =
   | GameConfigUpdateReqPacket
   | GameConfigUpdatePacket
   | GameStartReqPacket
-  | ReadyScenePacket;
+  | ReadyScenePacket
+  | UpdateScorePacket;
 
 // --- GAME PACKETS ---
 export interface SetFieldPacket {

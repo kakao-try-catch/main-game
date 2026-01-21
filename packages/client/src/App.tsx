@@ -144,7 +144,7 @@ function AppContent() {
     socketManager.send(joinRoomPacket);
     console.log("JOIN_ROOM sent: ", joinRoomPacket);
     // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
-    // setCurrentScreen('lobby');
+    setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
   };
 
   const handleGameStart = (preset: AppleGamePreset) => {

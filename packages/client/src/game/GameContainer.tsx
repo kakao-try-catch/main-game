@@ -100,7 +100,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       height: MAX_HEIGHT * ratio,
       parent: parentRef.current,
       backgroundColor: '#FFFFFF',
-      scene: [FlappyBirdsScene],
+      scene: [BootScene, AppleGameScene],
       physics: {
         default: 'matter',
         matter: {

@@ -141,8 +141,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			// 드로잉 오더 설정: 첫 번째 플레이어가 맨 앞으로 (index 0의 depth가 가장 높도록)
 			bird.setDepth(100 - i);
 
-			// 크기 조정 (2배 확대: 40x40 -> 80x80)
-			bird.setDisplaySize(80, 80);
+			// 크기 조정 (기존보다 축소: 80x50)
+			bird.setDisplaySize(80, 50);
 
 			this.birdSprites.push(bird);
 
@@ -306,7 +306,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
 			if (birdA && birdB) {
 				rope.clear();
-				rope.lineStyle(4, 0xffffff, 1);
+				rope.lineStyle(6, 0x8B4513, 1); // 고전적인 갈색 밧줄
 				rope.beginPath();
 				rope.moveTo(birdA.x, birdA.y);
 				rope.lineTo(birdB.x, birdB.y);
@@ -403,7 +403,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 				midPoint.y += midPoint.vy;
 
 				rope.clear();
-				rope.lineStyle(5, 0xffffff, 0.85);
+				rope.lineStyle(6, 0x8B4513, 0.9); // 고전적인 갈색 밧줄
 
 				// 2차 베지어 곡선을 사용하여 부드러운 처짐 표현
 				const curve = new Phaser.Curves.QuadraticBezier(

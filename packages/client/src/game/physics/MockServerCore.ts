@@ -26,7 +26,8 @@ export class MockServerCore {
 
     // 물리 파라미터
     private readonly GRAVITY_Y = 1.2; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
-    private readonly BIRD_RADIUS = 40; // 2배 확대 (20 -> 40)
+    private readonly BIRD_WIDTH = 80; // 57 * 1.4 (해상도 변경 반영)
+    private readonly BIRD_HEIGHT = 50; // 36 * 1.4 (해상도 변경 반영)
     private readonly FLAP_VELOCITY = -10; // 플랩 정도
     private readonly FORWARD_SPEED = 3; // 전진 순항 속도 밸런스 조정
     private isGameOverState: boolean = false; // 게임 오버 상태 추적
@@ -113,15 +114,18 @@ export class MockServerCore {
             // 각 새에 약간의 Y 오프셋을 주어 초기 장력 생성 (물리 안정화)
             const yOffset = i * 3; // 0, 5, 10, 15 픽셀 차이
 
-            const bird = Matter.Bodies.circle(
+            // 새의 형태가 57*36 이므로 원형보다는 직사각형(또는 둥근 사각형)이 적합
+            const bird = Matter.Bodies.rectangle(
                 startX + i * spacing,
-                startY + yOffset,  // 약간씩 다른 높이에서 시작
-                this.BIRD_RADIUS,
+                startY + yOffset,
+                this.BIRD_WIDTH,
+                this.BIRD_HEIGHT,
                 {
+                    chamfer: { radius: 10 }, // 모서리를 약간 둥글게 처리
                     density: 0.001,
                     restitution: 0.5,
                     friction: 0.1,
-                    frictionAir: 0.05, // 공기 저항을 높여 물리적 안정성 확보
+                    frictionAir: 0.05,
                     label: 'bird',
                     collisionFilter: {
                         category: CATEGORY_BIRD,
@@ -304,11 +308,11 @@ export class MockServerCore {
         for (let i = 0; i < this.birds.length; i++) {
             const bird = this.birds[i];
             // 바닥과의 충돌 (상단 표면 798 기준)
-            if (bird.position.y + this.BIRD_RADIUS >= 798) {
+            if (bird.position.y + (this.BIRD_HEIGHT / 2) >= 798) {
                 // 충돌 시 위치 보정 및 물리 완전 정지 (isStatic)
                 Matter.Body.setPosition(bird, {
                     x: bird.position.x,
-                    y: 798 - this.BIRD_RADIUS
+                    y: 798 - (this.BIRD_HEIGHT / 2)
                 });
                 Matter.Body.setVelocity(bird, { x: 0, y: 0 });
                 Matter.Body.setStatic(bird, true); // <--- 물리 엔진에서 제외 (뚫림 방지 핵심)

@@ -11,7 +11,7 @@ export var SystemPacketType;
 export var GameType;
 (function (GameType) {
     GameType["APPLE_GAME"] = "APPLE_GAME";
-    GameType["FLAFFY_BIRD"] = "FLAFFY_BIRD";
+    GameType["FLAPPY_BIRD"] = "FLAPPY_BIRD";
     GameType["MINESWEEPER"] = "MINESWEEPER";
 })(GameType || (GameType = {}));
 export var MapSize;

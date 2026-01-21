@@ -11,7 +11,7 @@ export enum SystemPacketType {
 
 export enum GameType {
   APPLE_GAME = "APPLE_GAME",
-  FLAFFY_BIRD = "FLAFFY_BIRD",
+  FLAPPY_BIRD = "FLAPPY_BIRD",
   MINESWEEPER = "MINESWEEPER",
 }
 

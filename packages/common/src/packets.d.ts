@@ -8,7 +8,7 @@ export declare enum SystemPacketType {
 }
 export declare enum GameType {
     APPLE_GAME = "APPLE_GAME",
-    FLAFFY_BIRD = "FLAFFY_BIRD",
+    FLAPPY_BIRD = "FLAPPY_BIRD",
     MINESWEEPER = "MINESWEEPER"
 }
 export declare enum MapSize {
@@ -117,5 +117,5 @@ export interface DrawingDragAreaPacket {
 }
 export type GamePacket = SetFieldPacket | SetTimePacket | UpdateDragAreaPacket | DropCellIndexPacket | TimeEndPacket | ConfirmDragAreaPacket | DrawingDragAreaPacket;
 export type ServerPacket = SystemPacket | GamePacket;
-export {};
+export { };
 //# sourceMappingURL=packets.d.ts.map

@@ -1,5 +1,5 @@
 import Matter from 'matter-js';
-import type { BirdPosition, RopeData, PlayerId } from '../types/flappybird.types';
+import type { BirdPosition, RopeData, PlayerId, PipeData } from '../types/flappybird.types';
 import { MockSocket } from '../network/MockSocket';
 
 /**
@@ -25,6 +25,13 @@ export class MockServerCore {
     private isRunning: boolean = false;
     private playerCount: number = 4;
 
+    // 파이프 관련
+    private pipes: PipeData[] = [];
+    private nextPipeId: number = 0;
+    private lastPipeSpawnTime: number = 0;
+    private screenWidth: number = 1440;
+    private screenHeight: number = 896;
+
     // 물리 파라미터
     private readonly GRAVITY_Y = 0.8;
     private readonly BIRD_RADIUS = 20;
@@ -32,6 +39,12 @@ export class MockServerCore {
     private readonly CHAIN_LENGTH = 100;
     private readonly CHAIN_STIFFNESS = 0.15;  // 0.4 → 0.15로 감소 (끌고가는 힘 약화)
     private readonly CHAIN_DAMPING = 0.1;
+
+    // 파이프 파라미터
+    private readonly PIPE_WIDTH = 80;
+    private readonly PIPE_GAP = 200;
+    private readonly PIPE_SPAWN_INTERVAL = 2000;
+    private readonly PIPE_SPEED = 3;
 
     constructor(socket: MockSocket) {
         this.socket = socket;
@@ -68,6 +81,9 @@ export class MockServerCore {
         this.birds = [];
         this.constraints = [];
         this.score = 0;
+        this.pipes = [];
+        this.nextPipeId = 0;
+        this.lastPipeSpawnTime = 0;
 
         // 바닥 생성
         this.createGround();
@@ -77,6 +93,7 @@ export class MockServerCore {
 
         // 체인으로 연결
         this.createChainConstraints();
+
 
         console.log('[MockServerCore] 게임 초기화 완료');
     }
@@ -192,6 +209,9 @@ export class MockServerCore {
         // Matter.js 물리 연산
         Matter.Engine.update(this.engine, 1000 / 60);
 
+        // 파이프 업데이트
+        this.updatePipes();
+
         // 충돌 감지
         this.checkCollisions();
 
@@ -212,7 +232,8 @@ export class MockServerCore {
         this.socket.emit('update_positions', {
             timestamp: Date.now(),
             birds,
-            ropes
+            ropes,
+            pipes: this.pipes
         });
     }
 
@@ -306,6 +327,38 @@ export class MockServerCore {
             });
 
             console.log(`[MockServerCore] Player ${playerId} Flap!`);
+        }
+    }
+
+    private createPipe(x: number) {
+        const minGapY = this.screenHeight * 0.1;
+        const maxGapY = this.screenHeight * 0.5;
+        const gapY = minGapY + Math.random() * (maxGapY - minGapY);
+
+        const pipe: PipeData = {
+            id: `pipe_${this.nextPipeId++}`,
+            x,
+            gapY,
+            width: this.PIPE_WIDTH,
+            gap: this.PIPE_GAP,
+            passed: false
+        };
+
+        this.pipes.push(pipe);
+    }
+
+    private updatePipes() {
+        const currentTime = Date.now();
+
+        for (const pipe of this.pipes) {
+            pipe.x -= this.PIPE_SPEED;
+        }
+
+        this.pipes = this.pipes.filter(pipe => pipe.x > -this.PIPE_WIDTH);
+
+        if (currentTime - this.lastPipeSpawnTime >= this.PIPE_SPAWN_INTERVAL) {
+            this.createPipe(this.screenWidth + this.PIPE_WIDTH);
+            this.lastPipeSpawnTime = currentTime;
         }
     }
 

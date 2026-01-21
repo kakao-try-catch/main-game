@@ -21,6 +21,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	private birdSprites: Phaser.GameObjects.Ellipse[] = [];
 	private targetPositions: BirdPosition[] = [];
 
+	// 파이프 데이터 (서버로부터 받은 데이터)
+	private targetPipes: any[] = [];
+
 	// 밧줄
 	private ropes: Phaser.GameObjects.Graphics[] = [];
 
@@ -193,6 +196,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		// 위치 업데이트 수신
 		this.socket.on('update_positions', (data: UpdatePositionsEvent) => {
 			this.targetPositions = data.birds;
+
+			// 파이프 데이터 저장 (update()에서 처리)
+			if (data.pipes) {
+				this.targetPipes = data.pipes;
+			}
 		});
 
 		// 게임 오버
@@ -282,11 +290,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	}
 
 	update(_time: number, _delta: number) {
-		// 파이프 매니저 업데이트 (파이프를 왼쪽으로 이동)
-		if (this.pipeManager) {
-			this.pipeManager.update(_delta);
-		}
-
 		// 선형 보간으로 부드러운 이동
 		for (let i = 0; i < this.birdSprites.length; i++) {
 			const sprite = this.birdSprites[i];
@@ -301,6 +304,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 				const angle = Phaser.Math.Clamp(target.velocityY * 3, -30, 90);
 				sprite.rotation = Phaser.Math.DegToRad(angle);
 			}
+		}
+
+		// 파이프 업데이트
+		if (this.targetPipes.length > 0 && this.pipeManager) {
+			this.pipeManager.updateFromServer(this.targetPipes);
 		}
 
 		// 밧줄을 클라이언트 측 새 스프라이트 위치로 직접 그리기 (레이턴시 없음)

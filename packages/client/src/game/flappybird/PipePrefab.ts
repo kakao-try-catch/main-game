@@ -92,6 +92,30 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
 		return pipeSet;
 	}
 
+	/**
+	 * 서버 데이터를 기반으로 파이프 간격을 설정합니다.
+	 * @param gapY - 간격 중심 Y 좌표
+	 * @param gap - 위아래 파이프 사이 간격
+	 * @param width - 파이프 너비
+	 * @param screenHeight - 화면 높이
+	 */
+	public setFromServerData(gapY: number, gap: number, width: number, screenHeight: number): void {
+		// 위쪽 파이프 높이 계산
+		const topPipeHeight = gapY - gap / 2;
+
+		// 아래쪽 파이프 높이 계산
+		const bottomPipeHeight = screenHeight - (gapY + gap / 2);
+
+		// 위쪽 파이프 설정
+		this.upPipe.setHeight(topPipeHeight);
+		this.upPipe.setThickness(width);
+
+		// 아래쪽 파이프 설정
+		this.downPipe.y = gapY + gap / 2;
+		this.downPipe.setHeight(bottomPipeHeight);
+		this.downPipe.setThickness(width);
+	}
+
 	/* END-USER-CODE */
 }
 

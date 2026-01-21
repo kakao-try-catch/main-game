@@ -1,6 +1,6 @@
 import { Server, Socket } from "socket.io";
 // @ts-ignore
-import { joinPlayerToGame, getSession } from "./applegame/serverHandler";
+import { joinPlayerToGame, getSession } from "../applegame/serverHandler";
 
 // Mock Socket
 const createMockSocket = (id: string): Socket => {

@@ -135,6 +135,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       if (settings.appleRange === '1-5') numberRange = '1-5';
       else if (settings.appleRange === '1-3') numberRange = '1-3';
 
+      // TODO 서버가 프리셋 가지고 있어야 하는 것. GAME_CONFIG_UPDATE
       const preset: AppleGamePreset = {
         gridSize,
         timeLimit:

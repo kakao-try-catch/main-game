@@ -25,10 +25,11 @@ export class MockServerCore {
     private playerCount: number = 4;
 
     // 물리 파라미터
-    private readonly GRAVITY_Y = 0.8;
+    private readonly GRAVITY_Y = 1.2; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
     private readonly BIRD_RADIUS = 40; // 2배 확대 (20 -> 40)
-    private readonly FLAP_VELOCITY = -8;
-    private readonly FORWARD_SPEED = 3;  // 오른쪽으로 비행하는 기본 속도
+    private readonly FLAP_VELOCITY = -10; // 플랩 정도
+    private readonly FORWARD_SPEED = 3; // 전진 순항 속도 밸런스 조정
+    private isGameOverState: boolean = false; // 게임 오버 상태 추적
 
     constructor(socket: MockSocket) {
         this.socket = socket;
@@ -40,7 +41,10 @@ export class MockServerCore {
                 x: 0,
                 y: this.GRAVITY_Y
             },
-            enableSleeping: false
+            enableSleeping: false,
+            // 물리 정밀도 향상 (빠른 낙하 시 바닥 뚫림 방지)
+            positionIterations: 10,
+            velocityIterations: 10
         });
 
         this.world = this.engine.world;
@@ -64,6 +68,7 @@ export class MockServerCore {
         Matter.World.clear(this.world, false);
         this.birds = [];
         this.score = 0;
+        this.isGameOverState = false;
 
         // 바닥 생성
         this.createGround();
@@ -80,15 +85,17 @@ export class MockServerCore {
      * 바닥 생성
      */
     private createGround() {
-        // x: 720 (1440의 중앙), y: 847 (896 - 49), width: 1440, height: 98
-        // 상단 표면은 896 - 98 = 798 입니다.
-        this.ground = Matter.Bodies.rectangle(720, 847, 1440, 98, {
+        // x: 720 (1440의 중앙), y: 798 + 500 = 1298, width: 1440, height: 1000
+        // 상단 표면(798)은 유지하되, 두께를 1000px로 대폭 늘려 터널링(뚫림) 현상 방지
+        this.ground = Matter.Bodies.rectangle(720, 1298, 1440, 1000, {
             isStatic: true,
             label: 'ground',
             collisionFilter: {
                 category: CATEGORY_GROUND,
                 mask: CATEGORY_BIRD
-            }
+            },
+            friction: 0.5,
+            restitution: 0.2 // 약간의 탄성
         });
 
         Matter.World.add(this.world, this.ground);
@@ -161,14 +168,27 @@ export class MockServerCore {
      * 물리 업데이트 및 브로드캐스트
      */
     private update() {
-        // 0. 전진 속도 조절: 위로 갈 때는 전진하고, 아래로 떨어질 때는 수직 낙하 유도
+        // 0. 전진 속도 조절
         for (const bird of this.birds) {
-            // Y 속도가 양수(하강)일 때는 목표 X 속도를 0으로, 아니면 FORWARD_SPEED로 설정
-            const targetX = bird.velocity.y > 0.5 ? 0 : this.FORWARD_SPEED;
+            // 이미 바닥에 고정(static)된 새는 물리 계산 제외
+            if (bird.isStatic) continue;
 
-            // 현재 X 속도를 목표 X 속도로 부드럽게 전환 (0.15 비율)
+            if (this.isGameOverState) {
+                // 게임 오버 시에는 전진 속도를 서서히 줄임
+                Matter.Body.setVelocity(bird, {
+                    x: bird.velocity.x * 0.95,
+                    y: bird.velocity.y
+                });
+                continue;
+            }
+
+            // 카메라 스크롤 속도(1.5)를 기준으로 밸런스 조정
+            const STALL_SPEED = 1.5;
+            const targetX = bird.velocity.y > 0.5 ? STALL_SPEED : this.FORWARD_SPEED;
+
+            // 현재 X 속도를 목표 X 속도로 전환 (0.1 비율로 더 부드럽게)
             const currentX = bird.velocity.x;
-            const newX = currentX + (targetX - currentX) * 0.15;
+            const newX = currentX + (targetX - currentX) * 0.1;
 
             Matter.Body.setVelocity(bird, {
                 x: newX,
@@ -179,11 +199,14 @@ export class MockServerCore {
         // 1. 가변 장력 적용 (밧줄이 팽팽할수록 상대를 세게 당김)
         this.applyDynamicTension();
 
-        // 2. Matter.js 물리 연산
-        Matter.Engine.update(this.engine, 1000 / 60);
-
-        // 3. 충돌 감지
-        this.checkCollisions();
+        // 2. 물리 서브스테핑 (바닥 뚫림 현상 완벽 차단)
+        // 60fps 프레임을 5번으로 쪼개서 정밀 연산
+        const subSteps = 5;
+        const stepTime = (1000 / 60) / subSteps;
+        for (let s = 0; s < subSteps; s++) {
+            Matter.Engine.update(this.engine, stepTime);
+            this.checkCollisions(); // 매 세부 단계마다 충돌 검사
+        }
 
         // 4. 위치 데이터 생성
         const birds: BirdPosition[] = this.birds.map((bird, index) => ({
@@ -211,8 +234,8 @@ export class MockServerCore {
      * 거리가 멀수록(팽팽할수록) 서로를 당기는 힘이 강해집니다.
      */
     private applyDynamicTension() {
-        const IDEAL_LENGTH = 100;    // 밧줄의 기본 여유 길이
-        const STIFFNESS_BASE = 0.0001; // 힘의 기본 세기 (오버슛 방지를 위해 하향)
+        const IDEAL_LENGTH = 120;    // 밧줄의 여유 길이를 좀 더 늘려 자주 팽팽해지는 것 방지
+        const STIFFNESS_LOG = 0.05;  // 로그 기반 탄성 계수
 
         for (let i = 0; i < this.birds.length - 1; i++) {
             const birdA = this.birds[i];
@@ -222,11 +245,12 @@ export class MockServerCore {
             const dy = birdB.position.y - birdA.position.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // 1. 인장력(Tension) 계산: 거리가 IDEAL_LENGTH보다 멀어지면 발생
+            // 1. 인장력(Tension) 계산: 로그 함수를 사용하여 늘어날수록 부드럽게 힘이 커지도록 설정
             if (distance > IDEAL_LENGTH) {
-                // 선형 스프링 공식 적용 (안정적)
                 const stretch = distance - IDEAL_LENGTH;
-                const forceMagnitude = stretch * STIFFNESS_BASE;
+
+                // 로그 함수 기반: Math.log(1 + stretch)는 초기에 부드럽게 늘어나고 확 당겨지는 느낌을 줄임
+                const forceMagnitude = Math.log(1 + stretch) * STIFFNESS_LOG;
 
                 const ux = dx / distance;
                 const uy = dy / distance;
@@ -277,32 +301,41 @@ export class MockServerCore {
    */
     private checkCollisions() {
         // 모든 새에 대해 충돌 검사
-        for (const bird of this.birds) {
-            // 바닥과의 충돌
-            if (this.ground && bird.position.y + this.BIRD_RADIUS >= this.ground.position.y - 50) {
-                this.handleGameOver('ground_collision');
-                return;
-            }
+        for (let i = 0; i < this.birds.length; i++) {
+            const bird = this.birds[i];
+            // 바닥과의 충돌 (상단 표면 798 기준)
+            if (bird.position.y + this.BIRD_RADIUS >= 798) {
+                // 충돌 시 위치 보정 및 물리 완전 정지 (isStatic)
+                Matter.Body.setPosition(bird, {
+                    x: bird.position.x,
+                    y: 798 - this.BIRD_RADIUS
+                });
+                Matter.Body.setVelocity(bird, { x: 0, y: 0 });
+                Matter.Body.setStatic(bird, true); // <--- 물리 엔진에서 제외 (뚫림 방지 핵심)
 
-            // 파이프와의 충돌 (나중에 추가)
-            // TODO: 파이프 구현 후 충돌 감지 추가
+                this.handleGameOver('ground_collision', String(i) as PlayerId);
+                // 여기서 return 하지 않고 다른 새들도 체크하여 바닥에 멈추게 함
+            }
         }
     }
 
     /**
      * 게임 오버 처리
      */
-    private handleGameOver(reason: 'pipe_collision' | 'ground_collision') {
-        this.stop();
+    private handleGameOver(reason: 'pipe_collision' | 'ground_collision', playerId: PlayerId = '0') {
+        if (this.isGameOverState) return;
+
+        this.isGameOverState = true;
+        // 이제 즉시 stop()을 부르지 않고 물리 시뮬레이션은 계속 유지합니다.
 
         this.socket.emit('game_over', {
             reason,
             finalScore: this.score,
-            collidedPlayerId: '0', // TODO: 실제 충돌한 플레이어 ID 계산
+            collidedPlayerId: playerId,
             timestamp: Date.now()
         });
 
-        console.log(`[MockServerCore] 게임 오버: ${reason}`);
+        console.log(`[MockServerCore] 게임 오버 발생: ${reason} (Player ${playerId})`);
     }
 
     /**
@@ -326,6 +359,8 @@ export class MockServerCore {
      * Flap 처리
      */
     private handleFlap(playerId: PlayerId) {
+        if (this.isGameOverState) return; // 게임 오버 상태면 입력 무시
+
         const birdIndex = parseInt(playerId);
         if (birdIndex >= 0 && birdIndex < this.birds.length) {
             const bird = this.birds[birdIndex];

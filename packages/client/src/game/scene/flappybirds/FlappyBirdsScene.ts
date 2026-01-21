@@ -24,11 +24,12 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	// 배경 및 바닥 (무한 스크롤용)
 	private groundTile!: Phaser.GameObjects.TileSprite;
 	private groundLine!: Phaser.GameObjects.Rectangle;
-	private focusX: number = 0; // 카메라 추적용 부드러운 중심점 X
 
 	// 밧줄
 	private ropes: Phaser.GameObjects.Graphics[] = [];
 	private ropeMidPoints: { y: number, vy: number }[] = []; // 밧줄 중간 지점의 관성 데이터
+	private gameStarted: boolean = false; // 게임 시작 여부 (1초 딜레이 동기화)
+	private isGameOver: boolean = false; // 게임 오버 여부
 
 	constructor() {
 		super("FlappyBirdsScene");
@@ -80,13 +81,17 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			this.mockServerCore.setPlayerCount(this.playerCount); // 플레이어 수 설정
 			this.mockServerCore.initialize();
 
-			// 1초 후 물리 엔진 시작 (초기화 시간 확보)
+			// 1초 후 물리 엔진 및 스크롤 시작 (초기화 시간 확보)
 			setTimeout(() => {
 				this.mockServerCore?.start();
-				console.log('[FlappyBirdsScene] 물리 엔진 시작 (1초 딜레이 후)');
+				this.gameStarted = true; // 스크롤 허용
+				console.log('[FlappyBirdsScene] 물리 엔진 및 스크롤 시작 (1초 딜레이 후)');
 			}, 1000);
 
 			console.log(`[FlappyBirdsScene] Mock 모드로 실행 중 (플레이어: ${this.playerCount}명)`);
+		} else {
+			// Mock 모드가 아닐 경우 즉시 시작 (또는 서버 신호 대기)
+			this.gameStarted = true;
 		}
 
 		// 초기 게임 객체 생성
@@ -108,6 +113,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		this.birdSprites = [];
 		this.ropes = [];
 		this.targetPositions = [];
+		this.ropeMidPoints = []; // 밧줄 관성 데이터 초기화 (누행 방지)
+		this.isGameOver = false; // 상태 초기화
 
 		// 새 생성
 		this.createBirds(this.playerCount);
@@ -228,6 +235,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		// 게임 오버
 		this.socket.on('game_over', (data: GameOverEvent) => {
 			console.log(`[FlappyBirdsScene] 게임 오버: ${data.reason}, 점수: ${data.finalScore}`);
+			this.gameStarted = false; // 스크롤 멈춤
+			this.isGameOver = true; // 게임 오버 상태 기록
 			// TODO: 게임 오버 UI 표시
 		});
 	}
@@ -317,10 +326,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			this.pipeManager.update(_delta);
 		}
 
-		// 2. 새들 위치 업데이트 및 평균 중심점 계산
-		let totalX = 0;
-		let birdCount = 0;
-
+		// 2. 새들 위치 업데이트 (서버 데이터 기반 보간)
 		for (let i = 0; i < this.birdSprites.length; i++) {
 			const sprite = this.birdSprites[i];
 			const target = this.targetPositions[i];
@@ -331,23 +337,23 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 				sprite.y = Phaser.Math.Linear(sprite.y, target.y, 0.3);
 
 				// 회전 애니메이션 (추락 시 수직으로 더 빨리 꺾이도록 배율 조정)
-				const angle = Phaser.Math.Clamp(target.velocityY * 10, -30, 90);
-				sprite.rotation = Phaser.Math.DegToRad(angle);
+				let angle = Phaser.Math.Clamp(target.velocityY * 10, -30, 90);
 
-				totalX += sprite.x;
-				birdCount++;
+				// 게임 오버 상태에서 바닥 부근에 있으면 수직 상태(90도) 유지
+				if (this.isGameOver && sprite.y > 700) {
+					angle = 90;
+				}
+
+				sprite.rotation = Phaser.Math.DegToRad(angle);
 			}
 		}
 
-		// 3. 카메라 추적 (새들의 평균 위치를 부드럽게 따라감)
-		if (birdCount > 0) {
-			const avgX = totalX / birdCount;
-			// focusX를 새들의 평균 X로 부드럽게 보간 (lerp)
-			this.focusX = Phaser.Math.Linear(this.focusX, avgX, 0.1);
-
-			// 새들이 화면의 약 1/3 지점(400px)에 위치하도록 카메라 스크롤 설정
-			const centerXOffset = 400;
-			this.cameras.main.scrollX = Math.max(0, this.focusX - centerXOffset);
+		// 3. 카메라 강제 스크롤 (게임이 시작된 경우에만 전진)
+		if (this.gameStarted) {
+			// 서버의 최소 전진 속도(1.5/frame @ 60fps = 90px/s)와 정확히 동기화
+			// 프레임률(Hz)에 상관없이 초당 90픽셀을 이동하도록 _delta 사용
+			const SCROLL_SPEED_PER_SECOND = 90;
+			this.cameras.main.scrollX += (SCROLL_SPEED_PER_SECOND * _delta) / 1000;
 
 			// 바닥 스크롤 효과 (바닥은 카메라 이동량에 맞춰 타일 위치 변경)
 			if (this.groundTile) {
@@ -363,10 +369,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	 * 클라이언트 측 새 스프라이트 위치 및 관성을 이용한 밧줄 그리기 (느슨할 때만 처짐)
 	 */
 	private drawRopesFromSprites() {
-		const GRAVITY = 0.6;          // 밧줄의 자체 중력
-		const STIFFNESS = 0.2;        // 팽팽해질 때 복원되는 세기 상향
+		const GRAVITY = 1.5;          // 밧줄의 자체 중력 (0.6 -> 1.5 상향)
+		const STIFFNESS = 0.3;        // 밧줄 관성 복원력 (0.25 -> 0.3)
 		const DAMPING = 0.8;          // 진동 감쇄
-		const MAX_ROPE_LENGTH = 100;  // 밧줄의 물리적 최대 길이 (서버 IDEAL_LENGTH와 동일)
+		const MAX_ROPE_LENGTH = 120;  // 서버 IDEAL_LENGTH와 동일하게 120으로 상향
 
 		for (let i = 0; i < this.ropes.length; i++) {
 			const rope = this.ropes[i];
@@ -378,16 +384,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 				const distance = Phaser.Math.Distance.Between(birdA.x, birdA.y, birdB.x, birdB.y);
 
 				// 1. 거리에 따른 처짐량 계산
-				// 거리가 MAX_ROPE_LENGTH 이상이면 처짐량 타겟은 0 (팽팽하게 직선이 됨)
-				// 거리가 그보다 짧으면 남는 길이만큼 아래로 처짐 발생
-				let sagTarget = 2; // 완전히 팽팽할 때도 아주 미세한 곡률을 주어 자연스럽게 표현
+				// 거리가 MAX_ROPE_LENGTH(120) 보다 짧으면 남는 길이만큼 아래로 처짐 발생
+				let sagTarget = 2;
 
 				if (distance < MAX_ROPE_LENGTH) {
-					// 밧줄의 기하학적 처짐 깊이 계산
-					// 베지어 곡선은 직선보다 짧게 그려지므로 1.4배의 보정 계수를 곱해 
-					// 팽팽할 때와 늘어졌을 때의 시각적 길이를 일정하게 유지합니다.
+					// 밧줄이 느슨할 때 더 뚜렷하게 곡선이 생기도록 보정 계수 상향 (1.4 -> 1.8)
 					const baseSag = Math.sqrt(Math.pow(MAX_ROPE_LENGTH / 2, 2) - Math.pow(distance / 2, 2));
-					sagTarget = baseSag * 1.4;
+					sagTarget = baseSag * 1.8;
 				}
 
 				// 2. 물리적 타겟 위치 계산

@@ -14,7 +14,7 @@ import { GameSession } from "./gameSession";
 const sessions = new Map<string, GameSession>();
 
 // Player ID -> Room ID
-const playerRooms = new Map<string, string>();
+const playerRooms = new Map<string, string>(); // todo 얘가 지금 기본 socket.io room 으로 대체 가능성이 있음.
 
 export function getSession(roomId: string): GameSession | undefined {
   return sessions.get(roomId);

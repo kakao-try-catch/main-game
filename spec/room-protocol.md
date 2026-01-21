@@ -47,3 +47,8 @@ zero: boolean # 0 생성 여부
 방장이 현재 설정으로 게임 시작을 요청할 때 사용됩니다.
 서버측은 방장인지 검증 후 현재 상태로 게임을 시작합니다.
 서버측 해당 패킷을 보낸 socket의 id를 기반으로 room을 찾고 접속 여부, 방장 여부 등을 검증 후 게임 시작 처리를 준비합니다.
+
+# READY_SCENE
+클라이언트가 이 패킷을 받아야 실제 게임 화면을 구성합니다. (기존 setCurrentScreen('game')으로 게임 화면으로 넘어가는 부분)
+
+- selectedGameType: GameType # 게임 타입 (packets.ts에 있는 GameType 사용하면 됨.)

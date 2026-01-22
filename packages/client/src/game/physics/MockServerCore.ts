@@ -395,8 +395,25 @@ export class MockServerCore {
 
         // 통과 판정 (새의 X 좌표가 파이프의 오른쪽 끝을 지났을 때)
         const playerId = String(i) as PlayerId;
-        if (!pipe.passedPlayers.includes(playerId) && birdX > pipe.x) {
+        if (
+          !pipe.passedPlayers.includes(playerId) &&
+          birdX - halfBirdW > pipe.x
+        ) {
           pipe.passedPlayers.push(playerId);
+          console.log(`Player: ${playerId}`);
+
+          // 모든 플레이어가 통과했을 때만 점수 1점 증가
+          if (!pipe.passed && pipe.passedPlayers.length >= this.playerCount) {
+            pipe.passed = true;
+            this.score++;
+            console.log(`score: ${this.score}`);
+
+            // 점수 업데이트 브로드캐스트
+            this.socket.emit('score_update', {
+              score: this.score,
+              timestamp: Date.now(),
+            });
+          }
         }
       }
     }

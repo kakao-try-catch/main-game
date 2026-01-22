@@ -344,63 +344,11 @@ export class MockServerCore {
       const bird = this.birds[i];
       if (bird.isStatic) continue;
 
-            // 1. 바닥과의 충돌 (상단 표면 798 기준)
-            if (bird.position.y + (this.BIRD_HEIGHT / 2) >= 798) {
-                Matter.Body.setPosition(bird, {
-                    x: bird.position.x,
-                    y: 798 - (this.BIRD_HEIGHT / 2)
-                });
-                Matter.Body.setVelocity(bird, { x: 0, y: 0 });
-                Matter.Body.setStatic(bird, true);
-                this.handleGameOver('ground_collision', String(i) as PlayerId);
-                continue;
-            }
-
-            // 2. 파이프와의 충돌
-            const birdX = bird.position.x;
-            const birdY = bird.position.y;
-            const halfBirdW = this.BIRD_WIDTH / 2;
-            const halfBirdH = this.BIRD_HEIGHT / 2;
-
-            for (const pipe of this.pipes) {
-                const halfPipeW = pipe.width / 2;
-
-                // X축 겹침 확인
-                if (birdX + halfBirdW > pipe.x - halfPipeW && birdX - halfBirdW < pipe.x + halfPipeW) {
-                    const gapTop = pipe.gapY - pipe.gap / 2;
-                    const gapBottom = pipe.gapY + pipe.gap / 2;
-
-                    // 상단 파이프 충돌 (새의 상단이 갭 상단보다 위에 있을 때)
-                    // 하단 파이프 충돌 (새의 하단이 갭 하단보다 아래에 있을 때)
-                    if (birdY - halfBirdH < gapTop || birdY + halfBirdH > gapBottom) {
-                        this.handleGameOver('pipe_collision', String(i) as PlayerId);
-                        return; // 한 명이라도 부딪히면 종료
-                    }
-                }
-
-                // 통과 판정 (새의 X 좌표가 파이프의 오른쪽 끝을 지났을 때)
-                const playerId = String(i) as PlayerId;
-                if (!pipe.passedPlayers.includes(playerId) && birdX > pipe.x) {
-                    pipe.passedPlayers.push(playerId);
-                }
-            }
-        }
-    }
-
-    /**
-     * 게임 오버 처리
-     */
-    private handleGameOver(reason: 'pipe_collision' | 'ground_collision', playerId: PlayerId = '0') {
-        if (this.isGameOverState) return;
-
-        this.isGameOverState = true;
-        // 이제 즉시 stop()을 부르지 않고 물리 시뮬레이션은 계속 유지합니다.
-
-        this.socket.emit('game_over', {
-            reason,
-            finalScore: this.score,
-            collidedPlayerId: playerId,
-            timestamp: Date.now()
+      // 1. 바닥과의 충돌 (상단 표면 798 기준)
+      if (bird.position.y + this.BIRD_HEIGHT / 2 >= 798) {
+        Matter.Body.setPosition(bird, {
+          x: bird.position.x,
+          y: 798 - this.BIRD_HEIGHT / 2,
         });
         Matter.Body.setVelocity(bird, { x: 0, y: 0 });
         Matter.Body.setStatic(bird, true);
@@ -409,23 +357,34 @@ export class MockServerCore {
       }
 
       // 2. 파이프와의 충돌
+      const birdX = bird.position.x;
+      const birdY = bird.position.y;
+      const halfBirdW = this.BIRD_WIDTH / 2;
+      const halfBirdH = this.BIRD_HEIGHT / 2;
+
       for (const pipe of this.pipes) {
-        // 파이프 좌우 범위 확인
-        const birdLeft = bird.position.x - this.BIRD_WIDTH / 2;
-        const birdRight = bird.position.x + this.BIRD_WIDTH / 2;
-        const pipeLeft = pipe.x - pipe.width / 2;
-        const pipeRight = pipe.x + pipe.width / 2;
+        const halfPipeW = pipe.width / 2;
 
-        if (birdRight > pipeLeft && birdLeft < pipeRight) {
-          // 파이프 상하 범위 확인 (Gap 사이가 아닌 부분)
-          const birdTop = bird.position.y - this.BIRD_HEIGHT / 2;
-          const birdBottom = bird.position.y + this.BIRD_HEIGHT / 2;
-          const gapTop = pipe.gapY;
-          const gapBottom = pipe.gapY + pipe.gap;
+        // X축 겹침 확인
+        if (
+          birdX + halfBirdW > pipe.x - halfPipeW &&
+          birdX - halfBirdW < pipe.x + halfPipeW
+        ) {
+          const gapTop = pipe.gapY - pipe.gap / 2;
+          const gapBottom = pipe.gapY + pipe.gap / 2;
 
-          if (birdTop < gapTop || birdBottom > gapBottom) {
+          // 상단 파이프 충돌 (새의 상단이 갭 상단보다 위에 있을 때)
+          // 하단 파이프 충돌 (새의 하단이 갭 하단보다 아래에 있을 때)
+          if (birdY - halfBirdH < gapTop || birdY + halfBirdH > gapBottom) {
             this.handleGameOver('pipe_collision', String(i) as PlayerId);
+            return; // 한 명이라도 부딪히면 종료
           }
+        }
+
+        // 통과 판정 (새의 X 좌표가 파이프의 오른쪽 끝을 지났을 때)
+        const playerId = String(i) as PlayerId;
+        if (!pipe.passedPlayers.includes(playerId) && birdX > pipe.x) {
+          pipe.passedPlayers.push(playerId);
         }
       }
     }
@@ -443,7 +402,7 @@ export class MockServerCore {
     this.isGameOverState = true;
     // 이제 즉시 stop()을 부르지 않고 물리 시뮬레이션은 계속 유지합니다.
 
-    this.socket.triggerEvent('game_over', {
+    this.socket.emit('game_over', {
       reason,
       finalScore: this.score,
       collidedPlayerId: playerId,
@@ -458,7 +417,7 @@ export class MockServerCore {
   /**
    * 클라이언트 이벤트 처리
    */
-  handleClientEvent(event: string, data: any) {
+  handleClientEvent(event: string, data: { playerId: PlayerId }) {
     switch (event) {
       case 'flap':
         this.handleFlap(data.playerId);
@@ -503,6 +462,7 @@ export class MockServerCore {
       width: this.PIPE_WIDTH,
       gap: this.PIPE_GAP,
       passed: false,
+      passedPlayers: [],
     };
 
     this.pipes.push(pipe);
@@ -541,57 +501,13 @@ export class MockServerCore {
     };
   }
 
-        const pipe: PipeData = {
-            id: `pipe_${this.nextPipeId++}`,
-            x,
-            gapY,
-            width: this.PIPE_WIDTH,
-            gap: this.PIPE_GAP,
-            passed: false,
-            passedPlayers: []
-        };
-
-        this.pipes.push(pipe);
-    }
-
-    private updatePipes() {
-        if (this.isGameOverState) return; // 게임 오버 시 파이프 정지
-
-        // 파이프 이동 (일정한 속도 유지)
-        for (const pipe of this.pipes) {
-            pipe.x -= this.pipeSpeed;
-        }
-
-        // 화면 밖으로 나간 파이프 제거
-        this.pipes = this.pipes.filter(pipe => pipe.x > -this.PIPE_WIDTH);
-
-        // 거리 기반 파이프 생성 (일정한 간격 유지)
-        // 마지막 파이프가 없거나, 마지막 파이프가 충분히 왼쪽으로 이동했을 때 새 파이프 생성
-        const shouldSpawnPipe = this.pipes.length === 0 ||
-            this.pipes[this.pipes.length - 1].x <= this.screenWidth - this.pipeSpacing;
-
-        if (shouldSpawnPipe) {
-            this.createPipe(this.screenWidth + this.PIPE_WIDTH);
-        }
-    }
-
-    /**
-     * 현재 게임 설정 조회
-     */
-    getGameConfig(): ResolvedFlappyBirdConfig {
-        return {
-            pipeSpeed: this.pipeSpeed,
-            pipeSpacing: this.pipeSpacing,
-        };
-    }
-
-    /**
-     * 정리
-     */
-    destroy() {
-        this.stop();
-        Matter.World.clear(this.world, false);
-        Matter.Engine.clear(this.engine);
-        console.log('[MockServerCore] 정리 완료');
-    }
+  /**
+   * 정리
+   */
+  destroy() {
+    this.stop();
+    Matter.World.clear(this.world, false);
+    Matter.Engine.clear(this.engine);
+    console.log('[MockServerCore] 정리 완료');
+  }
 }

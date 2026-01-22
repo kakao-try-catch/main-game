@@ -137,12 +137,17 @@ function AppContent() {
       ),
     );
 
-    const joinRoomPacket = {
+    const joinRoomPacket: {
+      type: SystemPacketType.JOIN_ROOM;
+      playerId: string;
+      roomId: string;
+      playerName: string;
+    } = {
       type: SystemPacketType.JOIN_ROOM,
       playerId: socketManager.getId() ?? '',
       roomId: 'HARDCODED_ROOM_1',
       playerName: inputNickname,
-    } as any;
+    };
     socketManager.send(joinRoomPacket);
     console.log('JOIN_ROOM sent: ', joinRoomPacket);
     // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
@@ -166,9 +171,11 @@ function AppContent() {
     console.log('서버와의 연결 시도');
     socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
 
-    const gameStartReq = {
-      type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
-    } as any;
+    const gameStartReq: {
+      type: SystemPacketType.GAME_START_REQ;
+    } = {
+      type: SystemPacketType.GAME_START_REQ,
+    };
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
     // todo game_config_update

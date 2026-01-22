@@ -95,6 +95,10 @@ export function handleClientPacket(
         session.handleDragConfirm(socket.id, packet.indices);
         break;
 
+      case SystemPacketType.GAME_CONFIG_UPDATE_REQ:
+        session.updateGameConfig(packet.selectedGameType, packet.gameConfig);
+        break;
+
       // TODO: 게임 시작 요청 등이 있다면 추가
     }
   } catch (error) {

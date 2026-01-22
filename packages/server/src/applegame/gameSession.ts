@@ -6,6 +6,10 @@ import {
   SetFieldPacket,
   SetTimePacket,
   PlayerData,
+  UpdateScorePacket,
+  SystemPacketType,
+  ReportCard,
+  PlayerSummary,
 } from '../../../common/src/packets';
 
 export type GameStatus = 'waiting' | 'playing' | 'ended';
@@ -18,26 +22,33 @@ const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
 export interface PlayerState {
   id: string; // Socket ID
   name: string;
-  score: number;
   order: number;
   color: string;
+  reportCard: ReportCard;
 }
 
 export class GameSession {
+  // todo 게임 콘피그는 가변적이어야 함.
+  private readonly config = APPLE_GAME_CONFIG;
+
+  // 플레이어 공통 상태 관리
+  public players: Map<string, PlayerState> = new Map();
+
+  // 게임 상태 관리
+  public status: GameStatus = 'waiting';
+  public timeLeft: number = this.config.totalTime;
+  private timerInterval: NodeJS.Timeout | null = null;
+
+  // 사과 게임의 것
   public apples: number[] = [];
   public removedIndices: Set<number> = new Set();
-  public players: Map<string, PlayerState> = new Map();
-  public status: GameStatus = 'waiting';
-  public timeLeft: number = APPLE_GAME_CONFIG.totalTime;
-
-  private timerInterval: NodeJS.Timeout | null = null;
-  private readonly config = APPLE_GAME_CONFIG;
 
   constructor(
     public roomId: string,
     private broadcastCallback: (packet: any) => void,
   ) {}
 
+  // todo id는 바뀌는 애임. 재접속 관련 로직이 필요함.
   public addPlayer(id: string, name: string) {
     if (this.players.has(id)) return;
 
@@ -47,9 +58,9 @@ export class GameSession {
     this.players.set(id, {
       id,
       name,
-      score: 0,
       order,
       color,
+      reportCard: { score: 0 },
     });
   }
 
@@ -66,7 +77,9 @@ export class GameSession {
     this.status = 'playing';
     this.timeLeft = this.config.totalTime;
     this.removedIndices.clear();
-    this.players.forEach((p) => (p.score = 0));
+    this.players.forEach((p) => {
+      p.reportCard.score = 0;
+    });
 
     // Generate Apples
     this.generateField();
@@ -85,6 +98,9 @@ export class GameSession {
     };
     this.broadcastCallback(setTimePacket);
 
+    // 점수 초기화 알리기 (Snapshot)
+    this.broadcastScoreboard();
+
     // Start Timer
     this.startTimer();
   }
@@ -99,12 +115,12 @@ export class GameSession {
 
   private generateField() {
     const count = this.config.gridCols * this.config.gridRows;
+    const minNumber = this.config.includeZero ? 0 : this.config.minNumber;
     this.apples = Array.from(
       { length: count },
       () =>
-        Math.floor(
-          Math.random() * (this.config.maxNumber - this.config.minNumber + 1),
-        ) + this.config.minNumber,
+        Math.floor(Math.random() * (this.config.maxNumber - minNumber + 1)) +
+        minNumber,
     );
   }
 
@@ -124,11 +140,11 @@ export class GameSession {
 
     // Calculate Rank
     const results = Array.from(this.players.values())
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => b.reportCard.score - a.reportCard.score)
       .map((p, index) => ({
         rank: index + 1,
         playerId: p.id,
-        score: p.score,
+        score: p.reportCard.score,
       }));
 
     const endPacket: TimeEndPacket = {
@@ -157,14 +173,14 @@ export class GameSession {
       const player = this.players.get(playerId);
       if (player) {
         const addedScore = indices.length;
-        player.score += addedScore;
+        player.reportCard.score += addedScore;
 
         // Broadcast Success
         const dropPacket: DropCellIndexPacket = {
           type: GamePacketType.DROP_CELL_INDEX,
           winnerId: playerId,
           indices: indices,
-          totalScore: player.score,
+          totalScore: player.reportCard.score,
         };
         this.broadcastCallback(dropPacket);
       }
@@ -178,11 +194,26 @@ export class GameSession {
         order: p.order,
         playerName: p.name,
         color: p.color,
-        score: p.score,
+        score: p.reportCard.score,
       }));
   }
 
   public getPlayerCount() {
     return this.players.size;
+  }
+
+  private broadcastScoreboard() {
+    const scoreboard: PlayerSummary[] = Array.from(this.players.values())
+      .sort((a, b) => a.order - b.order) // Ensure consistent order if needed
+      .map((p) => ({
+        playerOrder: p.order,
+        reportCard: [p.reportCard],
+      }));
+
+    const updateScorePacket: UpdateScorePacket = {
+      type: SystemPacketType.UPDATE_SCORE,
+      scoreboard,
+    };
+    this.broadcastCallback(updateScorePacket);
   }
 }

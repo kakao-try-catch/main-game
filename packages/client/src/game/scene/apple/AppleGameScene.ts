@@ -26,7 +26,12 @@ export default class AppleGameScene extends Phaser.Scene {
     this.gameContainer.setSize(GAME_WIDTH * ratio, GAME_HEIGHT * ratio);
 
     // 배경
-    const background = this.add.rectangle(0, 0, GAME_WIDTH * ratio, GAME_HEIGHT * ratio);
+    const background = this.add.rectangle(
+      0,
+      0,
+      GAME_WIDTH * ratio,
+      GAME_HEIGHT * ratio,
+    );
     background.setOrigin(0, 0);
     background.isFilled = true;
     background.fillColor = 0xffffff;

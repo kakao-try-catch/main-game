@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import Phaser from 'phaser';
 import AppleGameScene from './scene/apple/AppleGameScene';
@@ -13,19 +12,17 @@ import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 const GAME_CONFIGS = {
   apple: {
     sceneName: 'AppleGameScene',
-    sceneClasses: [BootScene, AppleGameScene],
+    sceneClasses: [BootScene, AppleGameScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#FFFFFF',
-    ratioKey: '__GAME_RATIO' as const,
   },
   flappy: {
     sceneName: 'FlappyBirdsScene',
-    sceneClasses: [FlappyBirdsScene],
+    sceneClasses: [FlappyBirdsScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#46d1fd',
-    ratioKey: '__GAME_RATIO' as const,
   },
 };
 
@@ -100,7 +97,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       }
 
       const ratio = width / config.maxWidth;
-      (window as any)[config.ratioKey] = ratio;
+      window.__GAME_RATIO = ratio;
     };
 
     updateRatio();
@@ -112,7 +109,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   useEffect(() => {
     if (!config || gameRef.current || !parentRef.current) return;
 
-    (window as any)[config.ratioKey] = layout.ratio;
+    window.__GAME_RATIO = layout.ratio;
 
     const gameConfig: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
@@ -120,7 +117,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       height: config.maxHeight * layout.ratio,
       parent: parentRef.current,
       backgroundColor: config.backgroundColor,
-      scene: config.sceneClasses,
+      scene: [...config.sceneClasses],
       physics: {
         default: 'arcade',
         arcade: { gravity: { y: 0, x: 0 }, debug: false },

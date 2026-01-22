@@ -7,7 +7,11 @@ import type { Socket } from 'socket.io-client';
 import { getSocket, isMockMode } from '../../network/socketService';
 import { MockSocket } from '../../network/MockSocket';
 import { MockServerCore } from '../../physics/MockServerCore';
-import { GAME_WIDTH, GAME_HEIGHT, FLAPPY_GROUND_Y } from '../../config/gameConfig';
+import {
+  GAME_WIDTH,
+  GAME_HEIGHT,
+  FLAPPY_GROUND_Y,
+} from '../../config/gameConfig';
 import type {
   BirdPosition,
   UpdatePositionsEvent,
@@ -51,10 +55,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   private getRatio(): number {
-    return (
-      (window as unknown as { __GAME_RATIO?: number })
-        .__GAME_RATIO || 1
-    );
+    return (window as unknown as { __GAME_RATIO?: number }).__GAME_RATIO || 1;
   }
 
   editorCreate(): void {
@@ -489,7 +490,12 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 바닥 히트박스 (y=800)
     this.debugGraphics.lineStyle(2, 0xff0000, 1); // 빨간색
-    this.debugGraphics.lineBetween(0, FLAPPY_GROUND_Y, GAME_WIDTH, FLAPPY_GROUND_Y);
+    this.debugGraphics.lineBetween(
+      0,
+      FLAPPY_GROUND_Y,
+      GAME_WIDTH,
+      FLAPPY_GROUND_Y,
+    );
   }
 
   /**

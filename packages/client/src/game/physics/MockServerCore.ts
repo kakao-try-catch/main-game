@@ -7,7 +7,12 @@ import type {
 } from '../types/flappybird.types';
 import type { ResolvedFlappyBirdConfig } from '../types/FlappyBirdGamePreset';
 import { MockSocket } from '../network/MockSocket';
-import { GAME_WIDTH, GAME_HEIGHT, FLAPPY_GROUND_Y, GAME_CENTER_X } from '../config/gameConfig';
+import {
+  GAME_WIDTH,
+  GAME_HEIGHT,
+  FLAPPY_GROUND_Y,
+  GAME_CENTER_X,
+} from '../config/gameConfig';
 
 /**
  * 충돌 카테고리
@@ -122,16 +127,22 @@ export class MockServerCore {
   private createGround() {
     // x: GAME_CENTER_X, y: FLAPPY_GROUND_Y + 500 = 1300, width: GAME_WIDTH, height: 1000
     // 상단 표면(FLAPPY_GROUND_Y)은 유지하되, 두께를 1000px로 대폭 늘려 터널링(뛫림) 현상 방지
-    this.ground = Matter.Bodies.rectangle(GAME_CENTER_X, FLAPPY_GROUND_Y + 500, GAME_WIDTH, 1000, {
-      isStatic: true,
-      label: 'ground',
-      collisionFilter: {
-        category: CATEGORY_GROUND,
-        mask: CATEGORY_BIRD,
+    this.ground = Matter.Bodies.rectangle(
+      GAME_CENTER_X,
+      FLAPPY_GROUND_Y + 500,
+      GAME_WIDTH,
+      1000,
+      {
+        isStatic: true,
+        label: 'ground',
+        collisionFilter: {
+          category: CATEGORY_GROUND,
+          mask: CATEGORY_BIRD,
+        },
+        friction: 0.5,
+        restitution: 0.2, // 약간의 탄성
       },
-      friction: 0.5,
-      restitution: 0.2, // 약간의 탄성
-    });
+    );
 
     Matter.World.add(this.world, this.ground);
   }

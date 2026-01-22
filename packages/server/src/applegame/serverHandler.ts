@@ -40,47 +40,53 @@ export function handleDisconnect(socketId: string) {
 }
 
 export function handleClientPacket(io: Server, socket: Socket, packet: ServerPacket) {
-  if (packet.type === SystemPacketType.JOIN_ROOM) {
-    joinPlayerToGame(io, socket, packet.roomId, packet.playerName);
-    return;
-  }
-
-  const roomId = playerRooms.get(socket.id);
-  if (!roomId) return;
-
-  const session = sessions.get(roomId);
-  if (!session) return;
-
-  switch (packet.type) {
-    case SystemPacketType.GAME_START_REQ: {
-      // 방장 검증 (order 0인 경우 방장으로 간주)
-      const player = session.players.get(socket.id);
-      if (player && player.order === 0) {
-        // session.startGame();
-        console.log("Game started");
-      } else {
-        socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "방장만 게임을 시작할 수 있습니다." });
-      }
-      break;
+  try {
+    if (packet.type === SystemPacketType.JOIN_ROOM) {
+      joinPlayerToGame(io, socket, packet.roomId, packet.playerName);
+      return;
     }
 
-    case GamePacketType.DRAWING_DRAG_AREA:
-      // 브로드캐스트 (나 제외)
-      socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
-        type: GamePacketType.UPDATE_DRAG_AREA,
-        playerId: socket.id,
-        startX: packet.startX,
-        startY: packet.startY,
-        endX: packet.endX,
-        endY: packet.endY,
-      });
-      break;
+    const roomId = playerRooms.get(socket.id);
+    if (!roomId) return;
 
-    case GamePacketType.CONFIRM_DRAG_AREA:
-      session.handleDragConfirm(socket.id, packet.indices);
-      break;
+    const session = sessions.get(roomId);
+    if (!session) return;
 
-    // TODO: 게임 시작 요청 등이 있다면 추가
+    switch (packet.type) {
+      case SystemPacketType.GAME_START_REQ: {
+        console.log(`[Server] GAME_START_REQ received from ${socket.id}`);
+        const player = session.players.get(socket.id);
+        console.log(`[Server] Player object:`, player ? player.name : "null");
+        if (player && player.order === 0) {
+          console.log("[Server] Order is 0, starting game... (currently commented out)");
+          // session.startGame();
+        } else {
+          console.log(`[Server] Start denied: ${player ? 'not order 0' : 'player not found'}`);
+          socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "방장만 게임을 시작할 수 있습니다." });
+        }
+        break;
+      }
+
+      case GamePacketType.DRAWING_DRAG_AREA:
+        // 브로드캐스트 (나 제외)
+        socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
+          type: GamePacketType.UPDATE_DRAG_AREA,
+          playerId: socket.id,
+          startX: packet.startX,
+          startY: packet.startY,
+          endX: packet.endX,
+          endY: packet.endY,
+        });
+        break;
+
+      case GamePacketType.CONFIRM_DRAG_AREA:
+        session.handleDragConfirm(socket.id, packet.indices);
+        break;
+
+      // TODO: 게임 시작 요청 등이 있다면 추가
+    }
+  } catch (error) {
+    console.error(`[Server] Error handling packet ${packet.type}:`, error);
   }
 }
 
@@ -135,6 +141,7 @@ export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, pla
     updateType: RoomUpdateType.INIT,
   };
   socket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Player);
+  console.log(`[Server] Sent ROOM_UPDATE (INIT) to ${socket.id}`);
 
   // Send JOIN to existing players
   const roomUpdatePacket2Others: RoomUpdatePacket = {
@@ -143,6 +150,7 @@ export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, pla
     updateType: RoomUpdateType.JOIN,
   };
   socket.to(roomId).emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Others);
+  console.log(`[Server] Sent ROOM_UPDATE (JOIN) to room ${roomId} (excluding ${socket.id})`);
 
   // 만약 방이 꽉 찼거나 특정 조건 만족 시 게임 시작?
   // 현재는 자동 시작 or 수동 시작. 일단 자동 시작 로직 예시:

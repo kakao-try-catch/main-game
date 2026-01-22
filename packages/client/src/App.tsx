@@ -33,8 +33,9 @@ function AppContent() {
   // 현재 유저 정보 (서버에서 받아올 예정)
 
   const { nickname, color, setUserInfo } = useUser();
+
   const [currentScreen, setCurrentScreen] = useState<
-    'landing' | 'lobby' | 'game'
+    'landing' | 'lobby' | 'game' | 'flappybird'
   >('landing');
 
   // 현재 유저 정보 (서버에서 받아올 예정)
@@ -141,7 +142,7 @@ function AppContent() {
       playerId: socketManager.getId() ?? '',
       roomId: 'HARDCODED_ROOM_1',
       playerName: inputNickname,
-    } as const;
+    } as any;
     socketManager.send(joinRoomPacket);
     console.log('JOIN_ROOM sent: ', joinRoomPacket);
     // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
@@ -165,9 +166,14 @@ function AppContent() {
     console.log('서버와의 연결 시도');
     socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
 
-    // 테스트 종료(컴포넌트 제거) 시 연결을 완전히 끊고 싶다면 주석 해제
-    return () => socketManager.disconnect();
-  }, []);
+    const gameStartReq = {
+      type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
+    } as any;
+    socketManager.send(gameStartReq);
+    console.log('GAME_START_REQ sent: ', gameStartReq);
+    setCurrentPreset(preset); // todo game_config_update 
+    setCurrentScreen('game'); // todo ready_scene
+  };
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {

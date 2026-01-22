@@ -15,7 +15,24 @@ export class MockSocket {
    * MockServerCore 연결
    */
   setServerCore(serverCore: any) {
+    // 기존 serverCore가 있으면 정리
+    if (this.serverCore && this.serverCore !== serverCore) {
+      console.log('[MockSocket] 기존 serverCore 정리');
+      if (typeof this.serverCore.destroy === 'function') {
+        this.serverCore.destroy();
+      }
+    }
+
     this.serverCore = serverCore;
+    console.log('[MockSocket] 새 serverCore 연결됨');
+  }
+
+  /**
+   * MockServerCore 연결 해제
+   */
+  clearServerCore() {
+    console.log('[MockSocket] serverCore 연결 해제');
+    this.serverCore = null;
   }
 
   /**

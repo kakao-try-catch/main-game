@@ -233,9 +233,6 @@ export class MockServerCore {
         continue;
       }
 
-      // 고정된 X 좌표 및 개별 순서 보정 완전 해제
-      const currentX = bird.position.x;
-
       // 1. 공기 저항 (수평 속도 감쇠)
       Matter.Body.setVelocity(bird, {
         x: bird.velocity.x * 0.985, // 관성을 유지하면서 자연스럽게 감속
@@ -369,7 +366,7 @@ export class MockServerCore {
       }
 
       // 2. 천장과의 충돌 (상단 0 기준, 죽지 않고 막기만 함)
-      if (bird.position.y - (this.BIRD_HEIGHT / 2) <= 0) {
+      if (bird.position.y - this.BIRD_HEIGHT / 2 <= 0) {
         Matter.Body.setPosition(bird, {
           x: bird.position.x,
           y: this.BIRD_HEIGHT / 2,
@@ -382,7 +379,7 @@ export class MockServerCore {
 
       // 3. 좌우 벽과의 충돌 (죽지 않고 막기만 함)
       // 왼쪽 벽
-      if (bird.position.x - (this.BIRD_WIDTH / 2) <= 0) {
+      if (bird.position.x - this.BIRD_WIDTH / 2 <= 0) {
         Matter.Body.setPosition(bird, {
           x: this.BIRD_WIDTH / 2,
           y: bird.position.y,
@@ -392,9 +389,9 @@ export class MockServerCore {
         }
       }
       // 오른쪽 벽 (1440 기준)
-      if (bird.position.x + (this.BIRD_WIDTH / 2) >= this.screenWidth) {
+      if (bird.position.x + this.BIRD_WIDTH / 2 >= this.screenWidth) {
         Matter.Body.setPosition(bird, {
-          x: this.screenWidth - (this.BIRD_WIDTH / 2),
+          x: this.screenWidth - this.BIRD_WIDTH / 2,
           y: bird.position.y,
         });
         if (bird.velocity.x > 0) {
@@ -435,19 +432,19 @@ export class MockServerCore {
           birdX - halfBirdW > pipe.x
         ) {
           pipe.passedPlayers.push(playerId);
-          console.log(`Player: ${playerId}`);
 
-          // 모든 플레이어가 통과했을 때만 점수 1점 증가
-          if (!pipe.passed && pipe.passedPlayers.length >= this.playerCount) {
+          // 모든 플레이어가 통과했을 때만 점수 증가 (팀 점수)
+          if (pipe.passedPlayers.length === this.birds.length && !pipe.passed) {
             pipe.passed = true;
             this.score++;
-            console.log(`score: ${this.score}`);
 
-            // 점수 업데이트 브로드캐스트
-            this.socket.emit('score_update', {
+            // 점수 업데이트 이벤트 전달
+            this.socket.triggerEvent('score_update', {
               score: this.score,
               timestamp: Date.now(),
             });
+
+            console.log(`[MockServerCore] 점수 업데이트: ${this.score}`);
           }
         }
       }
@@ -466,7 +463,7 @@ export class MockServerCore {
     this.isGameOverState = true;
     // 이제 즉시 stop()을 부르지 않고 물리 시뮬레이션은 계속 유지합니다.
 
-    this.socket.emit('game_over', {
+    this.socket.triggerEvent('game_over', {
       reason,
       finalScore: this.score,
       collidedPlayerId: playerId,
@@ -576,9 +573,24 @@ export class MockServerCore {
    * 정리
    */
   destroy() {
+    console.log('[MockServerCore] 정리 시작');
+
+    // 업데이트 루프 중지
     this.stop();
+
+    // 모든 상태 초기화
+    this.birds = [];
+    this.pipes = [];
+    this.score = 0;
+    this.nextPipeId = 0;
+    this.isGameOverState = false;
+    this.isRunning = false;
+    this.ground = null;
+
+    // Matter.js 월드와 엔진 정리
     Matter.World.clear(this.world, false);
     Matter.Engine.clear(this.engine);
+
     console.log('[MockServerCore] 정리 완료');
   }
 }

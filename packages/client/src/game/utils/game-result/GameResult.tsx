@@ -32,6 +32,7 @@ interface GameResultProps {
   onReplay: () => void;
   onLobby: () => void;
   ratio?: number;
+  title?: string; // 게임별 타이틀 커스터마이징
 }
 
 function calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
@@ -68,6 +69,7 @@ const GameResult: React.FC<GameResultProps> = ({
   onReplay,
   onLobby,
   ratio: propRatio,
+  title = 'APPLE GAME TOGETHER', // 기본값: 사과 게임 타이틀
 }) => {
   const { playSFX } = useSFXContext();
   // 기준 해상도 대비 현재 비율 (사과 게임과 동일)
@@ -94,7 +96,7 @@ const GameResult: React.FC<GameResultProps> = ({
           transform: 'translate(-50%, -50%)',
         }}
       >
-        <h1 style={getTitleStyle(ratio)}>APPLE GAME TOGETHER</h1>
+        <h1 style={getTitleStyle(ratio)}>{title}</h1>
         <div style={getRankContainerStyle(ratio)}>
           {rankedPlayers.map((player, idx) => {
             const height = getRankHeight(player.rank) * ratio;

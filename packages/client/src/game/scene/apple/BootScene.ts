@@ -4,8 +4,11 @@ import Phaser from 'phaser';
 import assetPackUrl from '../../../assets/asset-pack.json?url';
 
 export class BootScene extends Phaser.Scene {
-  constructor() {
+  private nextSceneName: string;
+
+  constructor(nextSceneName: string = 'AppleGameScene') {
     super('BootScene');
+    this.nextSceneName = nextSceneName;
   }
 
   private loadingText?: Phaser.GameObjects.Text;
@@ -21,7 +24,8 @@ export class BootScene extends Phaser.Scene {
         this.cameras.main.height,
         0xf6f5f6,
       )
-      .setOrigin(0.5, 0.5);
+      .setOrigin(0.5, 0.5)
+      .setDepth(10000); // 최상단
 
     // 중앙에 '로딩중...' 텍스트 표시
     this.loadingText = this.add
@@ -38,7 +42,8 @@ export class BootScene extends Phaser.Scene {
           strokeThickness: 4,
         },
       )
-      .setOrigin(0.5, 0.5);
+      .setOrigin(0.5, 0.5)
+      .setDepth(10001); // 텍스트는 배경보다 위
 
     // Load Phaser Editor 2D asset pack if present
     if (assetPackUrl) {
@@ -47,10 +52,31 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
-    // 로딩 텍스트 및 배경 제거
-    if (this.loadingText) this.loadingText.destroy();
-    if (this.loadingBg) this.loadingBg.destroy();
-    // Proceed to main scene once assets (if any) are ready
-    this.scene.start('AppleGameScene');
+    // 다음 씬을 백그라운드에서 시작 (보이지 않음)
+    this.scene.launch(this.nextSceneName);
+
+    // 다음 씬을 비활성화 상태로 유지
+    this.scene.sleep(this.nextSceneName);
+
+    // 다음 씬이 준비되면 전환
+    const nextScene = this.scene.get(this.nextSceneName);
+    if (nextScene) {
+      nextScene.events.once('scene-ready', () => {
+        // 로딩 화면 페이드 아웃
+        this.tweens.add({
+          targets: [this.loadingBg, this.loadingText],
+          alpha: 0,
+          duration: 200,
+          onComplete: () => {
+            if (this.loadingText) this.loadingText.destroy();
+            if (this.loadingBg) this.loadingBg.destroy();
+
+            // 다음 씬 깨우기 및 BootScene 중지
+            this.scene.wake(this.nextSceneName);
+            this.scene.stop('BootScene');
+          },
+        });
+      });
+    }
   }
 }

@@ -29,6 +29,26 @@
         "url": "src/assets/images/selectedApple.png",
         "type": "image",
         "key": "selectedApple"
+      },
+      {
+        "url": "src/assets/images/flappybird_1.png",
+        "type": "image",
+        "key": "flappybird_1"
+      },
+      {
+        "url": "src/assets/images/flappybird_2.png",
+        "type": "image",
+        "key": "flappybird_2"
+      },
+      {
+        "url": "src/assets/images/flappybird_3.png",
+        "type": "image",
+        "key": "flappybird_3"
+      },
+      {
+        "url": "src/assets/images/flappybird_4.png",
+        "type": "image",
+        "key": "flappybird_4"
       }
     ]
   },

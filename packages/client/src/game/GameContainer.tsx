@@ -19,7 +19,7 @@ const GAME_CONFIGS = {
   },
   flappy: {
     sceneName: 'FlappyBirdsScene',
-    sceneClasses: [FlappyBirdsScene] as const,
+    sceneClasses: [BootScene, FlappyBirdsScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#46d1fd',
@@ -32,6 +32,12 @@ interface GameContainerProps {
   onAppleScored?: (points: number) => void;
   onGameEnd?: (players: PlayerResultData[]) => void;
   onGameOver?: (data: { reason: string; finalScore: number }) => void;
+  onScoreUpdate?: (score: number) => void; // 플래피버드 점수 업데이트
+  onFlappyGameEnd?: (data: {
+    finalScore: number;
+    reason: string;
+    players: PlayerResultData[];
+  }) => void; // 플래피버드 게임 종료
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
@@ -45,6 +51,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onAppleScored,
   onGameEnd,
   onGameOver,
+  onScoreUpdate,
+  onFlappyGameEnd,
   playerCount = 4,
   players = [],
   currentPlayerIndex = 0,
@@ -110,13 +118,21 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
     window.__GAME_RATIO = layout.ratio;
 
+    // 씬 인스턴스 생성 (BootScene에 다음 씬 이름 전달)
+    const scenes = config.sceneClasses.map((SceneClass) => {
+      if (SceneClass === BootScene) {
+        return new BootScene(config.sceneName);
+      }
+      return new SceneClass();
+    });
+
     const gameConfig: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       width: config.maxWidth * layout.ratio,
       height: config.maxHeight * layout.ratio,
       parent: parentRef.current,
       backgroundColor: config.backgroundColor,
-      scene: [...config.sceneClasses],
+      scene: scenes,
       physics: {
         default: 'arcade',
         arcade: { gravity: { y: 0, x: 0 }, debug: false },
@@ -154,14 +170,43 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
-      } else if (gameType === 'flappy' && onGameOver) {
-        targetScene.events.on(
-          'game_over',
-          (data: { reason: string; finalScore: number }) => {
-            console.log('💀 game_over event received:', data);
-            onGameOver(data);
-          },
-        );
+      } else if (gameType === 'flappy') {
+        // 플래피버드 점수 업데이트 이벤트
+        if (onScoreUpdate) {
+          targetScene.events.on(
+            'scoreUpdate',
+            (data: { score: number; timestamp: number }) => {
+              console.log('📊 scoreUpdate event received:', data);
+              onScoreUpdate(data.score);
+            },
+          );
+        }
+
+        // 플래피버드 게임 종료 이벤트
+        if (onFlappyGameEnd) {
+          targetScene.events.on(
+            'gameEnd',
+            (data: {
+              finalScore: number;
+              reason: string;
+              players: PlayerResultData[];
+            }) => {
+              console.log('🏁 flappy gameEnd event received:', data);
+              onFlappyGameEnd(data);
+            },
+          );
+        }
+
+        // 기존 game_over 이벤트 (호환성 유지)
+        if (onGameOver) {
+          targetScene.events.on(
+            'game_over',
+            (data: { reason: string; finalScore: number }) => {
+              console.log('💀 game_over event received:', data);
+              onGameOver(data);
+            },
+          );
+        }
       }
 
       // 씬에 플레이어 데이터 전달
@@ -182,8 +227,16 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     });
 
     return () => {
-      game.destroy(true);
-      gameRef.current = null;
+      try {
+        // 게임 인스턴스 완전 파괴
+        console.log('[GameContainer] 게임 정리 시작');
+        game.destroy(true);
+        gameRef.current = null;
+        console.log('[GameContainer] 게임 정리 완료');
+      } catch (error) {
+        console.error('[GameContainer] 정리 중 오류:', error);
+        gameRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, layout.ratio, gameType]);

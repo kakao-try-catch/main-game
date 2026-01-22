@@ -233,18 +233,27 @@ export class MockServerCore {
         continue;
       }
 
-      // 고정된 위치(startX)로 돌아가려는 복원력 적용 (관성을 위해 점진적으로 조정)
-      const birdIndex = this.birds.indexOf(bird);
-      const startX = 250 + birdIndex * 90; // 줄어든 간격 반영
+      // 고정된 X 좌표 및 개별 순서 보정 완전 해제
       const currentX = bird.position.x;
 
-      // 복원력과 저항의 밸런스 조정 (0.1로 높여 더 쫀득하게 복귀)
-      const targetRestoringVX = (startX - currentX) * 0.1;
-      const newVX = bird.velocity.x * 0.85 + targetRestoringVX;
-
+      // 1. 공기 저항 (수평 속도 감쇠)
       Matter.Body.setVelocity(bird, {
-        x: newVX,
+        x: bird.velocity.x * 0.985, // 관성을 조금 더 유지 (0.98 -> 0.985)
         y: bird.velocity.y,
+      });
+
+      // 2. 그룹 전체의 중심을 유지하려는 물리 (새들이 화면 밖으로 영원히 나가지 않게 함)
+      // 모든 새의 위치 평균을 계산하여 그룹 자체가 화면 중앙 근처에 머물게 함
+      const groupTargetX = 350; // 모든 새가 머물 전체적인 기준 위치
+      const avgX = this.birds.reduce((sum, b) => sum + b.position.x, 0) / this.birds.length;
+      
+      // 그룹 전체가 너무 멀어지면 당기는 힘 (아주 미약하게)
+      const groupCorrection = (groupTargetX - avgX) * 0.0005; 
+
+      // 개별 순환(1-2-3-4)을 유지하려는 로직을 완전히 제거하여 자유로운 위치 교환 허용
+      Matter.Body.applyForce(bird, bird.position, {
+        x: groupCorrection,
+        y: 0,
       });
     }
 

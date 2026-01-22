@@ -6,6 +6,7 @@ import { UserProvider, useUser } from './contexts/UserContext';
 
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
+import FlappyBirdResult from './game/utils/game-result/FlappyBirdResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
@@ -364,11 +365,13 @@ function AppContent() {
         )}
         {/* 플래피버드 결과 모달 */}
         {flappyGameEnded && flappyFinalData && (
-          <GameResult
-            players={flappyFinalData.players}
+          <FlappyBirdResult
+            finalScore={flappyFinalData.finalScore}
+            reason={
+              flappyFinalData.reason as 'pipe_collision' | 'ground_collision'
+            }
             onReplay={handleReplay}
             onLobby={handleLobby}
-            title="FLAPPY BIRD"
             ratio={
               (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
             }

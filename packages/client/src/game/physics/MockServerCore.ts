@@ -397,6 +397,20 @@ export class MockServerCore {
         const playerId = String(i) as PlayerId;
         if (!pipe.passedPlayers.includes(playerId) && birdX > pipe.x) {
           pipe.passedPlayers.push(playerId);
+
+          // 모든 플레이어가 통과했을 때만 점수 증가 (팀 점수)
+          if (pipe.passedPlayers.length === this.birds.length && !pipe.passed) {
+            pipe.passed = true;
+            this.score++;
+
+            // 점수 업데이트 이벤트 전달
+            this.socket.triggerEvent('score_update', {
+              score: this.score,
+              timestamp: Date.now(),
+            });
+
+            console.log(`[MockServerCore] 점수 업데이트: ${this.score}`);
+          }
         }
       }
     }
@@ -414,7 +428,7 @@ export class MockServerCore {
     this.isGameOverState = true;
     // 이제 즉시 stop()을 부르지 않고 물리 시뮬레이션은 계속 유지합니다.
 
-    this.socket.emit('game_over', {
+    this.socket.triggerEvent('game_over', {
       reason,
       finalScore: this.score,
       collidedPlayerId: playerId,

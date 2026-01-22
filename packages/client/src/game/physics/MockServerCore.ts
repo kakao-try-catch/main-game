@@ -373,6 +373,8 @@ export class MockServerCore {
         });
         Matter.Body.setVelocity(bird, { x: 0, y: 0 });
         Matter.Body.setStatic(bird, true);
+        // 바닥에 닿으면 시계방향 90도(보고 있는 방향이 아래)로 회전
+        Matter.Body.setAngle(bird, Math.PI / 2);
         this.handleGameOver('ground_collision', String(i) as PlayerId);
         continue;
       }
@@ -430,8 +432,8 @@ export class MockServerCore {
 
           // Y축 충돌 확인 (갭 밖에 있으면 충돌)
           if (birdY - halfBirdH < gapTop || birdY + halfBirdH > gapBottom) {
-            Matter.Body.setVelocity(bird, { x: 0, y: 0 });
-            Matter.Body.setStatic(bird, true);
+            // 파이프 충돌 시 멈추지 않고 그대로 아래로 미끄러지도록(추락) 수정
+            // setStatic(true)를 하지 않으면 중력에 의해 자연스럽게 떨어짐
             this.handleGameOver('pipe_collision', String(i) as PlayerId);
             return;
           }
@@ -473,7 +475,10 @@ export class MockServerCore {
   /**
    * 클라이언트 이벤트 처리
    */
-  handleClientEvent(event: string, data: { playerId: PlayerId }) {
+  handleClientEvent(
+    event: string,
+    data: { playerId: PlayerId; active?: boolean },
+  ) {
     switch (event) {
       case 'flap':
         this.handleFlap(data.playerId);
@@ -501,6 +506,10 @@ export class MockServerCore {
         x: bird.velocity.x + 5.0, // 전진 파워 대폭 강화 (2.5 -> 5.0)
         y: this.FLAP_VELOCITY,
       });
+
+      // 플랩 시 즉시 앞을 보게 함 (0도 유지) 및 회전 속도 초기화
+      Matter.Body.setAngle(bird, 0);
+      Matter.Body.setAngularVelocity(bird, 0);
 
       console.log(`[MockServerCore] Player ${playerId} Flap!`);
     }

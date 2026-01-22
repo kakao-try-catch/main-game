@@ -89,10 +89,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       const vh = Math.min(window.innerHeight * 0.8, config.maxHeight);
 
       let width = vw;
-      let height = vw / aspectRatio;
+      const height = vw / aspectRatio;
 
       if (height > vh) {
-        height = vh;
         width = vh * aspectRatio;
       }
 

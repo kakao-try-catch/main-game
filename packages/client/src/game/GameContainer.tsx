@@ -32,6 +32,12 @@ interface GameContainerProps {
   onAppleScored?: (points: number) => void;
   onGameEnd?: (players: PlayerResultData[]) => void;
   onGameOver?: (data: { reason: string; finalScore: number }) => void;
+  onScoreUpdate?: (score: number) => void; // 플래피버드 점수 업데이트
+  onFlappyGameEnd?: (data: {
+    finalScore: number;
+    reason: string;
+    players: PlayerResultData[];
+  }) => void; // 플래피버드 게임 종료
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
@@ -45,6 +51,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onAppleScored,
   onGameEnd,
   onGameOver,
+  onScoreUpdate,
+  onFlappyGameEnd,
   playerCount = 4,
   players = [],
   currentPlayerIndex = 0,
@@ -154,14 +162,43 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
-      } else if (gameType === 'flappy' && onGameOver) {
-        targetScene.events.on(
-          'game_over',
-          (data: { reason: string; finalScore: number }) => {
-            console.log('💀 game_over event received:', data);
-            onGameOver(data);
-          },
-        );
+      } else if (gameType === 'flappy') {
+        // 플래피버드 점수 업데이트 이벤트
+        if (onScoreUpdate) {
+          targetScene.events.on(
+            'scoreUpdate',
+            (data: { score: number; timestamp: number }) => {
+              console.log('📊 scoreUpdate event received:', data);
+              onScoreUpdate(data.score);
+            },
+          );
+        }
+
+        // 플래피버드 게임 종료 이벤트
+        if (onFlappyGameEnd) {
+          targetScene.events.on(
+            'gameEnd',
+            (data: {
+              finalScore: number;
+              reason: string;
+              players: PlayerResultData[];
+            }) => {
+              console.log('🏁 flappy gameEnd event received:', data);
+              onFlappyGameEnd(data);
+            },
+          );
+        }
+
+        // 기존 game_over 이벤트 (호환성 유지)
+        if (onGameOver) {
+          targetScene.events.on(
+            'game_over',
+            (data: { reason: string; finalScore: number }) => {
+              console.log('💀 game_over event received:', data);
+              onGameOver(data);
+            },
+          );
+        }
       }
 
       // 씬에 플레이어 데이터 전달

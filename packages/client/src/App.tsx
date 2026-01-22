@@ -50,6 +50,16 @@ function AppContent() {
   const [gameEnded, setGameEnded] = useState(false);
   const [finalPlayers, setFinalPlayers] = useState<PlayerResultData[]>([]);
   const gameRef = useRef<Phaser.Game | null>(null);
+
+  // 플래피버드 관련 상태
+  const [flappyScore, setFlappyScore] = useState(0); // 팀 점수
+  const [flappyGameEnded, setFlappyGameEnded] = useState(false); // 플래피버드 게임 종료 여부
+  const [flappyFinalData, setFlappyFinalData] = useState<{
+    finalScore: number;
+    reason: string;
+    players: PlayerResultData[];
+  } | null>(null);
+
   const [players, setPlayers] = useState<PlayerData[]>([
     {
       id: 'id_1',
@@ -108,8 +118,31 @@ function AppContent() {
     [playSFX, pause],
   );
 
+  // 플래피버드 점수 업데이트 핸들러
+  const handleFlappyScoreUpdate = useCallback((score: number) => {
+    setFlappyScore(score);
+  }, []);
+
+  // 플래피버드 게임 종료 핸들러
+  const handleFlappyGameEnd = useCallback(
+    (data: {
+      finalScore: number;
+      reason: string;
+      players: PlayerResultData[];
+    }) => {
+      setFlappyFinalData(data);
+      setFlappyGameEnded(true);
+      playSFX('appleGameEnd'); // 동일한 사운드 사용
+      pause(); // 게임 종료 시 BGM 중지
+    },
+    [playSFX, pause],
+  );
+
   const handleReplay = useCallback(() => {
     setGameEnded(false);
+    setFlappyGameEnded(false);
+    setFlappyScore(0);
+    setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
     if (gameRef.current) {
       gameRef.current.destroy(true);
@@ -120,6 +153,9 @@ function AppContent() {
 
   const handleLobby = useCallback(() => {
     setGameEnded(false);
+    setFlappyGameEnded(false);
+    setFlappyScore(0);
+    setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
     setCurrentScreen('lobby');
   }, []);
@@ -256,14 +292,29 @@ function AppContent() {
             marginTop: '0px',
           }}
         >
-          {players.slice(0, testPlayerCount).map((player) => (
+          {/* 사과게임: 4개 플레이어카드 */}
+          {currentGameType === 'apple' &&
+            players
+              .slice(0, testPlayerCount)
+              .map((player) => (
+                <PlayerCard
+                  key={player.id}
+                  name={player.name}
+                  score={player.score}
+                  color={player.color}
+                />
+              ))}
+
+          {/* 플래피버드: 팀 점수 카드 1개 */}
+          {currentGameType === 'flappy' && (
             <PlayerCard
-              key={player.id}
-              name={player.name}
-              score={player.score}
-              color={player.color}
+              key="team-score"
+              name="Team Score"
+              score={flappyScore}
+              color="#209cee" // 메인 커러
             />
-          ))}
+          )}
+
           <SoundSetting gameReady={gameReady} />
         </div>
       </div>
@@ -284,7 +335,7 @@ function AppContent() {
           overflow: 'hidden',
         }}
       >
-        {!gameEnded && currentGameType && (
+        {!gameEnded && !flappyGameEnded && currentGameType && (
           <GameContainer
             gameType={currentGameType}
             playerCount={players.length}
@@ -294,14 +345,30 @@ function AppContent() {
             flappyPreset={flappyPreset}
             onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
+            onScoreUpdate={handleFlappyScoreUpdate}
+            onFlappyGameEnd={handleFlappyGameEnd}
             onGameReady={handleGameReady}
           />
         )}
+        {/* 사과게임 결과 모달 */}
         {gameEnded && (
           <GameResult
             players={finalPlayers}
             onReplay={handleReplay}
             onLobby={handleLobby}
+            title="APPLE GAME TOGETHER"
+            ratio={
+              (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
+            }
+          />
+        )}
+        {/* 플래피버드 결과 모달 */}
+        {flappyGameEnded && flappyFinalData && (
+          <GameResult
+            players={flappyFinalData.players}
+            onReplay={handleReplay}
+            onLobby={handleLobby}
+            title="FLAPPY BIRD"
             ratio={
               (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
             }

@@ -18,7 +18,11 @@ import type {
   GameOverEvent,
   PlayerId,
   PipeData,
+  ScoreUpdateEvent,
+  FlappyBirdGameEndData,
 } from '../../types/flappybird.types';
+import type { PlayerResultData } from '../../types/common';
+import { CONSTANTS } from '../../types/common';
 import PipeManager from './PipeManager';
 
 export default class FlappyBirdsScene extends Phaser.Scene {
@@ -27,6 +31,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private myPlayerId: PlayerId = '0';
   private pipeManager?: PipeManager;
   private playerCount: number = 4;
+  private playerNames: string[] = [
+    'Player 1',
+    'Player 2',
+    'Player 3',
+    'Player 4',
+  ]; // 플레이어 이름 (서버에서 받거나 기본값)
+  private currentScore: number = 0; // 현재 팀 점수
 
   // 새 스프라이트
   private birdSprites: Phaser.GameObjects.Sprite[] = [];
@@ -283,6 +294,17 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       }
     });
 
+    // 점수 업데이트
+    this.socket.on('score_update', (data: ScoreUpdateEvent) => {
+      this.currentScore = data.score;
+      // React로 점수 업데이트 이벤트 전달
+      this.events.emit('scoreUpdate', {
+        score: data.score,
+        timestamp: data.timestamp,
+      });
+      console.log(`[FlappyBirdsScene] 점수 업데이트: ${data.score}`);
+    });
+
     // 게임 오버
     this.socket.on('game_over', (data: GameOverEvent) => {
       console.log(
@@ -290,7 +312,19 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       );
       this.gameStarted = false; // 스크롤 멈춤
       this.isGameOver = true; // 게임 오버 상태 기록
-      // TODO: 게임 오버 UI 표시
+
+      // React로 게임 종료 데이터 전달
+      const gameEndData: FlappyBirdGameEndData = {
+        finalScore: data.finalScore,
+        reason: data.reason,
+        collidedPlayerId: data.collidedPlayerId,
+        timestamp: data.timestamp,
+      };
+
+      this.events.emit('gameEnd', {
+        ...gameEndData,
+        players: this.getPlayersData(),
+      });
     });
   }
 
@@ -560,6 +594,19 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   /**
+   * 플레이어 데이터 생성 (결과 모달용)
+   */
+  private getPlayersData(): PlayerResultData[] {
+    return Array.from({ length: this.playerCount }, (_, i) => ({
+      id: `player_${i}`,
+      name: this.playerNames[i] || `Player ${i + 1}`,
+      score: this.currentScore, // 팀 점수이므로 모든 플레이어가 같은 점수
+      color: CONSTANTS.PLAYER_COLORS[i] || '#000000',
+      playerIndex: i,
+    }));
+  }
+
+  /**
    * 씬 종료 시 정리
    */
   shutdown() {
@@ -568,6 +615,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     }
 
     this.socket.off('update_positions');
+    this.socket.off('score_update');
     this.socket.off('game_over');
   }
 

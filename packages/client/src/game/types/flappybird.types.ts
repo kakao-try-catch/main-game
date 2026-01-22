@@ -100,6 +100,17 @@ export interface RestartGameEvent {
   playerId: PlayerId;
 }
 
+/**
+ * 플래피버드 게임 종료 데이터
+ * React로 전달되어 결과 모달에 표시됨
+ */
+export interface FlappyBirdGameEndData {
+  finalScore: number; // 팀 최종 점수
+  reason: 'pipe_collision' | 'ground_collision'; // 게임 종료 사유
+  collidedPlayerId: PlayerId; // 충돌한 플레이어 ID
+  timestamp: number; // 게임 종료 시각
+}
+
 // 에러 이벤트
 export interface ErrorEvent {
   code: 'ROOM_FULL' | 'GAME_IN_PROGRESS' | 'INVALID_PLAYER_ID';

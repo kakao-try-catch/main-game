@@ -50,18 +50,23 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
 			screenHeight - minPipeHeight - pipeGap / 2
 		);
 
+		// 갭의 상단과 하단 위치 계산
+		const gapTop = gapY - pipeGap / 2;
+		const gapBottom = gapY + pipeGap / 2;
+
 		// 위쪽 파이프 높이 계산
-		const topPipeHeight = gapY - pipeGap / 2;
+		const topPipeHeight = gapTop;
 
 		// 아래쪽 파이프 높이 계산
-		const bottomPipeHeight = screenHeight - (gapY + pipeGap / 2);
+		const bottomPipeHeight = screenHeight - gapBottom;
 
 		// 위쪽 파이프 설정
+		this.upPipe.y = 0;
 		this.upPipe.setHeight(topPipeHeight);
 		this.upPipe.setThickness(pipeThickness);
 
 		// 아래쪽 파이프 설정
-		this.downPipe.y = gapY + pipeGap / 2;
+		this.downPipe.y = gapBottom;
 		this.downPipe.setHeight(bottomPipeHeight);
 		this.downPipe.setThickness(pipeThickness);
 	}
@@ -100,18 +105,23 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
 	 * @param screenHeight - 화면 높이
 	 */
 	public setFromServerData(gapY: number, gap: number, width: number, screenHeight: number): void {
+		// 갭의 상단과 하단 위치 계산
+		const gapTop = gapY - gap / 2;
+		const gapBottom = gapY + gap / 2;
+
 		// 위쪽 파이프 높이 계산
-		const topPipeHeight = gapY - gap / 2;
+		const topPipeHeight = gapTop;
 
 		// 아래쪽 파이프 높이 계산
-		const bottomPipeHeight = screenHeight - (gapY + gap / 2);
+		const bottomPipeHeight = screenHeight - gapBottom;
 
 		// 위쪽 파이프 설정
+		this.upPipe.y = 0;
 		this.upPipe.setHeight(topPipeHeight);
 		this.upPipe.setThickness(width);
 
 		// 아래쪽 파이프 설정
-		this.downPipe.y = gapY + gap / 2;
+		this.downPipe.y = gapBottom;
 		this.downPipe.setHeight(bottomPipeHeight);
 		this.downPipe.setThickness(width);
 	}

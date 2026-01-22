@@ -492,7 +492,7 @@ export class MockServerCore {
       const bird = this.birds[birdIndex];
 
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x + 3.0, // 전진 파워
+        x: bird.velocity.x + 1.5, // 전진 파워
         y: this.FLAP_VELOCITY,
       });
 

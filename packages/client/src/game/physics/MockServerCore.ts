@@ -371,8 +371,8 @@ export class MockServerCore {
       // 2. 파이프와의 충돌
       const birdX = bird.position.x;
       const birdY = bird.position.y;
-      const halfBirdW = this.BIRD_WIDTH / 2;
-      const halfBirdH = this.BIRD_HEIGHT / 2;
+      const halfBirdW = (this.BIRD_WIDTH * 0.8) / 2;
+      const halfBirdH = (this.BIRD_HEIGHT * 0.8) / 2;
 
       for (const pipe of this.pipes) {
         const halfPipeW = pipe.width / 2;
@@ -395,7 +395,10 @@ export class MockServerCore {
 
         // 통과 판정 (새의 X 좌표가 파이프의 오른쪽 끝을 지났을 때)
         const playerId = String(i) as PlayerId;
-        if (!pipe.passedPlayers.includes(playerId) && birdX > pipe.x) {
+        if (
+          !pipe.passedPlayers.includes(playerId) &&
+          birdX - halfBirdW > pipe.x
+        ) {
           pipe.passedPlayers.push(playerId);
 
           // 모든 플레이어가 통과했을 때만 점수 증가 (팀 점수)

@@ -5,6 +5,7 @@ export interface AppleGameConfig {
   maxNumber: number; // 최대 숫자 (9)
   totalTime: number; // 전체 게임 시간 (110초)
   maxPlayers: number; // 플레이어 수 (4)
+  includeZero: boolean; // 0생성 여부
 }
 
 export const APPLE_GAME_CONFIG: AppleGameConfig = {
@@ -14,4 +15,5 @@ export const APPLE_GAME_CONFIG: AppleGameConfig = {
   maxNumber: 9,
   totalTime: 110,
   maxPlayers: 4,
+  includeZero: false,
 };

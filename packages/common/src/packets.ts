@@ -48,7 +48,7 @@ export interface ReportCard {
   score: number;
 }
 
-export interface AppleGameReportCard extends ReportCard {}
+export interface AppleGameReportCard extends ReportCard { }
 
 export interface MineSweeperReportCard extends ReportCard {
   flags: number;
@@ -112,10 +112,14 @@ export interface ReadyScenePacket {
   selectedGameType: GameType;
 }
 
-export interface UpdateScorePacket {
-  type: SystemPacketType.UPDATE_SCORE;
+export type PlayerSummary = {
   playerOrder: number;
   reportCard: ReportCard[];
+};
+
+export interface UpdateScorePacket {
+  type: SystemPacketType.UPDATE_SCORE;
+  scoreboard: PlayerSummary[];
 }
 
 export type SystemPacket =

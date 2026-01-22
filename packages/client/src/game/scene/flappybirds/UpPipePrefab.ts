@@ -8,7 +8,7 @@ export default class UpPipePrefab extends Phaser.GameObjects.Container {
 
     // pipe_bottom_1
     const pipe_bottom_1 = scene.add.rectangle(0, 0, 80, 178);
-    pipe_bottom_1.setOrigin(0.5, 0); // 상단 기준으로 변경 (위에서 아래로 그려짐)
+    pipe_bottom_1.setOrigin(0, 0); // 상단 기준으로 변경 (위에서 아래로 그려짐)
     pipe_bottom_1.isFilled = true;
     pipe_bottom_1.fillColor = 3380533;
     this.add(pipe_bottom_1);

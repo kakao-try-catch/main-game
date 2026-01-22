@@ -153,21 +153,17 @@ function AppContent() {
     // 프리셋이 없는 경우에도 빈 객체라도 설정하여 렌더링 조건을 만족시킵니다.
     setCurrentPreset(preset || ({} as AppleGamePreset));
 
-    if (gameId === 'apple') {
-      setCurrentScreen('game');
-    } else if (gameId === 'flappy') {
-      setCurrentScreen('flappybird');
-    }
-  };
-
-
     const gameStartReq = {
       type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
     } as any;
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
-    setCurrentPreset(preset); // todo game_config_update 
-    setCurrentScreen('game'); // todo ready_scene
+
+    if (gameId === 'apple') {
+      setCurrentScreen('game');
+    } else if (gameId === 'flappy') {
+      setCurrentScreen('flappybird');
+    }
   };
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)

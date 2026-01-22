@@ -225,6 +225,9 @@ export default class AppleGameScene extends Phaser.Scene {
         }
       },
     );
+
+    // BootScene에 준비 완료 신호 보내기
+    this.events.emit('scene-ready');
   }
 
   /* END-USER-CODE */

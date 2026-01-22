@@ -55,13 +55,35 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
   // Write your code here
 
   create() {
-    this.editorCreate();
+    console.log('[FlappyBirdScene2] create 메서드 시작');
 
-    // 소켓 연결
+    // 소켓 연결 먼저 (기존 리스너 정리를 위해)
     this.socket = getSocket();
+
+    // 기존 소켓 이벤트 완전 정리 (중복 방지)
+    this.socket.off('update_positions');
+    this.socket.off('game_over');
+    console.log('[FlappyBirdScene2] 기존 소켓 이벤트 리스너 제거 완료');
+
+    // 기존 스프라이트와 그래픽 파괴
+    this.birdSprites.forEach((bird) => bird?.destroy());
+    this.ropes.forEach((rope) => rope?.destroy());
+
+    // 기존 상태 초기화 (중복 생성 방지)
+    this.birdSprites = [];
+    this.targetPositions = [];
+    this.ropes = [];
+
+    this.editorCreate();
 
     // Mock 모드인 경우 MockServerCore 생성
     if (isMockMode() && this.socket instanceof MockSocket) {
+      // 기존 MockServerCore 파괴
+      if (this.mockServerCore) {
+        this.mockServerCore.destroy();
+        this.mockServerCore = undefined;
+      }
+
       this.mockServerCore = new MockServerCore(this.socket as MockSocket);
       this.mockServerCore.initialize();
 
@@ -167,6 +189,10 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
    * 소켓 이벤트 리스너 설정
    */
   private setupSocketListeners() {
+    // 기존 리스너 제거 (중복 등록 방지)
+    this.socket.off('update_positions');
+    this.socket.off('game_over');
+
     // 위치 업데이트 수신
     this.socket.on('update_positions', (data: UpdatePositionsEvent) => {
       this.targetPositions = data.birds;
@@ -315,12 +341,24 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
    * 씬 종료 시 정리
    */
   shutdown() {
+    console.log('[FlappyBirdScene2] shutdown 호출됨');
+
+    // Mock 서버 코어 정리
     if (this.mockServerCore) {
       this.mockServerCore.destroy();
+      this.mockServerCore = undefined;
+      console.log('[FlappyBirdScene2] Mock 서버 코어 정리 완료');
+
+      // MockSocket에서 serverCore 참조 제거
+      if (this.socket instanceof MockSocket) {
+        this.socket.clearServerCore();
+      }
     }
 
+    // 소켓 이벤트 리스너 제거
     this.socket.off('update_positions');
     this.socket.off('game_over');
+    console.log('[FlappyBirdScene2] 소켓 이벤트 리스너 제거 완료');
   }
 
   /* END-USER-CODE */

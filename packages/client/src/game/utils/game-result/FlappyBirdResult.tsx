@@ -18,7 +18,10 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
   ratio: propRatio,
 }) => {
   const { playSFX } = useSFXContext();
-  const ratio = propRatio ?? ((window as any).__GAME_RATIO || 1);
+  const ratio =
+    propRatio ??
+    (((window as unknown as Record<string, unknown>).__GAME_RATIO as number) ||
+      1);
 
   const reasonText =
     reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!';

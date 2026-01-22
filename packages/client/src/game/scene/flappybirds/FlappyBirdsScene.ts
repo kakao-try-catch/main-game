@@ -86,19 +86,46 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
   // Write your code here
 
-  preload() {
-    // 새 이미지 프리로드
-    this.load.image('flappybird_1', 'src/assets/images/flappybird_1.png');
-    this.load.image('flappybird_2', 'src/assets/images/flappybird_2.png');
-    this.load.image('flappybird_3', 'src/assets/images/flappybird_3.png');
-    this.load.image('flappybird_4', 'src/assets/images/flappybird_4.png');
-  }
-
   create() {
-    this.editorCreate();
+    console.log('[FlappyBirdsScene] create 메서드 시작');
 
-    // 소켓 연결
+    // 소켓 연결 먼저 (기존 리스너 정리를 위해)
     this.socket = getSocket();
+
+    // 기존 소켓 이벤트 완전 정리 (중복 방지)
+    this.socket.off('update_positions');
+    this.socket.off('score_update');
+    this.socket.off('game_over');
+    this.events.off('updatePlayers');
+    console.log('[FlappyBirdsScene] 기존 소켓 이벤트 리스너 제거 완료');
+
+    // 기존 스프라이트, 그래픽, 파이프 파괴
+    this.birdSprites.forEach((bird) => bird?.destroy());
+    this.ropes.forEach((rope) => rope?.destroy());
+    if (this.pipeManager) {
+      this.pipeManager.destroy();
+    }
+    if (this.debugGraphics) {
+      this.debugGraphics.destroy();
+    }
+    if (this.groundTile) {
+      this.groundTile.destroy();
+    }
+    if (this.groundLine) {
+      this.groundLine.destroy();
+    }
+
+    // 기존 상태 초기화 (중복 생성 방지)
+    this.birdSprites = [];
+    this.targetPositions = [];
+    this.ropes = [];
+    this.ropeMidPoints = [];
+    this.targetPipes = [];
+    this.currentScore = 0;
+    this.gameStarted = false;
+    this.isGameOver = false;
+
+    this.editorCreate();
 
     // 파이프 매니저 생성
     this.pipeManager = new PipeManager(this);
@@ -108,6 +135,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // Mock 모드인 경우 MockServerCore 생성
     if (isMockMode() && this.socket instanceof MockSocket) {
+      // 기존 MockServerCore 파괴
+      if (this.mockServerCore) {
+        this.mockServerCore.destroy();
+      }
+
       this.mockServerCore = new MockServerCore(this.socket as MockSocket);
       this.mockServerCore.setPlayerCount(this.playerCount); // 플레이어 수 설정
       this.mockServerCore.initialize();
@@ -119,6 +151,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         console.log(
           '[FlappyBirdsScene] 물리 엔진 및 스크롤 시작 (1초 딜레이 후)',
         );
+        // BootScene에 준비 완료 신호 보내기
+        this.events.emit('scene-ready');
       }, 1000);
 
       console.log(
@@ -127,6 +161,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     } else {
       // Mock 모드가 아닐 경우 즉시 시작 (또는 서버 신호 대기)
       this.gameStarted = true;
+      // BootScene에 준비 완료 신호 보내기
+      this.events.emit('scene-ready');
     }
 
     // 초기 게임 객체 생성
@@ -266,6 +302,12 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    * 소켓 이벤트 리스너 설정
    */
   private setupSocketListeners() {
+    // 기존 리스너 제거 (중복 등록 방지)
+    this.events.off('updatePlayers');
+    this.socket.off('update_positions');
+    this.socket.off('score_update');
+    this.socket.off('game_over');
+
     // 플레이어 정보 업데이트 (인원수 조절 등)
     this.events.on('updatePlayers', (data: { playerCount?: number }) => {
       console.log(
@@ -610,13 +652,32 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    * 씬 종료 시 정리
    */
   shutdown() {
+    console.log('[FlappyBirdsScene] shutdown 호출됨');
+
+    // Mock 서버 코어 정리
     if (this.mockServerCore) {
       this.mockServerCore.destroy();
+      this.mockServerCore = undefined;
+      console.log('[FlappyBirdsScene] Mock 서버 코어 정리 완료');
+
+      // MockSocket에서 serverCore 참조 제거
+      if (this.socket instanceof MockSocket) {
+        this.socket.clearServerCore();
+      }
     }
 
+    // 파이프 매니저 정리
+    if (this.pipeManager) {
+      this.pipeManager.destroy();
+      console.log('[FlappyBirdsScene] 파이프 매니저 정리 완료');
+    }
+
+    // 소켓 이벤트 리스너 제거
     this.socket.off('update_positions');
     this.socket.off('score_update');
     this.socket.off('game_over');
+    this.events.off('updatePlayers');
+    console.log('[FlappyBirdsScene] 소켓 이벤트 리스너 제거 완료');
   }
 
   /* END-USER-CODE */

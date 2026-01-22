@@ -531,9 +531,24 @@ export class MockServerCore {
    * 정리
    */
   destroy() {
+    console.log('[MockServerCore] 정리 시작');
+
+    // 업데이트 루프 중지
     this.stop();
+
+    // 모든 상태 초기화
+    this.birds = [];
+    this.pipes = [];
+    this.score = 0;
+    this.nextPipeId = 0;
+    this.isGameOverState = false;
+    this.isRunning = false;
+    this.ground = null;
+
+    // Matter.js 월드와 엔진 정리
     Matter.World.clear(this.world, false);
     Matter.Engine.clear(this.engine);
+
     console.log('[MockServerCore] 정리 완료');
   }
 }

@@ -19,7 +19,7 @@ const GAME_CONFIGS = {
   },
   flappy: {
     sceneName: 'FlappyBirdsScene',
-    sceneClasses: [FlappyBirdsScene] as const,
+    sceneClasses: [BootScene, FlappyBirdsScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#46d1fd',
@@ -118,13 +118,21 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
     window.__GAME_RATIO = layout.ratio;
 
+    // 씬 인스턴스 생성 (BootScene에 다음 씬 이름 전달)
+    const scenes = config.sceneClasses.map((SceneClass) => {
+      if (SceneClass === BootScene) {
+        return new BootScene(config.sceneName);
+      }
+      return new SceneClass();
+    });
+
     const gameConfig: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       width: config.maxWidth * layout.ratio,
       height: config.maxHeight * layout.ratio,
       parent: parentRef.current,
       backgroundColor: config.backgroundColor,
-      scene: [...config.sceneClasses],
+      scene: scenes,
       physics: {
         default: 'arcade',
         arcade: { gravity: { y: 0, x: 0 }, debug: false },
@@ -219,8 +227,16 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     });
 
     return () => {
-      game.destroy(true);
-      gameRef.current = null;
+      try {
+        // 게임 인스턴스 완전 파괴
+        console.log('[GameContainer] 게임 정리 시작');
+        game.destroy(true);
+        gameRef.current = null;
+        console.log('[GameContainer] 게임 정리 완료');
+      } catch (error) {
+        console.error('[GameContainer] 정리 중 오류:', error);
+        gameRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, layout.ratio, gameType]);

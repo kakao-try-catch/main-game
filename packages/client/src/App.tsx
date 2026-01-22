@@ -84,6 +84,9 @@ function AppContent() {
     FlappyBirdGamePreset | undefined
   >(undefined);
 
+  // 게임 컨테이너 재마운트를 위한 key
+  const [gameKey, setGameKey] = useState(0);
+
   // 점수 증가 함수
   const handleAppleScored = useCallback(
     (points: number) => {
@@ -140,16 +143,32 @@ function AppContent() {
   );
 
   const handleReplay = useCallback(() => {
+    console.log('[App] handleReplay 호출됨');
+
+    // 상태 초기화
     setGameEnded(false);
     setFlappyGameEnded(false);
     setFlappyScore(0);
     setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+
+    // 게임 컨테이너 key 증가로 강제 재마운트
+    setGameKey((prev) => prev + 1);
+
+    // 게임 인스턴스 완전 파괴
     if (gameRef.current) {
-      gameRef.current.destroy(true);
-      gameRef.current = null;
+      try {
+        console.log('[App] 게임 인스턴스 파괴 시작');
+        gameRef.current.destroy(true);
+        gameRef.current = null;
+        console.log('[App] 게임 인스턴스 파괴 완료');
+      } catch (error) {
+        console.error('[App] 게임 파괴 중 오류:', error);
+        gameRef.current = null;
+      }
     }
-    setGameReady(false);
+
+    console.log('[App] handleReplay 완료 - 게임이 다시 마운트됨');
   }, []);
 
   const handleLobby = useCallback(() => {
@@ -159,6 +178,17 @@ function AppContent() {
     setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
     setCurrentScreen('lobby');
+
+    // 게임 인스턴스 파괴
+    if (gameRef.current) {
+      try {
+        gameRef.current.destroy(true);
+        gameRef.current = null;
+      } catch (error) {
+        console.error('[App] 로비 복귀 시 게임 파괴 중 오류:', error);
+        gameRef.current = null;
+      }
+    }
   }, []);
 
   // 닉네임 설정하고 시작 버튼 누를 때 동작
@@ -193,6 +223,9 @@ function AppContent() {
 
   const handleGameStart = (gameType: string, preset: unknown) => {
     setCurrentGameType(gameType as GameType);
+
+    // 새 게임 시작 시 key 변경
+    setGameKey((prev) => prev + 1);
 
     if (gameType === 'apple') {
       setApplePreset(preset as AppleGamePreset);
@@ -338,6 +371,7 @@ function AppContent() {
       >
         {!gameEnded && !flappyGameEnded && currentGameType && (
           <GameContainer
+            key={gameKey}
             gameType={currentGameType}
             playerCount={players.length}
             players={players}

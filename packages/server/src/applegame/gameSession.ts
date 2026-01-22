@@ -1,6 +1,6 @@
 
 import { APPLE_GAME_CONFIG } from "../../../common/src/config";
-import { GamePacketType, DropCellIndexPacket, TimeEndPacket, SetFieldPacket, SetTimePacket, PlayerData } from "../../../common/src/packets";
+import { GamePacketType, DropCellIndexPacket, TimeEndPacket, SetFieldPacket, SetTimePacket, PlayerData, UpdateScorePacket, SystemPacketType, ReportCard, PlayerSummary } from "../../../common/src/packets";
 
 export type GameStatus = "waiting" | "playing" | "ended";
 
@@ -12,9 +12,9 @@ const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
 export interface PlayerState {
   id: string; // Socket ID
   name: string;
-  score: number;
   order: number;
   color: string;
+  reportCard: ReportCard;
 }
 
 export class GameSession {
@@ -29,6 +29,7 @@ export class GameSession {
 
   constructor(public roomId: string, private broadcastCallback: (packet: any) => void) { }
 
+  // todo id는 바뀌는 애임
   public addPlayer(id: string, name: string) {
     if (this.players.has(id)) return;
 
@@ -38,9 +39,9 @@ export class GameSession {
     this.players.set(id, {
       id,
       name,
-      score: 0,
       order,
-      color
+      color,
+      reportCard: { score: 0 }
     });
   }
 
@@ -57,7 +58,9 @@ export class GameSession {
     this.status = "playing";
     this.timeLeft = this.config.totalTime;
     this.removedIndices.clear();
-    this.players.forEach(p => p.score = 0);
+    this.players.forEach(p => {
+      p.reportCard.score = 0;
+    });
 
     // Generate Apples
     this.generateField();
@@ -75,6 +78,9 @@ export class GameSession {
       limitTime: this.timeLeft,
     };
     this.broadcastCallback(setTimePacket);
+
+    // 점수 초기화 알리기 (Snapshot)
+    this.broadcastScoreboard();
 
     // Start Timer
     this.startTimer();
@@ -111,11 +117,11 @@ export class GameSession {
 
     // Calculate Rank
     const results = Array.from(this.players.values())
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => b.reportCard.score - a.reportCard.score)
       .map((p, index) => ({
         rank: index + 1,
         playerId: p.id,
-        score: p.score
+        score: p.reportCard.score
       }));
 
     const endPacket: TimeEndPacket = {
@@ -144,14 +150,14 @@ export class GameSession {
       const player = this.players.get(playerId);
       if (player) {
         const addedScore = indices.length;
-        player.score += addedScore;
+        player.reportCard.score += addedScore;
 
         // Broadcast Success
         const dropPacket: DropCellIndexPacket = {
           type: GamePacketType.DROP_CELL_INDEX,
           winnerId: playerId,
           indices: indices,
-          totalScore: player.score
+          totalScore: player.reportCard.score
         };
         this.broadcastCallback(dropPacket);
       }
@@ -165,12 +171,27 @@ export class GameSession {
         order: p.order,
         playerName: p.name,
         color: p.color,
-        score: p.score
+        score: p.reportCard.score
       }));
   }
 
   public getPlayerCount() {
     return this.players.size;
+  }
+
+  private broadcastScoreboard() {
+    const scoreboard: PlayerSummary[] = Array.from(this.players.values())
+      .sort((a, b) => a.order - b.order) // Ensure consistent order if needed
+      .map(p => ({
+        playerOrder: p.order,
+        reportCard: [p.reportCard]
+      }));
+
+    const updateScorePacket: UpdateScorePacket = {
+      type: SystemPacketType.UPDATE_SCORE,
+      scoreboard
+    };
+    this.broadcastCallback(updateScorePacket);
   }
 
 

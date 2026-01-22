@@ -18,7 +18,7 @@ import type {
   CurrentUser,
 } from './game/types/common';
 import { CONSTANTS } from './game/types/common';
-import { SystemPacketType } from '../../common/src/packets';
+import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
 
 import './App.css';
 import { socketManager } from './network/socket';
@@ -163,10 +163,8 @@ function AppContent() {
       setFlappyPreset(preset as FlappyBirdGamePreset);
     }
 
-    const gameStartReq: {
-      type: SystemPacketType.GAME_START_REQ;
-    } = {
-      type: SystemPacketType.GAME_START_REQ,
+    const gameStartReq: ServerPacket = {
+      type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
     };
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);

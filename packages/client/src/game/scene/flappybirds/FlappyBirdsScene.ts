@@ -374,34 +374,40 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    * 입력 처리 설정
    */
   private setupInput() {
-    // 스페이스바 - 내 새 (기본)
-    this.input.keyboard?.on('keydown-SPACE', () => {
-      this.handleFlap(this.myPlayerId);
+    // 키보드 반복(꾹 누르기) 방지용 핸들러
+    const onKeydown = (e: KeyboardEvent, playerId: PlayerId) => {
+      if (e.repeat) return; // 꾹 누르고 있을 때 발생하는 반복 이벤트 무시
+      this.handleFlap(playerId);
+    };
+
+    // 스페이스바 (내 새)
+    this.input.keyboard?.on('keydown-SPACE', (e: KeyboardEvent) => {
+      onKeydown(e, this.myPlayerId);
     });
 
-    // 마우스 클릭 - 내 새 (기본)
+    // 마우스 클릭 (내 새) - 마우스는 반복 이벤트가 없으므로 그대로 유지
     this.input.on('pointerdown', () => {
       this.handleFlap(this.myPlayerId);
     });
 
-    // Q키 - Bird 0 (가장 뒤)
-    this.input.keyboard?.on('keydown-Q', () => {
-      this.handleFlap('0');
+    // Q키 - Bird 0
+    this.input.keyboard?.on('keydown-Q', (e: KeyboardEvent) => {
+      onKeydown(e, '0');
     });
 
     // W키 - Bird 1
-    this.input.keyboard?.on('keydown-W', () => {
-      this.handleFlap('1');
+    this.input.keyboard?.on('keydown-W', (e: KeyboardEvent) => {
+      onKeydown(e, '1');
     });
 
     // E키 - Bird 2
-    this.input.keyboard?.on('keydown-E', () => {
-      this.handleFlap('2');
+    this.input.keyboard?.on('keydown-E', (e: KeyboardEvent) => {
+      onKeydown(e, '2');
     });
 
-    // R키 - Bird 3 (가장 앞)
-    this.input.keyboard?.on('keydown-R', () => {
-      this.handleFlap('3');
+    // R키 - Bird 3
+    this.input.keyboard?.on('keydown-R', (e: KeyboardEvent) => {
+      onKeydown(e, '3');
     });
 
     // D키 - 디버그 토글
@@ -410,13 +416,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       if (!this.showDebug) {
         this.debugGraphics.clear();
       }
-      console.log(
-        `[FlappyBirdsScene] 디버그 시각화: ${this.showDebug ? 'ON' : 'OFF'}`,
-      );
     });
 
     console.log(
-      '[FlappyBirdsScene] 키보드 매핑: Q=Bird0(뒤), W=Bird1, E=Bird2, R=Bird3(앞), Space/Click=내 새',
+      '[FlappyBirdsScene] 입력 방식: 순수 연타(Tapping) 모드 - 꾹 누르기가 방지되었습니다.',
     );
   }
 
@@ -480,11 +483,15 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         sprite.x = Phaser.Math.Linear(sprite.x, target.x * ratio, 0.3);
         sprite.y = Phaser.Math.Linear(sprite.y, target.y * ratio, 0.3);
 
-        // 회전 애니메이션 (추락 시 수직으로 더 빨리 꺾이도록 배율 조정)
-        let angle = Phaser.Math.Clamp(target.velocityY * 10, -30, 90);
+        // 회전 애니메이션: 기본적으로 서버에서 보낸 각도를 우선 사용하고, 
+        // 서버 각도가 0이면 velocityY를 기반으로 부드럽게 계산
+        let angle = target.angle;
+        if (angle === 0) {
+          angle = Phaser.Math.Clamp(target.velocityY * 10, -30, 90);
+        }
 
-        // 게임 오버 상태에서 바닥 부근에 있으면 수직 상태(90도) 유지
-        if (this.isGameOver && sprite.y > 750 * ratio) {
+        // 게임 오버 상태에서 바닥 부근에 있으면 확실하게 수직 상태(90도) 유지
+        if (this.isGameOver && sprite.y > (FLAPPY_GROUND_Y - 30) * ratio) {
           angle = 90;
         }
 

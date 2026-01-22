@@ -43,6 +43,10 @@ export function handleClientPacket(
   packet: ServerPacket,
 ) {
   try {
+    console.log(
+      '[Server] handleClientPacket received packet type:',
+      packet.type,
+    );
     if (packet.type === SystemPacketType.JOIN_ROOM) {
       joinPlayerToGame(io, socket, packet.roomId, packet.playerName);
       return;
@@ -63,7 +67,7 @@ export function handleClientPacket(
           console.log(
             '[Server] Order is 0, starting game... (currently commented out)',
           );
-          // session.startGame();
+          session.startGame();
         } else {
           console.log(
             `[Server] Start denied: ${player ? 'not order 0' : 'player not found'}`,

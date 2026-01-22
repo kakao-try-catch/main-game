@@ -18,7 +18,7 @@ import type {
   CurrentUser,
 } from './game/types/common';
 import { CONSTANTS } from './game/types/common';
-import { SystemPacketType } from '../../common/src/packets';
+import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
 
 import './App.css';
 import { socketManager } from './network/socket';
@@ -163,24 +163,16 @@ function AppContent() {
       setFlappyPreset(preset as FlappyBirdGamePreset);
     }
 
-    const gameStartReq: {
-      type: SystemPacketType.GAME_START_REQ;
-    } = {
-      type: SystemPacketType.GAME_START_REQ,
+    const gameStartReq: ServerPacket = {
+      type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
     };
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
 
     setCurrentScreen('game');
-  };
-
-  // 소켓 연결부
-  useEffect(() => {
-    console.log('서버와의 연결 시도');
-    socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
     // todo game_config_update
     // todo ready_scene
-  }, []);
+  };
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {

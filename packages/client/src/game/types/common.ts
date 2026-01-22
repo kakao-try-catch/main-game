@@ -71,3 +71,16 @@ export const CONSTANTS = {
   /** 기본 제한 시간 (초) */
   DEFAULT_TIME_LIMIT: 120,
 } as const;
+
+/** 게임 이벤트 데이터 타입 */
+export interface GameEventData {
+  appleScored?: { points: number };
+  gameEnd?: { players: PlayerResultData[] };
+  gameOver?: { reason: string; finalScore: number };
+  updatePlayers?: {
+    playerCount?: number;
+    players?: PlayerData[];
+    currentPlayerIndex?: number;
+    preset?: unknown;
+  };
+}

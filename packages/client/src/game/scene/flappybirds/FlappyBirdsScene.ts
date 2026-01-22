@@ -223,22 +223,30 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    */
   private setupSocketListeners() {
     // 플레이어 정보 업데이트 (인원수 조절 등)
-    this.events.on('updatePlayers', (data: { playerCount?: number }) => {
-      console.log(
-        `[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`,
-      );
-      const oldPlayerCount = this.playerCount;
-      this.playerCount = data.playerCount || 4;
+    this.events.on(
+      'updatePlayers',
+      (data: {
+        playerCount?: number;
+        players?: unknown[];
+        currentPlayerIndex?: number;
+        preset?: unknown;
+      }) => {
+        console.log(
+          `[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`,
+        );
+        const oldPlayerCount = this.playerCount;
+        this.playerCount = data.playerCount || 4;
 
-      // 인원수가 변경된 경우 게임 객체 재설정
-      if (oldPlayerCount !== this.playerCount) {
-        if (this.mockServerCore) {
-          this.mockServerCore.setPlayerCount(this.playerCount);
-          this.mockServerCore.initialize();
+        // 인원수가 변경된 경우 게임 객체 재설정
+        if (oldPlayerCount !== this.playerCount) {
+          if (this.mockServerCore) {
+            this.mockServerCore.setPlayerCount(this.playerCount);
+            this.mockServerCore.initialize();
+          }
+          this.setupGame();
         }
-        this.setupGame();
-      }
-    });
+      },
+    );
 
     // 위치 업데이트 수신
     this.socket.on('update_positions', (data: UpdatePositionsEvent) => {

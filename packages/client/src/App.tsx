@@ -171,9 +171,9 @@ function AppContent() {
     } as any;
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
-    setCurrentPreset(preset); // todo game_config_update 
-    setCurrentScreen('game'); // todo ready_scene
-  };
+    // todo game_config_update
+    // todo ready_scene
+  }, []);
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {

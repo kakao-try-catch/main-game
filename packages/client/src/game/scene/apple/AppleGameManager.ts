@@ -5,11 +5,14 @@ import TimerSystem from '../../utils/TimerSystem';
 import { attachDragSelection } from '../../utils/dragSelection';
 import { socketManager } from '../../../network/socket';
 import { GamePacketType } from '../../../../../common/src/packets';
+import type { PlayerData } from '../../types/common';
+import { hexStringToNumber, adjustBrightness } from '../../utils/colorUtils';
+import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 
 // Declare the global property for TypeScript
 declare global {
   interface Window {
-    __APPLE_GAME_RATIO?: number;
+    __GAME_RATIO?: number;
   }
 }
 
@@ -41,38 +44,6 @@ const DEFAULT_CONFIG: AppleGameConfig = {
   playerCount: 4,
   ratio: 1,
 };
-
-/** 플레이어 데이터 */
-export interface PlayerData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-}
-
-/** HEX 색상을 숫자로 변환 */
-function hexStringToNumber(hex: string): number {
-  return parseInt(hex.replace('#', ''), 16);
-}
-
-/** HSV에서 명도(V)를 조절한 색상 반환 */
-function adjustBrightness(hexColor: string, brightnessOffset: number): number {
-  const color = Phaser.Display.Color.HexStringToColor(hexColor);
-  const hsv = Phaser.Display.Color.RGBToHSV(color.red, color.green, color.blue);
-
-  // 명도 조정 (0~1 범위, brightnessOffset는 0~100 범위로 가정)
-  const newV = Math.max(
-    0,
-    Math.min(1, (hsv.v as number) - brightnessOffset / 100),
-  );
-
-  const rgb = Phaser.Display.Color.HSVToRGB(
-    hsv.h as number,
-    hsv.s as number,
-    newV,
-  ) as { r: number; g: number; b: number };
-  return Phaser.Display.Color.GetColor(rgb.r, rgb.g, rgb.b);
-}
 
 export default class AppleGameManager {
   private container: Phaser.GameObjects.Container | null = null;
@@ -127,8 +98,8 @@ export default class AppleGameManager {
   ) {
     this.scene = scene;
     this.container = container ?? null;
-    // ratio 우선순위: config.ratio > window.__APPLE_GAME_RATIO > 1
-    const ratio = config.ratio ?? window.__APPLE_GAME_RATIO ?? 1;
+    // ratio 우선순위: config.ratio > window.__GAME_RATIO > 1
+    const ratio = config.ratio ?? window.__GAME_RATIO ?? 1;
     const gridCols = config.gridCols ?? DEFAULT_CONFIG.gridCols;
     const gridRows = config.gridRows ?? DEFAULT_CONFIG.gridRows;
 
@@ -253,13 +224,13 @@ export default class AppleGameManager {
     w: number;
     h: number;
   } {
-    const ratio = window.__APPLE_GAME_RATIO || 1;
-    // 항상 기준 해상도(1380x862)로 정규화
+    const ratio = window.__GAME_RATIO || 1;
+    // 항상 기준 해상도(GAME_WIDTH x GAME_HEIGHT)로 정규화
     return {
-      x: rect.x / (1380 * ratio),
-      y: rect.y / (862 * ratio),
-      w: rect.width / (1380 * ratio),
-      h: rect.height / (862 * ratio),
+      x: rect.x / (GAME_WIDTH * ratio),
+      y: rect.y / (GAME_HEIGHT * ratio),
+      w: rect.width / (GAME_WIDTH * ratio),
+      h: rect.height / (GAME_HEIGHT * ratio),
     };
   }
 

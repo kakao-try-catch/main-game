@@ -65,7 +65,7 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
   /** 주어진 사각형 범위 안에 이 사과가 있는지 확인합니다. */
   isInRect(rect: Phaser.Geom.Rectangle): boolean {
     // 사과의 월드 좌표 계산
-    const ratio = (window as any).__APPLE_GAME_RATIO || 1;
+    const ratio = (window as any).__GAME_RATIO || 1;
     const worldX = this.x;
     const worldY = this.y + 7 * ratio;
     return Phaser.Geom.Rectangle.Contains(rect, worldX, worldY);

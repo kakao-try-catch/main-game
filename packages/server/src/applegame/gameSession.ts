@@ -1,8 +1,18 @@
+import { APPLE_GAME_CONFIG } from '../../../common/src/config';
+import {
+  GamePacketType,
+  DropCellIndexPacket,
+  TimeEndPacket,
+  SetFieldPacket,
+  SetTimePacket,
+  PlayerData,
+  UpdateScorePacket,
+  SystemPacketType,
+  ReportCard,
+  PlayerSummary,
+} from '../../../common/src/packets';
 
-import { APPLE_GAME_CONFIG } from "../../../common/src/config";
-import { GamePacketType, DropCellIndexPacket, TimeEndPacket, SetFieldPacket, SetTimePacket, PlayerData, UpdateScorePacket, SystemPacketType, ReportCard, PlayerSummary } from "../../../common/src/packets";
-
-export type GameStatus = "waiting" | "playing" | "ended";
+export type GameStatus = 'waiting' | 'playing' | 'ended';
 
 const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
 
@@ -25,7 +35,7 @@ export class GameSession {
   public players: Map<string, PlayerState> = new Map();
 
   // 게임 상태 관리
-  public status: GameStatus = "waiting";
+  public status: GameStatus = 'waiting';
   public timeLeft: number = this.config.totalTime;
   private timerInterval: NodeJS.Timeout | null = null;
 
@@ -33,8 +43,10 @@ export class GameSession {
   public apples: number[] = [];
   public removedIndices: Set<number> = new Set();
 
-
-  constructor(public roomId: string, private broadcastCallback: (packet: any) => void) { }
+  constructor(
+    public roomId: string,
+    private broadcastCallback: (packet: any) => void,
+  ) {}
 
   // todo id는 바뀌는 애임. 재접속 관련 로직이 필요함.
   public addPlayer(id: string, name: string) {
@@ -48,7 +60,7 @@ export class GameSession {
       name,
       order,
       color,
-      reportCard: { score: 0 }
+      reportCard: { score: 0 },
     });
   }
 
@@ -60,12 +72,12 @@ export class GameSession {
   }
 
   public startGame() {
-    if (this.status === "playing") return;
+    if (this.status === 'playing') return;
 
-    this.status = "playing";
+    this.status = 'playing';
     this.timeLeft = this.config.totalTime;
     this.removedIndices.clear();
-    this.players.forEach(p => {
+    this.players.forEach((p) => {
       p.reportCard.score = 0;
     });
 
@@ -94,7 +106,7 @@ export class GameSession {
   }
 
   public stopGame() {
-    this.status = "ended";
+    this.status = 'ended';
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
       this.timerInterval = null;
@@ -104,8 +116,11 @@ export class GameSession {
   private generateField() {
     const count = this.config.gridCols * this.config.gridRows;
     const minNumber = this.config.includeZero ? 0 : this.config.minNumber;
-    this.apples = Array.from({ length: count }, () =>
-      Math.floor(Math.random() * (this.config.maxNumber - minNumber + 1)) + minNumber
+    this.apples = Array.from(
+      { length: count },
+      () =>
+        Math.floor(Math.random() * (this.config.maxNumber - minNumber + 1)) +
+        minNumber,
     );
   }
 
@@ -129,21 +144,21 @@ export class GameSession {
       .map((p, index) => ({
         rank: index + 1,
         playerId: p.id,
-        score: p.reportCard.score
+        score: p.reportCard.score,
       }));
 
     const endPacket: TimeEndPacket = {
       type: GamePacketType.TIME_END,
-      results
+      results,
     };
     this.broadcastCallback(endPacket);
   }
 
   public handleDragConfirm(playerId: string, indices: number[]) {
-    if (this.status !== "playing") return;
+    if (this.status !== 'playing') return;
 
     // Check if any index is already removed (Race condition check)
-    const alreadyTaken = indices.some(idx => this.removedIndices.has(idx));
+    const alreadyTaken = indices.some((idx) => this.removedIndices.has(idx));
     if (alreadyTaken) {
       // Ignore request
       return;
@@ -153,7 +168,7 @@ export class GameSession {
     const sum = indices.reduce((acc, idx) => acc + (this.apples[idx] || 0), 0);
     if (sum === 10) {
       // Update State
-      indices.forEach(idx => this.removedIndices.add(idx));
+      indices.forEach((idx) => this.removedIndices.add(idx));
 
       const player = this.players.get(playerId);
       if (player) {
@@ -165,7 +180,7 @@ export class GameSession {
           type: GamePacketType.DROP_CELL_INDEX,
           winnerId: playerId,
           indices: indices,
-          totalScore: player.reportCard.score
+          totalScore: player.reportCard.score,
         };
         this.broadcastCallback(dropPacket);
       }
@@ -175,11 +190,11 @@ export class GameSession {
   public getPlayers(): PlayerData[] {
     return Array.from(this.players.values())
       .sort((a, b) => a.order - b.order)
-      .map(p => ({
+      .map((p) => ({
         order: p.order,
         playerName: p.name,
         color: p.color,
-        score: p.reportCard.score
+        score: p.reportCard.score,
       }));
   }
 
@@ -190,17 +205,15 @@ export class GameSession {
   private broadcastScoreboard() {
     const scoreboard: PlayerSummary[] = Array.from(this.players.values())
       .sort((a, b) => a.order - b.order) // Ensure consistent order if needed
-      .map(p => ({
+      .map((p) => ({
         playerOrder: p.order,
-        reportCard: [p.reportCard]
+        reportCard: [p.reportCard],
       }));
 
     const updateScorePacket: UpdateScorePacket = {
       type: SystemPacketType.UPDATE_SCORE,
-      scoreboard
+      scoreboard,
     };
     this.broadcastCallback(updateScorePacket);
   }
-
-
 }

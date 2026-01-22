@@ -60,7 +60,7 @@ export function handleClientPacket(io: Server, socket: Socket, packet: ServerPac
         console.log(`[Server] Player object:`, player ? player.name : "null");
         if (player && player.order === 0) {
           console.log("[Server] Order is 0, starting game... (currently commented out)");
-          // session.startGame();
+          session.startGame();
         } else {
           console.log(`[Server] Start denied: ${player ? 'not order 0' : 'player not found'}`);
           socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "방장만 게임을 시작할 수 있습니다." });

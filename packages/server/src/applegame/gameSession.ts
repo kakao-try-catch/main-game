@@ -36,7 +36,7 @@ export class GameSession {
 
   constructor(public roomId: string, private broadcastCallback: (packet: any) => void) { }
 
-  // todo id는 바뀌는 애임
+  // todo id는 바뀌는 애임. 재접속 관련 로직이 필요함.
   public addPlayer(id: string, name: string) {
     if (this.players.has(id)) return;
 

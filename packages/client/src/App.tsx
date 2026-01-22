@@ -163,14 +163,6 @@ function AppContent() {
       setFlappyPreset(preset as FlappyBirdGamePreset);
     }
 
-    setCurrentScreen('game');
-  };
-
-  // 소켓 연결부
-  useEffect(() => {
-    console.log('서버와의 연결 시도');
-    socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
-
     const gameStartReq: {
       type: SystemPacketType.GAME_START_REQ;
     } = {
@@ -178,6 +170,14 @@ function AppContent() {
     };
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
+
+    setCurrentScreen('game');
+  };
+
+  // 소켓 연결부
+  useEffect(() => {
+    console.log('서버와의 연결 시도');
+    socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
     // todo game_config_update
     // todo ready_scene
   }, []);

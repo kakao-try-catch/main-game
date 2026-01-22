@@ -236,23 +236,31 @@ export class GameSession {
     const sanitizeForApple = (raw: any) => {
       const out: any = {};
 
-      // mapSize: must be one of MapSize values; default to MEDIUM
+      // mapSize: must be one of MapSize values; prefer existing, then MEDIUM
       const mapSizeValid =
         raw && raw.mapSize && Object.values(MapSize).includes(raw.mapSize);
-      out.mapSize = mapSizeValid ? raw.mapSize : MapSize.MEDIUM;
+      out.mapSize = mapSizeValid
+        ? raw.mapSize
+        : (existingCfg?.mapSize ?? MapSize.MEDIUM);
 
-      // time: numeric, clamp between sensible bounds
-      out.time = this.sanitizeTime(raw?.time);
+      // time: numeric, clamp between sensible bounds; prefer existing, then default
+      out.time =
+        typeof raw?.time === 'number' && isFinite(raw.time)
+          ? this.sanitizeTime(raw.time)
+          : (existingCfg?.time ?? APPLE_GAME_CONFIG.totalTime);
 
-      // generation: 0 or 1 (treat other numbers as 0)
+      // generation: 0 or 1 (treat other numbers as 0); prefer existing
       const gen =
         typeof raw?.generation === 'number' && Number.isInteger(raw.generation)
           ? raw.generation
-          : 0;
+          : (existingCfg?.generation ?? 0);
       out.generation = gen === 1 ? 1 : 0;
 
-      // zero: boolean
-      out.zero = !!raw?.zero;
+      // zero: boolean; prefer existing
+      out.zero =
+        typeof raw?.zero === 'boolean'
+          ? raw.zero
+          : (existingCfg?.zero ?? !!APPLE_GAME_CONFIG.includeZero);
 
       return out as GameConfig;
     };
@@ -260,6 +268,19 @@ export class GameSession {
     let storedConfig: GameConfig = gameConfig;
     if (selectedGameType === GameType.APPLE_GAME) {
       storedConfig = sanitizeForApple(gameConfig as any);
+      // If the new sanitized config has no differences from the existing
+      // stored config for this session, avoid storing and broadcasting it.
+      const prev = existingCfg;
+      const noChange =
+        prev &&
+        prev.mapSize === storedConfig.mapSize &&
+        prev.time === storedConfig.time &&
+        prev.generation === storedConfig.generation &&
+        prev.zero === storedConfig.zero;
+      if (noChange) {
+        console.log('[GameSession] No change in game config; skipping update broadcast.');
+        return;
+      }
     }
 
     // store the sanitized config

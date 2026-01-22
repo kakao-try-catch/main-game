@@ -233,19 +233,17 @@ export class MockServerCore {
         continue;
       }
 
-      // 고정된 위치(startX)로 돌아가려는 복원력 적용 (관성을 위해 점진적으로 조정)
-      const birdIndex = this.birds.indexOf(bird);
-      const startX = 250 + birdIndex * 90; // 줄어든 간격 반영
+      // 고정된 X 좌표 및 개별 순서 보정 완전 해제
       const currentX = bird.position.x;
 
-      // 복원력과 저항의 밸런스 조정 (0.1로 높여 더 쫀득하게 복귀)
-      const targetRestoringVX = (startX - currentX) * 0.1;
-      const newVX = bird.velocity.x * 0.85 + targetRestoringVX;
-
+      // 1. 공기 저항 (수평 속도 감쇠)
       Matter.Body.setVelocity(bird, {
-        x: newVX,
+        x: bird.velocity.x * 0.985, // 관성을 유지하면서 자연스럽게 감속
         y: bird.velocity.y,
       });
+
+      // 그룹 중심 유지 및 개별 순서 보정 로직을 완전히 삭제함.
+      // 이제 새들은 플랩 세기에 따라画面 앞을 뚫고 나가거나 뒤로 완전히 밀려날 수 있음.
     }
 
     // 3. 가변 장력 적용
@@ -364,8 +362,44 @@ export class MockServerCore {
         });
         Matter.Body.setVelocity(bird, { x: 0, y: 0 });
         Matter.Body.setStatic(bird, true);
+        // 바닥에 닿으면 시계방향 90도(보고 있는 방향이 아래)로 회전
+        Matter.Body.setAngle(bird, Math.PI / 2);
         this.handleGameOver('ground_collision', String(i) as PlayerId);
         continue;
+      }
+
+      // 2. 천장과의 충돌 (상단 0 기준, 죽지 않고 막기만 함)
+      if (bird.position.y - (this.BIRD_HEIGHT / 2) <= 0) {
+        Matter.Body.setPosition(bird, {
+          x: bird.position.x,
+          y: this.BIRD_HEIGHT / 2,
+        });
+        // 위로 올라가는 속도만 제거
+        if (bird.velocity.y < 0) {
+          Matter.Body.setVelocity(bird, { x: bird.velocity.x, y: 0 });
+        }
+      }
+
+      // 3. 좌우 벽과의 충돌 (죽지 않고 막기만 함)
+      // 왼쪽 벽
+      if (bird.position.x - (this.BIRD_WIDTH / 2) <= 0) {
+        Matter.Body.setPosition(bird, {
+          x: this.BIRD_WIDTH / 2,
+          y: bird.position.y,
+        });
+        if (bird.velocity.x < 0) {
+          Matter.Body.setVelocity(bird, { x: 0, y: bird.velocity.y });
+        }
+      }
+      // 오른쪽 벽 (1440 기준)
+      if (bird.position.x + (this.BIRD_WIDTH / 2) >= this.screenWidth) {
+        Matter.Body.setPosition(bird, {
+          x: this.screenWidth - (this.BIRD_WIDTH / 2),
+          y: bird.position.y,
+        });
+        if (bird.velocity.x > 0) {
+          Matter.Body.setVelocity(bird, { x: 0, y: bird.velocity.y });
+        }
       }
 
       // 2. 파이프와의 충돌
@@ -385,11 +419,12 @@ export class MockServerCore {
           const gapTop = pipe.gapY - pipe.gap / 2;
           const gapBottom = pipe.gapY + pipe.gap / 2;
 
-          // 상단 파이프 충돌 (새의 상단이 갭 상단보다 위에 있을 때)
-          // 하단 파이프 충돌 (새의 하단이 갭 하단보다 아래에 있을 때)
+          // Y축 충돌 확인 (갭 밖에 있으면 충돌)
           if (birdY - halfBirdH < gapTop || birdY + halfBirdH > gapBottom) {
+            // 파이프 충돌 시 멈추지 않고 그대로 아래로 미끄러지도록(추락) 수정
+            // setStatic(true)를 하지 않으면 중력에 의해 자연스럽게 떨어짐
             this.handleGameOver('pipe_collision', String(i) as PlayerId);
-            return; // 한 명이라도 부딪히면 종료
+            return;
           }
         }
 
@@ -446,7 +481,10 @@ export class MockServerCore {
   /**
    * 클라이언트 이벤트 처리
    */
-  handleClientEvent(event: string, data: { playerId: PlayerId }) {
+  handleClientEvent(
+    event: string,
+    data: { playerId: PlayerId; active?: boolean },
+  ) {
     switch (event) {
       case 'flap':
         this.handleFlap(data.playerId);
@@ -471,9 +509,13 @@ export class MockServerCore {
       const bird = this.birds[birdIndex];
 
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x + 5.0, // 전진 파워 대폭 강화 (2.5 -> 5.0)
+        x: bird.velocity.x + 1.5, // 전진 파워
         y: this.FLAP_VELOCITY,
       });
+
+      // 플랩 시 즉시 앞을 보게 함 (0도 유지) 및 회전 속도 초기화
+      Matter.Body.setAngle(bird, 0);
+      Matter.Body.setAngularVelocity(bird, 0);
 
       console.log(`[MockServerCore] Player ${playerId} Flap!`);
     }

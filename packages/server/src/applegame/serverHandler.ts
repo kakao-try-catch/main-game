@@ -41,6 +41,7 @@ export function handleDisconnect(socketId: string) {
 
 export function handleClientPacket(io: Server, socket: Socket, packet: ServerPacket) {
   try {
+    console.log("[Server] handleClientPacket received packet type:", packet.type);
     if (packet.type === SystemPacketType.JOIN_ROOM) {
       joinPlayerToGame(io, socket, packet.roomId, packet.playerName);
       return;

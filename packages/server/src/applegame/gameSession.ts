@@ -102,8 +102,9 @@ export class GameSession {
 
   private generateField() {
     const count = this.config.gridCols * this.config.gridRows;
+    const minNumber = this.config.includeZero ? 0 : this.config.minNumber;
     this.apples = Array.from({ length: count }, () =>
-      Math.floor(Math.random() * (this.config.maxNumber - this.config.minNumber + 1)) + this.config.minNumber
+      Math.floor(Math.random() * (this.config.maxNumber - minNumber + 1)) + minNumber
     );
   }
 

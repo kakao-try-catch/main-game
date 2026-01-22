@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import AppleGameManager from './AppleGameManager';
 import type { AppleGamePreset } from '../../types/AppleGamePreset';
 import { resolvePreset } from '../../types/AppleGamePreset';
+import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 
 // You can write more code here
 
@@ -19,13 +20,13 @@ export default class AppleGameScene extends Phaser.Scene {
   //이제 AppleGameScene.scene은 절대 연 다음에 저장하면 안됩니다. 그거 열어서 저장하면 이 코드 날아감 (원래 페이저 에디터가 그럼)
 
   editorCreate(): void {
-    const ratio = window.__APPLE_GAME_RATIO || 1;
+    const ratio = window.__GAME_RATIO || 1;
     // 게임 전체 컨테이너 생성 (0,0)
     this.gameContainer = this.add.container(0, 0);
-    this.gameContainer.setSize(1380 * ratio, 862 * ratio);
+    this.gameContainer.setSize(GAME_WIDTH * ratio, GAME_HEIGHT * ratio);
 
     // 배경
-    const background = this.add.rectangle(0, 0, 1380 * ratio, 862 * ratio);
+    const background = this.add.rectangle(0, 0, GAME_WIDTH * ratio, GAME_HEIGHT * ratio);
     background.setOrigin(0, 0);
     background.isFilled = true;
     background.fillColor = 0xffffff;
@@ -54,7 +55,7 @@ export default class AppleGameScene extends Phaser.Scene {
 
   /** 프리셋에 따라 그리드 설정 계산 */
   private calculateGridConfig(gridCols: number, gridRows: number): void {
-    const ratio = window.__APPLE_GAME_RATIO || 1;
+    const ratio = window.__GAME_RATIO || 1;
     const canvasWidth = this.sys.game.canvas.width;
     const canvasHeight = this.sys.game.canvas.height;
     const margin = 20 * ratio;

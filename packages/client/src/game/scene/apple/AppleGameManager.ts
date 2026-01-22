@@ -7,11 +7,12 @@ import { socketManager } from '../../../network/socket';
 import { GamePacketType } from '../../../../../common/src/packets';
 import type { PlayerData } from '../../types/common';
 import { hexStringToNumber, adjustBrightness } from '../../utils/colorUtils';
+import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 
 // Declare the global property for TypeScript
 declare global {
   interface Window {
-    __APPLE_GAME_RATIO?: number;
+    __GAME_RATIO?: number;
   }
 }
 
@@ -97,8 +98,8 @@ export default class AppleGameManager {
   ) {
     this.scene = scene;
     this.container = container ?? null;
-    // ratio 우선순위: config.ratio > window.__APPLE_GAME_RATIO > 1
-    const ratio = config.ratio ?? window.__APPLE_GAME_RATIO ?? 1;
+    // ratio 우선순위: config.ratio > window.__GAME_RATIO > 1
+    const ratio = config.ratio ?? window.__GAME_RATIO ?? 1;
     const gridCols = config.gridCols ?? DEFAULT_CONFIG.gridCols;
     const gridRows = config.gridRows ?? DEFAULT_CONFIG.gridRows;
 
@@ -223,13 +224,13 @@ export default class AppleGameManager {
     w: number;
     h: number;
   } {
-    const ratio = window.__APPLE_GAME_RATIO || 1;
-    // 항상 기준 해상도(1380x862)로 정규화
+    const ratio = window.__GAME_RATIO || 1;
+    // 항상 기준 해상도(GAME_WIDTH x GAME_HEIGHT)로 정규화
     return {
-      x: rect.x / (1380 * ratio),
-      y: rect.y / (862 * ratio),
-      w: rect.width / (1380 * ratio),
-      h: rect.height / (862 * ratio),
+      x: rect.x / (GAME_WIDTH * ratio),
+      y: rect.y / (GAME_HEIGHT * ratio),
+      w: rect.width / (GAME_WIDTH * ratio),
+      h: rect.height / (GAME_HEIGHT * ratio),
     };
   }
 

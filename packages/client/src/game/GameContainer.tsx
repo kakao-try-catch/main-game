@@ -7,24 +7,25 @@ import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { PlayerData, PlayerResultData, GameType } from './types/common';
+import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 
 // 게임 설정 상수 분리
 const GAME_CONFIGS = {
   apple: {
     sceneName: 'AppleGameScene',
     sceneClasses: [BootScene, AppleGameScene],
-    maxWidth: 1379,
-    maxHeight: 859,
+    maxWidth: GAME_WIDTH,
+    maxHeight: GAME_HEIGHT,
     backgroundColor: '#FFFFFF',
-    ratioKey: '__APPLE_GAME_RATIO' as const,
+    ratioKey: '__GAME_RATIO' as const,
   },
   flappy: {
     sceneName: 'FlappyBirdsScene',
     sceneClasses: [FlappyBirdsScene],
-    maxWidth: 1440,
-    maxHeight: 896,
+    maxWidth: GAME_WIDTH,
+    maxHeight: GAME_HEIGHT,
     backgroundColor: '#46d1fd',
-    ratioKey: '__FLAPPY_GAME_RATIO' as const,
+    ratioKey: '__GAME_RATIO' as const,
   },
 };
 
@@ -123,6 +124,10 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       physics: {
         default: 'arcade',
         arcade: { gravity: { y: 0, x: 0 }, debug: false },
+      },
+      scale: {
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
       },
     };
 
@@ -235,7 +240,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         display: 'block',
         background: config.backgroundColor,
         position: 'relative',
-        border: '4px solid #fff',
       }}
     />
   );

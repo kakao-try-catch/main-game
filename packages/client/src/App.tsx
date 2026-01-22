@@ -303,8 +303,8 @@ function AppContent() {
             onReplay={handleReplay}
             onLobby={handleLobby}
             ratio={
-              (window as Window & { __APPLE_GAME_RATIO?: number })
-                .__APPLE_GAME_RATIO || 1
+              (window as Window & { __GAME_RATIO?: number })
+                .__GAME_RATIO || 1
             }
           />
         )}

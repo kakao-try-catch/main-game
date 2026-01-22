@@ -2,6 +2,7 @@ import RankOnePlayerPrefab from './rank/RankOnePlayerPrefab';
 import ButtonPrefab from './button/ButtonPrefab';
 import type { PlayerResultData } from '../../types/common';
 import { hexStringToNumber } from '../colorUtils';
+import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 // You can write more code here
 
 /** 순위가 매겨진 플레이어 데이터 */
@@ -28,8 +29,8 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
     const background = scene.add.rectangle(
       36 * ratio,
       165 * ratio,
-      1440 * ratio,
-      896 * ratio,
+      GAME_WIDTH * ratio,
+      GAME_HEIGHT * ratio,
     );
     background.isFilled = true;
     background.fillColor = 0;

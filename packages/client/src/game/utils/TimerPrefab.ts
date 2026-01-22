@@ -10,7 +10,7 @@ export default class TimerPrefab extends Phaser.GameObjects.Container {
    * @param barHeight 타이머 바의 높이 (사과 그리드와 동일하게 맞춤)
    */
   constructor(scene: Phaser.Scene, x?: number, y?: number, barHeight?: number) {
-    const ratio = window.__APPLE_GAME_RATIO || 1;
+    const ratio = window.__GAME_RATIO || 1;
     const clampedRatio = Math.min(Math.max(ratio, 0.5), 1.5);
     super(scene, x ?? 0, y ?? 0);
 

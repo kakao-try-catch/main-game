@@ -7,6 +7,7 @@ import type {
 } from '../types/flappybird.types';
 import type { ResolvedFlappyBirdConfig } from '../types/FlappyBirdGamePreset';
 import { MockSocket } from '../network/MockSocket';
+import { GAME_WIDTH, GAME_HEIGHT, FLAPPY_GROUND_Y, GAME_CENTER_X } from '../config/gameConfig';
 
 /**
  * 충돌 카테고리
@@ -33,8 +34,8 @@ export class MockServerCore {
   // 파이프 관련
   private pipes: PipeData[] = [];
   private nextPipeId: number = 0;
-  private screenWidth: number = 1440;
-  private screenHeight: number = 896;
+  private screenWidth: number = GAME_WIDTH;
+  private screenHeight: number = GAME_HEIGHT;
 
   // 물리 파라미터
   private readonly GRAVITY_Y = 1.2; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
@@ -119,9 +120,9 @@ export class MockServerCore {
    * 바닥 생성
    */
   private createGround() {
-    // x: 720 (1440의 중앙), y: 798 + 500 = 1298, width: 1440, height: 1000
-    // 상단 표면(798)은 유지하되, 두께를 1000px로 대폭 늘려 터널링(뚫림) 현상 방지
-    this.ground = Matter.Bodies.rectangle(720, 1298, 1440, 1000, {
+    // x: GAME_CENTER_X, y: FLAPPY_GROUND_Y + 500 = 1300, width: GAME_WIDTH, height: 1000
+    // 상단 표면(FLAPPY_GROUND_Y)은 유지하되, 두께를 1000px로 대폭 늘려 터널링(뛫림) 현상 방지
+    this.ground = Matter.Bodies.rectangle(GAME_CENTER_X, FLAPPY_GROUND_Y + 500, GAME_WIDTH, 1000, {
       isStatic: true,
       label: 'ground',
       collisionFilter: {
@@ -344,11 +345,11 @@ export class MockServerCore {
       const bird = this.birds[i];
       if (bird.isStatic) continue;
 
-      // 1. 바닥과의 충돌 (상단 표면 798 기준)
-      if (bird.position.y + this.BIRD_HEIGHT / 2 >= 798) {
+      // 1. 바닥과의 충돌 (상단 표면 FLAPPY_GROUND_Y 기준)
+      if (bird.position.y + this.BIRD_HEIGHT / 2 >= FLAPPY_GROUND_Y) {
         Matter.Body.setPosition(bird, {
           x: bird.position.x,
-          y: 798 - this.BIRD_HEIGHT / 2,
+          y: FLAPPY_GROUND_Y - this.BIRD_HEIGHT / 2,
         });
         Matter.Body.setVelocity(bird, { x: 0, y: 0 });
         Matter.Body.setStatic(bird, true);

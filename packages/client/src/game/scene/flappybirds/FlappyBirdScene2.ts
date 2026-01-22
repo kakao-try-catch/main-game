@@ -6,6 +6,7 @@
 import { getSocket, isMockMode } from '../../network/socketService';
 import { MockSocket } from '../../network/MockSocket';
 import { MockServerCore } from '../../physics/MockServerCore';
+import { GAME_WIDTH, GAME_HEIGHT, FLAPPY_GROUND_Y, FLAPPY_GROUND_HEIGHT, FLAPPY_GROUND_LINE_THICKNESS } from '../../config/gameConfig';
 import type { BirdPosition, UpdatePositionsEvent, GameOverEvent, PlayerId } from '../../types/flappybird.types';
 
 export default class FlappyBirdScene2 extends Phaser.Scene {
@@ -31,7 +32,7 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 	editorCreate(): void {
 
 		// rectangle_1 (배경)
-		const rectangle_1 = this.add.rectangle(0, 0, 1440, 896);
+		const rectangle_1 = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT);
 		rectangle_1.setOrigin(0, 0);
 		rectangle_1.isFilled = true;
 		rectangle_1.fillColor = 4630671;
@@ -116,14 +117,14 @@ export default class FlappyBirdScene2 extends Phaser.Scene {
 	 * 바닥 그래픽 생성 (물리 콜라이더 위치와 동기화)
 	 */
 	private createGroundUI() {
-		// 땅의 높이를 98px로 설정 (896 - 98 = 798)
-		const ground = this.add.rectangle(0, 798, 1440, 98);
+		// 땅의 높이를 100px로 설정 (GAME_HEIGHT - 100 = FLAPPY_GROUND_Y)
+		const ground = this.add.rectangle(0, FLAPPY_GROUND_Y, GAME_WIDTH, FLAPPY_GROUND_HEIGHT);
 		ground.setOrigin(0, 0);
 		ground.isFilled = true;
 		ground.fillColor = 0xDEB887; // BurlyWood 색상
 
 		// 바닥에 선 추가
-		const line = this.add.rectangle(0, 798, 1440, 4);
+		const line = this.add.rectangle(0, FLAPPY_GROUND_Y, GAME_WIDTH, FLAPPY_GROUND_LINE_THICKNESS);
 		line.setOrigin(0, 0);
 		line.isFilled = true;
 		line.fillColor = 0x8B4513; // SaddleBrown 색상

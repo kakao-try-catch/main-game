@@ -71,7 +71,7 @@ const GameResult: React.FC<GameResultProps> = ({
 }) => {
   const { playSFX } = useSFXContext();
   // 기준 해상도 대비 현재 비율 (사과 게임과 동일)
-  const ratio = propRatio ?? ((window as any).__APPLE_GAME_RATIO || 1);
+  const ratio = propRatio ?? ((window as any).__GAME_RATIO || 1);
   const rankedPlayers = calculateRanks(players);
 
   // 닉네임 길이에 따라 폰트 크기 조절

@@ -18,14 +18,20 @@ export interface PlayerState {
 }
 
 export class GameSession {
+  private readonly config = APPLE_GAME_CONFIG;
+
+  // 플레이어 공통 상태 관리
+  public players: Map<string, PlayerState> = new Map();
+
+  // 게임 상태 관리
+  public status: GameStatus = "waiting";
+  public timeLeft: number = this.config.totalTime;
+  private timerInterval: NodeJS.Timeout | null = null;
+
+  // 사과 게임의 것
   public apples: number[] = [];
   public removedIndices: Set<number> = new Set();
-  public players: Map<string, PlayerState> = new Map();
-  public status: GameStatus = "waiting";
-  public timeLeft: number = APPLE_GAME_CONFIG.totalTime;
 
-  private timerInterval: NodeJS.Timeout | null = null;
-  private readonly config = APPLE_GAME_CONFIG;
 
   constructor(public roomId: string, private broadcastCallback: (packet: any) => void) { }
 

@@ -154,7 +154,7 @@ export class MockServerCore {
                     density: 0.001,
                     restitution: 0.5,
                     friction: 0.1,
-                    frictionAir: 0.05,
+                    frictionAir: 0.01,
                     label: 'bird',
                     collisionFilter: {
                         category: CATEGORY_BIRD,
@@ -204,7 +204,15 @@ export class MockServerCore {
         // 1. 파이프 업데이트 (전체 상태에 대해 한 번만)
         this.updatePipes();
 
-        // 2. 개별 새 물리 제어
+        // 2. 군집 물리 제어 (개별 X 고정 대신 군집 중심 유지)
+        const activeBirds = this.birds.filter(b => !b.isStatic);
+        const avgX = activeBirds.length > 0
+            ? activeBirds.reduce((acc, b) => acc + b.position.x, 0) / activeBirds.length
+            : 300;
+
+        const targetGroupX = 350; // 군집이 머물 전체적인 기준 위치
+        const groupRestoringForce = (targetGroupX - avgX) * 0.0005; // 매우 부드러운 힘
+
         for (const bird of this.birds) {
             if (bird.isStatic) continue;
 
@@ -217,17 +225,13 @@ export class MockServerCore {
                 continue;
             }
 
-            // 고정된 위치(startX)로 돌아가려는 복원력 적용 (관성을 위해 점진적으로 조정)
-            const birdIndex = this.birds.indexOf(bird);
-            const startX = 250 + birdIndex * 90; // 줄어든 간격 반영
-            const currentX = bird.position.x;
+            // 군집 전체를 중앙으로 유지하려는 약한 힘 적용 (개별 새의 자유도 확보)
+            Matter.Body.applyForce(bird, bird.position, { x: groupRestoringForce, y: 0 });
 
-            // 복원력과 저항의 밸런스 조정 (0.1로 높여 더 쫀득하게 복귀)
-            const targetRestoringVX = (startX - currentX) * 0.1;
-            const newVX = bird.velocity.x * 0.85 + targetRestoringVX;
-
+            // 공기 저항 처리 (X축 속도를 너무 강하게 강제로 덮어쓰지 않음)
+            // 대신 수평 속도에 부드러운 감쇄만 적용하여 관성 확보
             Matter.Body.setVelocity(bird, {
-                x: newVX,
+                x: bird.velocity.x * 0.98,
                 y: bird.velocity.y
             });
         }
@@ -421,7 +425,7 @@ export class MockServerCore {
             const bird = this.birds[birdIndex];
 
             Matter.Body.setVelocity(bird, {
-                x: bird.velocity.x + 5.0, // 전진 파워 대폭 강화 (2.5 -> 5.0)
+                x: bird.velocity.x + 8.0, // 전진 파워 더 강화 (5.0 -> 8.0)
                 y: this.FLAP_VELOCITY
             });
 

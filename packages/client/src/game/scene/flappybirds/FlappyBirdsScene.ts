@@ -55,6 +55,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 		const ratio = this.getRatio();
 		const width = 1380 * ratio;
 		const height = 862 * ratio;
+		
 
 		// 고정 배경색 (카메라를 따라다님)
 		const background = this.add.rectangle(0, 0, width, height, 0x46D1FD);

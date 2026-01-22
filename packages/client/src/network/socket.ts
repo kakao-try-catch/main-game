@@ -1,6 +1,6 @@
-import { io, Socket } from "socket.io-client";
-import { type ServerPacket } from "../../../common/src/packets.ts";
-import { handleServerPacket } from "./clientHandler.ts";
+import { io, Socket } from 'socket.io-client';
+import { type ServerPacket } from '../../../common/src/packets.ts';
+import { handleServerPacket } from './clientHandler.ts';
 
 class SocketManager {
   private socket: Socket | null = null;
@@ -12,11 +12,11 @@ class SocketManager {
     }
 
     this.socket = io(url, {
-      transports: ["websocket"], // 성능을 위해 웹소켓 강제
+      transports: ['websocket'], // 성능을 위해 웹소켓 강제
       reconnectionAttempts: 5,
     });
 
-    console.log("[SocketManager] io url called: " + url);
+    console.log('[SocketManager] io url called: ' + url);
 
     // 통합 핸들러 연결
     this.socket.onAny((eventName, data) => {
@@ -26,14 +26,18 @@ class SocketManager {
       handleServerPacket(packet);
     });
 
-    this.socket.on("connect", () => console.log("[SocketManager] Connected! url:", url));
-    this.socket.on("disconnect", (reason) => console.log("[SocketManager] Disconnected! reason:", reason, "url:", url));
+    this.socket.on('connect', () =>
+      console.log('[SocketManager] Connected! url:', url),
+    );
+    this.socket.on('disconnect', (reason) =>
+      console.log('[SocketManager] Disconnected! reason:', reason, 'url:', url),
+    );
   }
 
   // 서버로 데이터 전송할 때 사용하는 메서드
   send(packet: ServerPacket) {
     if (!this.socket) {
-      console.warn("[SocketManager] Cannot send packet: socket is null");
+      console.warn('[SocketManager] Cannot send packet: socket is null');
       return;
     }
     const { type, ...data } = packet;
@@ -42,7 +46,7 @@ class SocketManager {
 
   disconnect() {
     if (this.socket) {
-      console.log("[SocketManager] Disconnecting...");
+      console.log('[SocketManager] Disconnecting...');
       this.socket.disconnect();
       this.socket = null;
     }

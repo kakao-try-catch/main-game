@@ -9,7 +9,7 @@ export default class DownPipePrefab extends Phaser.GameObjects.Container {
 		super(scene, x ?? 0, y ?? 0);
 
 		// pipe_bottom (아래에서 위로 올라오는 파이프 본체)
-		const pipe_bottom = scene.add.rectangle(0, 0, 128, 178);
+		const pipe_bottom = scene.add.rectangle(0, 0, 80, 178);
 		pipe_bottom.setOrigin(0.5, 0);  // 위쪽 기준으로 변경
 		pipe_bottom.isFilled = true;
 		pipe_bottom.fillColor = 3380533;

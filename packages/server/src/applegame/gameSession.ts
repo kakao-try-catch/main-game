@@ -18,6 +18,7 @@ export interface PlayerState {
 }
 
 export class GameSession {
+  // todo 게임 콘피그는 가변적이어야 함.
   private readonly config = APPLE_GAME_CONFIG;
 
   // 플레이어 공통 상태 관리

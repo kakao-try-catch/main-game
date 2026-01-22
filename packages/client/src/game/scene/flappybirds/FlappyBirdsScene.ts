@@ -1,4 +1,3 @@
-
 // You can write more code here
 
 /* START OF COMPILED CODE */
@@ -32,6 +31,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 	private ropeMidPoints: { y: number, vy: number }[] = []; // 밧줄 중간 지점의 관성 데이터
 	private gameStarted: boolean = false; // 게임 시작 여부 (1초 딜레이 동기화)
 	private isGameOver: boolean = false; // 게임 오버 여부
+	private debugGraphics!: Phaser.GameObjects.Graphics;
+	private showDebug: boolean = false;
 
 	constructor() {
 		super("FlappyBirdsScene");
@@ -101,6 +102,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
 		// 입력 처리
 		this.setupInput();
+
+		// 디버그 그래픽
+		this.debugGraphics = this.add.graphics();
+		this.debugGraphics.setDepth(1000); // 최상단
 
 		console.log('[FlappyBirdsScene] 씬 생성 완료');
 	}
@@ -282,6 +287,15 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 			this.handleFlap('3');
 		});
 
+		// D키 - 디버그 토글
+		this.input.keyboard?.on('keydown-D', () => {
+			this.showDebug = !this.showDebug;
+			if (!this.showDebug) {
+				this.debugGraphics.clear();
+			}
+			console.log(`[FlappyBirdsScene] 디버그 시각화: ${this.showDebug ? 'ON' : 'OFF'}`);
+		});
+
 		console.log('[FlappyBirdsScene] 키보드 매핑: Q=Bird0(뒤), W=Bird1, E=Bird2, R=Bird3(앞), Space/Click=내 새');
 	}
 
@@ -368,6 +382,45 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
 		// 밧줄을 클라이언트 측 새 스프라이트 위치로 직접 그리기 (레이턴시 없음)
 		this.drawRopesFromSprites();
+
+		// 디버그 히트박스 그리기
+		if (this.showDebug) {
+			this.drawDebugHitboxes();
+		}
+	}
+
+	/**
+	 * 디버그용 히트박스 시각화
+	 */
+	private drawDebugHitboxes() {
+		this.debugGraphics.clear();
+
+		// 새 히트박스 (80x50, radius 10)
+		this.debugGraphics.lineStyle(2, 0xff00ff, 1); // 마젠타
+		for (const sprite of this.birdSprites) {
+			// MockServerCore.ts의 createBirds와 동일한 크기 및 둥근 모서리
+			const x = sprite.x - 40; // 80 / 2
+			const y = sprite.y - 25; // 50 / 2
+			this.debugGraphics.strokeRoundedRect(x, y, 80, 50, 10);
+		}
+
+		// 파이프 히트박스
+		this.debugGraphics.lineStyle(2, 0x00ffff, 1); // 시안
+		for (const pipeData of this.targetPipes) {
+			const halfW = pipeData.width / 2;
+			const gapTop = pipeData.gapY - pipeData.gap / 2;
+			const gapBottom = pipeData.gapY + pipeData.gap / 2;
+
+			// 위쪽 파이프
+			this.debugGraphics.strokeRect(pipeData.x - halfW, 0, pipeData.width, gapTop);
+
+			// 아래쪽 파이프
+			this.debugGraphics.strokeRect(pipeData.x - halfW, gapBottom, pipeData.width, 896 - gapBottom);
+		}
+
+		// 바닥 히트박스 (y=798)
+		this.debugGraphics.lineStyle(2, 0xff0000, 1); // 빨간색
+		this.debugGraphics.lineBetween(0, 798, 1440, 798);
 	}
 
 	/**

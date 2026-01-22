@@ -371,8 +371,8 @@ export class MockServerCore {
       // 2. 파이프와의 충돌
       const birdX = bird.position.x;
       const birdY = bird.position.y;
-      const halfBirdW = this.BIRD_WIDTH / 2;
-      const halfBirdH = this.BIRD_HEIGHT / 2;
+      const halfBirdW = (this.BIRD_WIDTH * 0.8) / 2;
+      const halfBirdH = (this.BIRD_HEIGHT * 0.8) / 2;
 
       for (const pipe of this.pipes) {
         const halfPipeW = pipe.width / 2;

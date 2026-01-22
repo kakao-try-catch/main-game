@@ -1,27 +1,29 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { PhaserGame } from './game/GameContainer';
+import { GameContainer } from './game/GameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
 
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
-import SocketCounter from './components/SocketCounter';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
-import type { AppleGamePreset } from './game/types/GamePreset';
+import type { AppleGamePreset } from './game/types/AppleGamePreset';
+import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import type {
+  PlayerData,
+  PlayerResultData,
+  GameType,
+  CurrentUser,
+} from './game/types/common';
+import { CONSTANTS } from './game/types/common';
 import { SystemPacketType } from '../../common/src/packets';
 
 import './App.css';
 import { socketManager } from './network/socket';
 
-interface PlayerData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-}
+const { PLAYER_COLORS } = CONSTANTS;
 
 function AppContent() {
   const testPlayerCount = 4;
@@ -37,12 +39,7 @@ function AppContent() {
   >('landing');
 
   // 현재 유저 정보 (서버에서 받아올 예정)
-  const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    playerIndex: number;
-    name: string;
-    isHost: boolean;
-  }>({
+  const [currentUser, setCurrentUser] = useState<CurrentUser>({
     id: 'id_1',
     playerIndex: 0,
     name: nickname || '1P',
@@ -51,38 +48,42 @@ function AppContent() {
 
   const [gameReady, setGameReady] = useState(false);
   const [gameEnded, setGameEnded] = useState(false);
-  const [finalPlayers, setFinalPlayers] = useState<
-    (PlayerData & { playerIndex: number })[]
-  >([]);
+  const [finalPlayers, setFinalPlayers] = useState<PlayerResultData[]>([]);
   const gameRef = useRef<Phaser.Game | null>(null);
   const [players, setPlayers] = useState<PlayerData[]>([
-    { id: 'id_1', name: nickname || '1P', score: 0, color: color || '#209cee' },
-    { id: 'id_2', name: '2P', score: 0, color: '#e76e55' },
-    { id: 'id_3', name: '3P', score: 0, color: '#92cc41' },
-    { id: 'id_4', name: '4P', score: 0, color: '#f2d024' },
+    {
+      id: 'id_1',
+      name: nickname || '1P',
+      score: 0,
+      color: color || PLAYER_COLORS[0],
+    },
+    { id: 'id_2', name: '2P', score: 0, color: PLAYER_COLORS[1] },
+    { id: 'id_3', name: '3P', score: 0, color: PLAYER_COLORS[2] },
+    { id: 'id_4', name: '4P', score: 0, color: PLAYER_COLORS[3] },
   ]);
 
-  // 프리셋 설정 (로비에서 받아옴)
-  const [currentPreset, setCurrentPreset] = useState<
-    AppleGamePreset | undefined
+  // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
+  const [currentGameType, setCurrentGameType] = useState<GameType | undefined>(
+    undefined,
+  );
+  const [applePreset, setApplePreset] = useState<AppleGamePreset | undefined>(
+    undefined,
+  );
+  const [flappyPreset, setFlappyPreset] = useState<
+    FlappyBirdGamePreset | undefined
   >(undefined);
 
-
   // 점수 증가 함수
-  const handleAddScore = (playerId: string, pointsToAdd: number) => {
-    setPlayers((prevPlayers) =>
-      prevPlayers.map((player) =>
-        player.id === playerId
-          ? { ...player, score: player.score + pointsToAdd }
-          : player,
-      ),
-    );
-  };
-
   const handleAppleScored = useCallback(
     (points: number) => {
       try {
-        handleAddScore(currentUser.id, points);
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((player) =>
+            player.id === currentUser.id
+              ? { ...player, score: player.score + points }
+              : player,
+          ),
+        );
         playSFX('appleDrop');
       } catch (error) {
         console.error('Apple scored handler error:', error);
@@ -125,7 +126,7 @@ function AppContent() {
 
   // 닉네임 설정하고 시작 버튼 누를 때 동작
   const handleStart = (inputNickname: string) => {
-    const userColor = '#209cee'; // 처음 유저는 파란색
+    const userColor = PLAYER_COLORS[0]; // 처음 유저는 첫 번째 색상
     setUserInfo(inputNickname, userColor, true);
     setCurrentUser((prev) => ({ ...prev, name: inputNickname }));
     setPlayers((prev) =>
@@ -136,39 +137,50 @@ function AppContent() {
       ),
     );
 
-    const joinRoomPacket = {
-      type: SystemPacketType.JOIN_ROOM || 'JOIN_ROOM',
+    const joinRoomPacket: {
+      type: SystemPacketType.JOIN_ROOM;
+      playerId: string;
+      roomId: string;
+      playerName: string;
+    } = {
+      type: SystemPacketType.JOIN_ROOM,
       playerId: socketManager.getId() ?? '',
       roomId: 'HARDCODED_ROOM_1',
       playerName: inputNickname,
-    } as any;
+    };
     socketManager.send(joinRoomPacket);
     console.log('JOIN_ROOM sent: ', joinRoomPacket);
     // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
     setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
   };
 
-  const handleGameStart = (gameId: string, preset?: AppleGamePreset) => {
-    // 플래피버드도 나중에 프리셋을 가질 수 있으므로, 
-    // 프리셋이 없는 경우에도 빈 객체라도 설정하여 렌더링 조건을 만족시킵니다.
-    setCurrentPreset(preset || ({} as AppleGamePreset));
+  const handleGameStart = (gameType: string, preset: unknown) => {
+    setCurrentGameType(gameType as GameType);
 
-    if (gameId === 'apple') {
-      setCurrentScreen('game');
-    } else if (gameId === 'flappy') {
-      setCurrentScreen('flappybird');
+    if (gameType === 'apple') {
+      setApplePreset(preset as AppleGamePreset);
+    } else if (gameType === 'flappy') {
+      setFlappyPreset(preset as FlappyBirdGamePreset);
     }
-  };
 
-
-    const gameStartReq = {
-      type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
-    } as any;
+    const gameStartReq: {
+      type: SystemPacketType.GAME_START_REQ;
+    } = {
+      type: SystemPacketType.GAME_START_REQ,
+    };
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
-    setCurrentPreset(preset); // todo game_config_update 
-    setCurrentScreen('game'); // todo ready_scene
+
+    setCurrentScreen('game');
   };
+
+  // 소켓 연결부
+  useEffect(() => {
+    console.log('서버와의 연결 시도');
+    socketManager.connect('http://localhost:3000'); // 비동기 처리 필요?
+    // todo game_config_update
+    // todo ready_scene
+  }, []);
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {
@@ -219,21 +231,7 @@ function AppContent() {
           margin: '0',
           flexShrink: 0,
         }}
-      >
-        {gameReady && (
-          <p
-            style={{
-              fontFamily: 'NeoDunggeunmo',
-              fontSize: '16px',
-              textAlign: 'center',
-              margin: '2px 0',
-            }}
-          >
-            마우스로 사과를 드래그 하여 범위 내 사과 속 숫자의 합이 10이 되도록
-            하세요
-          </p>
-        )}
-      </header>
+      />
 
       {/* <SocketCounter /> */}
 
@@ -279,7 +277,6 @@ function AppContent() {
           alignItems: 'center',
           width: '100%',
           flex: 4,
-          backgroundColor: '#fff',
           margin: 0,
           padding: 0,
           minHeight: 0,
@@ -287,13 +284,14 @@ function AppContent() {
           overflow: 'hidden',
         }}
       >
-        {!gameEnded && currentPreset && (
-          <PhaserGame
-            gameType={currentScreen === 'game' ? 'apple' : 'flappy'}
+        {!gameEnded && currentGameType && (
+          <GameContainer
+            gameType={currentGameType}
             playerCount={players.length}
             players={players}
             currentPlayerIndex={currentUser.playerIndex}
-            preset={currentPreset}
+            applePreset={applePreset}
+            flappyPreset={flappyPreset}
             onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
             onGameReady={handleGameReady}
@@ -305,8 +303,7 @@ function AppContent() {
             onReplay={handleReplay}
             onLobby={handleLobby}
             ratio={
-              (window as Window & { __APPLE_GAME_RATIO?: number })
-                .__APPLE_GAME_RATIO || 1
+              (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
             }
           />
         )}

@@ -9,6 +9,6 @@ declare module '*.svg' {
 
 declare global {
   interface Window {
-    __APPLE_GAME_RATIO: number;
+    __GAME_RATIO: number;
   }
 }

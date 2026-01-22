@@ -31,13 +31,14 @@ const socket = io('http://your-server-url:3000');
 
 ```typescript
 {
-  playerId: string;        // 할당된 플레이어 ID (0-3)
-  roomId: string;          // 방 ID
-  playerCount: number;     // 현재 접속자 수
+  playerId: string; // 할당된 플레이어 ID (0-3)
+  roomId: string; // 방 ID
+  playerCount: number; // 현재 접속자 수
 }
 ```
 
 **설명:**
+
 - 클라이언트가 서버에 연결되면 고유한 `playerId`가 할당됩니다.
 - `playerId`는 0~3 사이의 값으로, 4명의 새 중 어떤 새를 조작할지 결정합니다.
 
@@ -59,6 +60,7 @@ const socket = io('http://your-server-url:3000');
 ```
 
 **설명:**
+
 - 플레이어가 게임 시작 준비가 되었음을 알립니다.
 - 4명 모두 `ready: true`가 되면 게임이 시작됩니다.
 
@@ -72,16 +74,18 @@ const socket = io('http://your-server-url:3000');
 
 ```typescript
 {
-  timestamp: number;       // 게임 시작 시각 (Unix timestamp)
+  timestamp: number; // 게임 시작 시각 (Unix timestamp)
   initialPositions: {
     playerId: string;
     x: number;
     y: number;
-  }[];
+  }
+  [];
 }
 ```
 
 **설명:**
+
 - 4명 모두 준비되면 서버가 게임을 시작합니다.
 - 각 새의 초기 위치를 전달합니다.
 
@@ -98,11 +102,12 @@ const socket = io('http://your-server-url:3000');
 ```typescript
 {
   playerId: string;
-  timestamp: number;       // 클라이언트 타임스탬프 (레이턴시 보상용)
+  timestamp: number; // 클라이언트 타임스탬프 (레이턴시 보상용)
 }
 ```
 
 **설명:**
+
 - 플레이어가 스페이스바 또는 클릭 시 서버로 전송됩니다.
 - 서버는 해당 플레이어의 새에 위쪽 힘을 적용합니다.
 
@@ -116,25 +121,29 @@ const socket = io('http://your-server-url:3000');
 
 ```typescript
 {
-  timestamp: number;       // 서버 타임스탬프
+  timestamp: number; // 서버 타임스탬프
   birds: {
     playerId: string;
-    x: number;             // 새의 X 좌표 (픽셀)
-    y: number;             // 새의 Y 좌표 (픽셀)
-    velocityX: number;     // X 방향 속도
-    velocityY: number;     // Y 방향 속도
-    angle: number;         // 회전 각도 (도)
-  }[];
+    x: number; // 새의 X 좌표 (픽셀)
+    y: number; // 새의 Y 좌표 (픽셀)
+    velocityX: number; // X 방향 속도
+    velocityY: number; // Y 방향 속도
+    angle: number; // 회전 각도 (도)
+  }
+  [];
   ropes: {
     points: {
       x: number;
       y: number;
-    }[];                   // 밧줄 정점 배열 (각 밧줄당 10개 정점)
-  }[];
+    }
+    []; // 밧줄 정점 배열 (각 밧줄당 10개 정점)
+  }
+  [];
 }
 ```
 
 **설명:**
+
 - 서버가 60fps로 물리 연산 후 모든 클라이언트에게 브로드캐스트합니다.
 - `birds` 배열은 4개의 새 정보를 포함합니다.
 - `ropes` 배열은 3개의 밧줄 정보를 포함합니다 (Bird[0]↔Bird[1], Bird[1]↔Bird[2], Bird[2]↔Bird[3]).
@@ -150,12 +159,13 @@ const socket = io('http://your-server-url:3000');
 
 ```typescript
 {
-  score: number;           // 현재 점수
+  score: number; // 현재 점수
   timestamp: number;
 }
 ```
 
 **설명:**
+
 - 새가 파이프를 통과할 때마다 점수가 증가합니다.
 - 모든 플레이어에게 동일한 점수가 적용됩니다 (협동 게임).
 
@@ -169,14 +179,15 @@ const socket = io('http://your-server-url:3000');
 
 ```typescript
 {
-  reason: 'pipe_collision' | 'ground_collision';  // 게임 오버 원인
-  finalScore: number;                              // 최종 점수
-  collidedPlayerId: string;                        // 충돌한 플레이어 ID
+  reason: 'pipe_collision' | 'ground_collision'; // 게임 오버 원인
+  finalScore: number; // 최종 점수
+  collidedPlayerId: string; // 충돌한 플레이어 ID
   timestamp: number;
 }
 ```
 
 **설명:**
+
 - 어떤 새든 파이프나 바닥에 충돌하면 게임이 종료됩니다.
 - `collidedPlayerId`는 충돌을 일으킨 플레이어를 나타냅니다.
 
@@ -195,6 +206,7 @@ const socket = io('http://your-server-url:3000');
 ```
 
 **설명:**
+
 - 게임 오버 후 재시작을 요청합니다.
 - 4명 모두 재시작을 요청하면 게임이 초기화됩니다.
 
@@ -236,7 +248,7 @@ const socket = io('http://your-server-url:3000');
 
 ```typescript
 {
-  flapVelocity: -8         // 위로 튀어오르는 속도 (음수 = 위쪽)
+  flapVelocity: -8; // 위로 튀어오르는 속도 (음수 = 위쪽)
 }
 ```
 
@@ -269,10 +281,11 @@ const socket = io('http://your-server-url:3000');
 const CATEGORY_BIRD = 0x0001;
 const CATEGORY_PIPE = 0x0002;
 const CATEGORY_GROUND = 0x0004;
-const CATEGORY_SENSOR = 0x0008;  // 점수 획득 영역
+const CATEGORY_SENSOR = 0x0008; // 점수 획득 영역
 ```
 
 **충돌 규칙:**
+
 - 새 ↔ 새: 충돌하지 않음
 - 새 ↔ 파이프: 충돌 감지 → 게임 오버
 - 새 ↔ 바닥: 충돌 감지 → 게임 오버
@@ -290,12 +303,13 @@ const CATEGORY_SENSOR = 0x0008;  // 점수 획득 영역
 
 ```typescript
 {
-  code: string;            // 에러 코드
-  message: string;         // 에러 메시지
+  code: string; // 에러 코드
+  message: string; // 에러 메시지
 }
 ```
 
 **에러 코드:**
+
 - `ROOM_FULL`: 방이 가득 참 (4명 초과)
 - `GAME_IN_PROGRESS`: 게임이 이미 진행 중
 - `INVALID_PLAYER_ID`: 잘못된 플레이어 ID
@@ -328,8 +342,8 @@ for (let i = 0; i < 4; i++) {
     label: 'bird',
     collisionFilter: {
       category: 0x0001,
-      mask: 0x0002 | 0x0004
-    }
+      mask: 0x0002 | 0x0004,
+    },
   });
   birds.push(bird);
   Matter.World.add(world, bird);
@@ -342,7 +356,7 @@ for (let i = 0; i < 3; i++) {
     bodyB: birds[i + 1],
     length: 100,
     stiffness: 0.4,
-    damping: 0.1
+    damping: 0.1,
   });
   Matter.World.add(world, constraint);
 }
@@ -350,7 +364,7 @@ for (let i = 0; i < 3; i++) {
 // 물리 업데이트 루프 (60fps)
 setInterval(() => {
   Matter.Engine.update(engine, 1000 / 60);
-  
+
   // 위치 데이터 브로드캐스트
   const positions = birds.map((bird, index) => ({
     playerId: String(index),
@@ -358,13 +372,13 @@ setInterval(() => {
     y: bird.position.y,
     velocityX: bird.velocity.x,
     velocityY: bird.velocity.y,
-    angle: bird.angle * (180 / Math.PI)
+    angle: bird.angle * (180 / Math.PI),
   }));
-  
+
   io.emit('update_positions', {
     timestamp: Date.now(),
     birds: positions,
-    ropes: [] // 밧줄 정점 계산 로직 추가 필요
+    ropes: [], // 밧줄 정점 계산 로직 추가 필요
   });
 }, 1000 / 60);
 
@@ -374,7 +388,7 @@ io.on('connection', (socket) => {
     const bird = birds[parseInt(data.playerId)];
     Matter.Body.setVelocity(bird, {
       x: bird.velocity.x,
-      y: -8
+      y: -8,
     });
   });
 });

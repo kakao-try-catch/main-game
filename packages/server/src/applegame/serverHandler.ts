@@ -1,5 +1,4 @@
-
-import { Server, Socket } from "socket.io";
+import { Server, Socket } from 'socket.io';
 import {
   GamePacketType,
   SystemPacketType,
@@ -7,8 +6,8 @@ import {
   GamePacket,
   RoomUpdatePacket,
   RoomUpdateType,
-} from "../../../common/src/packets";
-import { GameSession } from "./gameSession";
+} from '../../../common/src/packets';
+import { GameSession } from './gameSession';
 
 // Room ID -> Session
 const sessions = new Map<string, GameSession>();
@@ -21,10 +20,9 @@ export function getSession(roomId: string): GameSession | undefined {
 }
 
 export function handleConnection(io: Server, socket: Socket) {
-  // 클라이언트가 방에 접속 시도 (Connection 직후 로직은 index.ts에 있으나, 
+  // 클라이언트가 방에 접속 시도 (Connection 직후 로직은 index.ts에 있으나,
   // 여기서는 로직 분리를 위해 함수 제공)
-
-  // Note: index.ts에서 이미 hardcoded room logic이 있으므로 
+  // Note: index.ts에서 이미 hardcoded room logic이 있으므로
   // 여기서는 패킷 핸들링 위주로 구현함.
 }
 
@@ -39,7 +37,11 @@ export function handleDisconnect(socketId: string) {
   }
 }
 
-export function handleClientPacket(io: Server, socket: Socket, packet: ServerPacket) {
+export function handleClientPacket(
+  io: Server,
+  socket: Socket,
+  packet: ServerPacket,
+) {
   try {
     if (packet.type === SystemPacketType.JOIN_ROOM) {
       joinPlayerToGame(io, socket, packet.roomId, packet.playerName);
@@ -56,13 +58,19 @@ export function handleClientPacket(io: Server, socket: Socket, packet: ServerPac
       case SystemPacketType.GAME_START_REQ: {
         console.log(`[Server] GAME_START_REQ received from ${socket.id}`);
         const player = session.players.get(socket.id);
-        console.log(`[Server] Player object:`, player ? player.name : "null");
+        console.log(`[Server] Player object:`, player ? player.name : 'null');
         if (player && player.order === 0) {
-          console.log("[Server] Order is 0, starting game... (currently commented out)");
+          console.log(
+            '[Server] Order is 0, starting game... (currently commented out)',
+          );
           // session.startGame();
         } else {
-          console.log(`[Server] Start denied: ${player ? 'not order 0' : 'player not found'}`);
-          socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "방장만 게임을 시작할 수 있습니다." });
+          console.log(
+            `[Server] Start denied: ${player ? 'not order 0' : 'player not found'}`,
+          );
+          socket.emit(SystemPacketType.SYSTEM_MESSAGE, {
+            message: '방장만 게임을 시작할 수 있습니다.',
+          });
         }
         break;
       }
@@ -92,9 +100,16 @@ export function handleClientPacket(io: Server, socket: Socket, packet: ServerPac
 
 // index.ts에서 호출할 초기화/조인 헬퍼
 const MAX_PLAYERS_PER_ROOM = 4;
-export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, playerName: string) {
-  roomId = "HARDCODED_ROOM_1"; // todo: 강제로 하드코드된 방으로 넣기. 나중엔 지워야 함.
-  console.log(`[Server] Player ${playerName} (${socket.id}) joining room ${roomId}`);
+export function joinPlayerToGame(
+  io: Server,
+  socket: Socket,
+  roomId: string,
+  playerName: string,
+) {
+  roomId = 'HARDCODED_ROOM_1'; // todo: 강제로 하드코드된 방으로 넣기. 나중엔 지워야 함.
+  console.log(
+    `[Server] Player ${playerName} (${socket.id}) joining room ${roomId}`,
+  );
   // 중복 조인 방지
   //  if (playerRooms.has(socket.id)) {
   //    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "이미 방에 참여 중입니다." });
@@ -119,13 +134,15 @@ export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, pla
 
   // todo: 여기 방 numClients 랑 session.getPlayerCount() 둘 역할 중복되어서 정리해야 함
   if (numClients >= MAX_PLAYERS_PER_ROOM) {
-    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "Room is full" });
+    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: 'Room is full' });
     socket.disconnect();
     return;
   }
   // 방 인원 검사 해야 함.
   if (session.getPlayerCount() >= MAX_PLAYERS_PER_ROOM) {
-    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "방이 꽉 찼습니다." });
+    socket.emit(SystemPacketType.SYSTEM_MESSAGE, {
+      message: '방이 꽉 찼습니다.',
+    });
     socket.disconnect();
     return;
   }
@@ -150,7 +167,9 @@ export function joinPlayerToGame(io: Server, socket: Socket, roomId: string, pla
     updateType: RoomUpdateType.JOIN,
   };
   socket.to(roomId).emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Others);
-  console.log(`[Server] Sent ROOM_UPDATE (JOIN) to room ${roomId} (excluding ${socket.id})`);
+  console.log(
+    `[Server] Sent ROOM_UPDATE (JOIN) to room ${roomId} (excluding ${socket.id})`,
+  );
 
   // 만약 방이 꽉 찼거나 특정 조건 만족 시 게임 시작?
   // 현재는 자동 시작 or 수동 시작. 일단 자동 시작 로직 예시:

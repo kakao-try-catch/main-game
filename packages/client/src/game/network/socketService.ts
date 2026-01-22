@@ -15,39 +15,39 @@ let socketInstance: Socket | MockSocket | null = null;
  * 소켓 인스턴스 가져오기 (싱글톤)
  */
 export function getSocket(): Socket | MockSocket {
-    if (!socketInstance) {
-        if (USE_MOCK) {
-            console.log('[SocketService] Mock 모드로 실행 중');
-            socketInstance = new MockSocket();
-        } else {
-            console.log(`[SocketService] 실제 서버 연결 중: ${SERVER_URL}`);
-            socketInstance = io(SERVER_URL, {
-                transports: ['websocket'],
-                reconnection: true,
-                reconnectionDelay: 1000,
-                reconnectionAttempts: 5
-            });
-        }
+  if (!socketInstance) {
+    if (USE_MOCK) {
+      console.log('[SocketService] Mock 모드로 실행 중');
+      socketInstance = new MockSocket();
+    } else {
+      console.log(`[SocketService] 실제 서버 연결 중: ${SERVER_URL}`);
+      socketInstance = io(SERVER_URL, {
+        transports: ['websocket'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
+      });
     }
+  }
 
-    return socketInstance;
+  return socketInstance;
 }
 
 /**
  * 소켓 연결 해제
  */
 export function disconnectSocket() {
-    if (socketInstance) {
-        if ('disconnect' in socketInstance) {
-            socketInstance.disconnect();
-        }
-        socketInstance = null;
+  if (socketInstance) {
+    if ('disconnect' in socketInstance) {
+      socketInstance.disconnect();
     }
+    socketInstance = null;
+  }
 }
 
 /**
  * Mock 모드 여부 확인
  */
 export function isMockMode(): boolean {
-    return USE_MOCK;
+  return USE_MOCK;
 }

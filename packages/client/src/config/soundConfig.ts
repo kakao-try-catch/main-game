@@ -60,13 +60,13 @@ export type SFXName =
   | 'appleGameStart'
   | 'appleGameEnd';
 
-  // 플래피버드 SFX (추후 추가)
-  // | 'flappyJump'
-  // | 'flappyHit'
+// 플래피버드 SFX (추후 추가)
+// | 'flappyJump'
+// | 'flappyHit'
 
-  // 지뢰찾기 SFX (추후 추가)
-  // | 'mineClick'
-  // | 'mineExplode'
+// 지뢰찾기 SFX (추후 추가)
+// | 'mineClick'
+// | 'mineExplode'
 
 // ============= BGM Configuration =============
 

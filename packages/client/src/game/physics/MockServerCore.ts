@@ -238,23 +238,12 @@ export class MockServerCore {
 
       // 1. 공기 저항 (수평 속도 감쇠)
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x * 0.985, // 관성을 조금 더 유지 (0.98 -> 0.985)
+        x: bird.velocity.x * 0.985, // 관성을 유지하면서 자연스럽게 감속
         y: bird.velocity.y,
       });
 
-      // 2. 그룹 전체의 중심을 유지하려는 물리 (새들이 화면 밖으로 영원히 나가지 않게 함)
-      // 모든 새의 위치 평균을 계산하여 그룹 자체가 화면 중앙 근처에 머물게 함
-      const groupTargetX = 350; // 모든 새가 머물 전체적인 기준 위치
-      const avgX = this.birds.reduce((sum, b) => sum + b.position.x, 0) / this.birds.length;
-      
-      // 그룹 전체가 너무 멀어지면 당기는 힘 (아주 미약하게)
-      const groupCorrection = (groupTargetX - avgX) * 0.0005; 
-
-      // 개별 순환(1-2-3-4)을 유지하려는 로직을 완전히 제거하여 자유로운 위치 교환 허용
-      Matter.Body.applyForce(bird, bird.position, {
-        x: groupCorrection,
-        y: 0,
-      });
+      // 그룹 중심 유지 및 개별 순서 보정 로직을 완전히 삭제함.
+      // 이제 새들은 플랩 세기에 따라画面 앞을 뚫고 나가거나 뒤로 완전히 밀려날 수 있음.
     }
 
     // 3. 가변 장력 적용
@@ -503,7 +492,7 @@ export class MockServerCore {
       const bird = this.birds[birdIndex];
 
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x + 5.0, // 전진 파워 대폭 강화 (2.5 -> 5.0)
+        x: bird.velocity.x + 3.0, // 전진 파워
         y: this.FLAP_VELOCITY,
       });
 

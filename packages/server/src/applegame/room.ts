@@ -15,7 +15,7 @@ function getRoomByPlayer(socket: Socket) {
   // 1. socket.rooms에서 roomId를 하나 찾아낸 뒤 (socket.id가 아닌 것)
   // 2. 그 roomId로 gameRooms Map에서 데이터를 꺼내옴
   const roomId = Array.from(socket.rooms).find((id) => id !== socket.id);
-  return gameRooms.get(roomId || "");
+  return gameRooms.get(roomId || '');
 }
 
 // 나를 제외한 방 안의 모든 사람에게 (UPDATE_DRAG_AREA 등에 사용)
@@ -23,7 +23,7 @@ const broadcastToOthers = (
   socket: Socket,
   roomId: string,
   eventName: string,
-  data: any
+  data: any,
 ) => {
   socket.to(roomId).emit(eventName, data);
 };
@@ -33,7 +33,7 @@ const broadcastToAll = (
   io: Server,
   roomId: string,
   eventName: string,
-  data: any
+  data: any,
 ) => {
   io.to(roomId).emit(eventName, data);
 };

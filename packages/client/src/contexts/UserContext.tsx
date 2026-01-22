@@ -27,7 +27,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ nickname, color, isHost, setUserInfo }}>
+    <UserContext.Provider
+      value={{
+        nickname,
+        color,
+        isHost,
+        setUserInfo,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

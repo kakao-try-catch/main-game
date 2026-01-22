@@ -124,7 +124,54 @@ npm run type-check
 npm run lint
 
 # Prettier로 포맷팅
-npm run format
+npm run format         # 전체 프로젝트 포맷팅
+npm run format:check   # 포맷팅 확인 (CI용)
+```
+
+---
+
+## 코드 포맷팅
+
+이 프로젝트는 **Prettier**를 사용하여 일관된 코드 스타일을 유지합니다.
+
+### 에디터 설정
+
+1. **VS Code 확장 프로그램 설치**
+   - Prettier - Code formatter (`esbenp.prettier-vscode`)
+   - ESLint (`dbaeumer.vscode-eslint`)
+
+2. **자동 포맷팅**
+   - 저장 시 자동으로 포맷팅됩니다 (`.vscode/settings.json`에 설정됨)
+   - 수동 포맷팅: `Shift + Alt + F` (Windows/Linux) 또는 `Shift + Option + F` (Mac)
+
+### Prettier 설정 (`.prettierrc`)
+
+```json
+{
+  "semi": true,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "printWidth": 80,
+  "tabWidth": 2,
+  "useTabs": false,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "bracketSpacing": true,
+  "bracketSameLine": false
+}
+```
+
+### 명령어
+
+```bash
+# 전체 프로젝트 포맷팅
+pnpm format
+
+# 포맷팅 확인 (수정하지 않음)
+pnpm format:check
+
+# 특정 파일만 포맷팅
+pnpm prettier --write "path/to/file.ts"
 ```
 
 ---

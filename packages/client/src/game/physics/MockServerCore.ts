@@ -354,6 +354,41 @@ export class MockServerCore {
                 this.handleGameOver('ground_collision', String(i) as PlayerId);
                 continue;
             }
+
+            // 2. 천장과의 충돌 (상단 0 기준, 죽지 않고 막기만 함)
+            if (bird.position.y - (this.BIRD_HEIGHT / 2) <= 0) {
+                Matter.Body.setPosition(bird, {
+                    x: bird.position.x,
+                    y: this.BIRD_HEIGHT / 2
+                });
+                // 위로 올라가는 속도만 제거
+                if (bird.velocity.y < 0) {
+                    Matter.Body.setVelocity(bird, { x: bird.velocity.x, y: 0 });
+                }
+            }
+
+            // 3. 좌우 벽과의 충돌 (죽지 않고 막기만 함)
+            // 왼쪽 벽
+            if (bird.position.x - (this.BIRD_WIDTH / 2) <= 0) {
+                Matter.Body.setPosition(bird, {
+                    x: this.BIRD_WIDTH / 2,
+                    y: bird.position.y
+                });
+                if (bird.velocity.x < 0) {
+                    Matter.Body.setVelocity(bird, { x: 0, y: bird.velocity.y });
+                }
+            }
+            // 오른쪽 벽 (1440 기준)
+            if (bird.position.x + (this.BIRD_WIDTH / 2) >= this.screenWidth) {
+                Matter.Body.setPosition(bird, {
+                    x: this.screenWidth - (this.BIRD_WIDTH / 2),
+                    y: bird.position.y
+                });
+                if (bird.velocity.x > 0) {
+                    Matter.Body.setVelocity(bird, { x: 0, y: bird.velocity.y });
+                }
+            }
+
             /*
                         // 2. 파이프와의 충돌
                         for (const pipe of this.pipes) {

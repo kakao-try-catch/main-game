@@ -158,7 +158,7 @@ export class MockServerCore {
                     label: 'bird',
                     collisionFilter: {
                         category: CATEGORY_BIRD,
-                        mask: CATEGORY_BIRD | CATEGORY_PIPE | CATEGORY_GROUND // 서로 튕겨나가도록 다시 추가 (게임오버는 아님)
+                        mask: CATEGORY_BIRD | /*CATEGORY_PIPE |*/ CATEGORY_GROUND // 서로 튕겨나가도록 다시 추가 (게임오버는 아님)
                     }
                 }
             );
@@ -350,27 +350,27 @@ export class MockServerCore {
                 this.handleGameOver('ground_collision', String(i) as PlayerId);
                 continue;
             }
-
-            // 2. 파이프와의 충돌
-            for (const pipe of this.pipes) {
-                // 파이프 좌우 범위 확인
-                const birdLeft = bird.position.x - (this.BIRD_WIDTH / 2);
-                const birdRight = bird.position.x + (this.BIRD_WIDTH / 2);
-                const pipeLeft = pipe.x - (pipe.width / 2);
-                const pipeRight = pipe.x + (pipe.width / 2);
-
-                if (birdRight > pipeLeft && birdLeft < pipeRight) {
-                    // 파이프 상하 범위 확인 (Gap 사이가 아닌 부분)
-                    const birdTop = bird.position.y - (this.BIRD_HEIGHT / 2);
-                    const birdBottom = bird.position.y + (this.BIRD_HEIGHT / 2);
-                    const gapTop = pipe.gapY;
-                    const gapBottom = pipe.gapY + pipe.gap;
-
-                    if (birdTop < gapTop || birdBottom > gapBottom) {
-                        this.handleGameOver('pipe_collision', String(i) as PlayerId);
-                    }
-                }
-            }
+            /*
+                        // 2. 파이프와의 충돌
+                        for (const pipe of this.pipes) {
+                            // 파이프 좌우 범위 확인
+                            const birdLeft = bird.position.x - (this.BIRD_WIDTH / 2);
+                            const birdRight = bird.position.x + (this.BIRD_WIDTH / 2);
+                            const pipeLeft = pipe.x - (pipe.width / 2);
+                            const pipeRight = pipe.x + (pipe.width / 2);
+            
+                            if (birdRight > pipeLeft && birdLeft < pipeRight) {
+                                // 파이프 상하 범위 확인 (Gap 사이가 아닌 부분)
+                                const birdTop = bird.position.y - (this.BIRD_HEIGHT / 2);
+                                const birdBottom = bird.position.y + (this.BIRD_HEIGHT / 2);
+                                const gapTop = pipe.gapY;
+                                const gapBottom = pipe.gapY + pipe.gap;
+            
+                                if (birdTop < gapTop || birdBottom > gapBottom) {
+                                    this.handleGameOver('pipe_collision', String(i) as PlayerId);
+                                }
+                            }
+                        }*/
         }
     }
 

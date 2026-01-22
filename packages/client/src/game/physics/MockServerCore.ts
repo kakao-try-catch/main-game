@@ -233,9 +233,6 @@ export class MockServerCore {
         continue;
       }
 
-      // 고정된 X 좌표 및 개별 순서 보정 완전 해제
-      const currentX = bird.position.x;
-
       // 1. 공기 저항 (수평 속도 감쇠)
       Matter.Body.setVelocity(bird, {
         x: bird.velocity.x * 0.985, // 관성을 유지하면서 자연스럽게 감속
@@ -369,7 +366,7 @@ export class MockServerCore {
       }
 
       // 2. 천장과의 충돌 (상단 0 기준, 죽지 않고 막기만 함)
-      if (bird.position.y - (this.BIRD_HEIGHT / 2) <= 0) {
+      if (bird.position.y - this.BIRD_HEIGHT / 2 <= 0) {
         Matter.Body.setPosition(bird, {
           x: bird.position.x,
           y: this.BIRD_HEIGHT / 2,
@@ -382,7 +379,7 @@ export class MockServerCore {
 
       // 3. 좌우 벽과의 충돌 (죽지 않고 막기만 함)
       // 왼쪽 벽
-      if (bird.position.x - (this.BIRD_WIDTH / 2) <= 0) {
+      if (bird.position.x - this.BIRD_WIDTH / 2 <= 0) {
         Matter.Body.setPosition(bird, {
           x: this.BIRD_WIDTH / 2,
           y: bird.position.y,
@@ -392,9 +389,9 @@ export class MockServerCore {
         }
       }
       // 오른쪽 벽 (1440 기준)
-      if (bird.position.x + (this.BIRD_WIDTH / 2) >= this.screenWidth) {
+      if (bird.position.x + this.BIRD_WIDTH / 2 >= this.screenWidth) {
         Matter.Body.setPosition(bird, {
-          x: this.screenWidth - (this.BIRD_WIDTH / 2),
+          x: this.screenWidth - this.BIRD_WIDTH / 2,
           y: bird.position.y,
         });
         if (bird.velocity.x > 0) {

@@ -118,12 +118,16 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
     // 아래쪽 파이프 높이 계산
     const bottomPipeHeight = screenHeight - gapBottom;
 
+    const offsetX = -width / 2;
+
     // 위쪽 파이프 설정
+    this.upPipe.x = offsetX; // 추가
     this.upPipe.y = 0;
     this.upPipe.setHeight(topPipeHeight);
     this.upPipe.setThickness(width);
 
     // 아래쪽 파이프 설정
+    this.downPipe.x = offsetX; // 추가
     this.downPipe.y = gapBottom;
     this.downPipe.setHeight(bottomPipeHeight);
     this.downPipe.setThickness(width);

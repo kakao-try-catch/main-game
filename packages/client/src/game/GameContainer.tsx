@@ -2,6 +2,7 @@
 import { useEffect, useRef, useLayoutEffect } from 'react';
 import Phaser from 'phaser';
 import { AppleGameScene } from './scene/apple/AppleGameScene';
+import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import { BootScene } from './scene/apple/BootScene';
 import type { AppleGamePreset } from './types/GamePreset';
 
@@ -29,6 +30,8 @@ interface PhaserGameProps {
   currentPlayerIndex?: number;
   /** 게임 프리셋 설정 (로비에서 설정) */
   preset?: AppleGamePreset;
+  /** 현재 게임 종류 */
+  gameType?: string;
 }
 
 export const PhaserGame: React.FC<PhaserGameProps> = ({
@@ -39,6 +42,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
   players = [],
   currentPlayerIndex = 0,
   preset,
+  gameType = 'apple',
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -48,16 +52,20 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
   // 플레이어 데이터가 변경되면 씬에 전달
   useEffect(() => {
     if (!gameRef.current) return;
-    const appleGameScene = gameRef.current.scene.getScene('AppleGameScene');
-    if (appleGameScene) {
-      appleGameScene.events.emit('updatePlayers', {
+
+    const sceneKey = gameType === 'apple' ? 'AppleGameScene' : 'FlappyBirdsScene';
+    const activeScene = gameRef.current.scene.getScene(sceneKey);
+
+    if (activeScene) {
+      activeScene.events.emit('updatePlayers', {
         playerCount,
         players,
         currentPlayerIndex,
         preset,
       });
     }
-  }, [playerCount, players, currentPlayerIndex, preset]);
+
+  }, [playerCount, players, currentPlayerIndex, preset, gameType]);
 
   // 부모 div 크기 변화 감지 (리사이즈 대응)
   useLayoutEffect(() => {
@@ -97,7 +105,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       height: MAX_HEIGHT * ratio,
       parent: parentRef.current,
       backgroundColor: '#FFFFFF',
-      scene: [BootScene, AppleGameScene],
+      scene: gameType === 'apple' ? [BootScene, AppleGameScene] : [FlappyBirdsScene],
       physics: {
         default: 'arcade',
         arcade: {
@@ -114,23 +122,25 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
       onGameReady(game);
     }
 
-    let appleGameScene: Phaser.Scene | null = null;
+    let activeScene: Phaser.Scene | null = null;
     let appleScoredHandler: ((data: { points: number }) => void) | null = null;
 
     game.events.once('ready', () => {
-      appleGameScene = game.scene.getScene('AppleGameScene');
-      if (appleGameScene) {
+      const sceneKey = gameType === 'apple' ? 'AppleGameScene' : 'FlappyBirdsScene';
+      activeScene = game.scene.getScene(sceneKey);
+
+      if (activeScene) {
         // 씬의 create()가 완료된 후에 이벤트 전달
-        if (appleGameScene.scene.isActive()) {
-          appleGameScene.events.emit('updatePlayers', {
+        if (activeScene.scene.isActive()) {
+          activeScene.events.emit('updatePlayers', {
             playerCount,
             players,
             currentPlayerIndex,
             preset,
           });
         } else {
-          appleGameScene.events.once('create', () => {
-            appleGameScene?.events.emit('updatePlayers', {
+          activeScene.events.once('create', () => {
+            activeScene?.events.emit('updatePlayers', {
               playerCount,
               players,
               currentPlayerIndex,
@@ -139,35 +149,37 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({
           });
         }
 
-        if (onAppleScored) {
-          appleScoredHandler = (data: { points: number }) => {
-            onAppleScored(data.points);
-          };
-          appleGameScene.events.on('appleScored', appleScoredHandler);
-        }
-        if (onGameEnd) {
-          appleGameScene.events.on(
-            'gameEnd',
-            (data: { players: PlayerResultData[] }) => {
-              onGameEnd(data.players);
-            },
-          );
+        if (gameType === 'apple') {
+          if (onAppleScored) {
+            appleScoredHandler = (data: { points: number }) => {
+              onAppleScored(data.points);
+            };
+            activeScene.events.on('appleScored', appleScoredHandler);
+          }
+          if (onGameEnd) {
+            activeScene.events.on(
+              'gameEnd',
+              (data: { players: PlayerResultData[] }) => {
+                onGameEnd(data.players);
+              },
+            );
+          }
         }
       }
     });
 
     return () => {
-      if (appleGameScene && appleScoredHandler) {
-        appleGameScene.events.off('appleScored', appleScoredHandler);
+      if (activeScene && appleScoredHandler) {
+        activeScene.events.off('appleScored', appleScoredHandler);
       }
-      if (appleGameScene) {
-        appleGameScene.events.off('gameEnd');
+      if (activeScene) {
+        activeScene.events.off('gameEnd');
       }
       game.destroy(true);
       gameRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onGameReady, onAppleScored]);
+  }, [onGameReady, onAppleScored, gameType]);
 
   // 화면 크기에 따라 1380:862 비율을 유지하는 스타일
   const aspectRatio = MAX_WIDTH / MAX_HEIGHT;

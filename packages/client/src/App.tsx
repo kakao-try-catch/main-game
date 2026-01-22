@@ -31,8 +31,9 @@ function AppContent() {
   // 현재 유저 정보 (서버에서 받아올 예정)
 
   const { nickname, color, setUserInfo } = useUser();
+
   const [currentScreen, setCurrentScreen] = useState<
-    'landing' | 'lobby' | 'game'
+    'landing' | 'lobby' | 'game' | 'flappybird'
   >('landing');
 
   // 현재 유저 정보 (서버에서 받아올 예정)
@@ -147,7 +148,17 @@ function AppContent() {
     setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
   };
 
-  const handleGameStart = (preset: AppleGamePreset) => {
+  const handleGameStart = (gameId: string, preset?: AppleGamePreset) => {
+    // 플래피버드도 나중에 프리셋을 가질 수 있으므로, 
+    // 프리셋이 없는 경우에도 빈 객체라도 설정하여 렌더링 조건을 만족시킵니다.
+    setCurrentPreset(preset || ({} as AppleGamePreset));
+
+    if (gameId === 'apple') {
+      setCurrentScreen('game');
+    } else if (gameId === 'flappy') {
+      setCurrentScreen('flappybird');
+    }
+  };
 
 
     const gameStartReq = {
@@ -278,6 +289,7 @@ function AppContent() {
       >
         {!gameEnded && currentPreset && (
           <PhaserGame
+            gameType={currentScreen === 'game' ? 'apple' : 'flappy'}
             playerCount={players.length}
             players={players}
             currentPlayerIndex={currentUser.playerIndex}

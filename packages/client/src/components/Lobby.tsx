@@ -33,7 +33,7 @@ interface GameSettings {
 
 interface LobbyProps {
   currentPlayer: Player;
-  onGameStart: (preset: AppleGamePreset) => void;
+  onGameStart: (gameId: string, preset?: AppleGamePreset) => void;
 }
 
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
@@ -147,7 +147,11 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
         includeZero: settings.includeZero || false,
       };
 
-      onGameStart(preset);
+      onGameStart('apple', preset);
+    } else if (selectedGame === 'flappy') {
+      onGameStart('flappy');
+    } else {
+      showTooltip('준비 중인 게임입니다!', 'error');
     }
   };
 

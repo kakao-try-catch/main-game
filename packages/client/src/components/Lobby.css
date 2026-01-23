@@ -47,6 +47,28 @@
   text-align: center;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header .section-title {
+  margin-bottom: 0;
+}
+
+.difficulty-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.difficulty-legend .legend-label {
+  color: #666;
+}
+
 /* 플레이어 섹션 */
 .player-section {
   height: 100%;
@@ -207,14 +229,18 @@
 
 .setting-item .nes-select {
   width: auto;
-  min-width: 100px;
+  min-width: 10px;
 }
 
 .setting-item .nes-select select {
   font-size: 12px;
-  padding: 2px 6px;
+  padding: 2px 24px 2px 6px;
   height: 28px;
-  min-width: 100px;
+  min-width: 120px;
+}
+
+.settings-flappy .setting-item .nes-select select {
+  min-width: 80px;
 }
 
 .setting-item .nes-input {
@@ -263,6 +289,24 @@
   transform: translateX(-50%);
   border: 6px solid transparent;
   border-bottom-color: #e76e55;
+}
+
+.radio-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.radio-group .nes-radio {
+  margin-right: 4px;
 }
 
 .settings-empty {

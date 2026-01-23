@@ -1,4 +1,4 @@
-import { APPLE_GAME_CONFIG } from '../../../common/src/config';
+import { APPLE_GAME_CONFIG, AppleGameConfig } from '../../../common/src/config';
 import {
   GamePacketType,
   DropCellIndexPacket,
@@ -10,6 +10,9 @@ import {
   SystemPacketType,
   ReportCard,
   PlayerSummary,
+  GameType,
+  GameConfig,
+  MapSize,
 } from '../../../common/src/packets';
 
 export type GameStatus = 'waiting' | 'playing' | 'ended';
@@ -28,15 +31,18 @@ export interface PlayerState {
 }
 
 export class GameSession {
-  // todo 게임 콘피그는 가변적이어야 함.
-  private readonly config = APPLE_GAME_CONFIG;
+  // selected game in this session (lobby choice)
+  public selectedGameType: GameType = GameType.APPLE_GAME;
+
+  // Store last-updated configs for each game type (client-sent sanitized configs)
+  private gameConfigs: Map<GameType, GameConfig> = new Map();
 
   // 플레이어 공통 상태 관리
   public players: Map<string, PlayerState> = new Map();
 
   // 게임 상태 관리
   public status: GameStatus = 'waiting';
-  public timeLeft: number = this.config.totalTime;
+  public timeLeft: number = APPLE_GAME_CONFIG.totalTime;
   private timerInterval: NodeJS.Timeout | null = null;
 
   // 사과 게임의 것
@@ -46,7 +52,30 @@ export class GameSession {
   constructor(
     public roomId: string,
     private broadcastCallback: (packet: any) => void,
-  ) {}
+  ) {
+    this.initDefaults();
+  }
+
+  private sanitizeTime(rawTime: any): number {
+    const timeNum =
+      typeof rawTime === 'number' && isFinite(rawTime)
+        ? rawTime
+        : APPLE_GAME_CONFIG.totalTime;
+    return Math.max(10, Math.min(300, Math.floor(timeNum)));
+  }
+
+  // initialize defaults for game configs so lobby has a baseline
+  private initDefaults() {
+    if (!this.gameConfigs.has(GameType.APPLE_GAME)) {
+      const defaultCfg: GameConfig = {
+        mapSize: MapSize.MEDIUM,
+        time: APPLE_GAME_CONFIG.totalTime,
+        generation: 0,
+        zero: APPLE_GAME_CONFIG.includeZero,
+      } as GameConfig;
+      this.gameConfigs.set(GameType.APPLE_GAME, defaultCfg);
+    }
+  }
 
   // todo id는 바뀌는 애임. 재접속 관련 로직이 필요함.
   public addPlayer(id: string, name: string) {
@@ -75,14 +104,15 @@ export class GameSession {
     if (this.status === 'playing') return;
 
     this.status = 'playing';
-    this.timeLeft = this.config.totalTime;
+    const applied = this.getAppliedAppleConfig();
+    this.timeLeft = applied.totalTime;
     this.removedIndices.clear();
     this.players.forEach((p) => {
       p.reportCard.score = 0;
     });
 
     // Generate Apples
-    this.generateField();
+    this.generateField(applied);
 
     // Broadcast Field
     const setFieldPacket: SetFieldPacket = {
@@ -113,15 +143,48 @@ export class GameSession {
     }
   }
 
-  private generateField() {
-    const count = this.config.gridCols * this.config.gridRows;
-    const minNumber = this.config.includeZero ? 0 : this.config.minNumber;
+  private generateField(cfg?: AppleGameConfig) {
+    const used = cfg ?? this.getAppliedAppleConfig();
+    const count = used.gridCols * used.gridRows;
+    const minNumber = used.includeZero ? 0 : used.minNumber;
     this.apples = Array.from(
       { length: count },
       () =>
-        Math.floor(Math.random() * (this.config.maxNumber - minNumber + 1)) +
+        Math.floor(Math.random() * (used.maxNumber - minNumber + 1)) +
         minNumber,
     );
+  }
+
+  private getAppliedAppleConfig(): AppleGameConfig {
+    const raw = this.gameConfigs.get(GameType.APPLE_GAME) as
+      | GameConfig
+      | undefined;
+    const mapSize = raw?.mapSize ?? MapSize.MEDIUM;
+    let gridCols = APPLE_GAME_CONFIG.gridCols;
+    let gridRows = APPLE_GAME_CONFIG.gridRows;
+    switch (mapSize) {
+      case MapSize.SMALL:
+        gridCols = 11;
+        gridRows = 6;
+        break;
+      case MapSize.LARGE:
+        gridCols = 25;
+        gridRows = 14;
+        break;
+    }
+
+    const maxNumber = raw?.generation === 1 ? 5 : 9;
+    const totalTime = this.sanitizeTime(raw?.time);
+
+    return {
+      gridCols,
+      gridRows,
+      minNumber: raw?.zero ? 0 : APPLE_GAME_CONFIG.minNumber,
+      maxNumber,
+      totalTime,
+      maxPlayers: APPLE_GAME_CONFIG.maxPlayers,
+      includeZero: !!raw?.zero,
+    };
   }
 
   private startTimer() {
@@ -152,6 +215,84 @@ export class GameSession {
       results,
     };
     this.broadcastCallback(endPacket);
+  }
+
+  public updateGameConfig(selectedGameType: GameType, gameConfig: GameConfig) {
+    console.log(
+      '[GameSession] Updating game config:',
+      selectedGameType,
+      gameConfig,
+    );
+    // Update the session's selected game type based on the incoming packet
+    this.selectedGameType = selectedGameType;
+    // Validate & sanitize incoming config before storing.
+    // IMPORTANT: If a field is missing or invalid, prefer the existing stored
+    // config value for this session. Only fall back to global defaults when
+    // there is no existing stored value.
+    const existingCfg = this.gameConfigs.get(GameType.APPLE_GAME) as
+      | GameConfig
+      | undefined;
+
+    const sanitizeForApple = (raw: any) => {
+      const out: any = {};
+
+      // mapSize: must be one of MapSize values; prefer existing, then MEDIUM
+      const mapSizeValid =
+        raw && raw.mapSize && Object.values(MapSize).includes(raw.mapSize);
+      out.mapSize = mapSizeValid
+        ? raw.mapSize
+        : (existingCfg?.mapSize ?? MapSize.MEDIUM);
+
+      // time: numeric, clamp between sensible bounds; prefer existing, then default
+      out.time =
+        typeof raw?.time === 'number' && isFinite(raw.time)
+          ? this.sanitizeTime(raw.time)
+          : (existingCfg?.time ?? APPLE_GAME_CONFIG.totalTime);
+
+      // generation: 0 or 1 (treat other numbers as 0); prefer existing
+      const gen =
+        typeof raw?.generation === 'number' && Number.isInteger(raw.generation)
+          ? raw.generation
+          : (existingCfg?.generation ?? 0);
+      out.generation = gen === 1 ? 1 : 0;
+
+      // zero: boolean; prefer existing
+      out.zero =
+        typeof raw?.zero === 'boolean'
+          ? raw.zero
+          : (existingCfg?.zero ?? !!APPLE_GAME_CONFIG.includeZero);
+
+      return out as GameConfig;
+    };
+
+    let storedConfig: GameConfig = gameConfig;
+    if (selectedGameType === GameType.APPLE_GAME) {
+      storedConfig = sanitizeForApple(gameConfig as any);
+      // If the new sanitized config has no differences from the existing
+      // stored config for this session, avoid storing and broadcasting it.
+      const prev = existingCfg;
+      const noChange =
+        prev &&
+        prev.mapSize === storedConfig.mapSize &&
+        prev.time === storedConfig.time &&
+        prev.generation === storedConfig.generation &&
+        prev.zero === storedConfig.zero;
+      if (noChange) {
+        console.log('[GameSession] No change in game config; skipping update broadcast.');
+        return;
+      }
+    }
+
+    // store the sanitized config
+    this.gameConfigs.set(selectedGameType, storedConfig);
+
+    // Notify clients about the updated game config
+    const gameConfigUpdatePacket = {
+      type: SystemPacketType.GAME_CONFIG_UPDATE,
+      selectedGameType,
+      gameConfig: storedConfig,
+    };
+    this.broadcastCallback(gameConfigUpdatePacket);
   }
 
   public handleDragConfirm(playerId: string, indices: number[]) {

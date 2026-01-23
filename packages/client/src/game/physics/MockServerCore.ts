@@ -55,7 +55,7 @@ export class MockServerCore {
   private readonly ROPE_SOFTNESS = 50; // 장력 완화 계수 (로그 함수 대체용)
 
   // 파이프 파라미터
-  private readonly PIPE_WIDTH = 80;
+  private readonly PIPE_WIDTH = 120;
   private readonly PIPE_GAP = 200;
   private pipeSpacing: number = 400; // 파이프 간 거리
 
@@ -410,7 +410,7 @@ export class MockServerCore {
       const halfBirdH = (this.BIRD_HEIGHT * 0.8) / 2;
 
       for (const pipe of this.pipes) {
-        const halfPipeW = pipe.width / 2;
+        const halfPipeW = (pipe.width * 0.8) / 2;
 
         // X축 겹침 확인
         if (
@@ -575,6 +575,8 @@ export class MockServerCore {
     return {
       pipeSpeed: this.pipeSpeed,
       pipeSpacing: this.pipeSpacing,
+      pipeGap: this.PIPE_GAP,
+      pipeWidth: this.PIPE_WIDTH,
     };
   }
 

@@ -45,7 +45,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
   // 배경 및 바닥 (무한 스크롤용)
   private groundTile!: Phaser.GameObjects.TileSprite;
-  private groundLine!: Phaser.GameObjects.Rectangle;
+  private background!: Phaser.GameObjects.TileSprite;
+
   // 파이프 데이터 (서버로부터 받은 데이터)
   private targetPipes: PipeData[] = [];
 
@@ -70,15 +71,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   editorCreate(): void {
-    const ratio = this.getRatio();
-    const width = GAME_WIDTH * ratio;
-    const height = GAME_HEIGHT * ratio;
-
-    // 고정 배경색 (카메라를 따라다님)
-    const background = this.add.rectangle(0, 0, width, height, 0x46d1fd);
-    background.setOrigin(0, 0);
-    background.setScrollFactor(0);
-
     this.events.emit('scene-awake');
   }
 
@@ -101,6 +93,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 기존 스프라이트, 그래픽, 파이프 파괴
     this.birdSprites.forEach((bird) => bird?.destroy());
+    this.background?.destroy();
+
     this.ropes.forEach((rope) => rope?.destroy());
     if (this.pipeManager) {
       this.pipeManager.destroy();
@@ -110,9 +104,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     }
     if (this.groundTile) {
       this.groundTile.destroy();
-    }
-    if (this.groundLine) {
-      this.groundLine.destroy();
     }
 
     // 기존 상태 초기화 (중복 생성 방지)
@@ -191,6 +182,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.birdSprites.forEach((bird) => bird.destroy());
     this.ropes.forEach((rope) => rope.destroy());
     this.birdSprites = [];
+    this.background?.destroy();
     this.ropes = [];
     this.targetPositions = [];
     this.ropeMidPoints = []; // 밧줄 관성 데이터 초기화 (누행 방지)
@@ -201,6 +193,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 바닥 그리기
     this.createGroundUI();
+
+    // 배경 그리기
+    this.createBackgroundUI();
 
     // 밧줄 생성
     this.createRopes(this.playerCount);
@@ -222,7 +217,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       const spacing = 90;
       const totalWidth = (count - 1) * spacing;
       const startXOffset = 250 - totalWidth / 2;
-      
+
       const initialX = (startXOffset + i * spacing) * ratio;
       const initialY = (300 + i * 3) * ratio; // yOffset도 반영
       const bird = this.add.sprite(initialX, initialY, birdKey);
@@ -257,39 +252,59 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private createGroundUI() {
     const ratio = this.getRatio();
     const width = GAME_WIDTH * ratio;
-    const groundY = FLAPPY_GROUND_Y * ratio;
-    const groundHeight = 100 * ratio;
+    const imgSizeRatio = 1.3;
 
-    // 땅의 높이를 100px로 설정 (GAME_HEIGHT - 100 = FLAPPY_GROUND_Y)
+    // 이미지의 실제 높이 가져오기
+    const groundTexture = this.textures.get('flappybird_ground');
+    const groundImageHeight =
+      groundTexture.getSourceImage().height * imgSizeRatio;
+    const groundHeight = groundImageHeight * ratio;
+
+    // 시각적 바닥 위치를 실제 충돌 위치보다 위로 올림 (50px)
+    const visualGroundOffset = 40 * ratio;
+    const groundY = FLAPPY_GROUND_Y * ratio - visualGroundOffset;
+
     // TileSprite를 사용하여 카메라 이동 시 패턴이 반복되게 함
-    this.groundTile = this.add.tileSprite(0, groundY, width, groundHeight, '');
-    this.groundTile.setOrigin(0, 0);
-    this.groundTile.setScrollFactor(0); // 실제 이동은 update()에서 tilePositionX로 제어
-
-    // 바닥 색상 (패턴 대신 색상 채우기용 텍스처 생성)
-    if (!this.textures.exists('groundTexture')) {
-      const canvas = this.textures.createCanvas('groundTexture', 64, 128); // 넉넉하게 생성
-      if (canvas) {
-        const ctx = canvas.getContext();
-        ctx.fillStyle = '#DEB887'; // BurlyWood
-        ctx.fillRect(0, 0, 64, 128);
-        canvas.update();
-      }
-    }
-    this.groundTile.setTexture('groundTexture');
-    this.groundTile.setDepth(200); // 모든 요소보다 위쪽
-
-    // 바닥 상단 갈색 선
-    this.groundLine = this.add.rectangle(
+    this.groundTile = this.add.tileSprite(
       0,
       groundY,
       width,
-      4 * ratio,
-      0x8b4513,
+      groundHeight,
+      'flappybird_ground',
     );
-    this.groundLine.setOrigin(0, 0);
-    this.groundLine.setScrollFactor(0);
-    this.groundLine.setDepth(200);
+    this.groundTile.setOrigin(0, 0);
+    this.groundTile.setScrollFactor(0); // 실제 이동은 update()에서 tilePositionX로 제어
+    this.groundTile.setTileScale(ratio * imgSizeRatio);
+    this.groundTile.setDepth(200); // 모든 요소보다 위쪽
+  }
+
+  /**
+   * 배경  그래픽 생성 (무한 스크롤 TileSprite 방식)
+   */
+  private createBackgroundUI() {
+    const backgroundKey = `flappybird_background`;
+    const ratio = this.getRatio();
+    const width = GAME_WIDTH * ratio;
+    const offset = 70;
+    const height = GAME_HEIGHT * ratio + offset;
+
+    // TileSprite 생성 (화면 전체 크기)
+    this.background = this.add.tileSprite(
+      0,
+      -offset,
+      width,
+      height,
+      backgroundKey,
+    );
+    this.background.setOrigin(0, 0);
+    this.background.setScrollFactor(0);
+    this.background.setAlpha(0.5);
+
+    // 깊이 설정: 가장 뒤에 배치
+    this.background.setDepth(-1);
+
+    // 이미지 크기가 화면에 비해 너무 크거나 작다면 scale 조절 (선택 사항)
+    this.background.setTileScale(ratio);
   }
 
   /**
@@ -494,7 +509,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         sprite.x = Phaser.Math.Linear(sprite.x, target.x * ratio, 0.3);
         sprite.y = Phaser.Math.Linear(sprite.y, target.y * ratio, 0.3);
 
-        // 회전 애니메이션: 기본적으로 서버에서 보낸 각도를 우선 사용하고, 
+        // 회전 애니메이션: 기본적으로 서버에서 보낸 각도를 우선 사용하고,
         // 서버 각도가 0이면 velocityY를 기반으로 부드럽게 계산
         let angle = target.angle;
         if (angle === 0) {
@@ -525,12 +540,26 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         0.1
       );
     }
+    // 3. 지면/배경 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
+    if (this.gameStarted && !this.isGameOver) {
+      // 서버의 실제 pipeSpeed를 가져와서 동기화
+      let pipeSpeed = 1.5; // 기본값
+      if (this.mockServerCore) {
+        pipeSpeed = this.mockServerCore.getGameConfig().pipeSpeed;
+      }
+      // pipeSpeed는 frame당 픽셀이므로, 60fps 기준으로 초당 픽셀로 변환
+      const SPEED_PX_PER_SECOND = pipeSpeed * 60;
 
     // 지면 스크롤 처리 (카메라 이동에 맞춰 조정)
     if (this.gameStarted && !this.isGameOver) {
       // 카메라의 현재 X 위치를 기반으로 바닥 스크롤
       if (this.groundTile) {
         this.groundTile.tilePositionX = this.cameras.main.scrollX;
+      }
+      if (this.background) {
+        // 바닥 속도의 0.3배로 이동
+        const bgSpeed = SPEED_PX_PER_SECOND * 0.3;
+        this.background.tilePositionX += (bgSpeed * _delta) / 1000;
       }
     }
 

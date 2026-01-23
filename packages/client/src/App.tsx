@@ -149,6 +149,11 @@ function AppContent() {
     playSFX('flappyJump');
   }, [playSFX]);
 
+  // 플래피버드 충돌 사운드 핸들러
+  const handleFlappyStrike = useCallback(() => {
+    playSFX('flappyStrike');
+  }, [playSFX]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
@@ -386,6 +391,7 @@ function AppContent() {
             onScoreUpdate={handleFlappyScoreUpdate}
             onFlappyGameEnd={handleFlappyGameEnd}
             onFlappyJump={handleFlappyJump}
+            onFlappyStrike={handleFlappyStrike}
             onGameReady={handleGameReady}
           />
         )}

@@ -9,11 +9,11 @@
  */
 
 // ============= BGM Imports =============
-import appleGameBGM from '../assets/sounds/BGM/applegamebgm.mp3';
-import flappyBirdBGM from '../assets/sounds/BGM/flappybirdbgm.mp3';
-import minesweeperBGM from '../assets/sounds/BGM/minesweeperbgm.mp3';
+import appleGameBGM from '../assets/sounds/testapplebgm.mp3';
 // TODO: 나중에 추가
 // import lobbyBGM from '../assets/sounds/lobby.mp3';
+// import flappyBirdBGM from '../assets/sounds/flappybird.mp3';
+// import minesweeperBGM from '../assets/sounds/minesweeper.mp3';
 
 // ============= SFX Imports =============
 // 사과 게임 SFX
@@ -28,14 +28,12 @@ import buttonHoverSound from '../assets/sounds/SFX/buttonHover.mp3';
 // 플래피버드 SFX
 import flappyJumpSound from '../assets/sounds/SFX/flappyJump.mp3';
 import flappyStrikeSound from '../assets/sounds/SFX/flappybirdStrike.mp3';
-import flappyScoreSound from '../assets/sounds/SFX/flappyScore.mp3';
 // TODO: 나중에 추가
 // import flappyHitSound from '../assets/sounds/SFX/flappyHit.mp3';
 
 // 지뢰찾기 SFX
 // import mineClickSound from '../assets/sounds/SFX/mineClick.mp3';
-import mineExplodeSound from '../assets/sounds/SFX/mine.mp3';
-import mineFlagSound from '../assets/sounds/SFX/flag.mp3';
+// import mineExplodeSound from '../assets/sounds/SFX/mineExplode.mp3';
 
 // ============= Type Definitions =============
 
@@ -65,12 +63,7 @@ export type SFXName =
 
   // 플래피버드 SFX
   | 'flappyJump'
-  | 'flappyStrike'
-  | 'flappyScore'
-
-  // 지뢰찾기 SFX
-  | 'mineExplode'
-  | 'mineFlag';
+  | 'flappyStrike';
 
 // 플래피버드 SFX (추후 추가)
 // | 'flappyHit'
@@ -91,11 +84,11 @@ export const BGM_CONFIG: Record<BGMName, SoundConfig> = {
     volume: 1.0,
   },
   flappyBird: {
-    file: flappyBirdBGM,
+    file: appleGameBGM, // TODO: 플래피버드 BGM 추가 필요
     volume: 0.8,
   },
   minesweeper: {
-    file: minesweeperBGM,
+    file: appleGameBGM, // TODO: 지뢰찾기 BGM 추가 필요
     volume: 0.8,
   },
 };
@@ -107,7 +100,7 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
   buttonClick: {
     file: buttonClickSound,
     volume: 1.0,
-    startTime: 0,
+    startTime: 0.2,
   },
   buttonHover: {
     file: buttonHoverSound,
@@ -118,63 +111,29 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
   // 사과 게임 효과음
   appleDrop: {
     file: appleDropSound,
-    volume: 1.0,
+    volume: 0.7,
     startTime: 0,
   },
   appleGameStart: {
     file: gameStartSound,
-    volume: 1.0,
+    volume: 0.8,
     startTime: 0,
   },
   appleGameEnd: {
     file: gameEndSound,
-    volume: 1.0,
+    volume: 0.8,
     startTime: 0,
   },
 
   // 플래피버드 효과음
   flappyJump: {
     file: flappyJumpSound,
-    volume: 1.0,
-    startTime: 0,
-  },
-  flappyStrike: {
-    file: flappyStrikeSound,
-    volume: 1.0,
-    startTime: 0,
-  },
-  flappyScore: {
-    file: flappyScoreSound,
-    volume: 1.0,
-    startTime: 0,
-  },
-
-  // 지뢰찾기 효과음
-  mineExplode: {
-    file: mineExplodeSound,
-    volume: 1.0,
-    startTime: 0,
-  },
-  mineFlag: {
-    file: mineFlagSound,
-    volume: 1.0,
-    startTime: 0,
-  },
-
-  // 플래피버드 효과음
-  flappyJump: {
-    file: flappyJumpSound,
-    volume: 0.9,
+    volume: 0.7,
     startTime: 0,
   },
   flappyStrike: {
     file: flappyStrikeSound,
     volume: 0.8,
-    startTime: 0,
-  },
-  flappyScore: {
-    file: flappyScoreSound,
-    volume: 0.7,
     startTime: 0,
   },
 
@@ -183,6 +142,7 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
 
   // TODO: 지뢰찾기 효과음 추가
   // mineClick: { file: mineClickSound, volume: 0.6 },
+  // mineExplode: { file: mineExplodeSound, volume: 0.9 },
 };
 
 // ============= Helper Functions =============

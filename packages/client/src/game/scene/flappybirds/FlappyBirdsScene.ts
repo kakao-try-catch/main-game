@@ -476,7 +476,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       );
       this.gameStarted = false; // 스크롤 멈춤
       this.isGameOver = true; // 게임 오버 상태 기록
-
+      this.events.emit('flappyStrike');
       // React로 게임 종료 데이터 전달
       const gameEndData: FlappyBirdGameEndData = {
         finalScore: data.finalScore,

@@ -1,13 +1,24 @@
 import { Server, Socket } from 'socket.io';
 // @ts-ignore
 import { joinPlayerToGame, getSession } from '../applegame/serverHandler';
+// Mock Socket + Server with minimal adapter.rooms tracking
+const mockAdapter = { rooms: new Map<string, Set<string>>() };
 
-// Mock Socket
 const createMockSocket = (id: string): Socket => {
   return {
     id,
-    join: (roomId: string) =>
-      console.log(`[Socket ${id}] Joined room: ${roomId}`),
+    join: (roomId: string) => {
+      let set = mockAdapter.rooms.get(roomId);
+      if (!set) {
+        set = new Set<string>();
+        mockAdapter.rooms.set(roomId, set);
+      }
+      set.add(id);
+      console.log(`[Socket ${id}] Joined room: ${roomId}`);
+    },
+    disconnect: () => {
+      console.log(`[Socket ${id}] Disconnected`);
+    },
     emit: (event: string, data: any) =>
       console.log(
         `[Socket ${id}] Receive '${event}':`,
@@ -25,6 +36,7 @@ const createMockSocket = (id: string): Socket => {
 
 // Mock Server
 const mockIo = {
+  sockets: { adapter: mockAdapter },
   to: (roomId: string) => ({
     emit: (event: string, data: any) =>
       console.log(
@@ -36,7 +48,7 @@ const mockIo = {
 
 const roomId = 'test-room';
 
-async function runTest() {
+async function runTest_4PlayerJoin() {
   console.log('=== TEST START: Joining 5 Players ===');
 
   const players = ['a1', 'a2', 'a3', 'a4', 'a5'];
@@ -64,4 +76,4 @@ async function runTest() {
   console.log('\n=== TEST END ===');
 }
 
-runTest();
+runTest_4PlayerJoin();

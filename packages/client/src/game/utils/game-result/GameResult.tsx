@@ -103,7 +103,7 @@ const GameResult: React.FC<GameResultProps> = ({
             const crown = getCrownProps(player.rank);
             return (
               <div
-                key={player.id}
+                key={`player-${player.playerIndex}`}
                 style={{
                   ...getRankItemStyle(ratio),
                   marginLeft: idx === 0 ? 0 : -5 * ratio,
@@ -123,13 +123,13 @@ const GameResult: React.FC<GameResultProps> = ({
                   style={{
                     ...getPlayerNameStyle(ratio),
                     marginTop: 0,
-                    fontSize: getNameFontSize(player.name.length),
+                    fontSize: getNameFontSize(player.playerName.length),
                     whiteSpace: 'nowrap',
                     maxWidth: '210px',
                     textAlign: 'center',
                   }}
                 >
-                  {player.name}
+                  {player.playerName}
                 </div>
                 <div
                   style={{

@@ -33,13 +33,14 @@ const {
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   // players: prefer server-provided players (from zustand store), fallback to currentPlayer
   const storePlayers = useGameStore((s) => s.players);
+  // LobbyPlayer 제거하면서 제거 예정
   const players: LobbyPlayer[] =
     storePlayers && storePlayers.length > 0
-      ? storePlayers.map((p) => ({
-          id: String(p.order ?? p.playerName),
+      ? storePlayers.map((p, index) => ({
+          id: String(index),
           name: p.playerName,
           color: p.color,
-          isHost: false,
+          isHost: p.isHost,
         }))
       : [{ ...currentPlayer, color: PLAYER_COLORS[0] }];
 

@@ -3,6 +3,7 @@ import AppleGameManager from './AppleGameManager';
 import type { AppleGamePreset } from '../../types/AppleGamePreset';
 import { resolvePreset } from '../../types/AppleGamePreset';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
+import type { PlayerData } from '../../types/common';
 
 // You can write more code here
 
@@ -174,7 +175,7 @@ export default class AppleGameScene extends Phaser.Scene {
       'updatePlayers',
       (data: {
         playerCount: number;
-        players: { id: string; name: string; score: number; color: string }[];
+        players: PlayerData[];
         currentPlayerIndex: number;
         preset?: AppleGamePreset;
       }) => {

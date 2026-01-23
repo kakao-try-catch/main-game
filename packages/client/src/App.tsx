@@ -61,16 +61,18 @@ function AppContent() {
     players: PlayerResultData[];
   } | null>(null);
 
+  // TODO: 이 players state는 레거시 코드입니다. gameStore.ts의 players로 마이그레이션 필요
+  // TODO: score는 추후 ReportCard를 PlayerData에 통합 후 재작업 예정
   const [players, setPlayers] = useState<PlayerData[]>([
     {
-      id: 'id_1',
-      name: nickname || '1P',
-      score: 0,
+      playerName: nickname || '1P',
       color: color || PLAYER_COLORS[0],
+      score: 0,
+      isHost: true,
     },
-    { id: 'id_2', name: '2P', score: 0, color: PLAYER_COLORS[1] },
-    { id: 'id_3', name: '3P', score: 0, color: PLAYER_COLORS[2] },
-    { id: 'id_4', name: '4P', score: 0, color: PLAYER_COLORS[3] },
+    { playerName: '2P', color: PLAYER_COLORS[1], score: 0, isHost: false },
+    { playerName: '3P', color: PLAYER_COLORS[2], score: 0, isHost: false },
+    { playerName: '4P', color: PLAYER_COLORS[3], score: 0, isHost: false },
   ]);
 
   // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
@@ -88,12 +90,13 @@ function AppContent() {
   const [gameKey, setGameKey] = useState(0);
 
   // 점수 증가 함수
+  // TODO: score는 추후 ReportCard 통합 후 재작업 예정
   const handleAppleScored = useCallback(
     (points: number) => {
       try {
         setPlayers((prevPlayers) =>
-          prevPlayers.map((player) =>
-            player.id === currentUser.id
+          prevPlayers.map((player, index) =>
+            index === currentUser.playerIndex
               ? { ...player, score: player.score + points }
               : player,
           ),
@@ -103,7 +106,7 @@ function AppContent() {
         console.error('Apple scored handler error:', error);
       }
     },
-    [currentUser.id, playSFX],
+    [currentUser.playerIndex, playSFX],
   );
 
   const handleGameReady = useCallback((game: Phaser.Game) => {
@@ -199,7 +202,7 @@ function AppContent() {
     setPlayers((prev) =>
       prev.map((player, index) =>
         index === 0
-          ? { ...player, name: inputNickname, color: userColor }
+          ? { ...player, playerName: inputNickname, color: userColor }
           : player,
       ),
     );
@@ -319,13 +322,14 @@ function AppContent() {
           }}
         >
           {/* 사과게임: 4개 플레이어카드 */}
+          {/* TODO: score는 추후 ReportCard 통합 후 재작업 예정 */}
           {currentGameType === 'apple' &&
             players
               .slice(0, testPlayerCount)
-              .map((player) => (
+              .map((player, index) => (
                 <PlayerCard
-                  key={player.id}
-                  name={player.name}
+                  key={`player-${index}`}
+                  name={player.playerName}
                   score={player.score}
                   color={player.color}
                 />

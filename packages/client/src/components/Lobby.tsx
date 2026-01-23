@@ -1142,7 +1142,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                         </div>
                       ) : game.id === 'flappy' ? (
                         <div
-                          className="settings-edit"
+                          className="settings-edit settings-flappy"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
                               handleSelectGame(game.id);
@@ -1162,18 +1162,19 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
                                 style={{
                                   color:
                                     settings.pipeGap === 'wide'
-                                      ? '#4CAF50'
+                                      ? DIFFICULTY_COLORS.easy
                                       : settings.pipeGap === 'normal'
-                                        ? '#FFC107'
-                                        : '#F44336',
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="wide" style={{ color: '#4CAF50' }}>넓음</option>
-                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
-                                <option value="narrow" style={{ color: '#F44336' }}>좁음</option>
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
                               </select>
                             </div>
                           </div>
@@ -1189,18 +1190,19 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
                                 style={{
                                   color:
                                     settings.pipeWidth === 'narrow'
-                                      ? '#4CAF50'
+                                      ? DIFFICULTY_COLORS.easy
                                       : settings.pipeWidth === 'normal'
-                                        ? '#FFC107'
-                                        : '#F44336',
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="narrow" style={{ color: '#4CAF50' }}>좁음</option>
-                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
-                                <option value="wide" style={{ color: '#F44336' }}>넓음</option>
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.easy }}>좁음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.hard }}>넓음</option>
                               </select>
                             </div>
                           </div>
@@ -1216,18 +1218,19 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
                                 style={{
                                   color:
                                     settings.pipeSpacing === 'wide'
-                                      ? '#4CAF50'
+                                      ? DIFFICULTY_COLORS.easy
                                       : settings.pipeSpacing === 'normal'
-                                        ? '#FFC107'
-                                        : '#F44336',
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="wide" style={{ color: '#4CAF50' }}>넓음</option>
-                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
-                                <option value="narrow" style={{ color: '#F44336' }}>좁음</option>
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
                               </select>
                             </div>
                           </div>
@@ -1243,18 +1246,19 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
                                 style={{
                                   color:
                                     settings.pipeSpeed === 'slow'
-                                      ? '#4CAF50'
+                                      ? DIFFICULTY_COLORS.easy
                                       : settings.pipeSpeed === 'normal'
-                                        ? '#FFC107'
-                                        : '#F44336',
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="slow" style={{ color: '#4CAF50' }}>느림</option>
-                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
-                                <option value="fast" style={{ color: '#F44336' }}>빠름</option>
+                                <option value="slow" style={{ color: DIFFICULTY_COLORS.easy }}>느림</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="fast" style={{ color: DIFFICULTY_COLORS.hard }}>빠름</option>
                               </select>
                             </div>
                           </div>

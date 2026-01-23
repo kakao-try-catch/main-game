@@ -47,7 +47,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
   // 바닥 (무한 스크롤용)
   private groundTile!: Phaser.GameObjects.TileSprite;
-  private groundLine!: Phaser.GameObjects.Rectangle;
+  private background!: Phaser.GameObjects.TileSprite;
+
   // 파이프 데이터 (서버로부터 받은 데이터)
   private targetPipes: PipeData[] = [];
 
@@ -73,15 +74,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   editorCreate(): void {
-    const ratio = this.getRatio();
-    const width = GAME_WIDTH * ratio;
-    const height = GAME_HEIGHT * ratio;
-
-    // 고정 배경색 (카메라를 따라다님)
-    const background = this.add.rectangle(0, 0, width, height, 0x46d1fd);
-    background.setOrigin(0, 0);
-    background.setScrollFactor(0);
-
     this.events.emit('scene-awake');
   }
 
@@ -104,6 +96,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 기존 스프라이트, 그래픽, 파이프 파괴
     this.birdSprites.forEach((bird) => bird?.destroy());
+    this.background?.destroy();
+
     this.ropes.forEach((rope) => rope?.destroy());
     if (this.pipeManager) {
       this.pipeManager.destroy();
@@ -113,9 +107,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     }
     if (this.groundTile) {
       this.groundTile.destroy();
-    }
-    if (this.groundLine) {
-      this.groundLine.destroy();
     }
 
     // 기존 상태 초기화 (중복 생성 방지)
@@ -189,6 +180,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.birdSprites.forEach((bird) => bird.destroy());
     this.ropes.forEach((rope) => rope.destroy());
     this.birdSprites = [];
+    this.background?.destroy();
     this.ropes = [];
     this.targetPositions = [];
     this.ropeMidPoints = []; // 밧줄 관성 데이터 초기화 (누행 방지)
@@ -199,6 +191,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 바닥 그리기
     this.createGroundUI();
+
+    // 배경 그리기
+    this.createBackgroundUI();
 
     // 밧줄 생성
     this.createRopes(this.playerCount);
@@ -249,39 +244,59 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private createGroundUI() {
     const ratio = this.getRatio();
     const width = GAME_WIDTH * ratio;
-    const groundY = FLAPPY_GROUND_Y * ratio;
-    const groundHeight = 100 * ratio;
+    const imgSizeRatio = 1.3;
 
-    // 땅의 높이를 100px로 설정 (GAME_HEIGHT - 100 = FLAPPY_GROUND_Y)
+    // 이미지의 실제 높이 가져오기
+    const groundTexture = this.textures.get('flappybird_ground');
+    const groundImageHeight =
+      groundTexture.getSourceImage().height * imgSizeRatio;
+    const groundHeight = groundImageHeight * ratio;
+
+    // 시각적 바닥 위치를 실제 충돌 위치보다 위로 올림 (50px)
+    const visualGroundOffset = 40 * ratio;
+    const groundY = FLAPPY_GROUND_Y * ratio - visualGroundOffset;
+
     // TileSprite를 사용하여 카메라 이동 시 패턴이 반복되게 함
-    this.groundTile = this.add.tileSprite(0, groundY, width, groundHeight, '');
-    this.groundTile.setOrigin(0, 0);
-    this.groundTile.setScrollFactor(0); // 실제 이동은 update()에서 tilePositionX로 제어
-
-    // 바닥 색상 (패턴 대신 색상 채우기용 텍스처 생성)
-    if (!this.textures.exists('groundTexture')) {
-      const canvas = this.textures.createCanvas('groundTexture', 64, 128); // 넉넉하게 생성
-      if (canvas) {
-        const ctx = canvas.getContext();
-        ctx.fillStyle = '#DEB887'; // BurlyWood
-        ctx.fillRect(0, 0, 64, 128);
-        canvas.update();
-      }
-    }
-    this.groundTile.setTexture('groundTexture');
-    this.groundTile.setDepth(200); // 모든 요소보다 위쪽
-
-    // 바닥 상단 갈색 선
-    this.groundLine = this.add.rectangle(
+    this.groundTile = this.add.tileSprite(
       0,
       groundY,
       width,
-      4 * ratio,
-      0x8b4513,
+      groundHeight,
+      'flappybird_ground',
     );
-    this.groundLine.setOrigin(0, 0);
-    this.groundLine.setScrollFactor(0);
-    this.groundLine.setDepth(200);
+    this.groundTile.setOrigin(0, 0);
+    this.groundTile.setScrollFactor(0); // 실제 이동은 update()에서 tilePositionX로 제어
+    this.groundTile.setTileScale(ratio * imgSizeRatio);
+    this.groundTile.setDepth(200); // 모든 요소보다 위쪽
+  }
+
+  /**
+   * 배경  그래픽 생성 (무한 스크롤 TileSprite 방식)
+   */
+  private createBackgroundUI() {
+    const backgroundKey = `flappybird_background`;
+    const ratio = this.getRatio();
+    const width = GAME_WIDTH * ratio;
+    const offset = 70;
+    const height = GAME_HEIGHT * ratio + offset;
+
+    // TileSprite 생성 (화면 전체 크기)
+    this.background = this.add.tileSprite(
+      0,
+      -offset,
+      width,
+      height,
+      backgroundKey,
+    );
+    this.background.setOrigin(0, 0);
+    this.background.setScrollFactor(0);
+    this.background.setAlpha(0.5);
+
+    // 깊이 설정: 가장 뒤에 배치
+    this.background.setDepth(-1);
+
+    // 이미지 크기가 화면에 비해 너무 크거나 작다면 scale 조절 (선택 사항)
+    this.background.setTileScale(ratio);
   }
 
   /**

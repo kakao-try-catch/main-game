@@ -25,9 +25,9 @@ import gameEndSound from '../assets/sounds/SFX/gameResult.mp3';
 import buttonClickSound from '../assets/sounds/SFX/buttonClick.mp3';
 import buttonHoverSound from '../assets/sounds/SFX/buttonHover.mp3';
 
-// TODO: 나중에 추가
 // 플래피버드 SFX
-// import flappyJumpSound from '../assets/sounds/SFX/flappyJump.mp3';
+import flappyJumpSound from '../assets/sounds/SFX/flappyJump.mp3';
+// TODO: 나중에 추가
 // import flappyHitSound from '../assets/sounds/SFX/flappyHit.mp3';
 
 // 지뢰찾기 SFX
@@ -58,10 +58,12 @@ export type SFXName =
   // 사과 게임 SFX
   | 'appleDrop'
   | 'appleGameStart'
-  | 'appleGameEnd';
+  | 'appleGameEnd'
+
+  // 플래피버드 SFX
+  | 'flappyJump';
 
 // 플래피버드 SFX (추후 추가)
-// | 'flappyJump'
 // | 'flappyHit'
 
 // 지뢰찾기 SFX (추후 추가)
@@ -121,8 +123,14 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
     startTime: 0,
   },
 
+  // 플래피버드 효과음
+  flappyJump: {
+    file: flappyJumpSound,
+    volume: 0.7,
+    startTime: 0,
+  },
+
   // TODO: 플래피버드 효과음 추가
-  // flappyJump: { file: flappyJumpSound, volume: 0.7 },
   // flappyHit: { file: flappyHitSound, volume: 0.8 },
 
   // TODO: 지뢰찾기 효과음 추가

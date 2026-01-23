@@ -446,6 +446,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       playerId: playerId,
       timestamp: Date.now(),
     });
+
+    // React로 점프 사운드 재생 이벤트 전달
+    this.events.emit('flappyJump');
+
     console.log(`[FlappyBirdsScene] Bird ${playerId} Flap!`);
   }
 

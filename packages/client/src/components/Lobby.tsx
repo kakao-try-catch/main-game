@@ -1140,6 +1140,125 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                             </div>
                           </div>
                         </div>
+                      ) : game.id === 'flappy' ? (
+                        <div
+                          className="settings-edit"
+                          onClick={(e) => {
+                            if (selectedGame !== game.id) {
+                              handleSelectGame(game.id);
+                            }
+                            e.stopPropagation();
+                          }}
+                        >
+                          <div className="setting-item">
+                            <label>상하 간격:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeGap}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeGap',
+                                    e.target.value,
+                                  )
+                                }
+                                style={{
+                                  color:
+                                    settings.pipeGap === 'wide'
+                                      ? '#4CAF50'
+                                      : settings.pipeGap === 'normal'
+                                        ? '#FFC107'
+                                        : '#F44336',
+                                }}
+                              >
+                                <option value="wide" style={{ color: '#4CAF50' }}>넓음</option>
+                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
+                                <option value="narrow" style={{ color: '#F44336' }}>좁음</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>파이프 넓이:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeWidth}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeWidth',
+                                    e.target.value,
+                                  )
+                                }
+                                style={{
+                                  color:
+                                    settings.pipeWidth === 'narrow'
+                                      ? '#4CAF50'
+                                      : settings.pipeWidth === 'normal'
+                                        ? '#FFC107'
+                                        : '#F44336',
+                                }}
+                              >
+                                <option value="narrow" style={{ color: '#4CAF50' }}>좁음</option>
+                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
+                                <option value="wide" style={{ color: '#F44336' }}>넓음</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>좌우 간격:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeSpacing}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeSpacing',
+                                    e.target.value,
+                                  )
+                                }
+                                style={{
+                                  color:
+                                    settings.pipeSpacing === 'wide'
+                                      ? '#4CAF50'
+                                      : settings.pipeSpacing === 'normal'
+                                        ? '#FFC107'
+                                        : '#F44336',
+                                }}
+                              >
+                                <option value="wide" style={{ color: '#4CAF50' }}>넓음</option>
+                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
+                                <option value="narrow" style={{ color: '#F44336' }}>좁음</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>이동 속도:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeSpeed}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeSpeed',
+                                    e.target.value,
+                                  )
+                                }
+                                style={{
+                                  color:
+                                    settings.pipeSpeed === 'slow'
+                                      ? '#4CAF50'
+                                      : settings.pipeSpeed === 'normal'
+                                        ? '#FFC107'
+                                        : '#F44336',
+                                }}
+                              >
+                                <option value="slow" style={{ color: '#4CAF50' }}>느림</option>
+                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
+                                <option value="fast" style={{ color: '#F44336' }}>빠름</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
                       ) : (
                         <div
                           className="settings-edit settings-empty"

@@ -32,6 +32,7 @@ export interface PlayerData {
   playerName: string;
   color: string;
   score: number;
+  isHost: boolean;
 }
 export interface UpdateNumberPacket {
   type: SystemPacketType.UPDATE_NUMBER;

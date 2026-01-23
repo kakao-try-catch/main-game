@@ -42,13 +42,14 @@ export interface PlayerData {
   playerName: string;
   color: string;
   score: number; // User requested score to be in PlayerData
+  isHost: boolean; // whether this player is the room host
 }
 
 export interface ReportCard {
   score: number;
 }
 
-export interface AppleGameReportCard extends ReportCard { }
+export interface AppleGameReportCard extends ReportCard {}
 
 export interface MineSweeperReportCard extends ReportCard {
   flags: number;

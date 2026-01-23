@@ -73,16 +73,21 @@ export function handleClientPacket(
     switch (packet.type) {
       case SystemPacketType.GAME_START_REQ: {
         console.log(`[Server] GAME_START_REQ received from ${socket.id}`);
-        const player = session.players.get(socket.id);
-        console.log(`[Server] Player object:`, player ? player.name : 'null');
-        if (player && player.order === 0) {
+        console.log(
+          `[Server] Player object:`,
+          session.players.get(socket.id)
+            ? session.players.get(socket.id)!.name
+            : 'null',
+        );
+        if (session.isHost(socket.id)) {
           console.log(
             '[Server] Order is 0, starting game... (currently commented out)',
           );
           session.startGame();
         } else {
+          const playerExists = !!session.players.get(socket.id);
           console.log(
-            `[Server] Start denied: ${player ? 'not order 0' : 'player not found'}`,
+            `[Server] Start denied: ${playerExists ? 'not order 0' : 'player not found'}`,
           );
           socket.emit(SystemPacketType.SYSTEM_MESSAGE, {
             message: '방장만 게임을 시작할 수 있습니다.',
@@ -152,6 +157,13 @@ export function handleClientPacket(
         break;
 
       case SystemPacketType.GAME_CONFIG_UPDATE_REQ:
+        // Only host may update game config
+        if (!session.isHost(socket.id)) {
+          socket.emit(SystemPacketType.SYSTEM_MESSAGE, {
+            message: '방장만 게임 설정을 변경할 수 있습니다.',
+          });
+          break;
+        }
         session.updateGameConfig(packet.selectedGameType, packet.gameConfig);
         break;
 

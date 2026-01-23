@@ -294,7 +294,9 @@ export class GameSession {
         // game type is the same as the incoming one.
         prevSelectedGameType === selectedGameType;
       if (noChange) {
-        console.log('[GameSession] No change in game config; skipping update broadcast.');
+        console.log(
+          '[GameSession] No change in game config; skipping update broadcast.',
+        );
         return;
       }
     }
@@ -352,7 +354,14 @@ export class GameSession {
         playerName: p.name,
         color: p.color,
         score: p.reportCard.score,
+        isHost: p.order === 0,
       }));
+  }
+
+  // Returns true if the given playerId corresponds to the host (order 0)
+  public isHost(playerId: string): boolean {
+    const p = this.players.get(playerId);
+    return !!p && p.order === 0;
   }
 
   public getPlayerCount() {

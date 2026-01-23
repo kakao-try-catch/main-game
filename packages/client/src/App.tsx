@@ -39,7 +39,7 @@ function AppContent() {
     'landing' | 'lobby' | 'game' | 'flappybird'
   >('landing');
 
-  // 현재 유저 정보 (서버에서 받아올 예정)
+  // 현재 유저 정보 (서버에서 받아올 예정) // todo 얘도 제거 예정
   const [currentUser, setCurrentUser] = useState<CurrentUser>({
     id: 'id_1',
     playerIndex: 0,

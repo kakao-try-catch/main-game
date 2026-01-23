@@ -49,6 +49,11 @@
         "url": "src/assets/images/flappybird_4.png",
         "type": "image",
         "key": "flappybird_4"
+      },
+      {
+        "url": "src/assets/images/background.png",
+        "type": "image",
+        "key": "flappybird_background"
       }
     ]
   },

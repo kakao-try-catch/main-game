@@ -46,6 +46,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   // 배경 및 바닥 (무한 스크롤용)
   private groundTile!: Phaser.GameObjects.TileSprite;
   private groundLine!: Phaser.GameObjects.Rectangle;
+  private background!: Phaser.GameObjects.TileSprite;
+
   // 파이프 데이터 (서버로부터 받은 데이터)
   private targetPipes: PipeData[] = [];
 
@@ -70,15 +72,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   editorCreate(): void {
-    const ratio = this.getRatio();
-    const width = GAME_WIDTH * ratio;
-    const height = GAME_HEIGHT * ratio;
-
-    // 고정 배경색 (카메라를 따라다님)
-    const background = this.add.rectangle(0, 0, width, height, 0x46d1fd);
-    background.setOrigin(0, 0);
-    background.setScrollFactor(0);
-
     this.events.emit('scene-awake');
   }
 
@@ -101,6 +94,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 기존 스프라이트, 그래픽, 파이프 파괴
     this.birdSprites.forEach((bird) => bird?.destroy());
+    this.background?.destroy();
+
     this.ropes.forEach((rope) => rope?.destroy());
     if (this.pipeManager) {
       this.pipeManager.destroy();
@@ -186,6 +181,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.birdSprites.forEach((bird) => bird.destroy());
     this.ropes.forEach((rope) => rope.destroy());
     this.birdSprites = [];
+    this.background?.destroy();
     this.ropes = [];
     this.targetPositions = [];
     this.ropeMidPoints = []; // 밧줄 관성 데이터 초기화 (누행 방지)
@@ -196,6 +192,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 바닥 그리기
     this.createGroundUI();
+
+    // 배경 그리기
+    this.createBackgroundUI();
 
     // 밧줄 생성
     this.createRopes(this.playerCount);
@@ -279,6 +278,35 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.groundLine.setOrigin(0, 0);
     this.groundLine.setScrollFactor(0);
     this.groundLine.setDepth(200);
+  }
+
+  /**
+   * 배경  그래픽 생성 (무한 스크롤 TileSprite 방식)
+   */
+  private createBackgroundUI() {
+    const backgroundKey = `flappybird_background`;
+    const ratio = this.getRatio();
+    const width = GAME_WIDTH * ratio;
+    const offset = 70;
+    const height = GAME_HEIGHT * ratio + offset;
+
+    // TileSprite 생성 (화면 전체 크기)
+    this.background = this.add.tileSprite(
+      0,
+      -offset,
+      width,
+      height,
+      backgroundKey,
+    );
+    this.background.setOrigin(0, 0);
+    this.background.setScrollFactor(0);
+    this.background.setAlpha(0.65);
+
+    // 깊이 설정: 가장 뒤에 배치
+    this.background.setDepth(-1);
+
+    // 이미지 크기가 화면에 비해 너무 크거나 작다면 scale 조절 (선택 사항)
+    this.background.setTileScale(ratio);
   }
 
   /**
@@ -483,7 +511,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         sprite.x = Phaser.Math.Linear(sprite.x, target.x * ratio, 0.3);
         sprite.y = Phaser.Math.Linear(sprite.y, target.y * ratio, 0.3);
 
-        // 회전 애니메이션: 기본적으로 서버에서 보낸 각도를 우선 사용하고, 
+        // 회전 애니메이션: 기본적으로 서버에서 보낸 각도를 우선 사용하고,
         // 서버 각도가 0이면 velocityY를 기반으로 부드럽게 계산
         let angle = target.angle;
         if (angle === 0) {
@@ -499,13 +527,17 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       }
     }
 
-    // 3. 지면 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
+    // 3. 지면/배경 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
     if (this.gameStarted && !this.isGameOver) {
       const SPEED_PX_PER_SECOND = 90 * ratio; // 서버의 pipeSpeed(1.5/frame)와 동기화
-
       // 바닥 스크롤 효과 (카메라가 고정되어 있으므로 tilePositionX를 직접 증가)
       if (this.groundTile) {
         this.groundTile.tilePositionX += (SPEED_PX_PER_SECOND * _delta) / 1000;
+      }
+      if (this.background) {
+        // 바닥 속도의 0.3배로 이동
+        const bgSpeed = SPEED_PX_PER_SECOND * 0.3;
+        this.background.tilePositionX += (bgSpeed * _delta) / 1000;
       }
     }
 

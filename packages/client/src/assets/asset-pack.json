@@ -54,6 +54,16 @@
         "url": "src/assets/images/background.png",
         "type": "image",
         "key": "flappybird_background"
+      },
+      {
+        "url": "src/assets/images/pipe_top.png",
+        "type": "image",
+        "key": "pipe_top"
+      },
+      {
+        "url": "src/assets/images/pipe_bottom.png",
+        "type": "image",
+        "key": "pipe_bottom"
       }
     ]
   },

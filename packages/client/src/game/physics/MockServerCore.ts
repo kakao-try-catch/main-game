@@ -151,17 +151,21 @@ export class MockServerCore {
    * 새 생성
    */
   private createBirds(count: number) {
-    const startX = 250; // 좀 더 앞쪽에서 시작
+    const startX = 250; // 기준 시작점
     const startY = 300;
-    const spacing = 90; // 새들 사이 간격을 촘촘하게 (120 -> 90)
+    const spacing = 90; // 새들 사이 간격
+
+    // 전체 그룹이 startX(250)를 중심으로 정렬되도록 오프셋 계산
+    const totalWidth = (count - 1) * spacing;
+    const startXOffset = startX - totalWidth / 2;
 
     for (let i = 0; i < count; i++) {
       // 각 새에 약간의 Y 오프셋을 주어 초기 장력 생성 (물리 안정화)
-      const yOffset = i * 3; // 0, 5, 10, 15 픽셀 차이
+      const yOffset = i * 3; // 0, 3, 6, 9 픽셀 차이
 
       // 새의 형태가 57*36 이므로 원형보다는 직사각형(또는 둥근 사각형)이 적합
       const bird = Matter.Bodies.rectangle(
-        startX + i * spacing,
+        startXOffset + i * spacing,
         startY + yOffset,
         this.BIRD_WIDTH,
         this.BIRD_HEIGHT,
@@ -505,8 +509,13 @@ export class MockServerCore {
     if (birdIndex >= 0 && birdIndex < this.birds.length) {
       const bird = this.birds[birdIndex];
 
+      // 플레이어 수에 따라 전진력을 조절하여 다인 플레이 시 과도한 속도 증가 방지
+      // 1명: 1.5, 4명: ~1.05 (약 30% 감소)
+      const thrustDamping = Math.max(0.7, 1.0 - (this.playerCount - 1) * 0.1);
+      const forwardThrust = 1.5 * thrustDamping;
+
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x + 1.5, // 전진 파워
+        x: bird.velocity.x + forwardThrust, // 조절된 전진 파워
         y: this.FLAP_VELOCITY,
       });
 

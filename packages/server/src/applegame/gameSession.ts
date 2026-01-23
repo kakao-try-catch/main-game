@@ -8,6 +8,8 @@ import {
   PlayerData,
   UpdateScorePacket,
   SystemPacketType,
+  RoomUpdatePacket,
+  RoomUpdateType,
   ReportCard,
   PlayerSummary,
   GameType,
@@ -95,6 +97,14 @@ export class GameSession {
 
   public removePlayer(id: string) {
     this.players.delete(id);
+    // Notify remaining clients about updated room player list
+    const roomUpdatePacket: RoomUpdatePacket = {
+      type: SystemPacketType.ROOM_UPDATE,
+      players: this.getPlayers(),
+      updateType: RoomUpdateType.INIT,
+    };
+    this.broadcastCallback(roomUpdatePacket);
+
     if (this.players.size === 0) {
       this.stopGame();
     }

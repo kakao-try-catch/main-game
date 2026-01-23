@@ -11,7 +11,9 @@ interface GameState {
   setCount: (newCount: number) => void;
   // players from server (room snapshot)
   players: PlayerData[];
-  setPlayers: (players: PlayerData[]) => void;
+  setPlayers: (
+    playersOrUpdater: PlayerData[] | ((prev: PlayerData[]) => PlayerData[])
+  ) => void;
   // selected game type and config pushed from server
   selectedGameType?: GameType | null;
   gameConfig?: GameConfig | null;
@@ -30,7 +32,15 @@ export const useGameStore = create<GameState>((set) => ({
 
   // 액션
   setCount: (newCount: number) => set({ count: newCount }),
-  setPlayers: (players: PlayerData[]) => set({ players }),
+  setPlayers: (playersOrUpdater) => {
+    if (typeof playersOrUpdater === 'function') {
+      // Functional update: call updater with current state
+      set((state) => ({ players: playersOrUpdater(state.players) }));
+    } else {
+      // Direct array: set directly
+      set({ players: playersOrUpdater });
+    }
+  },
   setGameConfig: (selected: GameType | null, cfg: GameConfig | null) =>
     set({ selectedGameType: selected, gameConfig: cfg }),
   // ... 기존 액션들

@@ -3,15 +3,11 @@ import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
 import type { AppleGamePreset } from '../game/types/AppleGamePreset';
-import type {
-  LobbyPlayer,
-  Game,
-  GameSettings,
-  LobbyProps,
-} from '../game/types/common';
+import type { Game, GameSettings } from '../game/types/common';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 import { useGameStore } from '../store/gameStore';
+
 import {
   GameType,
   MapSize,
@@ -20,6 +16,12 @@ import {
 import type { AppleGameConfig } from '../../../common/src/packets';
 import { APPLE_GAME_CONFIG } from '../../../common/src/config';
 import { socketManager } from '../network/socket';
+import { type PlayerData } from '../../../common/src/packets';
+
+export interface LobbyProps {
+  players: PlayerData[];
+  onGameStart: (gameType: string, preset: unknown) => void;
+}
 
 const {
   PLAYER_COLORS,
@@ -30,20 +32,7 @@ const {
   DEFAULT_TIME_LIMIT,
 } = CONSTANTS;
 
-function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
-  // players: prefer server-provided players (from zustand store), fallback to currentPlayer
-  const storePlayers = useGameStore((s) => s.players);
-  // LobbyPlayer 제거하면서 제거 예정
-  const players: LobbyPlayer[] =
-    storePlayers && storePlayers.length > 0
-      ? storePlayers.map((p, index) => ({
-          id: String(index),
-          name: p.playerName,
-          color: p.color,
-          isHost: p.isHost,
-        }))
-      : [{ ...currentPlayer, color: PLAYER_COLORS[0] }];
-
+function Lobby({ players, onGameStart }: LobbyProps) {
   // 게임 리스트
   const [games] = useState<Game[]>([
     { id: 'apple', name: '다같이 사과 게임', thumbnail: '🍎' },

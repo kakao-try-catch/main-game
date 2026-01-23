@@ -3,6 +3,7 @@ import { GameContainer } from './game/GameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
+import { useGameStore } from './store/gameStore';
 
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
@@ -65,19 +66,9 @@ function AppContent() {
     players: PlayerResultData[];
   } | null>(null);
 
-  // TODO: 이 players state는 레거시 코드입니다. gameStore.ts의 players로 마이그레이션 필요
-  // TODO: score는 추후 ReportCard를 PlayerData에 통합 후 재작업 예정
-  const [players, setPlayers] = useState<PlayerData[]>([
-    {
-      playerName: nickname || '1P',
-      color: color || PLAYER_COLORS[0],
-      score: 0,
-      isHost: true,
-    },
-    { playerName: '2P', color: PLAYER_COLORS[1], score: 0, isHost: false },
-    { playerName: '3P', color: PLAYER_COLORS[2], score: 0, isHost: false },
-    { playerName: '4P', color: PLAYER_COLORS[3], score: 0, isHost: false },
-  ]);
+  // players: prefer server-provided players (from zustand store), fallback to currentPlayer
+  const players = useGameStore((s) => s.players);
+  const setPlayers = useGameStore((s) => s.setPlayers);
 
   // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
   const [currentGameType, setCurrentGameType] = useState<GameType | undefined>(
@@ -260,17 +251,7 @@ function AppContent() {
 
   // 로비 표시
   if (currentScreen === 'lobby') {
-    return (
-      <Lobby
-        currentPlayer={{
-          id: currentUser.id,
-          name: currentUser.name,
-          color: '#209cee',
-          isHost: currentUser.isHost,
-        }}
-        onGameStart={handleGameStart}
-      />
-    );
+    return <Lobby players={players} onGameStart={handleGameStart} />;
   }
 
   return (

@@ -47,12 +47,6 @@ export interface GameSettings {
   includeZero?: boolean;
 }
 
-/** 로비 Props */
-export interface LobbyProps {
-  currentPlayer: LobbyPlayer;
-  onGameStart: (gameType: string, preset: unknown) => void;
-}
-
 /** 공통 상수 */
 export const CONSTANTS = {
   /** 플레이어 색상 (들어온 순서대로) */

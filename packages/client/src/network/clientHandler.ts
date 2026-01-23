@@ -3,6 +3,7 @@ import {
   GamePacketType,
   type ServerPacket,
   type RoomUpdatePacket,
+  type GameConfigUpdatePacket,
 } from '../../../common/src/packets.ts';
 import { useGameStore } from '../store/gameStore';
 //import { useDebugStore, useAppleGameStore } from "../store/store.ts";
@@ -30,6 +31,16 @@ export const handleServerPacket = (packet: ServerPacket) => {
         roomPacket.players,
         roomPacket.updateType,
       );
+      break;
+    }
+
+    case SystemPacketType.GAME_CONFIG_UPDATE: {
+      const cfgPacket = packet as GameConfigUpdatePacket;
+      // store selected game type and config so UI can react
+      useGameStore
+        .getState()
+        .setGameConfig(cfgPacket.selectedGameType, cfgPacket.gameConfig);
+      console.log('GAME_CONFIG_UPDATE received:', cfgPacket);
       break;
     }
 

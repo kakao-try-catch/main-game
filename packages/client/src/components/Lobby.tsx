@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
@@ -12,6 +12,8 @@ import type {
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 import { useGameStore } from '../store/gameStore';
+import { GameType, MapSize } from '../../../common/src/packets';
+import type { AppleGameConfig } from '../../../common/src/packets';
 
 const {
   PLAYER_COLORS,
@@ -25,14 +27,15 @@ const {
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   // players: prefer server-provided players (from zustand store), fallback to currentPlayer
   const storePlayers = useGameStore((s) => s.players);
-  const players: LobbyPlayer[] = (storePlayers && storePlayers.length > 0
-    ? storePlayers.map((p) => ({
-        id: String(p.order ?? p.playerName),
-        name: p.playerName,
-        color: p.color,
-        isHost: false,
-      }))
-    : [{ ...currentPlayer, color: PLAYER_COLORS[0] }]);
+  const players: LobbyPlayer[] =
+    storePlayers && storePlayers.length > 0
+      ? storePlayers.map((p) => ({
+          id: String(p.order ?? p.playerName),
+          name: p.playerName,
+          color: p.color,
+          isHost: false,
+        }))
+      : [{ ...currentPlayer, color: PLAYER_COLORS[0] }];
 
   // 게임 리스트
   const [games] = useState<Game[]>([
@@ -151,6 +154,52 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       onGameStart('minesweeper', {});
     }
   };
+
+  // React to server-provided game config updates
+  const serverSelectedGame = useGameStore((s) => s.selectedGameType);
+  const serverGameConfig = useGameStore((s) => s.gameConfig);
+
+  useEffect(() => {
+    if (!serverSelectedGame || !serverGameConfig) return;
+
+    // Map common GameType to local game id
+    if (serverSelectedGame === ('APPLE_GAME' as unknown as GameType)) {
+      // schedule selection update to avoid synchronous setState in effect
+      setTimeout(() => setSelectedGame('apple'));
+
+      const cfg = serverGameConfig as AppleGameConfig;
+
+      let mapSize: 'small' | 'normal' | 'large' = 'normal';
+      if (cfg.mapSize === (MapSize.SMALL as unknown as MapSize))
+        mapSize = 'small';
+      else if (cfg.mapSize === (MapSize.MEDIUM as unknown as MapSize))
+        mapSize = 'normal';
+      else if (cfg.mapSize === (MapSize.LARGE as unknown as MapSize))
+        mapSize = 'large';
+
+      // generation -> appleRange heuristic
+      let appleRange: '1-9' | '1-5' | '1-3' = '1-9';
+      if (cfg.generation <= 3) appleRange = '1-3';
+      else if (cfg.generation <= 5) appleRange = '1-5';
+
+      setTimeout(() => {
+        setGameSettings((prev) => ({
+          ...prev,
+          apple: {
+            ...prev.apple,
+            mapSize,
+            timeLimit: cfg.time,
+            appleRange,
+            includeZero: !!cfg.zero,
+          },
+        }));
+      });
+    } else if (serverSelectedGame === ('FLAPPY_BIRD' as unknown as GameType)) {
+      setTimeout(() => setSelectedGame('flappy'));
+    } else if (serverSelectedGame === ('MINESWEEPER' as unknown as GameType)) {
+      setTimeout(() => setSelectedGame('minesweeper'));
+    }
+  }, [serverSelectedGame, serverGameConfig]);
 
   // 빈 슬롯 생성
   const emptySlots = Array(MAX_PLAYERS - players.length).fill(null);

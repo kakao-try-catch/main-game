@@ -54,13 +54,11 @@ export class MockServerCore {
   private readonly ROPE_STIFFNESS = 0.3; // 밧줄 장력 최대치 근사값
   private readonly ROPE_SOFTNESS = 50; // 장력 완화 계수 (로그 함수 대체용)
 
-  // 파이프 파라미터
-  private readonly PIPE_WIDTH = 80;
-  private readonly PIPE_GAP = 200;
-  private pipeSpacing: number = 400; // 파이프 간 거리
-
-  // 파이프 속도 관리 (원래 속도 1.5로 복구)
-  private pipeSpeed: number = 1.5;
+  // 파이프 파라미터 (프리셋에서 설정)
+  private pipeWidth: number = 80;
+  private pipeGap: number = 150;
+  private pipeSpacing: number = 300; // 파이프 간 거리
+  private pipeSpeed: number = 3;
 
   constructor(socket: MockSocket) {
     this.socket = socket;
@@ -108,6 +106,9 @@ export class MockServerCore {
     if (config) {
       this.pipeSpeed = config.pipeSpeed;
       this.pipeSpacing = config.pipeSpacing;
+      this.pipeGap = config.pipeGap;
+      this.pipeWidth = config.pipeWidth;
+      console.log(`[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}`);
     }
 
     // 바닥 생성
@@ -527,8 +528,8 @@ export class MockServerCore {
       id: `pipe_${this.nextPipeId++}`,
       x,
       gapY,
-      width: this.PIPE_WIDTH,
-      gap: this.PIPE_GAP,
+      width: this.pipeWidth,
+      gap: this.pipeGap,
       passed: false,
       passedPlayers: [],
     };
@@ -545,7 +546,7 @@ export class MockServerCore {
     }
 
     // 화면 밖으로 나간 파이프 제거
-    this.pipes = this.pipes.filter((pipe) => pipe.x > -this.PIPE_WIDTH);
+    this.pipes = this.pipes.filter((pipe) => pipe.x > -this.pipeWidth);
 
     // 거리 기반 파이프 생성 (일정한 간격 유지)
     // 마지막 파이프가 없거나, 마지막 파이프가 충분히 왼쪽으로 이동했을 때 새 파이프 생성
@@ -555,7 +556,7 @@ export class MockServerCore {
         this.screenWidth - this.pipeSpacing;
 
     if (shouldSpawnPipe) {
-      this.createPipe(this.screenWidth + this.PIPE_WIDTH);
+      this.createPipe(this.screenWidth + this.pipeWidth);
     }
   }
 
@@ -566,6 +567,8 @@ export class MockServerCore {
     return {
       pipeSpeed: this.pipeSpeed,
       pipeSpacing: this.pipeSpacing,
+      pipeGap: this.pipeGap,
+      pipeWidth: this.pipeWidth,
     };
   }
 

@@ -23,6 +23,8 @@ import type {
 } from '../../types/flappybird.types';
 import type { PlayerResultData } from '../../types/common';
 import { CONSTANTS } from '../../types/common';
+import type { FlappyBirdGamePreset, ResolvedFlappyBirdConfig } from '../../types/FlappyBirdGamePreset';
+import { resolveFlappyBirdPreset, DEFAULT_FLAPPYBIRD_PRESET } from '../../types/FlappyBirdGamePreset';
 import PipeManager from './PipeManager';
 
 export default class FlappyBirdsScene extends Phaser.Scene {
@@ -56,6 +58,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private isGameOver: boolean = false; // 게임 오버 여부
   private debugGraphics!: Phaser.GameObjects.Graphics;
   private showDebug: boolean = false;
+  private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(DEFAULT_FLAPPYBIRD_PRESET);
 
   constructor() {
     super('FlappyBirdsScene');
@@ -142,7 +145,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
       this.mockServerCore = new MockServerCore(this.socket as MockSocket);
       this.mockServerCore.setPlayerCount(this.playerCount); // 플레이어 수 설정
-      this.mockServerCore.initialize();
+      this.mockServerCore.initialize(this.gameConfig); // 프리셋 설정 적용
 
       // 1초 후 물리 엔진 및 스크롤 시작 (초기화 시간 확보)
       setTimeout(() => {
@@ -309,20 +312,39 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.socket.off('game_over');
 
     // 플레이어 정보 업데이트 (인원수 조절 등)
-    this.events.on('updatePlayers', (data: { playerCount?: number }) => {
+    this.events.on('updatePlayers', (data: { playerCount?: number; preset?: FlappyBirdGamePreset }) => {
       console.log(
         `[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`,
       );
       const oldPlayerCount = this.playerCount;
       this.playerCount = data.playerCount || 4;
 
-      // 인원수가 변경된 경우 게임 객체 재설정
-      if (oldPlayerCount !== this.playerCount) {
+      // 프리셋이 있으면 게임 설정 업데이트
+      let configChanged = false;
+      if (data.preset) {
+        const newConfig = resolveFlappyBirdPreset(data.preset);
+        // 설정이 변경되었는지 확인
+        if (
+          this.gameConfig.pipeSpeed !== newConfig.pipeSpeed ||
+          this.gameConfig.pipeSpacing !== newConfig.pipeSpacing ||
+          this.gameConfig.pipeGap !== newConfig.pipeGap ||
+          this.gameConfig.pipeWidth !== newConfig.pipeWidth
+        ) {
+          this.gameConfig = newConfig;
+          configChanged = true;
+          console.log(`[FlappyBirdsScene] 프리셋 적용:`, this.gameConfig);
+        }
+      }
+
+      // 인원수가 변경되었거나 설정이 변경된 경우 게임 객체 재설정
+      if (oldPlayerCount !== this.playerCount || configChanged) {
         if (this.mockServerCore) {
           this.mockServerCore.setPlayerCount(this.playerCount);
-          this.mockServerCore.initialize();
+          this.mockServerCore.initialize(this.gameConfig);
         }
-        this.setupGame();
+        if (oldPlayerCount !== this.playerCount) {
+          this.setupGame();
+        }
       }
     });
 

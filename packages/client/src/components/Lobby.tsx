@@ -28,6 +28,13 @@ const {
   DEFAULT_TIME_LIMIT,
 } = CONSTANTS;
 
+/** 난이도 색상 (쉬움/보통/어려움) */
+const DIFFICULTY_COLORS = {
+  easy: '#4CAF50',
+  normal: '#FF9800',
+  hard: '#F44336',
+} as const;
+
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
   const players: LobbyPlayer[] = [
@@ -137,7 +144,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
         timeLimit:
           settings.timeLimit === -1
             ? 'manual'
-            : (settings.timeLimit as 120 | 180 | 240),
+            : (settings.timeLimit as 90 | 120 | 180),
         manualTime: settings.timeLimit === -1 ? undefined : settings.timeLimit,
         numberRange,
         includeZero: settings.includeZero || false,
@@ -204,7 +211,15 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
         {/* 오른쪽: 게임 리스트 */}
         <div className="lobby-right">
           <div className="nes-container is-rounded game-section">
-            <h2 className="section-title">게임 선택</h2>
+            <div className="section-header">
+              <h2 className="section-title">게임 선택</h2>
+              <div className="difficulty-legend">
+                <span className="legend-label">난이도:</span>
+                <span style={{ color: DIFFICULTY_COLORS.easy }}>쉬움</span>
+                <span style={{ color: DIFFICULTY_COLORS.normal }}>보통</span>
+                <span style={{ color: DIFFICULTY_COLORS.hard }}>어려움</span>
+              </div>
+            </div>
             <div className="game-list">
               {games.map((game) => {
                 const settings = gameSettings[game.id];
@@ -244,17 +259,26 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.mapSize === 'large'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.mapSize === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
                               >
-                                <option value="small">작음</option>
-                                <option value="normal">보통</option>
-                                <option value="large">큼</option>
+                                <option value="large" style={{ color: DIFFICULTY_COLORS.easy }}>큼 (30x15)</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통 (20x10)</option>
+                                <option value="small" style={{ color: DIFFICULTY_COLORS.hard }}>작음 (16x8)</option>
                               </select>
                             </div>
                           </div>
                           <div className="setting-item time-limit-setting">
                             <label>제한 시간:</label>
                             {settings.timeLimit === -1 ||
-                            (![120, 180, 240].includes(
+                            (![180, 120, 90].includes(
                               settings.timeLimit || 0,
                             ) &&
                               settings.timeLimit !== undefined) ? (
@@ -321,10 +345,19 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                       val,
                                     );
                                   }}
+                                  onFocus={() => handleSelectGame(game.id)}
+                                  style={{
+                                    color:
+                                      settings.timeLimit === 180
+                                        ? DIFFICULTY_COLORS.easy
+                                        : settings.timeLimit === 120
+                                          ? DIFFICULTY_COLORS.normal
+                                          : DIFFICULTY_COLORS.hard,
+                                  }}
                                 >
-                                  <option value={120}>120초</option>
-                                  <option value={180}>180초</option>
-                                  <option value={240}>240초</option>
+                                  <option value={180} style={{ color: DIFFICULTY_COLORS.easy }}>180초</option>
+                                  <option value={120} style={{ color: DIFFICULTY_COLORS.normal }}>120초</option>
+                                  <option value={90} style={{ color: DIFFICULTY_COLORS.hard }}>90초</option>
                                   <option value={-1}>직접 입력</option>
                                 </select>
                               </div>
@@ -347,34 +380,62 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.appleRange === '1-9'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : DIFFICULTY_COLORS.hard,
+                                }}
                               >
-                                <option value="1-9">쉬움(1-9)</option>
-                                <option value="1-5">어려움(1-5)</option>
+                                <option value="1-9" style={{ color: DIFFICULTY_COLORS.easy }}>쉬움(1-9)</option>
+                                <option value="1-5" style={{ color: DIFFICULTY_COLORS.hard }}>어려움(1-5)</option>
                               </select>
                             </div>
                           </div>
-                          <div className="setting-item time-limit-setting">
+                          <div className="setting-item">
                             <label>0 생성:</label>
-                            <div className="nes-select is-small">
-                              <select
-                                value={settings.includeZero ? 'O' : 'X'}
-                                onChange={(e) =>
-                                  handleSettingChange(
-                                    game.id,
-                                    'includeZero',
-                                    e.target.value === 'O',
-                                  )
-                                }
-                              >
-                                <option value="X">X</option>
-                                <option value="O">O</option>
-                              </select>
+                            <div className="radio-group">
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`includeZero-${game.id}`}
+                                  checked={!settings.includeZero}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'includeZero',
+                                      false,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`includeZero-${game.id}`}
+                                  checked={settings.includeZero}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'includeZero',
+                                      true,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.hard }}>O</span>
+                              </label>
                             </div>
                           </div>
                         </div>
                       ) : game.id === 'flappy' ? (
                         <div
-                          className="settings-edit"
+                          className="settings-edit settings-flappy"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
                               handleSelectGame(game.id);
@@ -394,18 +455,19 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
                                 style={{
                                   color:
                                     settings.pipeGap === 'wide'
-                                      ? '#4CAF50'
+                                      ? DIFFICULTY_COLORS.easy
                                       : settings.pipeGap === 'normal'
-                                        ? '#FFC107'
-                                        : '#F44336',
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="wide" style={{ color: '#4CAF50' }}>넓음</option>
-                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
-                                <option value="narrow" style={{ color: '#F44336' }}>좁음</option>
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
                               </select>
                             </div>
                           </div>
@@ -421,18 +483,19 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
                                 style={{
                                   color:
                                     settings.pipeWidth === 'narrow'
-                                      ? '#4CAF50'
+                                      ? DIFFICULTY_COLORS.easy
                                       : settings.pipeWidth === 'normal'
-                                        ? '#FFC107'
-                                        : '#F44336',
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="narrow" style={{ color: '#4CAF50' }}>좁음</option>
-                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
-                                <option value="wide" style={{ color: '#F44336' }}>넓음</option>
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.easy }}>좁음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.hard }}>넓음</option>
                               </select>
                             </div>
                           </div>
@@ -448,18 +511,19 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
                                 style={{
                                   color:
                                     settings.pipeSpacing === 'wide'
-                                      ? '#4CAF50'
+                                      ? DIFFICULTY_COLORS.easy
                                       : settings.pipeSpacing === 'normal'
-                                        ? '#FFC107'
-                                        : '#F44336',
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="wide" style={{ color: '#4CAF50' }}>넓음</option>
-                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
-                                <option value="narrow" style={{ color: '#F44336' }}>좁음</option>
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
                               </select>
                             </div>
                           </div>
@@ -475,18 +539,19 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
                                 style={{
                                   color:
                                     settings.pipeSpeed === 'slow'
-                                      ? '#4CAF50'
+                                      ? DIFFICULTY_COLORS.easy
                                       : settings.pipeSpeed === 'normal'
-                                        ? '#FFC107'
-                                        : '#F44336',
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="slow" style={{ color: '#4CAF50' }}>느림</option>
-                                <option value="normal" style={{ color: '#FFC107' }}>보통</option>
-                                <option value="fast" style={{ color: '#F44336' }}>빠름</option>
+                                <option value="slow" style={{ color: DIFFICULTY_COLORS.easy }}>느림</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="fast" style={{ color: DIFFICULTY_COLORS.hard }}>빠름</option>
                               </select>
                             </div>
                           </div>

@@ -19,7 +19,11 @@ import type {
   CurrentUser,
 } from './game/types/common';
 import { CONSTANTS } from './game/types/common';
-import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
+import {
+  SystemPacketType,
+  type JoinRoomPacket,
+  type ServerPacket,
+} from '../../common/src/packets';
 
 import './App.css';
 import { socketManager } from './network/socket';
@@ -207,12 +211,7 @@ function AppContent() {
       ),
     );
 
-    const joinRoomPacket: {
-      type: SystemPacketType.JOIN_ROOM;
-      playerId: string;
-      roomId: string;
-      playerName: string;
-    } = {
+    const joinRoomPacket: JoinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,
       playerId: socketManager.getId() ?? '',
       roomId: 'HARDCODED_ROOM_1',

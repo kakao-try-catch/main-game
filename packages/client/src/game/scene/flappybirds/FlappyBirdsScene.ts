@@ -45,7 +45,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private birdSprites: Phaser.GameObjects.Sprite[] = [];
   private targetPositions: BirdPosition[] = [];
 
-  // 배경 및 바닥 (무한 스크롤용)
+  // 바닥 (무한 스크롤용)
   private groundTile!: Phaser.GameObjects.TileSprite;
   private groundLine!: Phaser.GameObjects.Rectangle;
   // 파이프 데이터 (서버로부터 받은 데이터)
@@ -493,7 +493,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     console.log('[FlappyBirdsScene] 초기 밧줄 그리기 완료');
   }
 
-  update(_time: number, _delta: number) {
+  update() {
     // 선형 보간으로 부드러운 이동
     const ratio = this.getRatio();
     for (let i = 0; i < this.birdSprites.length; i++) {
@@ -505,7 +505,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         sprite.x = Phaser.Math.Linear(sprite.x, target.x * ratio, 0.3);
         sprite.y = Phaser.Math.Linear(sprite.y, target.y * ratio, 0.3);
 
-        // 회전 애니메이션: 기본적으로 서버에서 보낸 각도를 우선 사용하고, 
+        // 회전 애니메이션: 기본적으로 서버에서 보낸 각도를 우선 사용하고,
         // 서버 각도가 0이면 velocityY를 기반으로 부드럽게 계산
         let angle = target.angle;
         if (angle === 0) {
@@ -521,14 +521,30 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       }
     }
 
-    // 3. 지면 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
-    if (this.gameStarted && !this.isGameOver) {
-      const SPEED_PX_PER_SECOND = 90 * ratio; // 서버의 pipeSpeed(1.5/frame)와 동기화
-
-      // 바닥 스크롤 효과 (카메라가 고정되어 있으므로 tilePositionX를 직접 증가)
-      if (this.groundTile) {
-        this.groundTile.tilePositionX += (SPEED_PX_PER_SECOND * _delta) / 1000;
+    // 3. 카메라 추적: 새들의 평균 X를 화면의 1/4 지점에 유지 (게임 시작 후에만)
+    if (this.gameStarted && this.birdSprites.length > 0) {
+      let totalX = 0;
+      for (const sprite of this.birdSprites) {
+        totalX += sprite.x;
       }
+      const avgX = totalX / this.birdSprites.length;
+
+      // 새들의 평균 위치가 화면 너비의 1/4 지점에 오도록 카메라 이동
+      const screenWidth = GAME_WIDTH * ratio;
+      const targetCameraX = avgX - screenWidth / 4;
+
+      // 부드러운 카메라 추적
+      this.cameras.main.scrollX = Phaser.Math.Linear(
+        this.cameras.main.scrollX,
+        targetCameraX,
+        0.1
+      );
+
+      // 지면 스크롤 (카메라 위치에 동기화)
+      if (this.groundTile) {
+        this.groundTile.tilePositionX = this.cameras.main.scrollX;
+      }
+      // 배경은 scrollFactor(0)으로 카메라를 따라다니므로 별도 처리 불필요
     }
 
     // 4. 밧줄 그리기

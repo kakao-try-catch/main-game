@@ -15,6 +15,18 @@ const sessions = new Map<string, GameSession>();
 // Player ID -> Room ID
 const playerRooms = new Map<string, string>(); // todo 얘가 지금 기본 socket.io room 으로 대체 가능성이 있음.
 
+// Player ID -> last drag area & repeat count
+const playerDragState = new Map<
+  string,
+  {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    repeatCount: number;
+  }
+>();
+
 export function getSession(roomId: string): GameSession | undefined {
   return sessions.get(roomId);
 }
@@ -79,17 +91,61 @@ export function handleClientPacket(
         break;
       }
 
-      case GamePacketType.DRAWING_DRAG_AREA:
+      case GamePacketType.DRAWING_DRAG_AREA: {
         // 브로드캐스트 (나 제외)
-        socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
-          type: GamePacketType.UPDATE_DRAG_AREA,
-          playerId: socket.id,
-          startX: packet.startX,
-          startY: packet.startY,
-          endX: packet.endX,
-          endY: packet.endY,
-        });
+        // 검증 로직 필요함. 게임 안쪽 영역이 맞는지, 그리고 정규화된 건지
+        // 드래그 영역은 정규화가 필요함.
+        // 추가: 이전에 보냈던 것과 동일한지 비교해 동일한 패킷이 3번까지만 브로드캐스트,
+        // 4번째부터는 무시하도록 함.
+        const key = socket.id;
+        const sx = packet.startX;
+        const sy = packet.startY;
+        const ex = packet.endX;
+        const ey = packet.endY;
+
+        const prev = playerDragState.get(key);
+        const isSame =
+          !!prev &&
+          prev.startX === sx &&
+          prev.startY === sy &&
+          prev.endX === ex &&
+          prev.endY === ey;
+
+        if (isSame) {
+          prev.repeatCount = (prev.repeatCount || 0) + 1;
+          if (prev.repeatCount <= 3) {
+            socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
+              type: GamePacketType.UPDATE_DRAG_AREA,
+              playerId: socket.id,
+              startX: sx,
+              startY: sy,
+              endX: ex,
+              endY: ey,
+            });
+          } else {
+            // 4번째 이상 동일한 패킷은 무시
+            // 필요하면 로깅 추가
+          }
+        } else {
+          playerDragState.set(key, {
+            startX: sx,
+            startY: sy,
+            endX: ex,
+            endY: ey,
+            repeatCount: 1,
+          });
+          socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
+            type: GamePacketType.UPDATE_DRAG_AREA,
+            playerId: socket.id,
+            startX: sx,
+            startY: sy,
+            endX: ex,
+            endY: ey,
+          });
+        }
+
         break;
+      }
 
       case GamePacketType.CONFIRM_DRAG_AREA:
         session.handleDragConfirm(socket.id, packet.indices);

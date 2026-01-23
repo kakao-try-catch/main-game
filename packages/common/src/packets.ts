@@ -38,7 +38,6 @@ type PlayerId = string;
 type AppleIndex = number;
 
 export interface PlayerData {
-  order: number;
   playerName: string;
   color: string;
   score: number; // User requested score to be in PlayerData
@@ -113,14 +112,10 @@ export interface ReadyScenePacket {
   selectedGameType: GameType;
 }
 
-export type PlayerSummary = {
-  playerOrder: number;
-  reportCard: ReportCard[];
-};
-
 export interface UpdateScorePacket {
   type: SystemPacketType.UPDATE_SCORE;
-  scoreboard: PlayerSummary[];
+  // scoreboard is an array of ReportCard objects where index = player order
+  scoreboard: ReportCard[];
 }
 
 export type SystemPacket =

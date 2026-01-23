@@ -11,7 +11,6 @@ import {
   RoomUpdatePacket,
   RoomUpdateType,
   ReportCard,
-  PlayerSummary,
   GameType,
   GameConfig,
   MapSize,
@@ -27,7 +26,6 @@ const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
 export interface PlayerState {
   id: string; // Socket ID
   name: string;
-  order: number;
   color: string;
   reportCard: ReportCard;
 }
@@ -83,13 +81,12 @@ export class GameSession {
   public addPlayer(id: string, name: string) {
     if (this.players.has(id)) return;
 
-    const order = this.players.size;
-    const color = PLAYER_COLORS[order % PLAYER_COLORS.length]; // 순서대로 부여 (4명 넘으면 순환 or 에러처리는 나중에)
+    const index = this.players.size;
+    const color = PLAYER_COLORS[index % PLAYER_COLORS.length]; // 순서대로 부여 (4명 넘으면 순환 or 에러처리는 나중에)
 
     this.players.set(id, {
       id,
       name,
-      order,
       color,
       reportCard: { score: 0 },
     });
@@ -347,21 +344,18 @@ export class GameSession {
   }
 
   public getPlayers(): PlayerData[] {
-    return Array.from(this.players.values())
-      .sort((a, b) => a.order - b.order)
-      .map((p) => ({
-        order: p.order,
-        playerName: p.name,
-        color: p.color,
-        score: p.reportCard.score,
-        isHost: p.order === 0,
-      }));
+    return Array.from(this.players.values()).map((p, idx) => ({
+      playerName: p.name,
+      color: p.color,
+      score: p.reportCard.score,
+      isHost: idx === 0,
+    }));
   }
 
   // Returns true if the given playerId corresponds to the host (order 0)
   public isHost(playerId: string): boolean {
-    const p = this.players.get(playerId);
-    return !!p && p.order === 0;
+    const first = this.players.keys().next().value;
+    return first === playerId;
   }
 
   public getPlayerCount() {
@@ -369,12 +363,9 @@ export class GameSession {
   }
 
   private broadcastScoreboard() {
-    const scoreboard: PlayerSummary[] = Array.from(this.players.values())
-      .sort((a, b) => a.order - b.order) // Ensure consistent order if needed
-      .map((p) => ({
-        playerOrder: p.order,
-        reportCard: [p.reportCard],
-      }));
+    const scoreboard: ReportCard[] = Array.from(this.players.values()).map(
+      (p) => p.reportCard,
+    );
 
     const updateScorePacket: UpdateScorePacket = {
       type: SystemPacketType.UPDATE_SCORE,

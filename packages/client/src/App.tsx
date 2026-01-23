@@ -230,6 +230,7 @@ function AppContent() {
     // 새 게임 시작 시 key 변경
     setGameKey((prev) => prev + 1);
 
+    // todo set preset 얘 뭔지 알아내야 함. 이후 game config update 반영으로 통합
     if (gameType === 'apple') {
       setApplePreset(preset as AppleGamePreset);
     } else if (gameType === 'flappy') {
@@ -242,9 +243,8 @@ function AppContent() {
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
 
+    // todo ready_scene 받을 때까지 이거 넘어가면 안 됨.
     setCurrentScreen('game');
-    // todo game_config_update
-    // todo ready_scene
   };
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)

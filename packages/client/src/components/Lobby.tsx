@@ -12,8 +12,14 @@ import type {
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 import { useGameStore } from '../store/gameStore';
-import { GameType, MapSize } from '../../../common/src/packets';
+import {
+  GameType,
+  MapSize,
+  SystemPacketType,
+} from '../../../common/src/packets';
 import type { AppleGameConfig } from '../../../common/src/packets';
+import { APPLE_GAME_CONFIG } from '../../../common/src/config';
+import { socketManager } from '../network/socket';
 
 const {
   PLAYER_COLORS,
@@ -71,6 +77,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
 
   const handleSelectGame = (gameId: string) => {
     setSelectedGame(gameId);
+    // send current settings to server
+    const settings = gameSettings[gameId];
+    sendGameConfigUpdate(gameId, settings);
   };
 
   const handleSettingChange = (
@@ -78,10 +87,66 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     setting: keyof GameSettings,
     value: string | number | boolean,
   ) => {
-    setGameSettings((prev) => ({
-      ...prev,
-      [gameId]: { ...prev[gameId], [setting]: value },
-    }));
+    setGameSettings((prev) => {
+      const updated = {
+        ...prev,
+        [gameId]: { ...prev[gameId], [setting]: value },
+      };
+      // send updated settings to server immediately
+      sendGameConfigUpdate(gameId, updated[gameId]);
+      return updated;
+    });
+  };
+
+  // Build and send GAME_CONFIG_UPDATE_REQ according to current settings
+  const sendGameConfigUpdate = (
+    gameId: string,
+    settings: GameSettings | undefined,
+  ) => {
+    if (!settings) return;
+
+    let selectedGameType = GameType.APPLE_GAME;
+    if (gameId === 'apple') selectedGameType = GameType.APPLE_GAME;
+    else if (gameId === 'flappy') selectedGameType = GameType.FLAPPY_BIRD;
+    else if (gameId === 'minesweeper') selectedGameType = GameType.MINESWEEPER;
+
+    // For now the only concrete GameConfig type is AppleGameConfig
+    const appleCfg: AppleGameConfig = {
+      mapSize: MapSize.MEDIUM,
+      time: APPLE_GAME_CONFIG.totalTime,
+      generation: 0,
+      zero: APPLE_GAME_CONFIG.includeZero,
+    };
+
+    if (gameId === 'apple') {
+      const s = settings as GameSettings;
+      if (s.mapSize === 'small') appleCfg.mapSize = MapSize.SMALL;
+      else if (s.mapSize === 'normal') appleCfg.mapSize = MapSize.MEDIUM;
+      else if (s.mapSize === 'large') appleCfg.mapSize = MapSize.LARGE;
+
+      // derive a valid time to send to server
+      // if timeLimit is a number and not the sentinel -1, use it (covers manual input)
+      // otherwise fall back to DEFAULT_TIME_LIMIT
+      const timeVal =
+        typeof s.timeLimit === 'number' && s.timeLimit !== -1
+          ? s.timeLimit
+          : DEFAULT_TIME_LIMIT;
+      appleCfg.time = timeVal;
+
+      // map appleRange to protocol generation (0 = easy (1-9), 1 = hard (1-5))
+      if (s.appleRange === '1-5') appleCfg.generation = 1;
+      else appleCfg.generation = 0;
+
+      appleCfg.zero = !!s.includeZero;
+    }
+
+    const packet = {
+      type: SystemPacketType.GAME_CONFIG_UPDATE_REQ,
+      selectedGameType,
+      gameConfig: appleCfg,
+    } as const;
+
+    socketManager.send(packet);
   };
 
   const showTooltip = (
@@ -125,18 +190,19 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       else if (settings.mapSize === 'large') gridSize = 'L';
 
       // appleRange를 numberRange로 변환
-      let numberRange: '1-9' | '1-5' | '1-3' = '1-9';
+      let numberRange: '1-9' | '1-5' = '1-9';
       if (settings.appleRange === '1-5') numberRange = '1-5';
-      else if (settings.appleRange === '1-3') numberRange = '1-3';
 
       // TODO 서버가 프리셋 가지고 있어야 하는 것. GAME_CONFIG_UPDATE
+      const isStandardTime = [120, 180, 240].includes(settings.timeLimit || 0);
       const preset: AppleGamePreset = {
         gridSize,
-        timeLimit:
-          settings.timeLimit === -1
-            ? 'manual'
-            : (settings.timeLimit as 120 | 180 | 240),
-        manualTime: settings.timeLimit === -1 ? undefined : settings.timeLimit,
+        timeLimit: isStandardTime
+          ? (settings.timeLimit as 120 | 180 | 240)
+          : 'manual',
+        manualTime: isStandardTime
+          ? undefined
+          : (settings.timeLimit as number | undefined),
         numberRange,
         includeZero: settings.includeZero || false,
       };
@@ -177,10 +243,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       else if (cfg.mapSize === (MapSize.LARGE as unknown as MapSize))
         mapSize = 'large';
 
-      // generation -> appleRange heuristic
-      let appleRange: '1-9' | '1-5' | '1-3' = '1-9';
-      if (cfg.generation <= 3) appleRange = '1-3';
-      else if (cfg.generation <= 5) appleRange = '1-5';
+      // generation -> appleRange (protocol uses 0/1)
+      let appleRange: '1-9' | '1-5' = '1-9';
+      if (cfg.generation === 1) appleRange = '1-5';
 
       setTimeout(() => {
         setGameSettings((prev) => ({

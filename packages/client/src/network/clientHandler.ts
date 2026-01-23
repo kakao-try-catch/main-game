@@ -2,7 +2,9 @@ import {
   SystemPacketType,
   GamePacketType,
   type ServerPacket,
+  type RoomUpdatePacket,
 } from '../../../common/src/packets.ts';
+import { useGameStore } from '../store/gameStore';
 //import { useDebugStore, useAppleGameStore } from "../store/store.ts";
 
 export const handleServerPacket = (packet: ServerPacket) => {
@@ -19,14 +21,17 @@ export const handleServerPacket = (packet: ServerPacket) => {
       console.log(`Player ${packet.playerId} joined ${packet.roomId}`);
       break;
 
-    case SystemPacketType.ROOM_UPDATE:
-      // store.setPlayerNames(packet.playerNames);
+    case SystemPacketType.ROOM_UPDATE: {
+      // update global store (clientHandler runs outside React)
+      const roomPacket = packet as RoomUpdatePacket;
+      useGameStore.getState().setPlayers(roomPacket.players || []);
       console.log(
         'ROOM_UPDATE packet received:',
-        packet.players,
-        packet.updateType,
+        roomPacket.players,
+        roomPacket.updateType,
       );
       break;
+    }
 
     case SystemPacketType.SYSTEM_MESSAGE:
       console.log('SYSTEM_MESSAGE packet received:', packet.message);

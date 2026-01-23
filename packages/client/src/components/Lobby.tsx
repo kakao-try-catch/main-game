@@ -11,6 +11,7 @@ import type {
 } from '../game/types/common';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
+import { useGameStore } from '../store/gameStore';
 
 const {
   PLAYER_COLORS,
@@ -22,10 +23,16 @@ const {
 } = CONSTANTS;
 
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
-  // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
-  const players: LobbyPlayer[] = [
-    { ...currentPlayer, color: PLAYER_COLORS[0] },
-  ];
+  // players: prefer server-provided players (from zustand store), fallback to currentPlayer
+  const storePlayers = useGameStore((s) => s.players);
+  const players: LobbyPlayer[] = (storePlayers && storePlayers.length > 0
+    ? storePlayers.map((p) => ({
+        id: String(p.order ?? p.playerName),
+        name: p.playerName,
+        color: p.color,
+        isHost: false,
+      }))
+    : [{ ...currentPlayer, color: PLAYER_COLORS[0] }]);
 
   // 게임 리스트
   const [games] = useState<Game[]>([

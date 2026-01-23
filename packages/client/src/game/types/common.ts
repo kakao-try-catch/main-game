@@ -49,6 +49,7 @@ export interface GameSettings {
 
 /** 로비 Props */
 export interface LobbyProps {
+  currentPlayer: LobbyPlayer;
   onGameStart: (gameType: string, preset: unknown) => void;
 }
 

@@ -260,7 +260,17 @@ function AppContent() {
 
   // 로비 표시
   if (currentScreen === 'lobby') {
-    return <Lobby onGameStart={handleGameStart} />;
+    return (
+      <Lobby
+        currentPlayer={{
+          id: currentUser.id,
+          name: currentUser.name,
+          color: '#209cee',
+          isHost: currentUser.isHost,
+        }}
+        onGameStart={handleGameStart}
+      />
+    );
   }
 
   return (

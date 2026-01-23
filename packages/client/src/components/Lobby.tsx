@@ -3,12 +3,7 @@ import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
 import type { AppleGamePreset } from '../game/types/AppleGamePreset';
-import type {
-  LobbyPlayer,
-  Game,
-  GameSettings,
-  LobbyProps,
-} from '../game/types/common';
+import type { Game, GameSettings, LobbyProps } from '../game/types/common';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 import { useGameStore } from '../store/gameStore';
@@ -30,19 +25,9 @@ const {
   DEFAULT_TIME_LIMIT,
 } = CONSTANTS;
 
-function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
+function Lobby({ onGameStart }: LobbyProps) {
   // players: prefer server-provided players (from zustand store), fallback to currentPlayer
-  const storePlayers = useGameStore((s) => s.players);
-  // LobbyPlayer 제거하면서 제거 예정
-  const players: LobbyPlayer[] =
-    storePlayers && storePlayers.length > 0
-      ? storePlayers.map((p, index) => ({
-          id: String(index),
-          name: p.playerName,
-          color: p.color,
-          isHost: p.isHost,
-        }))
-      : [{ ...currentPlayer, color: PLAYER_COLORS[0] }];
+  const players = useGameStore((s) => s.players);
 
   // 게임 리스트
   const [games] = useState<Game[]>([

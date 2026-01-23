@@ -233,6 +233,9 @@ export class GameSession {
       selectedGameType,
       gameConfig,
     );
+    // Remember previous selected game type so we can decide whether to
+    // treat identical configs as changes when the game type changed.
+    const prevSelectedGameType = this.selectedGameType;
     // Update the session's selected game type based on the incoming packet
     this.selectedGameType = selectedGameType;
     // Validate & sanitize incoming config before storing.
@@ -286,7 +289,10 @@ export class GameSession {
         prev.mapSize === storedConfig.mapSize &&
         prev.time === storedConfig.time &&
         prev.generation === storedConfig.generation &&
-        prev.zero === storedConfig.zero;
+        prev.zero === storedConfig.zero &&
+        // Only treat as duplicate (skip) when the previously-selected
+        // game type is the same as the incoming one.
+        prevSelectedGameType === selectedGameType;
       if (noChange) {
         console.log('[GameSession] No change in game config; skipping update broadcast.');
         return;

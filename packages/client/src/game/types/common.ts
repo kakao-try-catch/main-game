@@ -44,10 +44,16 @@ export interface Game {
 
 /** 게임 설정 (각 게임별로 확장 가능) */
 export interface GameSettings {
+  // 사과게임 설정
   mapSize?: 'small' | 'normal' | 'large' | string;
   timeLimit?: number;
   appleRange?: '1-9' | '1-5' | string;
   includeZero?: boolean;
+  // 플래피버드 설정
+  pipeGap?: 'narrow' | 'normal' | 'wide'; // 상하 파이프 간격
+  pipeWidth?: 'narrow' | 'normal' | 'wide'; // 파이프 넓이
+  pipeSpacing?: 'narrow' | 'normal' | 'wide'; // 좌우 파이프 간격
+  pipeSpeed?: 'slow' | 'normal' | 'fast'; // 이동 속도
 }
 
 /** 로비 Props */

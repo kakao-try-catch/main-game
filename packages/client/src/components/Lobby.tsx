@@ -267,9 +267,9 @@ function Lobby({ onGameStart }: LobbyProps) {
           <div className="nes-container is-rounded player-section">
             <h2 className="section-title">플레이어</h2>
             <div className="player-list">
-              {players.map((player) => (
+              {players.map((player, index) => (
                 <div
-                  key={player.id}
+                  key={`player-${index}`}
                   className="player-item"
                   style={{ borderColor: player.color }}
                 >
@@ -277,7 +277,7 @@ function Lobby({ onGameStart }: LobbyProps) {
                     className="player-color-indicator"
                     style={{ backgroundColor: player.color }}
                   />
-                  <span className="player-name">{player.name}</span>
+                  <span className="player-name">{player.playerName}</span>
                   {player.isHost && (
                     <span className="player-host-badge">방장</span>
                   )}

@@ -23,8 +23,6 @@ import type {
 } from '../../types/flappybird.types';
 import type { PlayerResultData } from '../../types/common';
 import { CONSTANTS } from '../../types/common';
-import type { FlappyBirdGamePreset, ResolvedFlappyBirdConfig } from '../../types/FlappyBirdGamePreset';
-import { resolveFlappyBirdPreset, DEFAULT_FLAPPYBIRD_PRESET } from '../../types/FlappyBirdGamePreset';
 import PipeManager from './PipeManager';
 
 export default class FlappyBirdsScene extends Phaser.Scene {
@@ -45,9 +43,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private birdSprites: Phaser.GameObjects.Sprite[] = [];
   private targetPositions: BirdPosition[] = [];
 
-  // 바닥 (무한 스크롤용)
+  // 배경 및 바닥 (무한 스크롤용)
   private groundTile!: Phaser.GameObjects.TileSprite;
   private groundLine!: Phaser.GameObjects.Rectangle;
+  private background!: Phaser.GameObjects.TileSprite;
+
   // 파이프 데이터 (서버로부터 받은 데이터)
   private targetPipes: PipeData[] = [];
 
@@ -58,7 +58,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private isGameOver: boolean = false; // 게임 오버 여부
   private debugGraphics!: Phaser.GameObjects.Graphics;
   private showDebug: boolean = false;
-  private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(DEFAULT_FLAPPYBIRD_PRESET);
 
   constructor() {
     super('FlappyBirdsScene');
@@ -73,15 +72,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   editorCreate(): void {
-    const ratio = this.getRatio();
-    const width = GAME_WIDTH * ratio;
-    const height = GAME_HEIGHT * ratio;
-
-    // 고정 배경색 (카메라를 따라다님)
-    const background = this.add.rectangle(0, 0, width, height, 0x46d1fd);
-    background.setOrigin(0, 0);
-    background.setScrollFactor(0);
-
     this.events.emit('scene-awake');
   }
 
@@ -104,6 +94,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 기존 스프라이트, 그래픽, 파이프 파괴
     this.birdSprites.forEach((bird) => bird?.destroy());
+    this.background?.destroy();
+
     this.ropes.forEach((rope) => rope?.destroy());
     if (this.pipeManager) {
       this.pipeManager.destroy();
@@ -145,7 +137,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
       this.mockServerCore = new MockServerCore(this.socket as MockSocket);
       this.mockServerCore.setPlayerCount(this.playerCount); // 플레이어 수 설정
-      this.mockServerCore.initialize(this.gameConfig); // 프리셋 설정 적용
+      this.mockServerCore.initialize();
 
       // 1초 후 물리 엔진 및 스크롤 시작 (초기화 시간 확보)
       setTimeout(() => {
@@ -189,6 +181,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.birdSprites.forEach((bird) => bird.destroy());
     this.ropes.forEach((rope) => rope.destroy());
     this.birdSprites = [];
+    this.background?.destroy();
     this.ropes = [];
     this.targetPositions = [];
     this.ropeMidPoints = []; // 밧줄 관성 데이터 초기화 (누행 방지)
@@ -199,6 +192,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 바닥 그리기
     this.createGroundUI();
+
+    // 배경 그리기
+    this.createBackgroundUI();
 
     // 밧줄 생성
     this.createRopes(this.playerCount);
@@ -285,6 +281,35 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   /**
+   * 배경  그래픽 생성 (무한 스크롤 TileSprite 방식)
+   */
+  private createBackgroundUI() {
+    const backgroundKey = `flappybird_background`;
+    const ratio = this.getRatio();
+    const width = GAME_WIDTH * ratio;
+    const offset = 70;
+    const height = GAME_HEIGHT * ratio + offset;
+
+    // TileSprite 생성 (화면 전체 크기)
+    this.background = this.add.tileSprite(
+      0,
+      -offset,
+      width,
+      height,
+      backgroundKey,
+    );
+    this.background.setOrigin(0, 0);
+    this.background.setScrollFactor(0);
+    this.background.setAlpha(0.65);
+
+    // 깊이 설정: 가장 뒤에 배치
+    this.background.setDepth(-1);
+
+    // 이미지 크기가 화면에 비해 너무 크거나 작다면 scale 조절 (선택 사항)
+    this.background.setTileScale(ratio);
+  }
+
+  /**
    * 밧줄 그래픽 생성
    */
   private createRopes(playerCount: number) {
@@ -312,39 +337,20 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.socket.off('game_over');
 
     // 플레이어 정보 업데이트 (인원수 조절 등)
-    this.events.on('updatePlayers', (data: { playerCount?: number; preset?: FlappyBirdGamePreset }) => {
+    this.events.on('updatePlayers', (data: { playerCount?: number }) => {
       console.log(
         `[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`,
       );
       const oldPlayerCount = this.playerCount;
       this.playerCount = data.playerCount || 4;
 
-      // 프리셋이 있으면 게임 설정 업데이트
-      let configChanged = false;
-      if (data.preset) {
-        const newConfig = resolveFlappyBirdPreset(data.preset);
-        // 설정이 변경되었는지 확인
-        if (
-          this.gameConfig.pipeSpeed !== newConfig.pipeSpeed ||
-          this.gameConfig.pipeSpacing !== newConfig.pipeSpacing ||
-          this.gameConfig.pipeGap !== newConfig.pipeGap ||
-          this.gameConfig.pipeWidth !== newConfig.pipeWidth
-        ) {
-          this.gameConfig = newConfig;
-          configChanged = true;
-          console.log(`[FlappyBirdsScene] 프리셋 적용:`, this.gameConfig);
-        }
-      }
-
-      // 인원수가 변경되었거나 설정이 변경된 경우 게임 객체 재설정
-      if (oldPlayerCount !== this.playerCount || configChanged) {
+      // 인원수가 변경된 경우 게임 객체 재설정
+      if (oldPlayerCount !== this.playerCount) {
         if (this.mockServerCore) {
           this.mockServerCore.setPlayerCount(this.playerCount);
-          this.mockServerCore.initialize(this.gameConfig);
+          this.mockServerCore.initialize();
         }
-        if (oldPlayerCount !== this.playerCount) {
-          this.setupGame();
-        }
+        this.setupGame();
       }
     });
 
@@ -493,7 +499,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     console.log('[FlappyBirdsScene] 초기 밧줄 그리기 완료');
   }
 
-  update() {
+  update(_time: number, _delta: number) {
     // 선형 보간으로 부드러운 이동
     const ratio = this.getRatio();
     for (let i = 0; i < this.birdSprites.length; i++) {
@@ -521,30 +527,18 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       }
     }
 
-    // 3. 카메라 추적: 새들의 평균 X를 화면의 1/4 지점에 유지 (게임 시작 후에만)
-    if (this.gameStarted && this.birdSprites.length > 0) {
-      let totalX = 0;
-      for (const sprite of this.birdSprites) {
-        totalX += sprite.x;
-      }
-      const avgX = totalX / this.birdSprites.length;
-
-      // 새들의 평균 위치가 화면 너비의 1/4 지점에 오도록 카메라 이동
-      const screenWidth = GAME_WIDTH * ratio;
-      const targetCameraX = avgX - screenWidth / 4;
-
-      // 부드러운 카메라 추적
-      this.cameras.main.scrollX = Phaser.Math.Linear(
-        this.cameras.main.scrollX,
-        targetCameraX,
-        0.1
-      );
-
-      // 지면 스크롤 (카메라 위치에 동기화)
+    // 3. 지면/배경 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
+    if (this.gameStarted && !this.isGameOver) {
+      const SPEED_PX_PER_SECOND = 90 * ratio; // 서버의 pipeSpeed(1.5/frame)와 동기화
+      // 바닥 스크롤 효과 (카메라가 고정되어 있으므로 tilePositionX를 직접 증가)
       if (this.groundTile) {
-        this.groundTile.tilePositionX = this.cameras.main.scrollX;
+        this.groundTile.tilePositionX += (SPEED_PX_PER_SECOND * _delta) / 1000;
       }
-      // 배경은 scrollFactor(0)으로 카메라를 따라다니므로 별도 처리 불필요
+      if (this.background) {
+        // 바닥 속도의 0.3배로 이동
+        const bgSpeed = SPEED_PX_PER_SECOND * 0.3;
+        this.background.tilePositionX += (bgSpeed * _delta) / 1000;
+      }
     }
 
     // 4. 밧줄 그리기

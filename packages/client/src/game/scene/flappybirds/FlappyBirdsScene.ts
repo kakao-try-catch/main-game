@@ -175,6 +175,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.debugGraphics = this.add.graphics();
     this.debugGraphics.setDepth(1000); // 최상단
 
+    // 카메라 설정 (월드 좌표계 사용)
+    const ratio = this.getRatio();
+    this.cameras.main.setBounds(0, 0, GAME_WIDTH * ratio * 10, GAME_HEIGHT * ratio);
+    this.cameras.main.setSize(GAME_WIDTH * ratio, GAME_HEIGHT * ratio);
+
     console.log('[FlappyBirdsScene] 씬 생성 완료');
   }
 
@@ -212,8 +217,14 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     for (let i = 0; i < count; i++) {
       // 플레이어 번호에 맞는 이미지 선택 (1, 2, 3, 4 순환)
       const birdKey = `flappybird_${(i % 4) + 1}`;
-      const initialX = (200 + i * 120) * ratio;
-      const initialY = 300 * ratio;
+
+      // MockServerCore와 동일한 위치 로직 적용 (Center 250, Spacing 90)
+      const spacing = 90;
+      const totalWidth = (count - 1) * spacing;
+      const startXOffset = 250 - totalWidth / 2;
+      
+      const initialX = (startXOffset + i * spacing) * ratio;
+      const initialY = (300 + i * 3) * ratio; // yOffset도 반영
       const bird = this.add.sprite(initialX, initialY, birdKey);
 
       // 드로잉 오더 설정: 첫 번째 플레이어가 맨 앞으로 (index 0의 depth가 가장 높도록)
@@ -479,7 +490,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       const target = this.targetPositions[i];
 
       if (target) {
-        // 서버 데이터를 기반으로 스프라이트 위치 보간 (ratio 적용)
+        // 서버 데이터를 기반으로 스프라이트 위치 보간 (ratio 적용, 월드 좌표)
         sprite.x = Phaser.Math.Linear(sprite.x, target.x * ratio, 0.3);
         sprite.y = Phaser.Math.Linear(sprite.y, target.y * ratio, 0.3);
 
@@ -499,13 +510,27 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       }
     }
 
-    // 3. 지면 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
-    if (this.gameStarted && !this.isGameOver) {
-      const SPEED_PX_PER_SECOND = 90 * ratio; // 서버의 pipeSpeed(1.5/frame)와 동기화
+    // 카메라를 새들의 평균 X 위치에 고정
+    if (this.birdSprites.length > 0) {
+      let totalX = 0;
+      for (const sprite of this.birdSprites) {
+        totalX += sprite.x;
+      }
+      const avgX = totalX / this.birdSprites.length;
+      // 카메라 중심을 평균 위치로 이동 (부드러운 보간)
+      const targetCameraX = avgX;
+      this.cameras.main.scrollX = Phaser.Math.Linear(
+        this.cameras.main.scrollX,
+        targetCameraX - (GAME_WIDTH * ratio) / 2,
+        0.1
+      );
+    }
 
-      // 바닥 스크롤 효과 (카메라가 고정되어 있으므로 tilePositionX를 직접 증가)
+    // 지면 스크롤 처리 (카메라 이동에 맞춰 조정)
+    if (this.gameStarted && !this.isGameOver) {
+      // 카메라의 현재 X 위치를 기반으로 바닥 스크롤
       if (this.groundTile) {
-        this.groundTile.tilePositionX += (SPEED_PX_PER_SECOND * _delta) / 1000;
+        this.groundTile.tilePositionX = this.cameras.main.scrollX;
       }
     }
 

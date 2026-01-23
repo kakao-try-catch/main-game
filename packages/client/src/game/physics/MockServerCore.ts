@@ -566,6 +566,8 @@ export class MockServerCore {
     return {
       pipeSpeed: this.pipeSpeed,
       pipeSpacing: this.pipeSpacing,
+      pipeGap: this.PIPE_GAP,
+      pipeWidth: this.PIPE_WIDTH,
     };
   }
 

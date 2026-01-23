@@ -53,65 +53,65 @@ export const DEFAULT_FLAPPYBIRD_PRESET: FlappyBirdGamePreset = {
 export function resolveFlappyBirdPreset(
   preset: FlappyBirdGamePreset,
 ): ResolvedFlappyBirdConfig {
-  // 1. 파이프 속도 결정
+  // 1. 파이프 속도 결정 (main 브랜치 기준: 1.5)
   let pipeSpeed: number;
   switch (preset.pipeSpeed) {
     case 'slow':
-      pipeSpeed = 2;
+      pipeSpeed = 1;
       break;
     case 'normal':
-      pipeSpeed = 3;
+      pipeSpeed = 1.5;
       break;
     case 'fast':
-      pipeSpeed = 5;
+      pipeSpeed = 2.5;
       break;
     case 'manual':
-      pipeSpeed = preset.manualSpeed ?? 3;
+      pipeSpeed = preset.manualSpeed ?? 1.5;
       break;
   }
 
-  // 2. 파이프 좌우 간격 결정
+  // 2. 파이프 좌우 간격 결정 (main 브랜치 기준: 400)
   let pipeSpacing: number;
   switch (preset.pipeSpacing) {
     case 'narrow':
-      pipeSpacing = 200;
-      break;
-    case 'normal':
       pipeSpacing = 300;
       break;
-    case 'wide':
+    case 'normal':
       pipeSpacing = 400;
+      break;
+    case 'wide':
+      pipeSpacing = 500;
       break;
     case 'manual':
       pipeSpacing = preset.manualSpacing ?? 400;
       break;
   }
 
-  // 3. 파이프 상하 간격 (통과 공간) 결정
+  // 3. 파이프 상하 간격 (통과 공간) 결정 (main 브랜치 기준: 200)
   let pipeGap: number;
   switch (preset.pipeGap) {
     case 'narrow':
-      pipeGap = 120;
-      break;
-    case 'normal':
       pipeGap = 150;
       break;
-    case 'wide':
+    case 'normal':
       pipeGap = 200;
+      break;
+    case 'wide':
+      pipeGap = 250;
       break;
   }
 
-  // 4. 파이프 넓이 (두께) 결정
+  // 4. 파이프 넓이 (두께) 결정 (main 브랜치 기준: 120)
   let pipeWidth: number;
   switch (preset.pipeWidth) {
     case 'narrow':
-      pipeWidth = 60;
-      break;
-    case 'normal':
       pipeWidth = 80;
       break;
+    case 'normal':
+      pipeWidth = 120;
+      break;
     case 'wide':
-      pipeWidth = 100;
+      pipeWidth = 160;
       break;
   }
 

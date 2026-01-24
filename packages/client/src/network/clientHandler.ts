@@ -48,41 +48,74 @@ export const handleServerPacket = (packet: ServerPacket) => {
       console.log('SYSTEM_MESSAGE packet received:', packet.message);
       break;
 
+    case SystemPacketType.UPDATE_SCORE: {
+      const store = useGameStore.getState();
+      // scoreboard 배열의 인덱스가 플레이어 순서와 일치
+      store.setPlayers((prev) =>
+        prev.map((player, index) => ({
+          ...player,
+          score: packet.scoreboard[index]?.score ?? player.score,
+        })),
+      );
+      console.log('UPDATE_SCORE packet received:', packet.scoreboard);
+      break;
+    }
+
     // --- Game Logic ---
-    case GamePacketType.SET_FIELD:
-      // store.setApples(packet.apples);
-      // renderAppleBoard(packet.apples);
-      console.log('SET_FIELD packet received:', packet.apples);
+    case GamePacketType.SET_FIELD: {
+      const store = useGameStore.getState();
+      store.setAppleField(packet.apples);
+      store.setGameStarted(true);
+      console.log(
+        'SET_FIELD packet received:',
+        packet.apples.length,
+        'apples',
+      );
       break;
+    }
 
-    case GamePacketType.DROP_CELL_INDEX:
-      // 서버에서 확정 패킷이 오면 점수를 반영하고 사과를 제거
-      console.log('DROP_CELL_INDEX packet received:', packet);
-      //handleAppleDrop(packet.winnerId, packet.indices, packet.totalScore);
-      // TODO: 사과 제거 로직 (store에 removeApples 등이 필요할 수 있음)
-      // store.removeApples(packet.indices, packet.winnerId);
-      // 점수 업데이트 (누적 점수라고 가정)
-      // packet에 totalScore가 있다면 사용
-      // appleGameStore.updateScore(packet.winnerId, packet.totalScore);
+    case GamePacketType.DROP_CELL_INDEX: {
+      const store = useGameStore.getState();
+      const { winnerId, indices, totalScore } = packet;
+
+      // 사과 제거 이벤트 발생 (AppleGameManager에서 처리)
+      store.setDropCellEvent({ winnerId, indices, totalScore });
+
+      console.log(
+        'DROP_CELL_INDEX packet received:',
+        winnerId,
+        indices,
+        totalScore,
+      );
       break;
+    }
 
-    case GamePacketType.SET_TIME:
-      // store.setTime(packet.limitTime);
+    case GamePacketType.SET_TIME: {
+      const store = useGameStore.getState();
+      store.setGameTime(packet.limitTime);
       console.log('SET_TIME packet received:', packet.limitTime);
       break;
+    }
 
-    case GamePacketType.UPDATE_DRAG_AREA:
-      // 다른 플레이어의 드래그 박스 좌표 업데이트
-      // updateOtherPlayerDrag(packet.playerId, packet.startX, packet.startY, packet.endX, packet.endY);
-      console.log('UPDATE_DRAG_AREA packet received:', packet);
+    case GamePacketType.UPDATE_DRAG_AREA: {
+      const store = useGameStore.getState();
+      store.updateOtherPlayerDrag({
+        playerId: packet.playerId,
+        startX: packet.startX,
+        startY: packet.startY,
+        endX: packet.endX,
+        endY: packet.endY,
+      });
       break;
+    }
 
-    case GamePacketType.TIME_END:
-      // 게임 종료 처리
-      // showResultWindow(packet.results);
+    case GamePacketType.TIME_END: {
+      const store = useGameStore.getState();
+      store.setGameResults(packet.results);
+      store.setGameStarted(false);
       console.log('TIME_END packet received:', packet.results);
-      // appleGameStore.setGameStatus('ended'); // 예시
       break;
+    }
 
     // 클라이언트가 보낸 패킷이 루프백으로 수신되는 경우 등 예외 처리
     default:

@@ -8,6 +8,9 @@ import { GamePacketType } from '../../../../../common/src/packets';
 import type { PlayerData } from '../../types/common';
 import { hexStringToNumber, adjustBrightness } from '../../utils/colorUtils';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
+import { useGameStore } from '../../../store/gameStore';
+import { DragAreaSender } from '../../utils/DragAreaSender';
+import { OtherPlayerDragRenderer } from '../../utils/OtherPlayerDragRenderer';
 
 // Declare the global property for TypeScript
 declare global {
@@ -68,6 +71,12 @@ export default class AppleGameManager {
 
   // 드래그 선택 해제용
   private detachDrag?: () => void;
+
+  // 드래그 영역 서버 전송용 (멀티플레이)
+  private dragAreaSender?: DragAreaSender;
+
+  // 타 플레이어 드래그 영역 렌더링용 (멀티플레이)
+  private otherPlayerDragRenderer?: OtherPlayerDragRenderer;
 
   // 플레이어 데이터
   private players: PlayerData[] = [];
@@ -164,8 +173,8 @@ export default class AppleGameManager {
     this.startTimer();
   }
 
-  /** 사과 그리드 생성 */
-  private createApples(): void {
+  /** 사과 그리드 생성 (서버 데이터 또는 랜덤 생성) */
+  private createApples(appleNumbers?: number[]): void {
     const {
       gridCols,
       gridRows,
@@ -188,8 +197,11 @@ export default class AppleGameManager {
       appleScale = ratio * 1.1; // S 크기(16x8): 110% 크기
     }
 
+    // 기존 사과 정리
+    this.apples.forEach((apple) => apple.destroy());
     this.apples = [];
     this.appleIndexMap.clear();
+
     let index = 0;
     for (let col = 0; col < gridCols; col++) {
       for (let row = 0; row < gridRows; row++) {
@@ -201,14 +213,97 @@ export default class AppleGameManager {
         } else {
           this.scene.add.existing(apple);
         }
-        // 랜덤 숫자 설정 (minNumber ~ maxNumber)
-        const randomNum = Phaser.Math.Between(minNumber, maxNumber);
-        apple.setNumber(randomNum);
+        // 서버에서 받은 숫자 사용, 없으면 랜덤 생성
+        const num =
+          appleNumbers?.[index] ?? Phaser.Math.Between(minNumber, maxNumber);
+        apple.setNumber(num);
         this.apples.push(apple);
         this.appleIndexMap.set(apple, index);
         index++;
       }
     }
+
+    console.log(`🍎 사과 ${this.apples.length}개 생성 완료`);
+  }
+
+  /** 서버 데이터로 게임 초기화 (멀티플레이용) */
+  public initWithServerData(
+    apples: number[],
+    currentPlayerIndex: number,
+  ): void {
+    this.createApples(apples);
+    this.setCurrentPlayerIndex(currentPlayerIndex);
+    this.setupDragSelection();
+    this.subscribeToDropCellEvents();
+
+    // 멀티플레이용 드래그 영역 전송 활성화
+    this.dragAreaSender = new DragAreaSender();
+
+    // 멀티플레이용 타 플레이어 드래그 영역 렌더링 활성화
+    this.otherPlayerDragRenderer = new OtherPlayerDragRenderer(
+      this.scene,
+      this.container ?? undefined,
+    );
+
+    console.log('🎮 서버 데이터로 게임 초기화 완료');
+  }
+
+  /** 지정된 시간으로 타이머 시작 (멀티플레이용) */
+  public startTimerWithDuration(seconds: number): void {
+    this.timerSystem = new TimerSystem(this.scene, this.timerPrefab, this);
+    this.timerSystem.start(seconds);
+    console.log(`⏱️ 타이머 시작: ${seconds}초`);
+  }
+
+  /** DROP_CELL_INDEX 이벤트 구독 */
+  private unsubscribeDropCell?: () => void;
+
+  private subscribeToDropCellEvents(): void {
+    // 이전 구독 해제
+    this.unsubscribeDropCell?.();
+
+    this.unsubscribeDropCell = useGameStore.subscribe(
+      (state) => state.dropCellEvent,
+      (event) => {
+        if (!event) return;
+
+        const myId = socketManager.getId();
+        const isMe = event.winnerId === myId;
+
+        this.handleDropCell(event.indices, isMe);
+
+        // 이벤트 소비 후 클리어
+        useGameStore.getState().setDropCellEvent(null);
+      },
+    );
+  }
+
+  /** 사과 제거 처리 */
+  private handleDropCell(indices: number[], isMe: boolean): void {
+    indices.forEach((index) => {
+      const apple = this.getAppleByIndex(index);
+      if (apple && apple.active) {
+        if (isMe) {
+          // 내가 딴 사과 - 이미 선택 상태이므로 애니메이션만 (이미 처리됨)
+          // 서버 확인 후 추가 처리가 필요하면 여기서
+        } else {
+          // 다른 플레이어가 딴 사과 - 블랙홀 효과
+          apple.playBlackholeDestroy();
+        }
+      }
+    });
+
+    // 사과 리스트 정리
+    this.apples = this.apples.filter((apple) => apple.active);
+    console.log(`🍎 사과 제거 완료. 남은 사과: ${this.apples.length}개`);
+  }
+
+  /** 인덱스로 사과 찾기 */
+  public getAppleByIndex(index: number): applePrefab | undefined {
+    for (const [apple, idx] of this.appleIndexMap.entries()) {
+      if (idx === index) return apple;
+    }
+    return undefined;
   }
 
   /**
@@ -260,6 +355,9 @@ export default class AppleGameManager {
         this.selectedApples.add(apple);
       }
     }
+
+    // 멀티플레이: 드래그 영역 서버로 전송
+    this.dragAreaSender?.updateDragArea(rect);
   }
 
   /** 드래그 종료 시 호출 */
@@ -308,6 +406,9 @@ export default class AppleGameManager {
     }
 
     this.selectedApples.clear();
+
+    // 멀티플레이: 드래그 영역 클리어
+    this.dragAreaSender?.clearDragArea();
   }
 
   /** 타이머 시작 */
@@ -407,6 +508,9 @@ export default class AppleGameManager {
   /** 정리 */
   destroy(): void {
     this.detachDrag?.();
+    this.unsubscribeDropCell?.();
+    this.dragAreaSender?.destroy();
+    this.otherPlayerDragRenderer?.destroy();
     this.timerSystem?.destroy();
     this.apples.forEach((apple) => apple.destroy());
     this.apples = [];

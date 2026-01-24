@@ -4,6 +4,7 @@ import type { AppleGamePreset } from '../../types/AppleGamePreset';
 import { resolvePreset } from '../../types/AppleGamePreset';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import type { PlayerData } from '../../types/common';
+import { useGameStore } from '../../../store/gameStore';
 
 // You can write more code here
 
@@ -56,6 +57,14 @@ export default class AppleGameScene extends Phaser.Scene {
   };
   private isGameInitialized: boolean = false;
   private _currentPreset?: AppleGamePreset;
+  private unsubscribeAppleField?: () => void;
+  private unsubscribeGameTime?: () => void;
+  private unsubscribeGameResults?: () => void;
+  private _pendingPlayerData?: {
+    playerCount: number;
+    players: PlayerData[];
+    currentPlayerIndex: number;
+  };
 
   /* START-USER-CODE */
 
@@ -178,39 +187,58 @@ export default class AppleGameScene extends Phaser.Scene {
         players: PlayerData[];
         currentPlayerIndex: number;
         preset?: AppleGamePreset;
+        isMultiplayer?: boolean;
       }) => {
         console.log('📩 updatePlayers 이벤트 수신:', data);
 
-        // 게임이 아직 초기화되지 않았으면 초기값 저장 후 초기화
-        if (!this.isGameInitialized) {
-          // 프리셋이 있으면 게임 설정 업데이트 (초기화 전에!)
-          if (data.preset) {
-            this._currentPreset = data.preset;
-            const resolvedConfig = resolvePreset(data.preset);
+        // 프리셋이 있으면 게임 설정 업데이트
+        if (data.preset) {
+          this._currentPreset = data.preset;
+          const resolvedConfig = resolvePreset(data.preset);
 
-            // 그리드 크기에 맞춰 레이아웃 재계산
-            this.calculateGridConfig(
-              resolvedConfig.gridCols,
-              resolvedConfig.gridRows,
-            );
+          // 그리드 크기에 맞춰 레이아웃 재계산
+          this.calculateGridConfig(
+            resolvedConfig.gridCols,
+            resolvedConfig.gridRows,
+          );
 
-            // AppleGameManager 설정 업데이트
-            this.gameManager.updateGameConfig({
-              ...resolvedConfig,
-              baseX: this._appleGridConfig.baseX,
-              baseY: this._appleGridConfig.baseY,
-              spacingX: this._appleGridConfig.spacingX,
-              spacingY: this._appleGridConfig.spacingY,
-            });
+          // AppleGameManager 설정 업데이트
+          this.gameManager.updateGameConfig({
+            ...resolvedConfig,
+            baseX: this._appleGridConfig.baseX,
+            baseY: this._appleGridConfig.baseY,
+            spacingX: this._appleGridConfig.spacingX,
+            spacingY: this._appleGridConfig.spacingY,
+          });
 
-            console.log(
-              '🎮 프리셋 적용 (초기화 전):',
-              data.preset,
-              '→',
-              resolvedConfig,
-            );
+          console.log(
+            '🎮 프리셋 적용:',
+            data.preset,
+            '→',
+            resolvedConfig,
+          );
+        }
+
+        // 플레이어 데이터 저장 (멀티플레이에서 SET_FIELD 대기용)
+        this._pendingPlayerData = {
+          playerCount: data.playerCount,
+          players: data.players,
+          currentPlayerIndex: data.currentPlayerIndex,
+        };
+
+        // 멀티플레이 모드: SET_FIELD 패킷을 기다림
+        if (data.isMultiplayer) {
+          console.log('🌐 멀티플레이 모드: SET_FIELD 패킷 대기 중...');
+          // SET_FIELD 패킷이 이미 도착했는지 확인
+          const appleField = useGameStore.getState().appleField;
+          if (appleField && !this.isGameInitialized) {
+            this.initializeWithServerData(appleField);
           }
+          return;
+        }
 
+        // 싱글플레이 모드: 기존 방식으로 바로 초기화
+        if (!this.isGameInitialized) {
           this.gameManager.updatePlayerData(data.playerCount, data.players);
           this.gameManager.init(data.currentPlayerIndex);
           this.isGameInitialized = true;
@@ -218,17 +246,81 @@ export default class AppleGameScene extends Phaser.Scene {
           // 이미 초기화된 경우 업데이트만
           this.gameManager.updatePlayerData(data.playerCount, data.players);
           this.gameManager.setCurrentPlayerIndex(data.currentPlayerIndex);
-
-          // 프리셋 변경 시 경고 (게임 재시작 필요)
-          if (data.preset) {
-            console.warn('⚠️ 프리셋 변경은 게임 재시작 후 적용됩니다.');
-          }
         }
       },
     );
 
     // BootScene에 준비 완료 신호 보내기
     this.events.emit('scene-ready');
+
+    // 멀티플레이: gameStore 구독 설정
+    this.subscribeToGameStore();
+
+    // 씬 종료 시 구독 해제
+    this.events.once('shutdown', () => {
+      this.unsubscribeAppleField?.();
+      this.unsubscribeGameTime?.();
+      this.unsubscribeGameResults?.();
+    });
+  }
+
+  /** gameStore 구독 설정 (멀티플레이용) */
+  private subscribeToGameStore(): void {
+    // SET_FIELD 패킷 수신 시 사과밭 초기화
+    this.unsubscribeAppleField = useGameStore.subscribe(
+      (state) => state.appleField,
+      (appleField) => {
+        if (appleField && !this.isGameInitialized) {
+          console.log('🍎 SET_FIELD 수신: 서버 데이터로 게임 초기화');
+          this.initializeWithServerData(appleField);
+        }
+      },
+    );
+
+    // SET_TIME 패킷 수신 시 타이머 시작
+    this.unsubscribeGameTime = useGameStore.subscribe(
+      (state) => state.gameTime,
+      (gameTime) => {
+        if (gameTime && this.isGameInitialized) {
+          console.log(`⏱️ SET_TIME 수신: ${gameTime}초`);
+          this.gameManager.startTimerWithDuration(gameTime);
+        }
+      },
+    );
+
+    // TIME_END 패킷 수신 시 게임 종료
+    this.unsubscribeGameResults = useGameStore.subscribe(
+      (state) => state.gameResults,
+      (results) => {
+        if (results) {
+          console.log('🏁 TIME_END 수신: 게임 종료');
+          this.gameManager.gameEnd();
+        }
+      },
+    );
+  }
+
+  /** 서버 데이터로 게임 초기화 (멀티플레이용) */
+  private initializeWithServerData(appleField: number[]): void {
+    const playerData = this._pendingPlayerData;
+    if (!playerData) {
+      console.warn('⚠️ 플레이어 데이터가 없습니다. updatePlayers 이벤트를 기다립니다.');
+      return;
+    }
+
+    // 플레이어 데이터 설정
+    this.gameManager.updatePlayerData(playerData.playerCount, playerData.players);
+
+    // 서버 데이터로 게임 초기화
+    this.gameManager.initWithServerData(appleField, playerData.currentPlayerIndex);
+
+    this.isGameInitialized = true;
+
+    // gameTime이 이미 설정되어 있으면 타이머 시작
+    const gameTime = useGameStore.getState().gameTime;
+    if (gameTime) {
+      this.gameManager.startTimerWithDuration(gameTime);
+    }
   }
 
   /* END-USER-CODE */

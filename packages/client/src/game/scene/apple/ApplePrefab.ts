@@ -117,6 +117,24 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
       },
     });
   }
+
+  /** 다른 플레이어가 딴 사과 - 블랙홀 효과로 소멸 */
+  playBlackholeDestroy(): void {
+    this.setFrameVisible(false);
+
+    // 축소되면서 사라지는 효과
+    this.scene.tweens.add({
+      targets: this,
+      scaleX: 0,
+      scaleY: 0,
+      alpha: 0,
+      duration: 300,
+      ease: 'Back.easeIn',
+      onComplete: () => {
+        this.destroy();
+      },
+    });
+  }
   /* END-USER-CODE */
 }
 

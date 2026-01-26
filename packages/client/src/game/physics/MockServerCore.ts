@@ -43,7 +43,7 @@ export class MockServerCore {
   private screenHeight: number = GAME_HEIGHT;
 
   // 물리 파라미터
-  private readonly GRAVITY_Y = 1.2; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
+  private readonly GRAVITY_Y = 1; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
   private readonly BIRD_WIDTH = 80; // 57 * 1.4 (해상도 변경 반영)
   private readonly BIRD_HEIGHT = 50; // 36 * 1.4 (해상도 변경 반영)
   private readonly FLAP_VELOCITY = -10; // 플랩 정도
@@ -56,6 +56,7 @@ export class MockServerCore {
   private readonly IDEAL_LENGTH = 100; // 밧줄 여유 길이 단축 (120 -> 100)
   private readonly ROPE_STIFFNESS = 0.3; // 밧줄 장력 최대치 근사값
   private readonly ROPE_SOFTNESS = 50; // 장력 완화 계수 (로그 함수 대체용)
+  private ropeConnections: [number, number][] = []; // 밧줄 연결 쌍
 
   // 파이프 파라미터 (프리셋에서 설정)
   private pipeWidth: number = 120;
@@ -64,6 +65,7 @@ export class MockServerCore {
   private pipeSpeed: number = 1.5;
   private flapBoostBase: number = 0.3; // 점프 시 기본 전진력
   private flapBoostRandom: number = 0.7; // 점프 시 랜덤 추가 전진력 범위
+  private connectAll: boolean = false; // 모두 묶기
 
   constructor(socket: MockSocket) {
     this.socket = socket;
@@ -117,7 +119,8 @@ export class MockServerCore {
       this.pipeWidth = config.pipeWidth;
       this.flapBoostBase = config.flapBoostBase;
       this.flapBoostRandom = config.flapBoostRandom;
-      console.log(`[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}, flapBoost=${config.flapBoostBase}+${config.flapBoostRandom}`);
+      this.connectAll = config.connectAll;
+      console.log(`[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}, flapBoost=${config.flapBoostBase}+${config.flapBoostRandom}, connectAll=${config.connectAll}`);
     }
 
     // 바닥 생성
@@ -126,9 +129,32 @@ export class MockServerCore {
     // 설정된 플레이어 수만큼 새 생성
     this.createBirds(this.playerCount);
 
-    // ※ 이제 고정된 Constraint 대신 update 루프에서 동적인 장력을 계산하여 적용합니다.
+    // 밧줄 연결 쌍 계산 (2인: 선형, 3인+: 폐쇄형 도형)
+    this.ropeConnections = this.calculateRopeConnections(this.playerCount);
 
-    console.log('[MockServerCore] 게임 초기화 완료');
+    console.log(`[MockServerCore] 게임 초기화 완료 (밧줄 연결: ${this.ropeConnections.map(c => `${c[0]}-${c[1]}`).join(', ')})`);
+  }
+
+  /**
+   * 밧줄 연결 쌍 계산
+   * connectAll=false: 선형 연결 (0-1, 1-2, 2-3)
+   * connectAll=true: 폐쇄형 도형 (2인: 선형, 3인: 삼각형, 4인: 사각형)
+   */
+  private calculateRopeConnections(playerCount: number): [number, number][] {
+    if (playerCount < 2) return [];
+
+    // 선형 연결 (기본)
+    const connections: [number, number][] = [];
+    for (let i = 0; i < playerCount - 1; i++) {
+      connections.push([i, i + 1]);
+    }
+
+    // 모두 묶기: 마지막 새와 첫 번째 새 연결 (3인 이상)
+    if (this.connectAll && playerCount >= 3) {
+      connections.push([playerCount - 1, 0]);
+    }
+
+    return connections;
   }
 
   /**
@@ -161,18 +187,16 @@ export class MockServerCore {
    * 새 생성
    */
   private createBirds(count: number) {
-    const startX = 250; // 좀 더 앞쪽에서 시작
-    const startY = 300;
-    const spacing = 90; // 새들 사이 간격을 촘촘하게 (120 -> 90)
+    // 초기 위치 계산
+    const positions = this.calculateBirdPositions(count);
 
     for (let i = 0; i < count; i++) {
-      // 각 새에 약간의 Y 오프셋을 주어 초기 장력 생성 (물리 안정화)
-      const yOffset = i * 3; // 0, 5, 10, 15 픽셀 차이
+      const { x, y } = positions[i];
 
       // 새의 형태가 57*36 이므로 원형보다는 직사각형(또는 둥근 사각형)이 적합
       const bird = Matter.Bodies.rectangle(
-        startX + i * spacing,
-        startY + yOffset,
+        x,
+        y,
         this.BIRD_WIDTH,
         this.BIRD_HEIGHT,
         {
@@ -193,7 +217,57 @@ export class MockServerCore {
       Matter.World.add(this.world, bird);
     }
 
-    console.log(`[MockServerCore] ${count}개의 새 생성 완료 (초기 장력 적용)`);
+    console.log(`[MockServerCore] ${count}개의 새 생성 완료 (connectAll=${this.connectAll})`);
+  }
+
+  /**
+   * 새 초기 위치 계산
+   * connectAll=false: 수평 일렬
+   * connectAll=true: 3인 삼각형, 4인 마름모
+   */
+  private calculateBirdPositions(count: number): { x: number; y: number }[] {
+    const centerX = 300;
+    const centerY = 350;
+    const spacing = 80; // 새들 사이 거리
+
+    // 기본: 수평 일렬 배치
+    if (!this.connectAll || count < 3) {
+      const startX = 250;
+      const startY = 300;
+      return Array.from({ length: count }, (_, i) => ({
+        x: startX + i * 90,
+        y: startY + i * 3, // 약간의 Y 오프셋
+      }));
+    }
+
+    // 모두 묶기: 도형 형태로 배치
+    if (count === 3) {
+      // 삼각형: 위에 1명, 아래에 2명
+      return [
+        { x: centerX, y: centerY - spacing * 0.6 }, // 상단
+        { x: centerX - spacing, y: centerY + spacing * 0.4 }, // 하단 좌
+        { x: centerX + spacing, y: centerY + spacing * 0.4 }, // 하단 우
+      ];
+    }
+
+    if (count === 4) {
+      // 마름모: 상-좌-하-우
+      return [
+        { x: centerX, y: centerY - spacing }, // 상단
+        { x: centerX - spacing, y: centerY }, // 좌측
+        { x: centerX, y: centerY + spacing }, // 하단
+        { x: centerX + spacing, y: centerY }, // 우측
+      ];
+    }
+
+    // 5인 이상: 원형 배치
+    return Array.from({ length: count }, (_, i) => {
+      const angle = (2 * Math.PI * i) / count - Math.PI / 2; // 12시 방향부터 시작
+      return {
+        x: centerX + spacing * Math.cos(angle),
+        y: centerY + spacing * Math.sin(angle),
+      };
+    });
   }
 
   /**
@@ -250,11 +324,11 @@ export class MockServerCore {
       // 점프를 하지 않으면 감속되어 뒤로 밀림
       const baseForwardSpeed = this.pipeSpeed * 1.5; // 파이프 속도의 1.5배
       const currentVelX = bird.velocity.x;
-      
+
       // 마지막 점프로부터 경과된 프레임 수 (60fps 기준)
       const lastFlap = this.lastFlapTime.get(i) ?? 0;
       const framesSinceFlap = this.frameCount - lastFlap;
-      
+
       // 점프하지 않은 시간이 길수록 더 많이 감속 (30프레임 = 0.5초 기준)
       const noFlapPenalty = framesSinceFlap > 30 ? 0.97 : 0.995; // 점프 안하면 더 빠른 감속
 
@@ -311,9 +385,10 @@ export class MockServerCore {
    * 거리가 멀수록(팽팽할수록) 서로를 당기는 힘이 강해집니다.
    */
   private applyDynamicTension() {
-    for (let i = 0; i < this.birds.length - 1; i++) {
-      const birdA = this.birds[i];
-      const birdB = this.birds[i + 1];
+    for (const [indexA, indexB] of this.ropeConnections) {
+      const birdA = this.birds[indexA];
+      const birdB = this.birds[indexB];
+      if (!birdA || !birdB) continue;
 
       const dx = birdB.position.x - birdA.position.x;
       const dy = birdB.position.y - birdA.position.y;
@@ -353,9 +428,11 @@ export class MockServerCore {
     const ropes: RopeData[] = [];
     const segments = 10;
 
-    for (let i = 0; i < this.birds.length - 1; i++) {
-      const birdA = this.birds[i];
-      const birdB = this.birds[i + 1];
+    for (const [indexA, indexB] of this.ropeConnections) {
+      const birdA = this.birds[indexA];
+      const birdB = this.birds[indexB];
+      if (!birdA || !birdB) continue;
+
       const points: { x: number; y: number }[] = [];
 
       for (let j = 0; j <= segments; j++) {

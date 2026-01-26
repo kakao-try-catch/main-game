@@ -31,6 +31,9 @@ export interface FlappyBirdGamePreset {
 
   /** 파이프 넓이 (두께) */
   pipeWidth: PipeWidthPreset;
+
+  /** 모두 묶기 (3인 이상일 때 폐쇄형 도형으로 연결) */
+  connectAll?: boolean;
 }
 
 /** 프리셋에서 실제 게임 설정으로 변환 */
@@ -41,6 +44,7 @@ export interface ResolvedFlappyBirdConfig {
   pipeWidth: number;
   flapBoostBase: number; // 점프 시 기본 전진력 (pipeSpeed에 비례)
   flapBoostRandom: number; // 점프 시 랜덤 추가 전진력 범위 (pipeSpeed에 비례)
+  connectAll: boolean; // 모두 묶기 (3인 이상일 때 폐쇄형 도형으로 연결)
 }
 
 /** 기본 프리셋 */
@@ -49,6 +53,7 @@ export const DEFAULT_FLAPPYBIRD_PRESET: FlappyBirdGamePreset = {
   pipeSpacing: 'normal',
   pipeGap: 'normal',
   pipeWidth: 'normal',
+  connectAll: false,
 };
 
 /** 프리셋을 실제 게임 설정으로 변환하는 헬퍼 함수 */
@@ -130,5 +135,6 @@ export function resolveFlappyBirdPreset(
     pipeWidth,
     flapBoostBase,
     flapBoostRandom,
+    connectAll: preset.connectAll ?? false,
   };
 }

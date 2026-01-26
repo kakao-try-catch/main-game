@@ -47,20 +47,23 @@ export class MockServerCore {
   private readonly BIRD_WIDTH = 80; // 57 * 1.4 (해상도 변경 반영)
   private readonly BIRD_HEIGHT = 50; // 36 * 1.4 (해상도 변경 반영)
   private readonly FLAP_VELOCITY = -10; // 플랩 정도
+  private readonly FLAP_VERTICAL_JITTER_RATIO = 0.2; // 규칙적 플랩 정렬 방지용 수직 변동 비율
   private isGameOverState: boolean = false; // 게임 오버 상태 추적
+  private lastFlapTime: Map<number, number> = new Map(); // 각 새의 마지막 점프 시간
+  private frameCount: number = 0; // 프레임 카운터
 
   // 밧줄 물리 파라미터
   private readonly IDEAL_LENGTH = 100; // 밧줄 여유 길이 단축 (120 -> 100)
   private readonly ROPE_STIFFNESS = 0.3; // 밧줄 장력 최대치 근사값
   private readonly ROPE_SOFTNESS = 50; // 장력 완화 계수 (로그 함수 대체용)
 
-  // 파이프 파라미터
-  private readonly PIPE_WIDTH = 120;
-  private readonly PIPE_GAP = 200;
+  // 파이프 파라미터 (프리셋에서 설정)
+  private pipeWidth: number = 120;
+  private pipeGap: number = 200;
   private pipeSpacing: number = 400; // 파이프 간 거리
-
-  // 파이프 속도 관리 (원래 속도 1.5로 복구)
   private pipeSpeed: number = 1.5;
+  private flapBoostBase: number = 0.3; // 점프 시 기본 전진력
+  private flapBoostRandom: number = 0.7; // 점프 시 랜덤 추가 전진력 범위
 
   constructor(socket: MockSocket) {
     this.socket = socket;
@@ -103,11 +106,18 @@ export class MockServerCore {
     this.isGameOverState = false;
     this.pipes = [];
     this.nextPipeId = 0;
+    this.lastFlapTime.clear();
+    this.frameCount = 0;
 
     // 설정 적용
     if (config) {
       this.pipeSpeed = config.pipeSpeed;
       this.pipeSpacing = config.pipeSpacing;
+      this.pipeGap = config.pipeGap;
+      this.pipeWidth = config.pipeWidth;
+      this.flapBoostBase = config.flapBoostBase;
+      this.flapBoostRandom = config.flapBoostRandom;
+      console.log(`[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}, flapBoost=${config.flapBoostBase}+${config.flapBoostRandom}`);
     }
 
     // 바닥 생성
@@ -217,11 +227,14 @@ export class MockServerCore {
    * 물리 업데이트 및 브로드캐스트
    */
   private update() {
+    this.frameCount++;
+
     // 1. 파이프 업데이트 (전체 상태에 대해 한 번만)
     this.updatePipes();
 
     // 2. 개별 새 물리 제어
-    for (const bird of this.birds) {
+    for (let i = 0; i < this.birds.length; i++) {
+      const bird = this.birds[i];
       if (bird.isStatic) continue;
 
       if (this.isGameOverState) {
@@ -233,14 +246,30 @@ export class MockServerCore {
         continue;
       }
 
-      // 1. 공기 저항 (수평 속도 감쇠)
+      // 1. 기본 전진 속도 유지 (pipeSpeed 기준으로 일정한 게임 진행)
+      // 점프를 하지 않으면 감속되어 뒤로 밀림
+      const baseForwardSpeed = this.pipeSpeed * 1.5; // 파이프 속도의 1.5배
+      const currentVelX = bird.velocity.x;
+      
+      // 마지막 점프로부터 경과된 프레임 수 (60fps 기준)
+      const lastFlap = this.lastFlapTime.get(i) ?? 0;
+      const framesSinceFlap = this.frameCount - lastFlap;
+      
+      // 점프하지 않은 시간이 길수록 더 많이 감속 (30프레임 = 0.5초 기준)
+      const noFlapPenalty = framesSinceFlap > 30 ? 0.97 : 0.995; // 점프 안하면 더 빠른 감속
+
+      // 기본 속도보다 느리면 가속, 빠르면 공기저항으로 감속
+      let newVelX: number;
+      if (currentVelX < baseForwardSpeed) {
+        newVelX = currentVelX + 0.05; // 점진적 가속
+      } else {
+        newVelX = currentVelX * noFlapPenalty; // 점프 안한 새는 더 빠르게 감속
+      }
+
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x * 0.985, // 관성을 유지하면서 자연스럽게 감속
+        x: newVelX,
         y: bird.velocity.y,
       });
-
-      // 그룹 중심 유지 및 개별 순서 보정 로직을 완전히 삭제함.
-      // 이제 새들은 플랩 세기에 따라画面 앞을 뚫고 나가거나 뒤로 완전히 밀려날 수 있음.
     }
 
     // 3. 가변 장력 적용
@@ -388,16 +417,7 @@ export class MockServerCore {
           Matter.Body.setVelocity(bird, { x: 0, y: bird.velocity.y });
         }
       }
-      // 오른쪽 벽 (1440 기준)
-      if (bird.position.x + this.BIRD_WIDTH / 2 >= this.screenWidth) {
-        Matter.Body.setPosition(bird, {
-          x: this.screenWidth - this.BIRD_WIDTH / 2,
-          y: bird.position.y,
-        });
-        if (bird.velocity.x > 0) {
-          Matter.Body.setVelocity(bird, { x: 0, y: bird.velocity.y });
-        }
-      }
+      // 오른쪽 벽 제거됨 - 카메라가 새를 따라가므로 무한히 앞으로 이동 가능
 
       // 2. 파이프와의 충돌
       const birdX = bird.position.x;
@@ -505,9 +525,18 @@ export class MockServerCore {
     if (birdIndex >= 0 && birdIndex < this.birds.length) {
       const bird = this.birds[birdIndex];
 
+      // 점프 시간 기록
+      this.lastFlapTime.set(birdIndex, this.frameCount);
+
+      // 플랩 시 약간의 추가 전진력 (새들 간 위치 변화용)
+      // 0.3 + 0~0.7 랜덤 (pipeSpeed에 비례)
+      const extraBoost = this.flapBoostBase + Math.random() * this.flapBoostRandom;
+      // 규칙적인 플랩이 반복될 때 새들이 일직선으로 정렬되는 현상 완화
+      const verticalJitter =
+        (Math.random() - 0.5) * Math.abs(this.FLAP_VELOCITY) * this.FLAP_VERTICAL_JITTER_RATIO;
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x + 1.5, // 전진 파워
-        y: this.FLAP_VELOCITY,
+        x: bird.velocity.x + extraBoost,
+        y: this.FLAP_VELOCITY + verticalJitter,
       });
 
       // 플랩 시 즉시 앞을 보게 함 (0도 유지) 및 회전 속도 초기화
@@ -527,8 +556,8 @@ export class MockServerCore {
       id: `pipe_${this.nextPipeId++}`,
       x,
       gapY,
-      width: this.PIPE_WIDTH,
-      gap: this.PIPE_GAP,
+      width: this.pipeWidth,
+      gap: this.pipeGap,
       passed: false,
       passedPlayers: [],
     };
@@ -539,23 +568,37 @@ export class MockServerCore {
   private updatePipes() {
     if (this.isGameOverState) return; // 게임 오버 시 파이프 정지
 
-    // 파이프 이동 (일정한 속도 유지)
-    for (const pipe of this.pipes) {
-      pipe.x -= this.pipeSpeed;
+    // 새들의 평균 X 위치 계산 (카메라 기준점)
+    let avgBirdX = 250; // 기본값
+    if (this.birds.length > 0) {
+      let totalX = 0;
+      for (const bird of this.birds) {
+        totalX += bird.position.x;
+      }
+      avgBirdX = totalX / this.birds.length;
     }
 
     // 화면 밖으로 나간 파이프 제거
-    this.pipes = this.pipes.filter((pipe) => pipe.x > -this.PIPE_WIDTH);
+    this.pipes = this.pipes.filter((pipe) => pipe.x > -this.pipeWidth);
+    // 카메라 뷰 범위 계산 (새들 기준)
+    const viewLeft = avgBirdX - this.screenWidth / 4;
+    const viewRight = avgBirdX + (this.screenWidth * 3) / 4;
 
-    // 거리 기반 파이프 생성 (일정한 간격 유지)
-    // 마지막 파이프가 없거나, 마지막 파이프가 충분히 왼쪽으로 이동했을 때 새 파이프 생성
-    const shouldSpawnPipe =
-      this.pipes.length === 0 ||
-      this.pipes[this.pipes.length - 1].x <=
-        this.screenWidth - this.pipeSpacing;
+    // 새들 앞에 파이프 미리 생성 (화면 오른쪽 + 여유 공간)
+    const spawnAhead = this.screenWidth; // 화면 너비만큼 앞에 미리 생성
+    const targetX = viewRight + spawnAhead;
 
-    if (shouldSpawnPipe) {
-      this.createPipe(this.screenWidth + this.PIPE_WIDTH);
+    // 뷰 오른쪽 + spawnAhead까지 파이프 생성
+    let maxPipeX = this.pipes.length > 0
+      ? Math.max(...this.pipes.map(p => p.x))
+      : viewLeft;
+
+    while (maxPipeX < targetX) {
+      const newPipeX = this.pipes.length === 0
+        ? viewRight + this.pipeSpacing
+        : maxPipeX + this.pipeSpacing;
+      this.createPipe(newPipeX);
+      maxPipeX = newPipeX;
     }
   }
 
@@ -566,6 +609,8 @@ export class MockServerCore {
     return {
       pipeSpeed: this.pipeSpeed,
       pipeSpacing: this.pipeSpacing,
+      pipeGap: this.pipeGap,
+      pipeWidth: this.pipeWidth,
     };
   }
 

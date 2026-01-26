@@ -84,12 +84,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
     case GamePacketType.SET_FIELD: {
       const store = useGameStore.getState();
       store.setAppleField(packet.apples);
-      store.setGameStarted(true);
-      console.log(
-        'SET_FIELD packet received:',
-        packet.apples.length,
-        'apples',
-      );
+      store.setGameStarted(true); // todo 이건 여기서 할 게 아니지 않음?
+      console.log('SET_FIELD packet received:', packet.apples.length, 'apples');
       break;
     }
 

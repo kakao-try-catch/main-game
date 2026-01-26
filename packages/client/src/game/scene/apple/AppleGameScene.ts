@@ -211,12 +211,7 @@ export default class AppleGameScene extends Phaser.Scene {
             spacingY: this._appleGridConfig.spacingY,
           });
 
-          console.log(
-            '🎮 프리셋 적용:',
-            data.preset,
-            '→',
-            resolvedConfig,
-          );
+          console.log('🎮 프리셋 적용:', data.preset, '→', resolvedConfig);
         }
 
         // 플레이어 데이터 저장 (멀티플레이에서 SET_FIELD 대기용)
@@ -308,15 +303,23 @@ export default class AppleGameScene extends Phaser.Scene {
   private initializeWithServerData(appleField: number[]): void {
     const playerData = this._pendingPlayerData;
     if (!playerData) {
-      console.warn('⚠️ 플레이어 데이터가 없습니다. updatePlayers 이벤트를 기다립니다.');
+      console.warn(
+        '⚠️ 플레이어 데이터가 없습니다. updatePlayers 이벤트를 기다립니다.',
+      );
       return;
     }
 
     // 플레이어 데이터 설정
-    this.gameManager.updatePlayerData(playerData.playerCount, playerData.players);
+    this.gameManager.updatePlayerData(
+      playerData.playerCount,
+      playerData.players,
+    );
 
     // 서버 데이터로 게임 초기화
-    this.gameManager.initWithServerData(appleField, playerData.currentPlayerIndex);
+    this.gameManager.initWithServerData(
+      appleField,
+      playerData.currentPlayerIndex,
+    );
 
     this.isGameInitialized = true;
 

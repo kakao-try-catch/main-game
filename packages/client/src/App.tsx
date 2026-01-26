@@ -24,7 +24,7 @@ import {
   type JoinRoomPacket,
   type ServerPacket,
 } from '../../common/src/packets';
-import { GameType } from '../../common/src/config';
+import { GameType } from '../../common/src/config.ts';
 
 import './App.css';
 import { socketManager } from './network/socket';

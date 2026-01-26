@@ -8,13 +8,13 @@ import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 import { useGameStore } from '../store/gameStore';
 
+import { SystemPacketType } from '../../../common/src/packets';
 import {
-  GameType,
   MapSize,
-  SystemPacketType,
-} from '../../../common/src/packets';
-import type { AppleGameConfig } from '../../../common/src/packets';
-import { APPLE_GAME_CONFIG } from '../../../common/src/config';
+  GameType,
+  APPLE_GAME_CONFIG,
+} from '../../../common/src/config.ts';
+import type { AppleGameConfig } from '../../../common/src/config.ts';
 import { socketManager } from '../network/socket';
 import { type PlayerData } from '../../../common/src/packets';
 

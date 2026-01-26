@@ -7,7 +7,7 @@ import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { PlayerData, PlayerResultData } from './types/common';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
-import { GameType } from '../../../common/src/packets';
+import { GameType } from '../../../common/src/config.ts';
 
 // 게임 설정 상수 분리
 const GAME_CONFIGS = {

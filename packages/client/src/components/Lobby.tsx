@@ -1262,6 +1262,47 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                               </select>
                             </div>
                           </div>
+
+                          {/* 모두 묶기 라디오 */}
+                          <div className="setting-item">
+                            <label>모두 묶기:</label>
+                            <div className="radio-group">
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`connectAll-${game.id}`}
+                                  checked={!settings.connectAll}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'connectAll',
+                                      false,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`connectAll-${game.id}`}
+                                  checked={settings.connectAll ?? false}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'connectAll',
+                                      true,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.hard }}>O</span>
+                              </label>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         <div

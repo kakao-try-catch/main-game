@@ -23,6 +23,8 @@ import type {
 } from '../../types/flappybird.types';
 import type { PlayerResultData } from '../../types/common';
 import { CONSTANTS } from '../../types/common';
+import type { FlappyBirdGamePreset, ResolvedFlappyBirdConfig } from '../../types/FlappyBirdGamePreset';
+import { resolveFlappyBirdPreset, DEFAULT_FLAPPYBIRD_PRESET } from '../../types/FlappyBirdGamePreset';
 import PipeManager from './PipeManager';
 
 export default class FlappyBirdsScene extends Phaser.Scene {
@@ -43,7 +45,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private birdSprites: Phaser.GameObjects.Sprite[] = [];
   private targetPositions: BirdPosition[] = [];
 
-  // 배경 및 바닥 (무한 스크롤용)
+  // 바닥 (무한 스크롤용)
   private groundTile!: Phaser.GameObjects.TileSprite;
   private background!: Phaser.GameObjects.TileSprite;
 
@@ -53,10 +55,12 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   // 밧줄
   private ropes: Phaser.GameObjects.Graphics[] = [];
   private ropeMidPoints: { y: number; vy: number }[] = []; // 밧줄 중간 지점의 관성 데이터
+  private ropeConnections: [number, number][] = []; // 밧줄 연결 쌍 (새 인덱스)
   private gameStarted: boolean = false; // 게임 시작 여부 (1초 딜레이 동기화)
   private isGameOver: boolean = false; // 게임 오버 여부
   private debugGraphics!: Phaser.GameObjects.Graphics;
   private showDebug: boolean = false;
+  private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(DEFAULT_FLAPPYBIRD_PRESET);
 
   constructor() {
     super('FlappyBirdsScene');
@@ -133,7 +137,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
       this.mockServerCore = new MockServerCore(this.socket as MockSocket);
       this.mockServerCore.setPlayerCount(this.playerCount); // 플레이어 수 설정
-      this.mockServerCore.initialize();
+      this.mockServerCore.initialize(this.gameConfig); // 프리셋 설정 적용
 
       // 1초 후 물리 엔진 및 스크롤 시작 (초기화 시간 확보)
       setTimeout(() => {
@@ -204,12 +208,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    */
   private createBirds(count: number) {
     const ratio = this.getRatio();
+    const positions = this.calculateBirdPositions(count);
+
     for (let i = 0; i < count; i++) {
       // 플레이어 번호에 맞는 이미지 선택 (1, 2, 3, 4 순환)
       const birdKey = `flappybird_${(i % 4) + 1}`;
-      const initialX = (200 + i * 120) * ratio;
-      const initialY = 300 * ratio;
-      const bird = this.add.sprite(initialX, initialY, birdKey);
+      const { x, y } = positions[i];
+      const bird = this.add.sprite(x * ratio, y * ratio, birdKey);
 
       // 드로잉 오더 설정: 첫 번째 플레이어가 맨 앞으로 (index 0의 depth가 가장 높도록)
       bird.setDepth(100 - i);
@@ -222,8 +227,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       // 초기 타겟 위치 설정 (서버 좌표계 GAME_WIDTH 기준 그대로 저장)
       this.targetPositions.push({
         playerId: String(i) as PlayerId,
-        x: 200 + i * 120,
-        y: 300,
+        x: x,
+        y: y,
         velocityX: 0,
         velocityY: 0,
         angle: 0,
@@ -231,8 +236,58 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     }
 
     console.log(
-      `[FlappyBirdsScene] ${count}개의 새(스프라이트) 생성 완료 (ratio: ${ratio})`,
+      `[FlappyBirdsScene] ${count}개의 새(스프라이트) 생성 완료 (connectAll=${this.gameConfig.connectAll})`,
     );
+  }
+
+  /**
+   * 새 초기 위치 계산
+   * connectAll=false: 수평 일렬
+   * connectAll=true: 3인 삼각형, 4인 마름모
+   */
+  private calculateBirdPositions(count: number): { x: number; y: number }[] {
+    const centerX = 300;
+    const centerY = 350;
+    const spacing = 80;
+
+    // 기본: 수평 일렬 배치
+    if (!this.gameConfig.connectAll || count < 3) {
+      const startX = 200;
+      const startY = 300;
+      return Array.from({ length: count }, (_, i) => ({
+        x: startX + i * 120,
+        y: startY,
+      }));
+    }
+
+    // 모두 묶기: 도형 형태로 배치
+    if (count === 3) {
+      // 삼각형: 위에 1명, 아래에 2명
+      return [
+        { x: centerX, y: centerY - spacing * 0.6 },
+        { x: centerX - spacing, y: centerY + spacing * 0.4 },
+        { x: centerX + spacing, y: centerY + spacing * 0.4 },
+      ];
+    }
+
+    if (count === 4) {
+      // 마름모: 상-좌-하-우
+      return [
+        { x: centerX, y: centerY - spacing },
+        { x: centerX - spacing, y: centerY },
+        { x: centerX, y: centerY + spacing },
+        { x: centerX + spacing, y: centerY },
+      ];
+    }
+
+    // 5인 이상: 원형 배치
+    return Array.from({ length: count }, (_, i) => {
+      const angle = (2 * Math.PI * i) / count - Math.PI / 2;
+      return {
+        x: centerX + spacing * Math.cos(angle),
+        y: centerY + spacing * Math.sin(angle),
+      };
+    });
   }
 
   /**
@@ -297,10 +352,39 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   /**
+   * 밧줄 연결 쌍 계산
+   * 2인: 1개 (선형), 3인: 3개 (삼각형), 4인: 4개 (사각형)
+   */
+  /**
+   * 밧줄 연결 쌍 계산
+   * connectAll=false: 선형 연결 (0-1, 1-2, 2-3)
+   * connectAll=true: 폐쇄형 도형 (2인: 선형, 3인: 삼각형, 4인: 사각형)
+   */
+  private calculateRopeConnections(playerCount: number): [number, number][] {
+    if (playerCount < 2) return [];
+
+    // 선형 연결 (기본)
+    const connections: [number, number][] = [];
+    for (let i = 0; i < playerCount - 1; i++) {
+      connections.push([i, i + 1]);
+    }
+
+    // 모두 묶기: 마지막 새와 첫 번째 새 연결 (3인 이상)
+    if (this.gameConfig.connectAll && playerCount >= 3) {
+      connections.push([playerCount - 1, 0]);
+    }
+
+    return connections;
+  }
+
+  /**
    * 밧줄 그래픽 생성
    */
   private createRopes(playerCount: number) {
-    const ropeCount = Math.max(0, playerCount - 1);
+    // 연결 쌍 계산
+    this.ropeConnections = this.calculateRopeConnections(playerCount);
+    const ropeCount = this.ropeConnections.length;
+
     for (let i = 0; i < ropeCount; i++) {
       const rope = this.add.graphics();
       rope.setDepth(10); // 새(depth 100~97)보다 뒤쪽에 렌더링
@@ -310,7 +394,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       this.ropeMidPoints.push({ y: 300, vy: 0 });
     }
 
-    console.log(`[FlappyBirdsScene] ${ropeCount}개의 밧줄 생성 완료`);
+    console.log(`[FlappyBirdsScene] ${ropeCount}개의 밧줄 생성 완료 (연결: ${this.ropeConnections.map(c => `${c[0]}-${c[1]}`).join(', ')})`);
   }
 
   /**
@@ -324,20 +408,43 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.socket.off('game_over');
 
     // 플레이어 정보 업데이트 (인원수 조절 등)
-    this.events.on('updatePlayers', (data: { playerCount?: number }) => {
+    this.events.on('updatePlayers', (data: { playerCount?: number; preset?: FlappyBirdGamePreset }) => {
       console.log(
         `[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`,
       );
       const oldPlayerCount = this.playerCount;
       this.playerCount = data.playerCount || 4;
 
-      // 인원수가 변경된 경우 게임 객체 재설정
-      if (oldPlayerCount !== this.playerCount) {
+      // 프리셋이 있으면 게임 설정 업데이트
+      let configChanged = false;
+      let connectAllChanged = false;
+      if (data.preset) {
+        const newConfig = resolveFlappyBirdPreset(data.preset);
+        // 설정이 변경되었는지 확인
+        if (
+          this.gameConfig.pipeSpeed !== newConfig.pipeSpeed ||
+          this.gameConfig.pipeSpacing !== newConfig.pipeSpacing ||
+          this.gameConfig.pipeGap !== newConfig.pipeGap ||
+          this.gameConfig.pipeWidth !== newConfig.pipeWidth ||
+          this.gameConfig.connectAll !== newConfig.connectAll
+        ) {
+          connectAllChanged = this.gameConfig.connectAll !== newConfig.connectAll;
+          this.gameConfig = newConfig;
+          configChanged = true;
+          console.log(`[FlappyBirdsScene] 프리셋 적용:`, this.gameConfig);
+        }
+      }
+
+      // 인원수가 변경되었거나 설정이 변경된 경우 게임 객체 재설정
+      if (oldPlayerCount !== this.playerCount || configChanged) {
         if (this.mockServerCore) {
           this.mockServerCore.setPlayerCount(this.playerCount);
-          this.mockServerCore.initialize();
+          this.mockServerCore.initialize(this.gameConfig);
         }
-        this.setupGame();
+        // 인원수 또는 connectAll이 변경된 경우 밧줄 재생성
+        if (oldPlayerCount !== this.playerCount || connectAllChanged) {
+          this.setupGame();
+        }
       }
     });
 
@@ -458,14 +565,15 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       `[FlappyBirdsScene] ropes.length: ${this.ropes.length}, birdSprites.length: ${this.birdSprites.length}`,
     );
 
-    // 새 스프라이트의 초기 위치를 기반으로 밧줄 그리기
+    // 연결 쌍을 기반으로 밧줄 그리기
     for (let i = 0; i < this.ropes.length; i++) {
       const rope = this.ropes[i];
-      const birdA = this.birdSprites[i];
-      const birdB = this.birdSprites[i + 1];
+      const [indexA, indexB] = this.ropeConnections[i];
+      const birdA = this.birdSprites[indexA];
+      const birdB = this.birdSprites[indexB];
 
       console.log(
-        `[FlappyBirdsScene] Rope ${i}: birdA=${birdA ? `(${birdA.x}, ${birdA.y})` : 'null'}, birdB=${birdB ? `(${birdB.x}, ${birdB.y})` : 'null'}`,
+        `[FlappyBirdsScene] Rope ${i} (${indexA}-${indexB}): birdA=${birdA ? `(${birdA.x}, ${birdA.y})` : 'null'}, birdB=${birdB ? `(${birdB.x}, ${birdB.y})` : 'null'}`,
       );
 
       if (birdA && birdB) {
@@ -486,7 +594,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     console.log('[FlappyBirdsScene] 초기 밧줄 그리기 완료');
   }
 
-  update(_time: number, _delta: number) {
+  update() {
     // 선형 보간으로 부드러운 이동
     const ratio = this.getRatio();
     for (let i = 0; i < this.birdSprites.length; i++) {
@@ -514,25 +622,30 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       }
     }
 
-    // 3. 지면/배경 스크롤 처리 (새는 고정되고 배경/파이프가 움직이는 모델)
-    if (this.gameStarted && !this.isGameOver) {
-      // 서버의 실제 pipeSpeed를 가져와서 동기화
-      let pipeSpeed = 1.5; // 기본값
-      if (this.mockServerCore) {
-        pipeSpeed = this.mockServerCore.getGameConfig().pipeSpeed;
+    // 3. 카메라 추적: 새들의 평균 X를 화면의 1/4 지점에 유지 (게임 시작 후에만)
+    if (this.gameStarted && this.birdSprites.length > 0) {
+      let totalX = 0;
+      for (const sprite of this.birdSprites) {
+        totalX += sprite.x;
       }
-      // pipeSpeed는 frame당 픽셀이므로, 60fps 기준으로 초당 픽셀로 변환
-      const SPEED_PX_PER_SECOND = pipeSpeed * 60;
+      const avgX = totalX / this.birdSprites.length;
 
-      // 바닥 스크롤 효과 (카메라가 고정되어 있으므로 tilePositionX를 직접 증가)
+      // 새들의 평균 위치가 화면 너비의 1/4 지점에 오도록 카메라 이동
+      const screenWidth = GAME_WIDTH * ratio;
+      const targetCameraX = avgX - screenWidth / 4;
+
+      // 부드러운 카메라 추적
+      this.cameras.main.scrollX = Phaser.Math.Linear(
+        this.cameras.main.scrollX,
+        targetCameraX,
+        0.1
+      );
+
+      // 지면 스크롤 (카메라 위치에 동기화)
       if (this.groundTile) {
-        this.groundTile.tilePositionX += (SPEED_PX_PER_SECOND * _delta) / 1000;
+        this.groundTile.tilePositionX = this.cameras.main.scrollX;
       }
-      if (this.background) {
-        // 바닥 속도의 0.3배로 이동
-        const bgSpeed = SPEED_PX_PER_SECOND * 0.3;
-        this.background.tilePositionX += (bgSpeed * _delta) / 1000;
-      }
+      // 배경은 scrollFactor(0)으로 카메라를 따라다니므로 별도 처리 불필요
     }
 
     // 4. 밧줄 그리기
@@ -619,8 +732,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     for (let i = 0; i < this.ropes.length; i++) {
       const rope = this.ropes[i];
-      const birdA = this.birdSprites[i];
-      const birdB = this.birdSprites[i + 1];
+      const [indexA, indexB] = this.ropeConnections[i];
+      const birdA = this.birdSprites[indexA];
+      const birdB = this.birdSprites[indexB];
       const midPoint = this.ropeMidPoints[i];
 
       if (birdA && birdB && midPoint) {

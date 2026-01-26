@@ -20,29 +20,31 @@ declare global {
 }
 
 /** 사과 게임 설정 */
-interface AppleGameConfig {
-  gridCols: number; // 가로 사과 개수 (17)
-  gridRows: number; // 세로 사과 개수 (10)
+interface AppleGameRenderConfig {
   baseX: number; // 시작 X 좌표 (91)
   baseY: number; // 시작 Y 좌표 (91)
   spacingX: number; // X 간격 (73px)
   spacingY: number; // Y 간격 (74px)
-  minNumber: number; // 최소 숫자 (1)
-  maxNumber: number; // 최대 숫자 (9)
-  totalTime: number; // 전체 게임 시간 (110초)
-  playerCount: number; // 플레이어 수 (1~4)
+
+  gridCols: number; // 가로 사과 개수 (17)
+  gridRows: number; // 세로 사과 개수 (10)
   ratio: number; // 스케일 비율
+
+  // minNumber: number; // 최소 숫자 (1)
+  // maxNumber: number; // 최대 숫자 (9)
+  totalTime: number; // 전체 게임 시간 (110초) // todo 얘도 필요없음
+  playerCount: number; // 플레이어 수 (1~4) // todo 얘도
 }
 
-const DEFAULT_CONFIG: AppleGameConfig = {
+const DEFAULT_CONFIG: AppleGameRenderConfig = {
   gridCols: 17,
   gridRows: 10,
   baseX: 91,
   baseY: 91,
   spacingX: 73,
   spacingY: 74,
-  minNumber: 1,
-  maxNumber: 9,
+  // minNumber: 1,
+  // maxNumber: 9,
   totalTime: 110,
   playerCount: 4,
   ratio: 1,
@@ -51,7 +53,7 @@ const DEFAULT_CONFIG: AppleGameConfig = {
 export default class AppleGameManager {
   private container: Phaser.GameObjects.Container | null = null;
   private readonly scene: Phaser.Scene;
-  private readonly config: AppleGameConfig;
+  private readonly config: AppleGameRenderConfig;
 
   // 현재 유저의 플레이어 인덱스
   private currentPlayerIndex: number = 0;
@@ -103,7 +105,7 @@ export default class AppleGameManager {
     scene: Phaser.Scene,
     timer: TimerPrefab | undefined,
     container?: Phaser.GameObjects.Container,
-    config: Partial<AppleGameConfig> = {},
+    config: Partial<AppleGameRenderConfig> = {},
   ) {
     this.scene = scene;
     this.container = container ?? null;
@@ -159,7 +161,7 @@ export default class AppleGameManager {
   }
 
   /** 게임 설정 업데이트 (프리셋 적용) */
-  updateGameConfig(config: Partial<AppleGameConfig>): void {
+  updateGameConfig(config: Partial<AppleGameRenderConfig>): void {
     // 설정 업데이트
     Object.assign(this.config, config);
     console.log('🎮 게임 설정 업데이트:', config);
@@ -167,17 +169,8 @@ export default class AppleGameManager {
 
   /** 사과 그리드 생성 (서버 데이터 또는 랜덤 생성) */
   private createApples(appleNumbers?: number[]): void {
-    const {
-      gridCols,
-      gridRows,
-      baseX,
-      baseY,
-      spacingX,
-      spacingY,
-      minNumber,
-      maxNumber,
-      ratio,
-    } = this.config;
+    const { gridCols, gridRows, baseX, baseY, spacingX, spacingY, ratio } =
+      this.config;
 
     // 그리드 크기에 따라 사과 스케일 조정
     let appleScale = ratio;

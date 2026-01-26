@@ -1,4 +1,4 @@
-export interface AppleGameConfig {
+export interface AppleGameRenderConfig {
   gridCols: number; // 가로 사과 개수 (17)
   gridRows: number; // 세로 사과 개수 (10)
   minNumber: number; // 최소 숫자 (1)
@@ -8,7 +8,7 @@ export interface AppleGameConfig {
   includeZero: boolean; // 0생성 여부
 }
 
-export const APPLE_GAME_CONFIG: AppleGameConfig = {
+export const APPLE_GAME_CONFIG: AppleGameRenderConfig = {
   gridCols: 17,
   gridRows: 10,
   minNumber: 1,

@@ -39,6 +39,8 @@ export interface ResolvedFlappyBirdConfig {
   pipeSpacing: number;
   pipeGap: number;
   pipeWidth: number;
+  flapBoostBase: number; // 점프 시 기본 전진력 (pipeSpeed에 비례)
+  flapBoostRandom: number; // 점프 시 랜덤 추가 전진력 범위 (pipeSpeed에 비례)
 }
 
 /** 기본 프리셋 */
@@ -57,16 +59,16 @@ export function resolveFlappyBirdPreset(
   let pipeSpeed: number;
   switch (preset.pipeSpeed) {
     case 'slow':
-      pipeSpeed = 1;
+      pipeSpeed = 1.5;
       break;
     case 'normal':
-      pipeSpeed = 1.5;
+      pipeSpeed = 2.0;
       break;
     case 'fast':
       pipeSpeed = 2.5;
       break;
     case 'manual':
-      pipeSpeed = preset.manualSpeed ?? 1.5;
+      pipeSpeed = preset.manualSpeed ?? 2.0;
       break;
   }
 
@@ -91,13 +93,13 @@ export function resolveFlappyBirdPreset(
   let pipeGap: number;
   switch (preset.pipeGap) {
     case 'narrow':
-      pipeGap = 150;
-      break;
-    case 'normal':
       pipeGap = 200;
       break;
-    case 'wide':
+    case 'normal':
       pipeGap = 250;
+      break
+    case 'wide':
+      pipeGap = 300;
       break;
   }
 
@@ -115,10 +117,18 @@ export function resolveFlappyBirdPreset(
       break;
   }
 
+  // 5. 점프 시 전진력 결정 (pipeSpeed에 비례)
+  // normal(2.0) 기준 0.3 + 0~0.7 = 0.3 ~ 1.0 범위
+  const speedRatio = pipeSpeed / 2.0; // normal 기준
+  const flapBoostBase = 0.5 * speedRatio;
+  const flapBoostRandom = 0.5 * speedRatio;
+
   return {
     pipeSpeed,
     pipeSpacing,
     pipeGap,
     pipeWidth,
+    flapBoostBase,
+    flapBoostRandom,
   };
 }

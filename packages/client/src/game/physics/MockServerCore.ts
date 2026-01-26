@@ -47,7 +47,10 @@ export class MockServerCore {
   private readonly BIRD_WIDTH = 80; // 57 * 1.4 (해상도 변경 반영)
   private readonly BIRD_HEIGHT = 50; // 36 * 1.4 (해상도 변경 반영)
   private readonly FLAP_VELOCITY = -10; // 플랩 정도
+  private readonly FLAP_VERTICAL_JITTER_RATIO = 0.2; // 규칙적 플랩 정렬 방지용 수직 변동 비율
   private isGameOverState: boolean = false; // 게임 오버 상태 추적
+  private lastFlapTime: Map<number, number> = new Map(); // 각 새의 마지막 점프 시간
+  private frameCount: number = 0; // 프레임 카운터
 
   // 밧줄 물리 파라미터
   private readonly IDEAL_LENGTH = 100; // 밧줄 여유 길이 단축 (120 -> 100)
@@ -59,6 +62,8 @@ export class MockServerCore {
   private pipeGap: number = 200;
   private pipeSpacing: number = 400; // 파이프 간 거리
   private pipeSpeed: number = 1.5;
+  private flapBoostBase: number = 0.3; // 점프 시 기본 전진력
+  private flapBoostRandom: number = 0.7; // 점프 시 랜덤 추가 전진력 범위
 
   constructor(socket: MockSocket) {
     this.socket = socket;
@@ -101,6 +106,8 @@ export class MockServerCore {
     this.isGameOverState = false;
     this.pipes = [];
     this.nextPipeId = 0;
+    this.lastFlapTime.clear();
+    this.frameCount = 0;
 
     // 설정 적용
     if (config) {
@@ -108,7 +115,9 @@ export class MockServerCore {
       this.pipeSpacing = config.pipeSpacing;
       this.pipeGap = config.pipeGap;
       this.pipeWidth = config.pipeWidth;
-      console.log(`[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}`);
+      this.flapBoostBase = config.flapBoostBase;
+      this.flapBoostRandom = config.flapBoostRandom;
+      console.log(`[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}, flapBoost=${config.flapBoostBase}+${config.flapBoostRandom}`);
     }
 
     // 바닥 생성
@@ -218,11 +227,14 @@ export class MockServerCore {
    * 물리 업데이트 및 브로드캐스트
    */
   private update() {
+    this.frameCount++;
+
     // 1. 파이프 업데이트 (전체 상태에 대해 한 번만)
     this.updatePipes();
 
     // 2. 개별 새 물리 제어
-    for (const bird of this.birds) {
+    for (let i = 0; i < this.birds.length; i++) {
+      const bird = this.birds[i];
       if (bird.isStatic) continue;
 
       if (this.isGameOverState) {
@@ -235,16 +247,23 @@ export class MockServerCore {
       }
 
       // 1. 기본 전진 속도 유지 (pipeSpeed 기준으로 일정한 게임 진행)
-      // 플랩과 무관하게 새들이 일정 속도로 앞으로 이동
+      // 점프를 하지 않으면 감속되어 뒤로 밀림
       const baseForwardSpeed = this.pipeSpeed * 1.5; // 파이프 속도의 1.5배
       const currentVelX = bird.velocity.x;
+      
+      // 마지막 점프로부터 경과된 프레임 수 (60fps 기준)
+      const lastFlap = this.lastFlapTime.get(i) ?? 0;
+      const framesSinceFlap = this.frameCount - lastFlap;
+      
+      // 점프하지 않은 시간이 길수록 더 많이 감속 (30프레임 = 0.5초 기준)
+      const noFlapPenalty = framesSinceFlap > 30 ? 0.97 : 0.995; // 점프 안하면 더 빠른 감속
 
       // 기본 속도보다 느리면 가속, 빠르면 공기저항으로 감속
       let newVelX: number;
       if (currentVelX < baseForwardSpeed) {
         newVelX = currentVelX + 0.05; // 점진적 가속
       } else {
-        newVelX = currentVelX * 0.98; // 공기 저항
+        newVelX = currentVelX * noFlapPenalty; // 점프 안한 새는 더 빠르게 감속
       }
 
       Matter.Body.setVelocity(bird, {
@@ -506,11 +525,18 @@ export class MockServerCore {
     if (birdIndex >= 0 && birdIndex < this.birds.length) {
       const bird = this.birds[birdIndex];
 
+      // 점프 시간 기록
+      this.lastFlapTime.set(birdIndex, this.frameCount);
+
       // 플랩 시 약간의 추가 전진력 (새들 간 위치 변화용)
-      const extraBoost = 0.3 + Math.random() * 0.4; // 0.3 ~ 0.7 랜덤
+      // 0.3 + 0~0.7 랜덤 (pipeSpeed에 비례)
+      const extraBoost = this.flapBoostBase + Math.random() * this.flapBoostRandom;
+      // 규칙적인 플랩이 반복될 때 새들이 일직선으로 정렬되는 현상 완화
+      const verticalJitter =
+        (Math.random() - 0.5) * Math.abs(this.FLAP_VELOCITY) * this.FLAP_VERTICAL_JITTER_RATIO;
       Matter.Body.setVelocity(bird, {
         x: bird.velocity.x + extraBoost,
-        y: this.FLAP_VELOCITY,
+        y: this.FLAP_VELOCITY + verticalJitter,
       });
 
       // 플랩 시 즉시 앞을 보게 함 (0도 유지) 및 회전 속도 초기화

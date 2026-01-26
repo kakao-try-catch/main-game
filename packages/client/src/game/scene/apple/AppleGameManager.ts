@@ -173,6 +173,7 @@ export default class AppleGameManager {
       this.config;
 
     // 그리드 크기에 따라 사과 스케일 조정
+    // todo 여기서 계산할 필요가 없는 것. 상수라서 그냥 따로 빼면 됨. ratio 결정될 때 만들면 됨.
     let appleScale = ratio;
     if (gridCols >= 30 || gridRows >= 15) {
       appleScale = ratio * 0.7; // L 크기(30x15): 70% 크기
@@ -193,6 +194,7 @@ export default class AppleGameManager {
         const x = baseX + col * spacingX;
         const y = baseY + row * spacingY;
         const apple = new applePrefab(this.scene, x, y, appleScale);
+        // todo ?? 왜 이렇게 함
         if (this.container) {
           this.container.add(apple);
         } else {

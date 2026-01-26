@@ -40,6 +40,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
     }
 
     case SystemPacketType.GAME_CONFIG_UPDATE: {
+      // todo 굳이 형변환 안 해줘도 알아서 type narrow 해줄 거임.
       const cfgPacket = packet as GameConfigUpdatePacket;
       // store selected game type and config so UI can react
       useGameStore

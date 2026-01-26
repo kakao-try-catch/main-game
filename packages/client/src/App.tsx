@@ -89,6 +89,7 @@ function AppContent() {
 
   // 점수 증가 함수
   // TODO: score는 추후 ReportCard 통합 후 재작업 예정
+  // todo: 빨간 줄 뜨는 거 봐야 함.
   const handleAppleScored = useCallback(
     (points: number) => {
       try {

@@ -279,6 +279,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   return (
     <div
       ref={parentRef}
+      // todo 이게 무슨 하드코딩임? id가 뭔지 역할을 알 필요가 있음.
       id={gameType === GameType.APPLE_GAME ? 'apple-game' : 'flappy-game'}
       style={{
         width: `${layout.width}px`,

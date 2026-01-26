@@ -40,6 +40,9 @@ interface GameState {
   gameConfig?: GameConfig | null;
   setGameConfig: (selected: GameType | null, cfg: GameConfig | null) => void;
 
+  screen: 'landing' | 'lobby' | 'game';
+  setScreen: (screen: 'landing' | 'lobby' | 'game') => void;
+
   // === 멀티플레이 상태 ===
   // 사과 게임 필드 (서버에서 받은 사과 배열)
   appleField: number[] | null;
@@ -79,6 +82,8 @@ export const useGameStore = create<GameState>()(
     selectedGameType: null,
     gameConfig: null,
 
+    screen: 'landing',
+
     // 멀티플레이 상태 초기값
     appleField: null,
     gameTime: null,
@@ -98,6 +103,8 @@ export const useGameStore = create<GameState>()(
     },
     setGameConfig: (selected: GameType | null, cfg: GameConfig | null) =>
       set({ selectedGameType: selected, gameConfig: cfg }),
+
+    setScreen: (screen: 'landing' | 'lobby' | 'game') => set({ screen }),
 
     // 멀티플레이 액션
     setAppleField: (apples: number[]) => set({ appleField: apples }),

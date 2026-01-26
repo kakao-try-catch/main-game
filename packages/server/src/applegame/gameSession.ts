@@ -11,6 +11,7 @@ import {
   RoomUpdatePacket,
   RoomUpdateType,
   ReportCard,
+  ReadyScenePacket,
 } from '../../../common/src/packets';
 
 import { GameType, MapSize, GameConfig } from '../../../common/src/config';
@@ -126,6 +127,13 @@ export class GameSession {
       apples: this.apples,
     };
     this.broadcastCallback(setFieldPacket);
+
+    // ready_scene
+    const readyScenePacket: ReadyScenePacket = {
+      type: SystemPacketType.READY_SCENE,
+      selectedGameType: this.selectedGameType,
+    };
+    this.broadcastCallback(readyScenePacket);
 
     // Broadcast Time
     const setTimePacket: SetTimePacket = {

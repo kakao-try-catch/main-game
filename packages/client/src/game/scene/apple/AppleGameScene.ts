@@ -227,26 +227,30 @@ export default class AppleGameScene extends Phaser.Scene {
         };
 
         // 멀티플레이 모드: SET_FIELD 패킷을 기다림
-        if (data.isMultiplayer) {
-          console.log('🌐 멀티플레이 모드: SET_FIELD 패킷 대기 중...');
-          // SET_FIELD 패킷이 이미 도착했는지 확인
-          const appleField = useGameStore.getState().appleField;
-          if (appleField && !this.isGameInitialized) {
-            this.initializeWithServerData(appleField);
-          }
-          return;
+        // if (data.isMultiplayer) {
+        //
+        //   return;
+        // }
+
+        console.log('🌐 멀티플레이 모드: SET_FIELD 패킷 대기 중...');
+        const appleField = useGameStore.getState().appleField;
+        if (appleField && !this.isGameInitialized) {
+          // todo isGameInitialized는 왜 필요함?
+          this.initializeWithServerData(appleField);
+          // this.isGameInitialized = true;
+          // todo 아래 로직 참고 필요할 수도
         }
 
         // 싱글플레이 모드: 기존 방식으로 바로 초기화
-        if (!this.isGameInitialized) {
-          this.gameManager.updatePlayerData(data.playerCount, data.players);
-          this.gameManager.init(data.currentPlayerIndex);
-          this.isGameInitialized = true;
-        } else {
-          // 이미 초기화된 경우 업데이트만
-          this.gameManager.updatePlayerData(data.playerCount, data.players);
-          this.gameManager.setCurrentPlayerIndex(data.currentPlayerIndex);
-        }
+        // if (!this.isGameInitialized) {
+        //   this.gameManager.updatePlayerData(data.playerCount, data.players);
+        //   this.gameManager.init(data.currentPlayerIndex);
+        //   this.isGameInitialized = true;
+        // } else {
+        //   // 이미 초기화된 경우 업데이트만
+        //   this.gameManager.updatePlayerData(data.playerCount, data.players);
+        //   this.gameManager.setCurrentPlayerIndex(data.currentPlayerIndex);
+        // }
       },
     );
 

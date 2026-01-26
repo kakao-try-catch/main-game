@@ -27,6 +27,10 @@ export const handleServerPacket = (packet: ServerPacket) => {
       // update global store (clientHandler runs outside React)
       const roomPacket = packet as RoomUpdatePacket;
       useGameStore.getState().setPlayers(roomPacket.players || []);
+      // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
+      if (useGameStore.getState().screen !== 'lobby') {
+        useGameStore.getState().setScreen('lobby');
+      }
       console.log(
         'ROOM_UPDATE packet received:',
         roomPacket.players,
@@ -61,6 +65,20 @@ export const handleServerPacket = (packet: ServerPacket) => {
       console.log('UPDATE_SCORE packet received:', packet.scoreboard);
       break;
     }
+
+    case SystemPacketType.READY_SCENE:
+      useGameStore.getState().setScreen('game');
+      switch (packet.selectedGameType) {
+        // 다른 게임 타입이 추가되면 여기에 케이스 추가
+        case GameType.APPLE_GAME:
+          break;
+        case GameType.FLAPPY_BIRD:
+          break;
+        case GameType.MINESWEEPER:
+          break;
+      }
+      console.log('READY_SCENE packet received', packet);
+      break;
 
     // --- Game Logic ---
     case GamePacketType.SET_FIELD: {

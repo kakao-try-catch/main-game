@@ -40,9 +40,10 @@ function AppContent() {
 
   const { nickname, color, setUserInfo } = useUser();
 
-  const [currentScreen, setCurrentScreen] = useState<
-    'landing' | 'lobby' | 'game' | 'flappybird'
-  >('landing');
+  // const [currentScreen, setCurrentScreen] = useState<
+  //   'landing' | 'lobby' | 'game' | 'flappybird'
+  // >('landing');
+  const screen = useGameStore((s) => s.screen);
 
   // 현재 유저 정보 (서버에서 받아올 예정) // todo 얘도 제거 예정
   const [currentUser, setCurrentUser] = useState<CurrentUser>({
@@ -71,9 +72,10 @@ function AppContent() {
   const setPlayers = useGameStore((s) => s.setPlayers);
 
   // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
-  const [currentGameType, setCurrentGameType] = useState<GameType | undefined>(
-    undefined,
-  );
+  // const [currentGameType, setCurrentGameType] = useState<GameType | undefined>(
+  //   undefined,
+  // );
+  const currentGameType = useGameStore((s) => s.selectedGameType || undefined);
   const [applePreset, setApplePreset] = useState<AppleGamePreset | undefined>(
     undefined,
   );
@@ -175,7 +177,8 @@ function AppContent() {
     setFlappyScore(0);
     setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
-    setCurrentScreen('lobby');
+    useGameStore.getState().setScreen('lobby');
+    // setCurrentScreen('lobby');
 
     // 게임 인스턴스 파괴
     if (gameRef.current) {
@@ -210,12 +213,10 @@ function AppContent() {
     };
     socketManager.send(joinRoomPacket);
     console.log('JOIN_ROOM sent: ', joinRoomPacket);
-    // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
-    setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
   };
 
   const handleGameStart = (gameType: string, preset: unknown) => {
-    setCurrentGameType(gameType as GameType);
+    // setCurrentGameType(gameType as GameType);
 
     // 새 게임 시작 시 key 변경
     setGameKey((prev) => prev + 1);
@@ -234,7 +235,7 @@ function AppContent() {
     console.log('GAME_START_REQ sent: ', gameStartReq);
 
     // todo ready_scene 받을 때까지 이거 넘어가면 안 됨.
-    setCurrentScreen('game');
+    // setCurrentScreen('game');
   };
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
@@ -245,12 +246,12 @@ function AppContent() {
   }, [gameEnded, pause]);
 
   // 랜딩 페이지 표시
-  if (currentScreen === 'landing') {
+  if (screen === 'landing') {
     return <LandingPage onStart={handleStart} />;
   }
 
   // 로비 표시
-  if (currentScreen === 'lobby') {
+  if (screen === 'lobby') {
     return <Lobby players={players} onGameStart={handleGameStart} />;
   }
 
@@ -303,7 +304,7 @@ function AppContent() {
         >
           {/* 사과게임: 4개 플레이어카드 */}
           {/* TODO: score는 추후 ReportCard 통합 후 재작업 예정 */}
-          {currentGameType === 'apple' &&
+          {currentGameType === GameType.APPLE_GAME &&
             players
               .slice(0, testPlayerCount)
               .map((player, index) => (
@@ -316,7 +317,7 @@ function AppContent() {
               ))}
 
           {/* 플래피버드: 팀 점수 카드 1개 */}
-          {currentGameType === 'flappy' && (
+          {currentGameType === GameType.FLAPPY_BIRD && (
             <PlayerCard
               key="team-score"
               name="Team Score"

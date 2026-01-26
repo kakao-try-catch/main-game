@@ -11,14 +11,14 @@ import { GameType } from '../../../common/src/packets';
 
 // 게임 설정 상수 분리
 const GAME_CONFIGS = {
-  apple: {
+  APPLE_GAME: {
     sceneName: 'AppleGameScene',
     sceneClasses: [BootScene, AppleGameScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#FFFFFF',
   },
-  flappy: {
+  FLAPPY_BIRD: {
     sceneName: 'FlappyBirdsScene',
     sceneClasses: [BootScene, FlappyBirdsScene] as const,
     maxWidth: GAME_WIDTH,
@@ -63,9 +63,10 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const isValidGameType = gameType === 'apple' || gameType === 'flappy';
+  const isValidGameType =
+    gameType === GameType.APPLE_GAME || gameType === GameType.FLAPPY_BIRD;
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
-  const preset = gameType === 'apple' ? applePreset : flappyPreset;
+  const preset = gameType === GameType.APPLE_GAME ? applePreset : flappyPreset;
 
   // 레이아웃 계산 (useMemo로 최적화)
   const layout = useMemo(() => {
@@ -154,7 +155,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       if (!targetScene) return;
 
       // 이벤트 리스너 등록
-      if (gameType === 'apple') {
+      if (gameType === GameType.APPLE_GAME) {
         if (onAppleScored) {
           targetScene.events.on('appleScored', (data: { points: number }) => {
             console.log('🍎 appleScored event received:', data);
@@ -171,7 +172,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
-      } else if (gameType === 'flappy') {
+      } else if (gameType === GameType.FLAPPY_BIRD) {
         // 플래피버드 점수 업데이트 이벤트
         if (onScoreUpdate) {
           targetScene.events.on(
@@ -278,7 +279,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   return (
     <div
       ref={parentRef}
-      id={gameType === 'apple' ? 'apple-game' : 'flappy-game'}
+      id={gameType === GameType.APPLE_GAME ? 'apple-game' : 'flappy-game'}
       style={{
         width: `${layout.width}px`,
         height: `${layout.height}px`,

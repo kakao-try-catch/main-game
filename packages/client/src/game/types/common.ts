@@ -13,9 +13,6 @@ export interface PlayerResultData extends PlayerData {
   playerIndex: number;
 }
 
-/** 게임 타입 */
-export type GameType = 'apple' | 'flappy' | 'minesweeper';
-
 /** 현재 사용자 정보 */
 export interface CurrentUser {
   id: string;

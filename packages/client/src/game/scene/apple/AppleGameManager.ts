@@ -165,14 +165,6 @@ export default class AppleGameManager {
     console.log('🎮 게임 설정 업데이트:', config);
   }
 
-  /** 게임 초기화 및 시작 */
-  init(currentPlayerIndex: number = 0): void {
-    this.createApples();
-    this.setCurrentPlayerIndex(currentPlayerIndex); // 외부에서 받은 값 사용
-    this.setupDragSelection();
-    this.startTimer();
-  }
-
   /** 사과 그리드 생성 (서버 데이터 또는 랜덤 생성) */
   private createApples(appleNumbers?: number[]): void {
     const {
@@ -213,9 +205,9 @@ export default class AppleGameManager {
         } else {
           this.scene.add.existing(apple);
         }
-        // 서버에서 받은 숫자 사용, 없으면 랜덤 생성
-        const num =
-          appleNumbers?.[index] ?? Phaser.Math.Between(minNumber, maxNumber);
+        // 서버에서 받은 숫자 사용, 없으면 -1
+        // todo 애초에 appleNumbers 못 받으면 시작 못 하게 하기
+        const num = appleNumbers?.[index] ?? -1;
         apple.setNumber(num);
         this.apples.push(apple);
         this.appleIndexMap.set(apple, index);

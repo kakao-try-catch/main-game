@@ -152,6 +152,11 @@ function AppContent() {
     playSFX('flappyStrike');
   }, [playSFX]);
 
+  // 플래피버드 점수 획득 사운드 핸들러
+  const handleFlappyScore = useCallback(() => {
+    playSFX('flappyScore');
+  }, [playSFX]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
@@ -386,6 +391,7 @@ function AppContent() {
             onFlappyGameEnd={handleFlappyGameEnd}
             onFlappyJump={handleFlappyJump}
             onFlappyStrike={handleFlappyStrike}
+            onFlappyScore={handleFlappyScore}
             onGameReady={handleGameReady}
           />
         )}

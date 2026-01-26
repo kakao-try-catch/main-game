@@ -359,6 +359,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         score: data.score,
         timestamp: data.timestamp,
       });
+      // 점수 획득 사운드 재생 이벤트 전달
+      this.events.emit('flappyScore');
       console.log(`[FlappyBirdsScene] 점수 업데이트: ${data.score}`);
     });
 

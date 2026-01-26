@@ -5,6 +5,7 @@ import {
   type RoomUpdatePacket,
   type GameConfigUpdatePacket,
 } from '../../../common/src/packets.ts';
+import { GameType } from '../../../common/src/config.ts';
 import { useGameStore } from '../store/gameStore';
 //import { useDebugStore, useAppleGameStore } from "../store/store.ts";
 

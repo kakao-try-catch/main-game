@@ -1,3 +1,5 @@
+import { GameConfig, GameType } from './config';
+
 // --- ENUMS ---
 export enum SystemPacketType {
   UPDATE_NUMBER = 'UPDATE_NUMBER',
@@ -9,18 +11,6 @@ export enum SystemPacketType {
   GAME_START_REQ = 'GAME_START_REQ',
   READY_SCENE = 'READY_SCENE',
   UPDATE_SCORE = 'UPDATE_SCORE',
-}
-
-export enum GameType {
-  APPLE_GAME = 'APPLE_GAME',
-  FLAPPY_BIRD = 'FLAPPY_BIRD',
-  MINESWEEPER = 'MINESWEEPER',
-}
-
-export enum MapSize {
-  SMALL = 'SMALL',
-  MEDIUM = 'MEDIUM',
-  LARGE = 'LARGE',
 }
 
 export enum GamePacketType {
@@ -81,15 +71,6 @@ export interface SystemMessagePacket {
   type: SystemPacketType.SYSTEM_MESSAGE;
   message: string;
 }
-
-export interface AppleGameConfig {
-  mapSize: MapSize;
-  time: number;
-  generation: number;
-  zero: boolean;
-}
-
-export type GameConfig = AppleGameConfig;
 
 export interface GameConfigUpdateReqPacket {
   type: SystemPacketType.GAME_CONFIG_UPDATE_REQ;

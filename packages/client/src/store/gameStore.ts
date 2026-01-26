@@ -1,10 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type {
-  PlayerData,
-  GameConfig,
-  GameType,
-} from '../../../common/src/packets';
+import type { PlayerData } from '../../../common/src/packets';
+import { type GameType, type GameConfig } from '../../../common/src/config';
 
 // 드래그 영역 데이터 타입
 export interface DragAreaData {

@@ -17,3 +17,22 @@ export const APPLE_GAME_CONFIG: AppleGameConfig = {
   maxPlayers: 4,
   includeZero: false,
 };
+export interface AppleGameConfig {
+  mapSize: MapSize;
+  time: number;
+  generation: number;
+  zero: boolean;
+}
+
+export type GameConfig = AppleGameConfig;
+export enum GameType {
+  APPLE_GAME = 'APPLE_GAME',
+  FLAPPY_BIRD = 'FLAPPY_BIRD',
+  MINESWEEPER = 'MINESWEEPER',
+}
+
+export enum MapSize {
+  SMALL = 'SMALL',
+  MEDIUM = 'MEDIUM',
+  LARGE = 'LARGE',
+}

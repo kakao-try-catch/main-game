@@ -16,7 +16,6 @@ import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
 import type {
   PlayerData,
   PlayerResultData,
-  GameType,
   CurrentUser,
 } from './game/types/common';
 import { CONSTANTS } from './game/types/common';
@@ -25,6 +24,7 @@ import {
   type JoinRoomPacket,
   type ServerPacket,
 } from '../../common/src/packets';
+import { GameType } from '../../common/src/config';
 
 import './App.css';
 import { socketManager } from './network/socket';

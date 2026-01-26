@@ -11,10 +11,9 @@ import {
   RoomUpdatePacket,
   RoomUpdateType,
   ReportCard,
-  GameType,
-  GameConfig,
-  MapSize,
 } from '../../../common/src/packets';
+
+import { GameType, MapSize, GameConfig } from '../../../common/src/config';
 
 export type GameStatus = 'waiting' | 'playing' | 'ended';
 

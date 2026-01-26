@@ -40,6 +40,7 @@ interface GameContainerProps {
   }) => void; // 플래피버드 게임 종료
   onFlappyJump?: () => void; // 플래피버드 점프 사운드
   onFlappyStrike?: () => void; // 플래피버드 충돌 사운드
+  onFlappyScore?: () => void; // 플래피버드 점수 획득 사운드
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
@@ -57,6 +58,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onFlappyGameEnd,
   onFlappyJump,
   onFlappyStrike,
+  onFlappyScore,
   playerCount = 4,
   players = [],
   currentPlayerIndex = 0,
@@ -188,6 +190,14 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           targetScene.events.on('flappyStrike', () => {
             console.log('💥 flappyStrike event received');
             onFlappyStrike();
+          });
+        }
+
+        // 플래피버드 점수 획득 사운드 이벤트
+        if (onFlappyScore) {
+          targetScene.events.on('flappyScore', () => {
+            console.log('🎵 flappyScore event received');
+            onFlappyScore();
           });
         }
 

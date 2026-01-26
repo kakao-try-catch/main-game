@@ -28,6 +28,7 @@ import buttonHoverSound from '../assets/sounds/SFX/buttonHover.mp3';
 // 플래피버드 SFX
 import flappyJumpSound from '../assets/sounds/SFX/flappyJump.mp3';
 import flappyStrikeSound from '../assets/sounds/SFX/flappybirdStrike.mp3';
+import flappyScoreSound from '../assets/sounds/SFX/flappyScore.mp3';
 // TODO: 나중에 추가
 // import flappyHitSound from '../assets/sounds/SFX/flappyHit.mp3';
 
@@ -63,7 +64,8 @@ export type SFXName =
 
   // 플래피버드 SFX
   | 'flappyJump'
-  | 'flappyStrike';
+  | 'flappyStrike'
+  | 'flappyScore';
 
 // 플래피버드 SFX (추후 추가)
 // | 'flappyHit'
@@ -134,6 +136,11 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
   flappyStrike: {
     file: flappyStrikeSound,
     volume: 0.8,
+    startTime: 0,
+  },
+  flappyScore: {
+    file: flappyScoreSound,
+    volume: 0.7,
     startTime: 0,
   },
 

@@ -19,6 +19,7 @@ import {
 } from '../../../common/src/packets';
 
 import { GameType, MapSize, GameConfig } from '../../../common/src/config';
+import { Server } from 'socket.io';
 
 export type GameStatus = 'waiting' | 'playing' | 'ended';
 
@@ -51,6 +52,7 @@ export class GameSession {
   public removedIndices: Set<number> = new Set();
 
   constructor(
+    public io: Server,
     public roomId: string,
     private broadcastCallback: (packet: any) => void,
   ) {
@@ -93,16 +95,31 @@ export class GameSession {
     });
   }
 
+  public updateRemainingPlayers(id: string) {
+    // Send JOIN to existing players (excluding the new player)
+    for (const [playerId] of this.players) {
+      if (playerId === id) continue; // 새로 접속한 플레이어 제외
+
+      const otherSocket = this.io.sockets.sockets.get(playerId);
+      if (!otherSocket) continue; // 소켓이 없으면 스킵
+
+      const roomUpdatePacket2Other: RoomUpdatePacket = {
+        type: SystemPacketType.ROOM_UPDATE,
+        players: this.getPlayers(),
+        updateType: RoomUpdateType.PLAYER_JOIN,
+        yourIndex: this.getIndex(playerId), // 각 플레이어 본인의 인덱스
+      };
+      otherSocket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Other);
+    }
+    console.log(
+      `[Server] Sent ROOM_UPDATE (JOIN) to room ${this.roomId} (excluding ${id})`,
+    );
+  }
+
   public removePlayer(id: string) {
     this.players.delete(id);
     // Notify remaining clients about updated room player list
-    const roomUpdatePacket: RoomUpdatePacket = {
-      type: SystemPacketType.ROOM_UPDATE,
-      players: this.getPlayers(),
-      updateType: RoomUpdateType.PLAYER_QUIT,
-      yourIndex: this.getIndex(id), // Not relevant for quit notification
-    };
-    this.broadcastCallback(roomUpdatePacket);
+    this.updateRemainingPlayers(id); // io 필요하면 전달하도록 수정 필요
 
     if (this.players.size === 0) {
       this.stopGame();

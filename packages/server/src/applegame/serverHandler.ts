@@ -194,7 +194,7 @@ export async function joinPlayerToGame(
 
   let session = sessions.get(roomId);
   if (!session) {
-    session = new GameSession(roomId, (packet: ServerPacket) => {
+    session = new GameSession(io, roomId, (packet: ServerPacket) => {
       // packet에서 type과 나머지 데이터를 분리
       const { type, ...payload } = packet;
 
@@ -256,24 +256,7 @@ export async function joinPlayerToGame(
     `[Server] Sent ROOM_UPDATE (${roomUpdatePacket2Player.updateType}) to ${socket.id}`,
   );
 
-  // Send JOIN to existing players (excluding the new player)
-  for (const [playerId] of session.players) {
-    if (playerId === socket.id) continue; // 새로 접속한 플레이어 제외
-
-    const otherSocket = io.sockets.sockets.get(playerId);
-    if (!otherSocket) continue; // 소켓이 없으면 스킵
-
-    const roomUpdatePacket2Other: RoomUpdatePacket = {
-      type: SystemPacketType.ROOM_UPDATE,
-      players: session.getPlayers(),
-      updateType: RoomUpdateType.PLAYER_JOIN,
-      yourIndex: session.getIndex(playerId), // 각 플레이어 본인의 인덱스
-    };
-    otherSocket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Other);
-  }
-  console.log(
-    `[Server] Sent ROOM_UPDATE (JOIN) to room ${roomId} (excluding ${socket.id})`,
-  );
+  session.updateRemainingPlayers(socket.id);
 
   // 만약 방이 꽉 찼거나 특정 조건 만족 시 게임 시작?
   // 현재는 자동 시작 or 수동 시작. 일단 자동 시작 로직 예시:

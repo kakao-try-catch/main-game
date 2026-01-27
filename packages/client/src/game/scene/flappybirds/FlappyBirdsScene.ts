@@ -648,8 +648,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private getPlayersData(): PlayerResultData[] {
     return Array.from({ length: this.playerCount }, (_, i) => ({
       id: `player_${i}`,
-      name: this.playerNames[i] || `Player ${i + 1}`,
-      score: this.currentScore, // 팀 점수이므로 모든 플레이어가 같은 점수
+      playerName: this.playerNames[i] || `Player ${i + 1}`,
+      reportCard: { score: this.currentScore }, // 팀 점수이므로 모든 플레이어가 같은 점수
       color: CONSTANTS.PLAYER_COLORS[i] || '#000000',
       playerIndex: i,
     }));

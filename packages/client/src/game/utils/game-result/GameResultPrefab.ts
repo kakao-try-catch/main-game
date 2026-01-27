@@ -85,7 +85,7 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
       rankPlayer
         .setRank(player.rank)
         .setPlayerName(player.playerName)
-        .setScore(player.score)
+        .setScore(player.reportCard.score)
         .setPlayerColor(hexStringToNumber(player.color));
       this.add(rankPlayer);
       this.rankPlayers.push(rankPlayer);
@@ -134,8 +134,7 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
         defaultPlayers.push({
           playerName: `${i + 1}P`,
           color: ['#209cee', '#e76e55', '#92cc41', '#f2d024'][i] || '#209cee',
-          score: 0,
-          isHost: i === 0,
+          reportCard: { score: 0 },
           playerIndex: i,
           rank: i + 1,
         });
@@ -145,8 +144,8 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
 
     // 1. 점수 내림차순, 같으면 playerIndex 오름차순 정렬
     const sortedPlayers = [...players].sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score; // 점수 내림차순
+      if (b.reportCard.score !== a.reportCard.score) {
+        return b.reportCard.score - a.reportCard.score; // 점수 내림차순
       }
       return a.playerIndex - b.playerIndex; // 플레이어 번호 오름차순
     });
@@ -159,7 +158,10 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
       const player = sortedPlayers[i];
 
       // 첫 번째 플레이어가 아니고, 이전 플레이어와 점수가 다르면 순위 증가
-      if (i > 0 && sortedPlayers[i - 1].score !== player.score) {
+      if (
+        i > 0 &&
+        sortedPlayers[i - 1].reportCard.score !== player.reportCard.score
+      ) {
         currentRank = i + 1;
       }
 

@@ -38,14 +38,18 @@ interface GameResultProps {
 function calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
   if (players.length === 0) return [];
   const sortedPlayers = [...players].sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
+    if (b.reportCard.score !== a.reportCard.score)
+      return b.reportCard.score - a.reportCard.score;
     return a.playerIndex - b.playerIndex;
   });
   const rankedPlayers: RankedPlayer[] = [];
   let currentRank = 1;
   for (let i = 0; i < sortedPlayers.length; i++) {
     const player = sortedPlayers[i];
-    if (i > 0 && sortedPlayers[i - 1].score !== player.score) {
+    if (
+      i > 0 &&
+      sortedPlayers[i - 1].reportCard.score !== player.reportCard.score
+    ) {
       currentRank = i + 1;
     }
     rankedPlayers.push({ ...player, rank: currentRank });
@@ -138,7 +142,9 @@ const GameResult: React.FC<GameResultProps> = ({
                     backgroundColor: player.color,
                   }}
                 >
-                  <div style={getScoreStyle(ratio)}>{player.score}</div>
+                  <div style={getScoreStyle(ratio)}>
+                    {player.reportCard.score}
+                  </div>
                 </div>
               </div>
             );

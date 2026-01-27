@@ -296,7 +296,7 @@ function AppContent() {
                 <PlayerCard
                   key={`player-${index}`}
                   name={player.playerName}
-                  score={player.score}
+                  score={player.reportCard.score}
                   color={player.color}
                 />
               ))}

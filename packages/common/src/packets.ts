@@ -30,8 +30,7 @@ type AppleIndex = number;
 export interface PlayerData {
   playerName: string;
   color: string;
-  score: number; // User requested score to be in PlayerData
-  isHost: boolean; // whether this player is the room host
+  reportCard: ReportCard;
 }
 
 export interface ReportCard {

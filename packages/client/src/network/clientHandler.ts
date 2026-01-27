@@ -65,7 +65,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       store.setPlayers((prev) =>
         prev.map((player, index) => ({
           ...player,
-          score: packet.scoreboard[index]?.score ?? player.score,
+          reportCard: packet.scoreboard[index] ?? player.reportCard,
         })),
       );
       sfxManager.play('appleDrop');

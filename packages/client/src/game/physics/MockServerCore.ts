@@ -172,10 +172,8 @@ export class MockServerCore {
         label: 'ground',
         collisionFilter: {
           category: CATEGORY_GROUND,
-          mask: CATEGORY_BIRD,
+          mask: 0, // 물리 충돌 비활성화 - checkCollisions에서만 처리
         },
-        friction: 0.5,
-        restitution: 0.2, // 약간의 탄성
       },
     );
 
@@ -201,13 +199,13 @@ export class MockServerCore {
         {
           chamfer: { radius: 10 }, // 모서리를 약간 둥글게 처리
           density: 0.001,
-          restitution: 0.5,
+          restitution: 0.2, // 탄성 없음
           friction: 0.1,
           frictionAir: 0.05,
           label: 'bird',
           collisionFilter: {
             category: CATEGORY_BIRD,
-            mask: CATEGORY_BIRD | CATEGORY_PIPE | CATEGORY_GROUND, // 서로 튕겨나가도록 다시 추가 (게임오버는 아님)
+            mask: CATEGORY_BIRD | CATEGORY_PIPE | CATEGORY_GROUND, // 물리 충돌 비활성화 - checkCollisions에서만 처리
           },
         },
       );
@@ -348,7 +346,16 @@ export class MockServerCore {
     // 3. 밧줄 최대 길이 제한 (단단한 줄)
     this.enforceRopeConstraint();
 
-    // 2. 물리 서브스테핑 (바닥 뚫림 현상 완벽 차단)
+    // 3-1. velocityY 기반으로 새의 각도 업데이트 (클라이언트 시각적 표시와 일치시킴)
+    for (const bird of this.birds) {
+      if (!bird.isStatic) {
+        // velocityY * 10을 -30 ~ 90도 범위로 클램프 후 라디안 변환
+        const angleDeg = Math.max(-30, Math.min(90, bird.velocity.y * 10));
+        Matter.Body.setAngle(bird, angleDeg * (Math.PI / 180));
+      }
+    }
+
+    // 4. 물리 서브스테핑 (바닥 뚫림 현상 완벽 차단)
     // 60fps 프레임을 5번으로 쪼개서 정밀 연산
     const subSteps = 5;
     const stepTime = 1000 / 60 / subSteps;
@@ -465,8 +472,10 @@ export class MockServerCore {
       const bird = this.birds[i];
       if (bird.isStatic) continue;
 
-      // 1. 바닥과의 충돌 (상단 표면 FLAPPY_GROUND_Y 기준)
-      if (bird.position.y + this.BIRD_HEIGHT / 2 >= FLAPPY_GROUND_Y) {
+      // 1. 바닥과의 충돌 (상단 표면 FLAPPY_GROUND_Y 기준, 물리 엔진 여유분 5px 포함)
+      const birdBottom = bird.position.y + this.BIRD_HEIGHT / 2;
+      const groundThreshold = FLAPPY_GROUND_Y;
+      if (birdBottom >= groundThreshold) {
         Matter.Body.setPosition(bird, {
           x: bird.position.x,
           y: FLAPPY_GROUND_Y - this.BIRD_HEIGHT / 2,
@@ -504,64 +513,37 @@ export class MockServerCore {
       }
       // 오른쪽 벽 제거됨 - 카메라가 새를 따라가므로 무한히 앞으로 이동 가능
 
-      // 2. 파이프와의 충돌
+      // 2. 파이프와의 충돌 (단순한 정사각형 히트박스, 회전 무시)
       const birdX = bird.position.x;
       const birdY = bird.position.y;
-      const halfBirdW = (this.BIRD_WIDTH * 0.8) / 2;
-      const halfBirdH = (this.BIRD_HEIGHT * 0.8) / 2;
-      const birdPoints = this.getRotatedRectPoints(
-        birdX,
-        birdY,
-        halfBirdW,
-        halfBirdH,
-        bird.angle,
-      );
-      const birdAabb = this.getAabbFromPoints(birdPoints);
+      const hitboxSize = 36; // 작은 정사각형 히트박스
+      const halfHitbox = hitboxSize / 2;
 
       for (const pipe of this.pipes) {
-        const pipeWidth = pipe.width * 0.8;
+        const pipeWidth = pipe.width;
         const halfPipeW = pipeWidth / 2;
         const pipeLeft = pipe.x - halfPipeW;
         const pipeRight = pipe.x + halfPipeW;
 
-        if (birdAabb.maxX < pipeLeft || birdAabb.minX > pipeRight) {
+        // X축 충돌 체크
+        if (birdX + halfHitbox < pipeLeft || birdX - halfHitbox > pipeRight) {
           continue;
         }
 
         const gapTop = pipe.gapY - pipe.gap / 2;
         const gapBottom = pipe.gapY + pipe.gap / 2;
 
-        // Y축 충돌 확인 (갭 밖에 있으면 충돌)
-        if (birdAabb.minY < gapTop || birdAabb.maxY > gapBottom) {
-          // 파이프 충돌 시 멈추지 않고 그대로 아래로 미끄러지도록(추락) 수정
-          // setStatic(true)를 하지 않으면 중력에 의해 자연스럽게 떨어짐
-          const topRect = this.getRectPoints(
-            pipeLeft,
-            0,
-            pipeWidth,
-            gapTop,
-          );
-          const bottomRect = this.getRectPoints(
-            pipeLeft,
-            gapBottom,
-            pipeWidth,
-            this.screenHeight - gapBottom,
-          );
-
-          if (
-            this.polygonsIntersect(birdPoints, topRect) ||
-            this.polygonsIntersect(birdPoints, bottomRect)
-          ) {
-            this.handleGameOver('pipe_collision', String(i) as PlayerId);
-            return;
-          }
+        // Y축 충돌: 새가 갭 밖에 있으면 충돌
+        if (birdY - halfHitbox < gapTop || birdY + halfHitbox > gapBottom) {
+          this.handleGameOver('pipe_collision', String(i) as PlayerId);
+          return;
         }
 
         // 통과 판정 (새의 X 좌표가 파이프의 오른쪽 끝을 지났을 때)
         const playerId = String(i) as PlayerId;
         if (
           !pipe.passedPlayers.includes(playerId) &&
-          birdX - halfBirdW > pipe.x
+          birdX - halfHitbox > pipe.x
         ) {
           pipe.passedPlayers.push(playerId);
 
@@ -754,8 +736,7 @@ export class MockServerCore {
         y: this.FLAP_VELOCITY + verticalJitter,
       });
 
-      // 플랩 시 즉시 앞을 보게 함 (0도 유지) 및 회전 속도 초기화
-      Matter.Body.setAngle(bird, 0);
+      // 회전 속도 초기화 (각도는 update()에서 velocityY 기반으로 자동 설정됨)
       Matter.Body.setAngularVelocity(bird, 0);
 
       console.log(`[MockServerCore] Player ${playerId} Flap!`);

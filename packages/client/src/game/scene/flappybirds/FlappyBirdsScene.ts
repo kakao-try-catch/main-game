@@ -23,8 +23,14 @@ import type {
 } from '../../types/flappybird.types';
 import type { PlayerResultData } from '../../types/common';
 import { CONSTANTS } from '../../types/common';
-import type { FlappyBirdGamePreset, ResolvedFlappyBirdConfig } from '../../types/FlappyBirdGamePreset';
-import { resolveFlappyBirdPreset, DEFAULT_FLAPPYBIRD_PRESET } from '../../types/FlappyBirdGamePreset';
+import type {
+  FlappyBirdGamePreset,
+  ResolvedFlappyBirdConfig,
+} from '../../types/FlappyBirdGamePreset';
+import {
+  resolveFlappyBirdPreset,
+  DEFAULT_FLAPPYBIRD_PRESET,
+} from '../../types/FlappyBirdGamePreset';
 import PipeManager from './PipeManager';
 
 export default class FlappyBirdsScene extends Phaser.Scene {
@@ -60,7 +66,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private isGameOver: boolean = false; // 게임 오버 여부
   private debugGraphics!: Phaser.GameObjects.Graphics;
   private showDebug: boolean = false;
-  private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(DEFAULT_FLAPPYBIRD_PRESET);
+  private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(
+    DEFAULT_FLAPPYBIRD_PRESET,
+  );
 
   constructor() {
     super('FlappyBirdsScene');
@@ -394,7 +402,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       this.ropeMidPoints.push({ y: 300, vy: 0 });
     }
 
-    console.log(`[FlappyBirdsScene] ${ropeCount}개의 밧줄 생성 완료 (연결: ${this.ropeConnections.map(c => `${c[0]}-${c[1]}`).join(', ')})`);
+    console.log(
+      `[FlappyBirdsScene] ${ropeCount}개의 밧줄 생성 완료 (연결: ${this.ropeConnections.map((c) => `${c[0]}-${c[1]}`).join(', ')})`,
+    );
   }
 
   /**
@@ -408,52 +418,65 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.socket.off('game_over');
 
     // 플레이어 정보 업데이트 (인원수 조절 등)
-    this.events.on('updatePlayers', (data: { playerCount?: number; players?: { name: string }[]; preset?: FlappyBirdGamePreset }) => {
-      console.log(
-        `[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`,
-      );
-      const oldPlayerCount = this.playerCount;
-      this.playerCount = data.playerCount || 4;
+    this.events.on(
+      'updatePlayers',
+      (data: {
+        playerCount?: number;
+        players?: { name: string }[];
+        preset?: FlappyBirdGamePreset;
+      }) => {
+        console.log(
+          `[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`,
+        );
+        const oldPlayerCount = this.playerCount;
+        this.playerCount = data.playerCount || 4;
 
-      // 플레이어 이름 업데이트
-      if (data.players && data.players.length > 0) {
-        this.playerNames = data.players.map((p, i) => p.name || `Player ${i + 1}`);
-        console.log(`[FlappyBirdsScene] 플레이어 이름 업데이트:`, this.playerNames);
-      }
+        // 플레이어 이름 업데이트
+        if (data.players && data.players.length > 0) {
+          this.playerNames = data.players.map(
+            (p, i) => p.name || `Player ${i + 1}`,
+          );
+          console.log(
+            `[FlappyBirdsScene] 플레이어 이름 업데이트:`,
+            this.playerNames,
+          );
+        }
 
-      // 프리셋이 있으면 게임 설정 업데이트
-      let configChanged = false;
-      let connectAllChanged = false;
-      if (data.preset) {
-        const newConfig = resolveFlappyBirdPreset(data.preset);
-        // 설정이 변경되었는지 확인
-        if (
-          this.gameConfig.pipeSpeed !== newConfig.pipeSpeed ||
-          this.gameConfig.pipeSpacing !== newConfig.pipeSpacing ||
-          this.gameConfig.pipeGap !== newConfig.pipeGap ||
-          this.gameConfig.pipeWidth !== newConfig.pipeWidth ||
-          this.gameConfig.ropeLength !== newConfig.ropeLength ||
-          this.gameConfig.connectAll !== newConfig.connectAll
-        ) {
-          connectAllChanged = this.gameConfig.connectAll !== newConfig.connectAll;
-          this.gameConfig = newConfig;
-          configChanged = true;
-          console.log(`[FlappyBirdsScene] 프리셋 적용:`, this.gameConfig);
+        // 프리셋이 있으면 게임 설정 업데이트
+        let configChanged = false;
+        let connectAllChanged = false;
+        if (data.preset) {
+          const newConfig = resolveFlappyBirdPreset(data.preset);
+          // 설정이 변경되었는지 확인
+          if (
+            this.gameConfig.pipeSpeed !== newConfig.pipeSpeed ||
+            this.gameConfig.pipeSpacing !== newConfig.pipeSpacing ||
+            this.gameConfig.pipeGap !== newConfig.pipeGap ||
+            this.gameConfig.pipeWidth !== newConfig.pipeWidth ||
+            this.gameConfig.ropeLength !== newConfig.ropeLength ||
+            this.gameConfig.connectAll !== newConfig.connectAll
+          ) {
+            connectAllChanged =
+              this.gameConfig.connectAll !== newConfig.connectAll;
+            this.gameConfig = newConfig;
+            configChanged = true;
+            console.log(`[FlappyBirdsScene] 프리셋 적용:`, this.gameConfig);
+          }
         }
-      }
 
-      // 인원수가 변경되었거나 설정이 변경된 경우 게임 객체 재설정
-      if (oldPlayerCount !== this.playerCount || configChanged) {
-        if (this.mockServerCore) {
-          this.mockServerCore.setPlayerCount(this.playerCount);
-          this.mockServerCore.initialize(this.gameConfig);
+        // 인원수가 변경되었거나 설정이 변경된 경우 게임 객체 재설정
+        if (oldPlayerCount !== this.playerCount || configChanged) {
+          if (this.mockServerCore) {
+            this.mockServerCore.setPlayerCount(this.playerCount);
+            this.mockServerCore.initialize(this.gameConfig);
+          }
+          // 인원수 또는 connectAll이 변경된 경우 밧줄 재생성
+          if (oldPlayerCount !== this.playerCount || connectAllChanged) {
+            this.setupGame();
+          }
         }
-        // 인원수 또는 connectAll이 변경된 경우 밧줄 재생성
-        if (oldPlayerCount !== this.playerCount || connectAllChanged) {
-          this.setupGame();
-        }
-      }
-    });
+      },
+    );
 
     // 위치 업데이트 수신
     this.socket.on('update_positions', (data: UpdatePositionsEvent) => {
@@ -660,7 +683,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       this.cameras.main.scrollX = Phaser.Math.Linear(
         this.cameras.main.scrollX,
         targetCameraX,
-        0.1
+        0.1,
       );
 
       // 지면 스크롤 (카메라 위치에 동기화)
@@ -699,39 +722,24 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private drawDebugHitboxes() {
     this.debugGraphics.clear();
     const ratio = this.getRatio();
-    const birdHitboxScale = 0.8;
 
-    // 새 히트박스 (회전 포함, 물리 충돌과 동일한 스케일)
+    // 새 히트박스 (36x36 정사각형, 회전 무시)
+    const hitboxSize = 36 * ratio;
+    const halfHitbox = hitboxSize / 2;
     this.debugGraphics.lineStyle(2, 0xff00ff, 1); // 마젠타
     for (const sprite of this.birdSprites) {
-      const halfW = (sprite.displayWidth * birdHitboxScale) / 2;
-      const halfH = (sprite.displayHeight * birdHitboxScale) / 2;
-      const cos = Math.cos(sprite.rotation);
-      const sin = Math.sin(sprite.rotation);
-      const corners = [
-        { x: -halfW, y: -halfH },
-        { x: halfW, y: -halfH },
-        { x: halfW, y: halfH },
-        { x: -halfW, y: halfH },
-      ];
-      const points = corners.map((c) => ({
-        x: sprite.x + c.x * cos - c.y * sin,
-        y: sprite.y + c.x * sin + c.y * cos,
-      }));
-
-      this.debugGraphics.beginPath();
-      this.debugGraphics.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        this.debugGraphics.lineTo(points[i].x, points[i].y);
-      }
-      this.debugGraphics.closePath();
-      this.debugGraphics.strokePath();
+      this.debugGraphics.strokeRect(
+        sprite.x - halfHitbox,
+        sprite.y - halfHitbox,
+        hitboxSize,
+        hitboxSize,
+      );
     }
 
     // 파이프 히트박스
     this.debugGraphics.lineStyle(2, 0x00ffff, 1); // 시안
     for (const pipeData of this.targetPipes) {
-      const pipeWidth = pipeData.width * 0.8 * ratio;
+      const pipeWidth = pipeData.width * ratio;
       const halfW = pipeWidth / 2;
       const gapY = pipeData.gapY * ratio;
       const gap = pipeData.gap * ratio;
@@ -740,12 +748,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       const pipeX = pipeData.x * ratio;
 
       // 위쪽 파이프
-      this.debugGraphics.strokeRect(
-        pipeX - halfW,
-        0,
-        pipeWidth,
-        gapTop,
-      );
+      this.debugGraphics.strokeRect(pipeX - halfW, 0, pipeWidth, gapTop);
 
       // 아래쪽 파이프
       this.debugGraphics.strokeRect(

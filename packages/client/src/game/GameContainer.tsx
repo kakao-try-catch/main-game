@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import AppleGameScene from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
+import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
 import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { PlayerData, PlayerResultData, GameType } from './types/common';
@@ -23,6 +24,13 @@ const GAME_CONFIGS = {
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#46d1fd',
+  },
+  minesweeper: {
+    sceneName: 'MineSweeperScene',
+    sceneClasses: [BootScene, MineSweeperScene] as const,
+    maxWidth: GAME_WIDTH,
+    maxHeight: GAME_HEIGHT,
+    backgroundColor: '#2c3e50',
   },
 };
 
@@ -68,7 +76,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const isValidGameType = gameType === 'apple' || gameType === 'flappy';
+  const isValidGameType = gameType === 'apple' || gameType === 'flappy' || gameType === 'minesweeper';
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
   const preset = gameType === 'apple' ? applePreset : flappyPreset;
 
@@ -307,7 +315,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   return (
     <div
       ref={parentRef}
-      id={gameType === 'apple' ? 'apple-game' : 'flappy-game'}
+      id={`${gameType}-game`}
       style={{
         width: `${layout.width}px`,
         height: `${layout.height}px`,

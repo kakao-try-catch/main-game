@@ -1,4 +1,4 @@
-﻿import Phaser from 'phaser';
+import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import { TileState } from '../../types/minesweeper.types';
 
@@ -9,8 +9,6 @@ export interface TileRenderData {
   isMine: boolean;
   adjacentMines: number;
   state: TileState;
-  revealedBy?: string | null;
-  flaggedBy?: string | null;
 }
 
 // 타일 매니저 설정
@@ -32,10 +30,8 @@ export default class TileManager {
   // 타일 관련
   private tileSize: number = 0;
   private tiles: TileRenderData[][] = [];
-  private tileSprites: Phaser.GameObjects.Image[][] = [];
+  private tileSprites: Phaser.GameObjects.Rectangle[][] = [];
   private tileTexts: Phaser.GameObjects.Text[][] = [];
-  private mineSprites: (Phaser.GameObjects.Image | null)[][] = [];
-  private flagSprites: (Phaser.GameObjects.Image | null)[][] = [];
 
   // 디버그 모드
   private debugMode: boolean = false;
@@ -44,9 +40,6 @@ export default class TileManager {
   // 그리드 시작 위치 (중앙 정렬용)
   private gridStartX: number = 0;
   private gridStartY: number = 0;
-
-  // 플레이어 색상 매핑
-  private playerColors: Map<string, string> = new Map();
 
   constructor(
     scene: Phaser.Scene,
@@ -74,32 +67,13 @@ export default class TileManager {
   }
 
   /**
-   * 플레이어 색상 설정
-   */
-  public setPlayerColors(players: { id: string; color: string }[]): void {
-    console.log('[TileManager] setPlayerColors 호출됨, players:', players);
-    this.playerColors.clear();
-    for (const player of players) {
-      this.playerColors.set(player.id, player.color);
-    }
-  }
-
-  /**
-   * 타일 크기 계산 (사과게임과 동일한 레이아웃)
+   * 타일 크기 계산 (화면을 가득 채우도록)
    */
   private calculateTileSize(): void {
     const ratio = window.__GAME_RATIO || 1;
-    const canvasWidth = GAME_WIDTH * ratio;
-    const canvasHeight = GAME_HEIGHT * ratio;
 
-    // 사과게임과 동일한 여백 설정
-    const timerBarWidth = 22 * ratio;
-    const timerBarMarginRight = 30 * ratio;
-    const verticalMargin = 50 * ratio; // 상하 여백 (사과게임과 동일)
-
-    // 사용 가능한 영역 계산 (타이머 영역 제외)
-    const availableWidth = canvasWidth - timerBarWidth - timerBarMarginRight;
-    const availableHeight = canvasHeight - 2 * verticalMargin;
+    const availableWidth = GAME_WIDTH * ratio;
+    const availableHeight = GAME_HEIGHT * ratio;
 
     // 그리드에 맞는 타일 크기 계산
     const tileWidth = availableWidth / this.gridCols;
@@ -108,11 +82,11 @@ export default class TileManager {
     // 정사각형 타일 유지 (더 작은 쪽에 맞춤)
     this.tileSize = Math.floor(Math.min(tileWidth, tileHeight));
 
-    // 그리드 시작 위치 계산 (사용 가능한 영역 내에서 중앙 정렬)
+    // 그리드 시작 위치 계산 (중앙 정렬)
     const gridWidth = this.gridCols * this.tileSize;
     const gridHeight = this.gridRows * this.tileSize;
     this.gridStartX = (availableWidth - gridWidth) / 2;
-    this.gridStartY = verticalMargin + (availableHeight - gridHeight) / 2;
+    this.gridStartY = (availableHeight - gridHeight) / 2;
 
     console.log(`[TileManager] 타일 크기: ${this.tileSize}px`);
   }
@@ -133,10 +107,30 @@ export default class TileManager {
           isMine: false,
           adjacentMines: 0,
           state: TileState.HIDDEN,
-          revealedBy: null,
         };
       }
     }
+  }
+
+  /**
+   * 랜덤 지뢰 배치
+   */
+  private placeMines(): void {
+    let minesPlaced = 0;
+    const totalTiles = this.gridRows * this.gridCols;
+    const maxMines = Math.min(this.mineCount, totalTiles - 1);
+
+    while (minesPlaced < maxMines) {
+      const row = Phaser.Math.Between(0, this.gridRows - 1);
+      const col = Phaser.Math.Between(0, this.gridCols - 1);
+
+      if (!this.tiles[row][col].isMine) {
+        this.tiles[row][col].isMine = true;
+        minesPlaced++;
+      }
+    }
+
+    console.log(`[TileManager] 지뢰 ${minesPlaced}개 배치 완료`);
   }
 
   /**
@@ -145,31 +139,33 @@ export default class TileManager {
   private createTileSprites(): void {
     this.tileSprites = [];
     this.tileTexts = [];
-    this.mineSprites = [];
-    this.flagSprites = [];
 
     for (let row = 0; row < this.gridRows; row++) {
       this.tileSprites[row] = [];
       this.tileTexts[row] = [];
-      this.mineSprites[row] = [];
-      this.flagSprites[row] = [];
 
       for (let col = 0; col < this.gridCols; col++) {
         const x = this.gridStartX + col * this.tileSize + this.tileSize / 2;
         const y = this.gridStartY + row * this.tileSize + this.tileSize / 2;
 
-        // 타일 배경 (이미지 스프라이트)
-        const tile = this.scene.add.image(x, y, 'TileClosed');
-        tile.setDisplaySize(this.tileSize - 2, this.tileSize - 2);
+        // 타일 배경
+        const tile = this.scene.add.rectangle(
+          x,
+          y,
+          this.tileSize - 2,
+          this.tileSize - 2,
+          0x7f8c8d,
+        );
+        tile.setStrokeStyle(2, 0x95a5a6);
         tile.setData('row', row);
         tile.setData('col', col);
 
         this.tileSprites[row][col] = tile;
         this.gameContainer.add(tile);
 
-        // 타일 텍스트 (숫자 표시용)
+        // 타일 텍스트 (숫자/지뢰 표시용)
         const text = this.scene.add.text(x, y, '', {
-          fontSize: `${Math.floor(this.tileSize * 0.8)}px`,
+          fontSize: `${Math.floor(this.tileSize * 0.6)}px`,
           fontFamily: 'NeoDunggeunmo',
           color: '#ffffff',
         });
@@ -178,11 +174,6 @@ export default class TileManager {
 
         this.tileTexts[row][col] = text;
         this.gameContainer.add(text);
-
-        // 지뢰 스프라이트 (처음에는 null)
-        this.mineSprites[row][col] = null;
-        // 깃발 스프라이트 (처음에는 null)
-        this.flagSprites[row][col] = null;
       }
     }
   }
@@ -231,7 +222,6 @@ export default class TileManager {
           this.tiles[row][col].isMine = serverTile.isMine;
           this.tiles[row][col].adjacentMines = serverTile.adjacentMines;
           this.tiles[row][col].state = serverTile.state;
-          this.tiles[row][col].revealedBy = serverTile.revealedBy;
         }
       }
     }
@@ -240,74 +230,7 @@ export default class TileManager {
   }
 
   /**
-   * 순차적 타일 열기 애니메이션 (거리별로 파동 효과)
-   * @param tiles 거리 정보가 포함된 타일 업데이트 배열
-   * @param delayMs 거리당 딜레이 (기본 50ms)
-   */
-  public revealTilesSequentially(
-    tiles: Array<{
-      row: number;
-      col: number;
-      state: TileState;
-      adjacentMines?: number;
-      isMine?: boolean;
-      revealedBy?: string | null;
-      flaggedBy?: string | null;
-      distance: number;
-    }>,
-    delayMs: number = 50,
-  ): void {
-    // 거리별로 그룹화
-    const tilesByDistance: Map<number, typeof tiles> = new Map();
-
-    for (const tile of tiles) {
-      if (!tilesByDistance.has(tile.distance)) {
-        tilesByDistance.set(tile.distance, []);
-      }
-      tilesByDistance.get(tile.distance)!.push(tile);
-    }
-
-    // 거리 순서대로 정렬
-    const distances = Array.from(tilesByDistance.keys()).sort((a, b) => a - b);
-
-    // 거리별로 순차적으로 타일 열기
-    distances.forEach((distance, index) => {
-      setTimeout(() => {
-        const tilesAtDistance = tilesByDistance.get(distance)!;
-        let hasNonMineTile = false;
-
-        for (const tile of tilesAtDistance) {
-          const isMine = this.updateTileState(
-            tile.row,
-            tile.col,
-            tile.state,
-            tile.adjacentMines,
-            tile.isMine,
-            tile.revealedBy,
-            tile.flaggedBy,
-          );
-
-          // 지뢰가 아닌 타일이 하나라도 있으면 사운드 재생
-          if (!isMine && tile.state === TileState.REVEALED) {
-            hasNonMineTile = true;
-          }
-        }
-
-        // 지뢰가 아닌 타일이 있을 때만 타일 열기 사운드 이벤트 발생
-        if (hasNonMineTile) {
-          this.scene.events.emit('minesweeperTileReveal');
-        }
-      }, index * delayMs);
-    });
-
-    console.log(
-      `[TileManager] 순차 애니메이션 시작: ${tiles.length}개 타일, ${distances.length}단계, ${delayMs}ms 간격`,
-    );
-  }
-
-  /**
    * 타일 상태 업데이트 (서버에서 받은 데이터로 시각적 업데이트)
-   * @returns 지뢰 타일인지 여부 (true: 지뢰, false: 안전한 타일)
    */
   public updateTileState(
     row: number,
@@ -315,72 +238,32 @@ export default class TileManager {
     state: TileState,
     adjacentMines?: number,
     isMine?: boolean,
-    revealedBy?: string | null,
-    flaggedBy?: string | null,
-  ): boolean {
+  ): void {
     if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
-      return false;
+      return;
     }
 
     const tile = this.tiles[row][col];
     const sprite = this.tileSprites[row][col];
     const text = this.tileTexts[row][col];
 
-    if (!tile || !sprite || !text) return false;
+    if (!tile || !sprite || !text) return;
 
     tile.state = state;
     if (adjacentMines !== undefined) tile.adjacentMines = adjacentMines;
     if (isMine !== undefined) tile.isMine = isMine;
-    if (revealedBy !== undefined) tile.revealedBy = revealedBy;
-    tile.flaggedBy = flaggedBy;
-
-    let isMineTile = false;
 
     // 상태에 따른 시각적 업데이트
     switch (state) {
       case TileState.REVEALED:
-        sprite.setTexture('TileOpened');
-        // 깃발 스프라이트 숨기기
-        const tileAlpha = 0.6;
-        if (this.flagSprites[row][col]) {
-          this.flagSprites[row][col]!.setVisible(false);
-        }
         if (tile.isMine) {
-          // 지뢰 이미지 표시 - 플레이어 색상 적용
-          if (tile.revealedBy && this.playerColors.has(tile.revealedBy)) {
-            const colorStr = this.playerColors.get(tile.revealedBy)!;
-            const lightTint = this.getLightTint(colorStr, tileAlpha);
-            sprite.setTint(lightTint);
-          } else {
-            sprite.setTint(0xe74c3c); // 기본 빨간색 틴트
-          }
-          text.setVisible(false);
-          // 지뢰 스프라이트 생성 또는 표시
-          if (!this.mineSprites[row][col]) {
-            const x = this.gridStartX + col * this.tileSize + this.tileSize / 2;
-            const y = this.gridStartY + row * this.tileSize + this.tileSize / 2;
-            const mineSprite = this.scene.add.image(x, y, 'mine');
-            mineSprite.setDisplaySize(this.tileSize * 0.8, this.tileSize * 0.8);
-            this.mineSprites[row][col] = mineSprite;
-            this.gameContainer.add(mineSprite);
-          } else {
-            this.mineSprites[row][col]!.setVisible(true);
-          }
-          // 지뢰 폭발 사운드 이벤트 발생
-          this.scene.events.emit('minesweeperMineExplode');
+          // 지뢰 표시
+          sprite.setFillStyle(0xe74c3c); // 빨간색
+          text.setText('💣');
+          text.setVisible(true);
         } else {
           // 빈 타일 또는 숫자 표시
-          if (tile.revealedBy && this.playerColors.has(tile.revealedBy)) {
-            const colorStr = this.playerColors.get(tile.revealedBy)!;
-            const lightTint = this.getLightTint(colorStr, tileAlpha);
-            sprite.setTint(lightTint);
-          } else {
-            sprite.clearTint();
-          }
-          // 지뢰 스프라이트 숨기기
-          if (this.mineSprites[row][col]) {
-            this.mineSprites[row][col]!.setVisible(false);
-          }
+          sprite.setFillStyle(0xbdc3c7); // 밝은 회색
           if (tile.adjacentMines > 0) {
             text.setText(tile.adjacentMines.toString());
             text.setStyle({
@@ -394,84 +277,17 @@ export default class TileManager {
         break;
 
       case TileState.FLAGGED:
-        // 플레이어별 색상으로 깃발 표시
-        sprite.setTexture('TileClosed');
-        // 타일 배경에도 플레이어 색상 적용
-        if (flaggedBy && this.playerColors.has(flaggedBy)) {
-          const colorStr = this.playerColors.get(flaggedBy)!;
-          const lightTint = this.getLightTint(colorStr, 0.5);
-          sprite.setTint(lightTint);
-        } else {
-          sprite.clearTint();
-        }
-        text.setVisible(false);
-        // 깃발 스프라이트 생성 또는 표시
-        if (!this.flagSprites[row][col]) {
-          const x = this.gridStartX + col * this.tileSize + this.tileSize / 2;
-          const y = this.gridStartY + row * this.tileSize + this.tileSize / 2;
-          const flagSprite = this.scene.add.image(x, y, 'flag_other');
-          flagSprite.setDisplaySize(this.tileSize * 0.8, this.tileSize * 0.8);
-          // 플레이어 색상 틴트 적용
-          if (flaggedBy && this.playerColors.has(flaggedBy)) {
-            const colorStr = this.playerColors.get(flaggedBy)!;
-            const flagColor = parseInt(colorStr.replace('#', ''), 16);
-            flagSprite.setTint(flagColor);
-          }
-          this.flagSprites[row][col] = flagSprite;
-          this.gameContainer.add(flagSprite);
-        } else {
-          this.flagSprites[row][col]!.setVisible(true);
-          // 플레이어 색상 틴트 업데이트
-          if (flaggedBy && this.playerColors.has(flaggedBy)) {
-            const colorStr = this.playerColors.get(flaggedBy)!;
-            const flagColor = parseInt(colorStr.replace('#', ''), 16);
-            this.flagSprites[row][col]!.setTint(flagColor);
-          }
-        }
-        // 지뢰 스프라이트 숨기기
-        if (this.mineSprites[row][col]) {
-          this.mineSprites[row][col]!.setVisible(false);
-        }
-        // 깃발 설치 사운드 이벤트 발생
-        this.scene.events.emit('minesweeperFlagPlaced');
+        sprite.setFillStyle(0xf39c12); // 주황색
+        text.setText('🚩');
+        text.setVisible(true);
         break;
 
       case TileState.HIDDEN:
       default:
-        sprite.setTexture('TileClosed');
-        sprite.clearTint();
+        sprite.setFillStyle(0x7f8c8d); // 기본 회색
         text.setVisible(false);
-        // 지뢰 스프라이트 숨기기
-        if (this.mineSprites[row][col]) {
-          this.mineSprites[row][col]!.setVisible(false);
-        }
-        // 깃발 스프라이트 숨기기
-        if (this.flagSprites[row][col]) {
-          this.flagSprites[row][col]!.setVisible(false);
-        }
         break;
     }
-
-    return isMineTile;
-  }
-
-  /**
-   * 색상을 흰색과 블렌딩하여 밝은 색상 반환
-   * @param colorStr #RRGGBB 형식의 색상
-   * @param ratio 원본 색상 비율 (0.0 = 흰색, 1.0 = 원본)
-   */
-  private getLightTint(colorStr: string, ratio: number): number {
-    const hex = colorStr.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-
-    // 흰색(255)과 블렌딩
-    const lightR = Math.round(255 + (r - 255) * ratio);
-    const lightG = Math.round(255 + (g - 255) * ratio);
-    const lightB = Math.round(255 + (b - 255) * ratio);
-
-    return (lightR << 16) | (lightG << 8) | lightB;
   }
 
   /**
@@ -507,7 +323,7 @@ export default class TileManager {
   public getTileSprite(
     row: number,
     col: number,
-  ): Phaser.GameObjects.Image | null {
+  ): Phaser.GameObjects.Rectangle | null {
     if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
       return null;
     }
@@ -551,8 +367,6 @@ export default class TileManager {
       for (let col = 0; col < this.gridCols; col++) {
         this.tileSprites[row][col]?.destroy();
         this.tileTexts[row][col]?.destroy();
-        this.mineSprites[row][col]?.destroy();
-        this.flagSprites[row][col]?.destroy();
       }
     }
 
@@ -565,15 +379,12 @@ export default class TileManager {
 
   /**
    * 디버그 모드 토글
-   * @param debugTiles 디버그용 서버 내부 타일 데이터 (지뢰 정보 포함)
    */
-  public toggleDebugMode(
-    debugTiles?: { isMine: boolean; adjacentMines: number }[][],
-  ): void {
+  public toggleDebugMode(): void {
     this.debugMode = !this.debugMode;
 
     if (this.debugMode) {
-      this.createDebugOverlays(debugTiles);
+      this.createDebugOverlays();
       console.log('[TileManager] 디버그 모드 활성화');
     } else {
       this.clearDebugOverlays();
@@ -583,11 +394,8 @@ export default class TileManager {
 
   /**
    * 디버그 오버레이 생성 (모든 타일 정보 표시)
-   * @param debugTiles 디버그용 서버 내부 타일 데이터 (지뢰 정보 포함)
    */
-  private createDebugOverlays(
-    debugTiles?: { isMine: boolean; adjacentMines: number }[][],
-  ): void {
+  private createDebugOverlays(): void {
     this.clearDebugOverlays();
 
     for (let row = 0; row < this.gridRows; row++) {
@@ -598,11 +406,6 @@ export default class TileManager {
         if (tile.state !== TileState.HIDDEN) {
           continue;
         }
-
-        // 디버그용 타일 데이터 사용 (없으면 로컬 데이터 사용)
-        const debugTile = debugTiles?.[row]?.[col] ?? tile;
-        const isMine = debugTile.isMine;
-        const adjacentMines = debugTile.adjacentMines;
 
         const x = this.gridStartX + col * this.tileSize + this.tileSize / 2;
         const y = this.gridStartY + row * this.tileSize + this.tileSize / 2;
@@ -615,24 +418,26 @@ export default class TileManager {
           0,
           this.tileSize - 2,
           this.tileSize - 2,
-          isMine ? 0xe74c3c : 0x3498db,
+          tile.isMine ? 0xe74c3c : 0x3498db,
           0.3,
         );
         container.add(overlay);
 
         // 디버그 텍스트
         let debugText = '';
-        if (isMine) {
+        if (tile.isMine) {
           debugText = '💣';
-        } else if (adjacentMines > 0) {
-          debugText = adjacentMines.toString();
+        } else if (tile.adjacentMines > 0) {
+          debugText = tile.adjacentMines.toString();
         }
 
         if (debugText) {
           const text = this.scene.add.text(0, 0, debugText, {
             fontSize: `${Math.floor(this.tileSize * 0.5)}px`,
             fontFamily: 'NeoDunggeunmo',
-            color: isMine ? '#ffffff' : this.getNumberColor(adjacentMines),
+            color: tile.isMine
+              ? '#ffffff'
+              : this.getNumberColor(tile.adjacentMines),
           });
           text.setOrigin(0.5, 0.5);
           text.setAlpha(0.7);
@@ -673,16 +478,12 @@ export default class TileManager {
       for (let col = 0; col < this.gridCols; col++) {
         this.tileSprites[row][col]?.destroy();
         this.tileTexts[row][col]?.destroy();
-        this.mineSprites[row][col]?.destroy();
-        this.flagSprites[row][col]?.destroy();
       }
     }
 
     this.tiles = [];
     this.tileSprites = [];
     this.tileTexts = [];
-    this.mineSprites = [];
-    this.flagSprites = [];
 
     console.log('[TileManager] 정리 완료');
   }

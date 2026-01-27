@@ -150,3 +150,8 @@ export const getMyPlayerData = (): PlayerData | null => {
   }
   return players[myselfIndex];
 };
+
+export const isPlayerHost = (): boolean => {
+  const { myselfIndex } = useGameStore.getState();
+  return myselfIndex === 0;
+};

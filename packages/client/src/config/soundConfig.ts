@@ -9,7 +9,7 @@
  */
 
 // ============= BGM Imports =============
-import appleGameBGM from '../assets/sounds/testapplebgm.mp3';
+import appleGameBGM from '../assets/sounds/BGM/applegamebgm.mp3';
 // TODO: 나중에 추가
 // import lobbyBGM from '../assets/sounds/lobby.mp3';
 // import flappyBirdBGM from '../assets/sounds/flappybird.mp3';
@@ -130,7 +130,7 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
   // 플래피버드 효과음
   flappyJump: {
     file: flappyJumpSound,
-    volume: 0.7,
+    volume: 0.9,
     startTime: 0,
   },
   flappyStrike: {

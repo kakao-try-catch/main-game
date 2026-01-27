@@ -456,6 +456,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 위치 업데이트 수신
     this.socket.on('update_positions', (data: UpdatePositionsEvent) => {
+      if (this.isGameOver) {
+        return;
+      }
       this.targetPositions = data.birds;
 
       // 파이프 데이터 저장 (update()에서 처리)
@@ -557,6 +560,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    * Flap 처리
    */
   private handleFlap(playerId: PlayerId) {
+    if (this.isGameOver) {
+      return;
+    }
     this.socket.emit('flap', {
       playerId: playerId,
       timestamp: Date.now(),
@@ -607,6 +613,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   update() {
+    if (this.isGameOver) {
+      return;
+    }
     // 선형 보간으로 부드러운 이동
     const ratio = this.getRatio();
     for (let i = 0; i < this.birdSprites.length; i++) {

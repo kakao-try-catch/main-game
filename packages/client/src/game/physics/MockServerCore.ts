@@ -45,7 +45,7 @@ export class MockServerCore {
   // 물리 파라미터
   private readonly GRAVITY_Y = 1; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
   private readonly BIRD_WIDTH = 80; // 57 * 1.4 (해상도 변경 반영)
-  private readonly BIRD_HEIGHT = 50; // 36 * 1.4 (해상도 변경 반영)
+  private readonly BIRD_HEIGHT = 59; // 42 * 1.4 (해상도 변경 반영)
   private readonly FLAP_VELOCITY = -10; // 플랩 정도
   private readonly FLAP_VERTICAL_JITTER_RATIO = 0.2; // 규칙적 플랩 정렬 방지용 수직 변동 비율
   private isGameOverState: boolean = false; // 게임 오버 상태 추적
@@ -193,7 +193,7 @@ export class MockServerCore {
     for (let i = 0; i < count; i++) {
       const { x, y } = positions[i];
 
-      // 새의 형태가 57*36 이므로 원형보다는 직사각형(또는 둥근 사각형)이 적합
+      // 새의 형태가 57*42 이므로 원형보다는 직사각형(또는 둥근 사각형)이 적합
       const bird = Matter.Bodies.rectangle(
         x,
         y,

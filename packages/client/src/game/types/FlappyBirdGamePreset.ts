@@ -92,10 +92,10 @@ export function resolveFlappyBirdPreset(
       pipeSpacing = 300;
       break;
     case 'normal':
-      pipeSpacing = 400;
+      pipeSpacing = 600;
       break;
     case 'wide':
-      pipeSpacing = 500;
+      pipeSpacing = 800;
       break;
     case 'manual':
       pipeSpacing = preset.manualSpacing ?? 400;

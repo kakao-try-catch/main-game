@@ -1262,6 +1262,34 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                               </select>
                             </div>
                           </div>
+                          <div className="setting-item">
+                            <label>줄 길이:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.ropeLength}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'ropeLength',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.ropeLength === 'long'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.ropeLength === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="long" style={{ color: DIFFICULTY_COLORS.easy }}>길음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="short" style={{ color: DIFFICULTY_COLORS.hard }}>짧음</option>
+                              </select>
+                            </div>
+                          </div>
 
                           {/* 모두 묶기 라디오 */}
                           <div className="setting-item">

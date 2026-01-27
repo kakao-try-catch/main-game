@@ -14,6 +14,9 @@ export type PipeGapPreset = 'narrow' | 'normal' | 'wide';
 /** 파이프 넓이(두께) 프리셋 */
 export type PipeWidthPreset = 'narrow' | 'normal' | 'wide';
 
+/** 밧줄 길이 프리셋 */
+export type RopeLengthPreset = 'short' | 'normal' | 'long';
+
 /** 플래피버드 게임 프리셋 설정 */
 export interface FlappyBirdGamePreset {
   /** 파이프 속도 (이동 속도) */
@@ -32,6 +35,9 @@ export interface FlappyBirdGamePreset {
   /** 파이프 넓이 (두께) */
   pipeWidth: PipeWidthPreset;
 
+  /** 밧줄 길이 */
+  ropeLength?: RopeLengthPreset;
+
   /** 모두 묶기 (3인 이상일 때 폐쇄형 도형으로 연결) */
   connectAll?: boolean;
 }
@@ -42,6 +48,7 @@ export interface ResolvedFlappyBirdConfig {
   pipeSpacing: number;
   pipeGap: number;
   pipeWidth: number;
+  ropeLength: number;
   flapBoostBase: number; // 점프 시 기본 전진력 (pipeSpeed에 비례)
   flapBoostRandom: number; // 점프 시 랜덤 추가 전진력 범위 (pipeSpeed에 비례)
   connectAll: boolean; // 모두 묶기 (3인 이상일 때 폐쇄형 도형으로 연결)
@@ -53,6 +60,7 @@ export const DEFAULT_FLAPPYBIRD_PRESET: FlappyBirdGamePreset = {
   pipeSpacing: 'normal',
   pipeGap: 'normal',
   pipeWidth: 'normal',
+  ropeLength: 'normal',
   connectAll: false,
 };
 
@@ -84,10 +92,10 @@ export function resolveFlappyBirdPreset(
       pipeSpacing = 300;
       break;
     case 'normal':
-      pipeSpacing = 400;
+      pipeSpacing = 600;
       break;
     case 'wide':
-      pipeSpacing = 500;
+      pipeSpacing = 800;
       break;
     case 'manual':
       pipeSpacing = preset.manualSpacing ?? 400;
@@ -128,11 +136,26 @@ export function resolveFlappyBirdPreset(
   const flapBoostBase = 0.5 * speedRatio;
   const flapBoostRandom = 0.5 * speedRatio;
 
+  // 6. 밧줄 길이 결정 (main 브랜치 기준: 100)
+  let ropeLength: number;
+  switch (preset.ropeLength ?? 'normal') {
+    case 'short':
+      ropeLength = 80;
+      break;
+    case 'normal':
+      ropeLength = 100;
+      break;
+    case 'long':
+      ropeLength = 140;
+      break;
+  }
+
   return {
     pipeSpeed,
     pipeSpacing,
     pipeGap,
     pipeWidth,
+    ropeLength,
     flapBoostBase,
     flapBoostRandom,
     connectAll: preset.connectAll ?? false,

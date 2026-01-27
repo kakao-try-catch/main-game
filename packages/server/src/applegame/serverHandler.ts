@@ -76,7 +76,7 @@ export function handleClientPacket(
         console.log(
           `[Server] Player object:`,
           session.players.get(socket.id)
-            ? session.players.get(socket.id)!.name
+            ? session.players.get(socket.id)!.playerName
             : 'null',
         );
         if (session.isHost(socket.id)) {
@@ -231,7 +231,8 @@ export function joinPlayerToGame(
   const roomUpdatePacket2Player: RoomUpdatePacket = {
     type: SystemPacketType.ROOM_UPDATE,
     players: session.getPlayers(),
-    updateType: RoomUpdateType.INIT,
+    updateType: RoomUpdateType.INIT_ROOM,
+    yourIndex: session.getIndex(socket.id),
   };
   socket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Player);
   console.log(`[Server] Sent ROOM_UPDATE (INIT) to ${socket.id}`);
@@ -240,7 +241,8 @@ export function joinPlayerToGame(
   const roomUpdatePacket2Others: RoomUpdatePacket = {
     type: SystemPacketType.ROOM_UPDATE,
     players: session.getPlayers(),
-    updateType: RoomUpdateType.JOIN,
+    updateType: RoomUpdateType.PLAYER_JOIN,
+    yourIndex: session.getIndex(socket.id), // 플레이어 각자로 해주어야 함
   };
   // todo socket 주인장 제외 보내야 함.
   socket.to(roomId).emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Others);

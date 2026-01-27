@@ -82,9 +82,9 @@ export class GameSession {
     const color = PLAYER_COLORS[index % PLAYER_COLORS.length]; // 순서대로 부여 (4명 넘으면 순환 or 에러처리는 나중에)
 
     this.players.set(id, {
-      id,
-      name,
-      color,
+      id: id,
+      playerName: name,
+      color: color,
       reportCard: { score: 0 },
     });
   }
@@ -95,7 +95,8 @@ export class GameSession {
     const roomUpdatePacket: RoomUpdatePacket = {
       type: SystemPacketType.ROOM_UPDATE,
       players: this.getPlayers(),
-      updateType: RoomUpdateType.INIT,
+      updateType: RoomUpdateType.PLAYER_QUIT,
+      yourIndex: this.getIndex(id), // Not relevant for quit notification
     };
     this.broadcastCallback(roomUpdatePacket);
 
@@ -359,11 +360,10 @@ export class GameSession {
   }
 
   public getPlayers(): PlayerData[] {
-    return Array.from(this.players.values()).map((p, idx) => ({
-      playerName: p.name,
+    return Array.from(this.players.values()).map((p) => ({
+      playerName: p.playerName,
       color: p.color,
-      score: p.reportCard.score,
-      isHost: idx === 0,
+      reportCard: p.reportCard,
     }));
   }
 

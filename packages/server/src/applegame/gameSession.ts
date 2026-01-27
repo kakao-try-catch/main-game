@@ -168,7 +168,7 @@ export class GameSession {
     // Broadcast Time
     const setTimePacket: SetTimePacket = {
       type: GamePacketType.SET_TIME,
-      limitTime: this.timeLeft,
+      limitTime: 10, //this.timeLeft, 일단 10초로.
     };
     this.broadcastCallback(setTimePacket);
 
@@ -370,13 +370,13 @@ export class GameSession {
         player.reportCard.score += addedScore;
 
         // Broadcast Success
-        const dropPacket: DropCellIndexPacket = {
+        const dropCellIndexPacket: DropCellIndexPacket = {
           type: GamePacketType.DROP_CELL_INDEX,
           winnerId: playerId,
           indices: indices,
           totalScore: player.reportCard.score,
         };
-        this.broadcastCallback(dropPacket);
+        this.broadcastCallback(dropCellIndexPacket);
       }
     }
   }

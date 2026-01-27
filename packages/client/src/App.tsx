@@ -196,16 +196,20 @@ function AppContent() {
 
   // 닉네임 설정하고 시작 버튼 누를 때 동작
   const handleStart = (inputNickname: string) => {
-    const userColor = PLAYER_COLORS[0]; // 처음 유저는 첫 번째 색상
-    setUserInfo(inputNickname, userColor, true);
-    setCurrentUser((prev) => ({ ...prev, name: inputNickname }));
-    setPlayers((prev) =>
-      prev.map((player, index) =>
-        index === 0
-          ? { ...player, playerName: inputNickname, color: userColor }
-          : player,
-      ),
-    );
+    // todo 색상도 서버가 알아서 줌.
+    // const userColor = PLAYER_COLORS[0]; // 처음 유저는 첫 번째 색상
+    // // todo 이거 이렇게 할 필요없고 내가 그 방의 몇 번째인지만 관리해주면 될 것 같음. number로.
+    // // todo 그 다음에는 gameStore의 players에서 index 찍어서 내 PlayerData 뽑아내고 그걸로 보면 될 듯?
+    // setUserInfo(inputNickname, userColor, true);
+    // setCurrentUser((prev) => ({ ...prev, name: inputNickname }));
+    //
+    // setPlayers((prev) =>
+    //   prev.map((player, index) =>
+    //     index === 0
+    //       ? { ...player, playerName: inputNickname, color: userColor }
+    //       : player,
+    //   ),
+    // );
 
     const joinRoomPacket: JoinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,

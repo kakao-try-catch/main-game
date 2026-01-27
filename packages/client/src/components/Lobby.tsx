@@ -282,7 +282,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                     style={{ backgroundColor: player.color }}
                   />
                   <span className="player-name">{player.playerName}</span>
-                  {player.isHost && (
+                  {index == 0 && (
                     <span className="player-host-badge">방장</span>
                   )}
                 </div>

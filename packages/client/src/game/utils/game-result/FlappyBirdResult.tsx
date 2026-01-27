@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
 import type { PlayerResultData } from '../../types/common';
 import type { PlayerId } from '../../types/flappybird.types';
 
-export interface FlappyBirdResultProps {
+interface FlappyBirdResultProps {
   finalScore: number;
   reason: 'pipe_collision' | 'ground_collision';
   collidedPlayerId?: PlayerId;
@@ -29,35 +29,17 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
     (((window as unknown as Record<string, unknown>).__GAME_RATIO as number) ||
       1);
 
-  // 페이드인 애니메이션 상태
-  const [opacity, setOpacity] = useState(0);
-
-  useEffect(() => {
-    // 마운트 후 페이드인 시작
-    const timer = setTimeout(() => {
-      setOpacity(1);
-    }, 50);
-    return () => clearTimeout(timer);
-  }, []);
-
   // 충돌한 플레이어 정보 가져오기
   const collidedPlayer = players?.find(
-    (p) => p.playerIndex === Number(collidedPlayerId),
+    (p) => p.playerIndex === Number(collidedPlayerId)
   );
   const playerName = collidedPlayer?.name || '';
   const playerColor = collidedPlayer?.color || '#333';
 
-  const collisionType =
-    reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!';
+  const collisionType = reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!';
 
   return (
-    <div
-      style={{
-        ...getOverlayStyle(),
-        opacity,
-        transition: 'opacity 1.5s ease-in',
-      }}
-    >
+    <div style={getOverlayStyle()}>
       <div
         className="nes-container is-rounded"
         style={{
@@ -95,9 +77,6 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
               playSFX('buttonClick');
               onReplay();
             }}
-            onMouseEnter={() => {
-              playSFX('buttonHover');
-            }}
           >
             REPLAY
           </button>
@@ -108,9 +87,6 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
             onClick={() => {
               playSFX('buttonClick');
               onLobby();
-            }}
-            onMouseEnter={() => {
-              playSFX('buttonHover');
             }}
           >
             LOBBY
@@ -129,7 +105,7 @@ function getOverlayStyle(): React.CSSProperties {
     left: 0,
     width: '100vw',
     height: '100vh',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -142,7 +118,7 @@ function getContainerStyle(ratio: number): React.CSSProperties {
     width: `${800 * ratio}px`,
     maxWidth: '90vw',
     padding: `${40 * ratio}px`,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: '#fff',
     textAlign: 'center',
   };
 }

@@ -408,12 +408,18 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.socket.off('game_over');
 
     // 플레이어 정보 업데이트 (인원수 조절 등)
-    this.events.on('updatePlayers', (data: { playerCount?: number; preset?: FlappyBirdGamePreset }) => {
+    this.events.on('updatePlayers', (data: { playerCount?: number; players?: { name: string }[]; preset?: FlappyBirdGamePreset }) => {
       console.log(
         `[FlappyBirdsScene] 플레이어 업데이트 수신: ${data.playerCount}명`,
       );
       const oldPlayerCount = this.playerCount;
       this.playerCount = data.playerCount || 4;
+
+      // 플레이어 이름 업데이트
+      if (data.players && data.players.length > 0) {
+        this.playerNames = data.players.map((p, i) => p.name || `Player ${i + 1}`);
+        console.log(`[FlappyBirdsScene] 플레이어 이름 업데이트:`, this.playerNames);
+      }
 
       // 프리셋이 있으면 게임 설정 업데이트
       let configChanged = false;

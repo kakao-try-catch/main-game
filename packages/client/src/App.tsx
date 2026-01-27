@@ -46,20 +46,12 @@ function AppContent() {
   // >('landing');
   const screen = useGameStore((s) => s.screen);
 
-  // 현재 유저 정보 (서버에서 받아올 예정) // todo 얘도 제거 예정
-  const [currentUser, setCurrentUser] = useState<CurrentUser>({
-    id: 'id_1',
-    playerIndex: 0,
-    name: nickname || '1P',
-    isHost: false, // 방장 여부는 서버/방 생성 로직에서 결정됨
-  });
-
   const [gameReady, setGameReady] = useState(false);
   const [gameEnded, setGameEnded] = useState(false);
   const [finalPlayers, setFinalPlayers] = useState<PlayerResultData[]>([]);
   const gameRef = useRef<Phaser.Game | null>(null);
 
-  // 플래피버드 관련 상태
+  // 플래피버드 관련 상태 // todo 이거 왜 여기? 플레이로 통일
   const [flappyScore, setFlappyScore] = useState(0); // 팀 점수
   const [flappyGameEnded, setFlappyGameEnded] = useState(false); // 플래피버드 게임 종료 여부
   const [flappyFinalData, setFlappyFinalData] = useState<{

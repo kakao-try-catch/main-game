@@ -242,6 +242,7 @@ export function joinPlayerToGame(
     players: session.getPlayers(),
     updateType: RoomUpdateType.JOIN,
   };
+  // todo socket 주인장 제외 보내야 함.
   socket.to(roomId).emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Others);
   console.log(
     `[Server] Sent ROOM_UPDATE (JOIN) to room ${roomId} (excluding ${socket.id})`,

@@ -372,7 +372,7 @@ export class GameSession {
         // Broadcast Success
         const dropCellIndexPacket: DropCellIndexPacket = {
           type: GamePacketType.DROP_CELL_INDEX,
-          winnerId: playerId,
+          winnerId: playerId, // todo 주면 안 됨.
           indices: indices,
           totalScore: player.reportCard.score,
         };

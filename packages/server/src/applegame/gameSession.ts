@@ -234,7 +234,7 @@ export class GameSession {
 
   private startTimer() {
     if (this.timerInterval) clearInterval(this.timerInterval);
-
+    console.log('[GameSession] Timer started with', this.timeLeft, 'seconds');
     this.timerInterval = setInterval(() => {
       this.timeLeft--;
       if (this.timeLeft <= 0) {
@@ -246,6 +246,10 @@ export class GameSession {
   private finishGame() {
     this.stopGame();
 
+    console.log('게임 끝남. 결과: ');
+    for (const [id, player] of this.players) {
+      console.log(`- ${player.playerName} (${id}): ${player.reportCard.score}`);
+    }
     // Calculate Rank
     const results: PlayerData[] = Array.from(this.players.values())
       .map(({ playerName, color, reportCard }) => ({
@@ -368,6 +372,14 @@ export class GameSession {
       if (player) {
         const addedScore = indices.length;
         player.reportCard.score += addedScore;
+        console.log(
+          '[GameSession] Player',
+          playerId,
+          'scored',
+          addedScore,
+          'points. total score:',
+          player.reportCard.score,
+        );
 
         // Broadcast Success
         const dropCellIndexPacket: DropCellIndexPacket = {

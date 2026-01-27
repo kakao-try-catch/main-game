@@ -19,6 +19,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       //debugStore.setCount(packet.number);
       break;
 
+    // todo 클라 핸들러는 이거 필요없는데?
     case SystemPacketType.JOIN_ROOM:
       console.log(`Player ${packet.playerId} joined ${packet.roomId}`);
       break;
@@ -129,6 +130,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       const store = useGameStore.getState();
       store.setGameResults(packet.results);
       store.setGameStarted(false);
+      // todo 렌더링 필요함.
       console.log('TIME_END packet received:', packet.results);
       break;
     }

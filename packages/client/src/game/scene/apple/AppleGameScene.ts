@@ -185,6 +185,8 @@ export default class AppleGameScene extends Phaser.Scene {
       (data: {
         playerCount: number;
         players: PlayerData[];
+        // 얘는 AppleGameManager의 init(currentPlayerIndex: number)로 쓰이던 애
+        // this.setCurrentPlayerIndex(currentPlayerIndex); // 외부에서 받은 값 사용
         currentPlayerIndex: number;
         preset?: AppleGamePreset;
         isMultiplayer?: boolean;

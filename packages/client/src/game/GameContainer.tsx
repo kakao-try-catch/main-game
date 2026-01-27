@@ -41,7 +41,6 @@ interface GameContainerProps {
   }) => void; // 플래피버드 게임 종료
   playerCount?: number;
   players?: PlayerData[];
-  currentPlayerIndex?: number;
   applePreset?: AppleGamePreset;
   flappyPreset?: FlappyBirdGamePreset;
 }
@@ -56,7 +55,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onFlappyGameEnd,
   playerCount = 4,
   players = [],
-  currentPlayerIndex = 0,
   applePreset,
   flappyPreset,
 }) => {
@@ -216,7 +214,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         targetScene.events.emit('updatePlayers', {
           playerCount,
           players,
-          currentPlayerIndex,
           preset,
         });
       };
@@ -252,11 +249,10 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       scene.events.emit('updatePlayers', {
         playerCount,
         players,
-        currentPlayerIndex,
         preset,
       });
     }
-  }, [playerCount, players, currentPlayerIndex, preset, config]);
+  }, [playerCount, players, preset, config]);
 
   // 구현되지 않은 게임 타입
   if (!config) {

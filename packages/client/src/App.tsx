@@ -354,7 +354,6 @@ function AppContent() {
             gameType={currentGameType}
             playerCount={players.length}
             players={players}
-            currentPlayerIndex={currentUser.playerIndex}
             applePreset={applePreset}
             flappyPreset={flappyPreset}
             onAppleScored={handleAppleScored}

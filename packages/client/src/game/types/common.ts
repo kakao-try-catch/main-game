@@ -68,7 +68,6 @@ export interface GameEventData {
   updatePlayers?: {
     playerCount?: number;
     players?: PlayerData[];
-    currentPlayerIndex?: number;
     preset?: unknown;
   };
 }

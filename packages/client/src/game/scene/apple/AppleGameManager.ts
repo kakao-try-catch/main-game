@@ -419,19 +419,22 @@ export default class AppleGameManager {
 
   /** 현재 플레이어 인덱스 업데이트 */
   setCurrentPlayerIndex(index: number): void {
-    this.currentPlayerIndex = index;
-    this.updatePlayerColors();
+    // this.currentPlayerIndex = index;
+    // this.updatePlayerColors();
     // 드래그 선택 색상 업데이트를 위해 재설정
     this.setupDragSelection();
-    console.log(`🎮 현재 플레이어: ${index}번`);
+    console.log(`🎮 현재 플레이어: ${index ?? -1}번`);
   }
 
   /** 플레이어 색상 업데이트 */
   private static readonly FRAME_BRIGHTNESS_OFFSET = 15;
 
+  // todo 애초에 이거 색상 그리는 거 자체가 여기서 처리가 안 될 걸???
   private updatePlayerColors(): void {
+    // todo 플레이어를 여기서 뽑아올 거 아님
     const player = this.players[this.currentPlayerIndex];
     // 플레이어 데이터가 없으면 기본 색상 사용
+    // todo color 여기서 관리할 거 아님
     const colorHex =
       player?.color ??
       AppleGameManager.DEFAULT_COLORS[this.currentPlayerIndex] ??
@@ -445,11 +448,6 @@ export default class AppleGameManager {
     console.log(
       `🎨 플레이어 색상: ${colorHex}, 프레임: 0x${this.currentFrameColor.toString(16)}`,
     );
-  }
-
-  /** 현재 플레이어 인덱스 반환 */
-  getCurrentPlayerIndex(): number {
-    return this.currentPlayerIndex;
   }
 
   /** 플레이어 수 반환 */
@@ -466,7 +464,7 @@ export default class AppleGameManager {
   updatePlayerData(playerCount: number, players: PlayerData[]): void {
     this.config.playerCount = playerCount;
     this.players = players;
-    this.updatePlayerColors();
+    // this.updatePlayerColors();
     // 드래그 선택 색상 업데이트
     this.setupDragSelection();
     console.log(`👥 플레이어 데이터 업데이트: ${playerCount}명`, players);

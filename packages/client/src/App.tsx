@@ -18,6 +18,7 @@ import type {
   GameType,
   CurrentUser,
 } from './game/types/common';
+import type { PlayerId } from './game/types/flappybird.types';
 import { CONSTANTS } from './game/types/common';
 import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
 
@@ -58,6 +59,7 @@ function AppContent() {
   const [flappyFinalData, setFlappyFinalData] = useState<{
     finalScore: number;
     reason: string;
+    collidedPlayerId: PlayerId;
     players: PlayerResultData[];
   } | null>(null);
 
@@ -133,6 +135,7 @@ function AppContent() {
     (data: {
       finalScore: number;
       reason: string;
+      collidedPlayerId: PlayerId;
       players: PlayerResultData[];
     }) => {
       setFlappyFinalData(data);
@@ -420,6 +423,8 @@ function AppContent() {
             reason={
               flappyFinalData.reason as 'pipe_collision' | 'ground_collision'
             }
+            collidedPlayerId={flappyFinalData.collidedPlayerId}
+            players={flappyFinalData.players}
             onReplay={handleReplay}
             onLobby={handleLobby}
             ratio={

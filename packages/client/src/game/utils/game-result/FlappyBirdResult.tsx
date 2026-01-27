@@ -1,10 +1,14 @@
 import React from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
+import type { PlayerResultData } from '../../types/common';
+import type { PlayerId } from '../../types/flappybird.types';
 
 interface FlappyBirdResultProps {
   finalScore: number;
   reason: 'pipe_collision' | 'ground_collision';
+  collidedPlayerId?: PlayerId;
+  players?: PlayerResultData[];
   onReplay: () => void;
   onLobby: () => void;
   ratio?: number;
@@ -13,6 +17,8 @@ interface FlappyBirdResultProps {
 const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
   finalScore,
   reason,
+  collidedPlayerId,
+  players,
   onReplay,
   onLobby,
   ratio: propRatio,
@@ -23,8 +29,14 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
     (((window as unknown as Record<string, unknown>).__GAME_RATIO as number) ||
       1);
 
-  const reasonText =
-    reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!';
+  // 충돌한 플레이어 정보 가져오기
+  const collidedPlayer = players?.find(
+    (p) => p.playerIndex === Number(collidedPlayerId)
+  );
+  const playerName = collidedPlayer?.name || '';
+  const playerColor = collidedPlayer?.color || '#333';
+
+  const collisionType = reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!';
 
   return (
     <div style={getOverlayStyle()}>
@@ -41,7 +53,16 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
         <h1 style={getTitleStyle(ratio)}>GAME OVER</h1>
 
         <div style={getContentStyle(ratio)}>
-          <div style={getReasonStyle(ratio)}>{reasonText}</div>
+          {collidedPlayerId ? (
+            <div style={getReasonStyle(ratio)}>
+              <span style={{ color: playerColor, fontWeight: 'bold' }}>
+                {playerName}
+              </span>{' '}
+              {collisionType}
+            </div>
+          ) : (
+            <div style={getReasonStyle(ratio)}>{collisionType}</div>
+          )}
 
           <div style={getScoreLabelStyle(ratio)}>최종 점수</div>
           <div style={getFinalScoreStyle(ratio)}>{finalScore}</div>

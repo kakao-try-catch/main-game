@@ -6,6 +6,7 @@ import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { PlayerData, PlayerResultData, GameType } from './types/common';
+import type { PlayerId } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 
 // 게임 설정 상수 분리
@@ -36,6 +37,7 @@ interface GameContainerProps {
   onFlappyGameEnd?: (data: {
     finalScore: number;
     reason: string;
+    collidedPlayerId: PlayerId;
     players: PlayerResultData[];
   }) => void; // 플래피버드 게임 종료
   onFlappyJump?: () => void; // 플래피버드 점프 사운드
@@ -219,6 +221,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             (data: {
               finalScore: number;
               reason: string;
+              collidedPlayerId: PlayerId;
               players: PlayerResultData[];
             }) => {
               console.log('🏁 flappy gameEnd event received:', data);

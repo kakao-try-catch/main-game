@@ -141,3 +141,12 @@ export const useGameStore = create<GameState>()(
       }),
   })),
 );
+
+// 현재 플레이어(자신)의 PlayerData를 정적으로 가져오는 헬퍼 함수
+export const getMyPlayerData = (): PlayerData | null => {
+  const { players, myselfIndex } = useGameStore.getState();
+  if (myselfIndex < 0 || myselfIndex >= players.length) {
+    return null;
+  }
+  return players[myselfIndex];
+};

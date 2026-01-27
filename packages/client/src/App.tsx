@@ -28,7 +28,7 @@ const { PLAYER_COLORS } = CONSTANTS;
 
 function AppContent() {
   const testPlayerCount = 4;
-  const { pause } = useBGMContext();
+  const { pause, reset } = useBGMContext();
   const { playSFX } = useSFXContext();
 
   // 현재 유저 정보 (서버에서 받아올 예정)
@@ -118,8 +118,9 @@ function AppContent() {
       setGameEnded(true);
       playSFX('appleGameEnd');
       pause(); // 게임 종료 시 BGM 중지
+      reset(); // 게임 종료 시 BGM을 처음으로 되감기
     },
-    [playSFX, pause],
+    [playSFX, pause, reset],
   );
 
   // 플래피버드 점수 업데이트 핸들러
@@ -138,14 +139,16 @@ function AppContent() {
       setFlappyGameEnded(true);
       playSFX('appleGameEnd'); // 동일한 사운드 사용
       pause(); // 게임 종료 시 BGM 중지
+      reset(); // 게임 종료 시 BGM을 처음으로 되감기
     },
-    [playSFX, pause],
+    [playSFX, pause, reset],
   );
 
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
     // 상태 초기화
+    setGameReady(false); // 재마운트 후 onGameReady에서 다시 true로 올려 BGM play 트리거
     setGameEnded(false);
     setFlappyGameEnded(false);
     setFlappyScore(0);
@@ -172,11 +175,13 @@ function AppContent() {
   }, []);
 
   const handleLobby = useCallback(() => {
+    setGameReady(false); // 로비로 복귀 시 BGM 재생 트리거를 초기화
     setGameEnded(false);
     setFlappyGameEnded(false);
     setFlappyScore(0);
     setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+    reset(); // 로비로 복귀 시에도 BGM을 처음으로 되감기
     setCurrentScreen('lobby');
 
     // 게임 인스턴스 파괴
@@ -248,8 +253,9 @@ function AppContent() {
   useEffect(() => {
     if (gameEnded) {
       pause();
+      reset();
     }
-  }, [gameEnded, pause]);
+  }, [gameEnded, pause, reset]);
 
   // 랜딩 페이지 표시
   if (currentScreen === 'landing') {

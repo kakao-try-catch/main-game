@@ -74,7 +74,8 @@ export const DEFAULT_MINESWEEPER_CONFIG: MineSweeperConfig = {
 
 // ===== 소켓 이벤트 타입 =====
 
-// 클라이언트 -> 서버 이벤트
+// 클라이언트 -> 서버 이벤트 타입
+export type ClientEventType = 'reveal_tile' | 'toggle_flag';
 
 // 타일 열기 요청
 export interface RevealTileRequest {

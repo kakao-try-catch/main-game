@@ -7,6 +7,7 @@ import {
   type PlayerId,
   type RevealTileRequest,
   type ToggleFlagRequest,
+  type ClientEventType,
   DEFAULT_MINESWEEPER_CONFIG,
 } from '../types/minesweeper.types';
 import { CONSTANTS } from '../types/common';
@@ -167,7 +168,7 @@ export class MineSweeperMockCore {
    * 클라이언트 이벤트 처리 (MockSocket.emit()에서 호출됨)
    */
   handleClientEvent(
-    event: string,
+    event: ClientEventType,
     data: RevealTileRequest | ToggleFlagRequest,
   ): void {
     switch (event) {
@@ -215,18 +216,103 @@ export class MineSweeperMockCore {
       return;
     }
 
-    // 타일 열기
-    const tileUpdate = this.revealTile(row, col, playerId);
+    // 타일 열기 (빈 공간이면 주변도 함께 열기)
+    const tileUpdates = this.revealTileWithFloodFill(row, col, playerId);
 
     // 타일 업데이트 이벤트 전송
     this.socket.triggerEvent('tile_update', {
-      tiles: [tileUpdate],
+      tiles: tileUpdates,
       timestamp: Date.now(),
     });
 
     console.log(
-      `[MineSweeperMockCore] 타일 열림: (${row}, ${col}) by ${playerId}`,
+      `[MineSweeperMockCore] 타일 열림: (${row}, ${col}) by ${playerId}, 총 ${tileUpdates.length}개 열림`,
     );
+  }
+
+  /**
+   * 빈 공간 클릭 시 주변 타일 자동 열기 (Flood Fill)
+   */
+  private revealTileWithFloodFill(
+    row: number,
+    col: number,
+    playerId: PlayerId,
+  ): Array<{
+    row: number;
+    col: number;
+    state: TileState;
+    isMine: boolean;
+    adjacentMines: number;
+    revealedBy: PlayerId;
+    flaggedBy: PlayerId | null;
+  }> {
+    const updates: Array<{
+      row: number;
+      col: number;
+      state: TileState;
+      isMine: boolean;
+      adjacentMines: number;
+      revealedBy: PlayerId;
+      flaggedBy: PlayerId | null;
+    }> = [];
+
+    // BFS를 위한 큐
+    const queue: Array<{ row: number; col: number }> = [{ row, col }];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const key = `${current.row},${current.col}`;
+
+      // 이미 방문한 타일은 건너뛰기
+      if (visited.has(key)) {
+        continue;
+      }
+      visited.add(key);
+
+      // 범위 체크
+      if (
+        current.row < 0 ||
+        current.row >= this.config.gridRows ||
+        current.col < 0 ||
+        current.col >= this.config.gridCols
+      ) {
+        continue;
+      }
+
+      const currentTile = this.tiles[current.row][current.col];
+
+      // 이미 열린 타일이나 깃발이 있는 타일은 건너뛰기
+      if (
+        currentTile.state === TileState.REVEALED ||
+        currentTile.state === TileState.FLAGGED
+      ) {
+        continue;
+      }
+
+      // 타일 열기
+      const update = this.revealTile(current.row, current.col, playerId);
+      updates.push(update);
+
+      // 빈 공간(인접 지뢰 0개)이고 지뢰가 아니면 주변 8방향 타일도 큐에 추가
+      if (currentTile.adjacentMines === 0 && !currentTile.isMine) {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+
+            const newRow = current.row + dr;
+            const newCol = current.col + dc;
+            const newKey = `${newRow},${newCol}`;
+
+            if (!visited.has(newKey)) {
+              queue.push({ row: newRow, col: newCol });
+            }
+          }
+        }
+      }
+    }
+
+    return updates;
   }
 
   /**

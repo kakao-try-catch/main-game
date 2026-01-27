@@ -5,7 +5,7 @@ import { type GameType, type GameConfig } from '../../../common/src/config';
 
 // 드래그 영역 데이터 타입
 export interface DragAreaData {
-  playerId: string;
+  playerIndex: number;
   startX: number;
   startY: number;
   endX: number;
@@ -64,9 +64,9 @@ interface GameState {
   setDropCellEvent: (event: DropCellEvent | null) => void;
 
   // 타 플레이어 드래그 영역 (UPDATE_DRAG_AREA)
-  otherPlayerDrags: Map<string, DragAreaData>;
+  otherPlayerDrags: Map<number, DragAreaData>;
   updateOtherPlayerDrag: (data: DragAreaData) => void;
-  removeOtherPlayerDrag: (playerId: string) => void;
+  removeOtherPlayerDrag: (playerIndex: number) => void;
 
   // 게임 결과 (TIME_END)
   gameResults: PlayerData[] | null;
@@ -93,7 +93,7 @@ export const useGameStore = create<GameState>()(
     gameTime: null,
     isGameStarted: false,
     dropCellEvent: null,
-    otherPlayerDrags: new Map<string, DragAreaData>(),
+    otherPlayerDrags: new Map<number, DragAreaData>(),
     gameResults: null,
 
     // 기존 액션
@@ -120,13 +120,13 @@ export const useGameStore = create<GameState>()(
     updateOtherPlayerDrag: (data: DragAreaData) =>
       set((state) => {
         const newMap = new Map(state.otherPlayerDrags);
-        newMap.set(data.playerId, data);
+        newMap.set(data.playerIndex, data);
         return { otherPlayerDrags: newMap };
       }),
-    removeOtherPlayerDrag: (playerId: string) =>
+    removeOtherPlayerDrag: (playerIndex: number) =>
       set((state) => {
         const newMap = new Map(state.otherPlayerDrags);
-        newMap.delete(playerId);
+        newMap.delete(playerIndex);
         return { otherPlayerDrags: newMap };
       }),
     setGameResults: (results: GameResult[]) => set({ gameResults: results }),
@@ -136,7 +136,7 @@ export const useGameStore = create<GameState>()(
         gameTime: null,
         isGameStarted: false,
         dropCellEvent: null,
-        otherPlayerDrags: new Map<string, DragAreaData>(),
+        otherPlayerDrags: new Map<number, DragAreaData>(),
         gameResults: null,
       }),
   })),

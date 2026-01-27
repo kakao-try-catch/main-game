@@ -8,7 +8,7 @@ import { GamePacketType } from '../../../../../common/src/packets';
 import type { PlayerData } from '../../types/common';
 import { hexStringToNumber, adjustBrightness } from '../../utils/colorUtils';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
-import { useGameStore } from '../../../store/gameStore';
+import { getMyPlayerData, useGameStore } from '../../../store/gameStore';
 import { DragAreaSender } from '../../utils/DragAreaSender';
 import { OtherPlayerDragRenderer } from '../../utils/OtherPlayerDragRenderer';
 
@@ -320,9 +320,12 @@ export default class AppleGameManager {
   private setupDragSelection(): void {
     this.detachDrag?.();
 
+    const color = getMyPlayerData()?.color;
+    const colorHex = hexStringToNumber(color ?? '#209cee');
+
     this.detachDrag = attachDragSelection(this.scene, {
-      fillColor: this.currentPlayerColor,
-      lineColor: this.currentPlayerColor,
+      fillColor: colorHex,
+      lineColor: colorHex,
       onDrag: (rect) => this.onDragUpdate(rect),
       onDragEnd: (rect) => this.onDragEnd(rect),
     });
@@ -334,10 +337,16 @@ export default class AppleGameManager {
     this.selectedApples.forEach((apple) => apple.setFrameVisible(false));
     this.selectedApples.clear();
 
+    const color = getMyPlayerData()?.color;
+    const frameColor = adjustBrightness(
+      color ?? '#209cee',
+      AppleGameManager.FRAME_BRIGHTNESS_ADJUSTMENT,
+    );
+
     // 새로운 선택 영역 내 사과들 프레임 표시
     for (const apple of this.apples) {
       if (apple.isInRect(rect)) {
-        apple.setFrameColor(this.currentFrameColor);
+        apple.setFrameColor(frameColor);
         apple.setFrameVisible(true);
         this.selectedApples.add(apple);
       }

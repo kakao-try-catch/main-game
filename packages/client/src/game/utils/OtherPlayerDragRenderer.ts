@@ -28,19 +28,9 @@ interface PlayerDragState {
 export class OtherPlayerDragRenderer {
   private scene: Phaser.Scene;
   private container?: Phaser.GameObjects.Container;
-  private playerStates: Map<string, PlayerDragState> = new Map();
+  private playerStates: Map<number, PlayerDragState> = new Map();
   private updateEvent?: Phaser.Time.TimerEvent;
   private unsubscribe?: () => void;
-
-  // 플레이어별 색상 (AppleGameManager와 동일)
-  // todo 색깔 추후 통합. AppleGameManager는 추후 제거 대상임.
-  // todo 색깔은 gameStore.ts의 각 플레이어 객체 상태가 홀드하고 있음.
-  private static readonly PLAYER_COLORS = [
-    0x209cee, // 1P 파란색
-    0xe76e55, // 2P 빨간색
-    0x92cc41, // 3P 초록색
-    0xf2d024, // 4P 노란색
-  ];
 
   private static readonly INTERPOLATION_SPEED = 0.15; // lerp 계수
   private static readonly FADE_TIMEOUT_MS = 500; // 패킷 미수신 시 페이드 아웃
@@ -48,7 +38,7 @@ export class OtherPlayerDragRenderer {
   constructor(
     scene: Phaser.Scene,
     container?: Phaser.GameObjects.Container,
-    private playerIndexMap?: Map<string, number>,
+    private playerIndexMap?: Map<number, number>,
   ) {
     this.scene = scene;
     this.container = container;
@@ -61,7 +51,7 @@ export class OtherPlayerDragRenderer {
     this.unsubscribe = useGameStore.subscribe(
       (state) => state.otherPlayerDrags,
       (drags) => {
-        drags.forEach((data, playerId) => {
+        drags.forEach((data) => {
           this.updatePlayerDrag(data);
         });
       },
@@ -80,7 +70,7 @@ export class OtherPlayerDragRenderer {
       endY: data.endY * GAME_HEIGHT * ratio,
     };
 
-    let state = this.playerStates.get(data.playerId);
+    let state = this.playerStates.get(data.playerIndex);
 
     if (!state) {
       // 새 플레이어 - Graphics 생성
@@ -91,17 +81,19 @@ export class OtherPlayerDragRenderer {
         this.container.add(graphics);
       }
 
-      const playerIndex = this.playerIndexMap?.get(data.playerId) ?? 0;
+      const players = useGameStore.getState().players;
+      const player = players[data.playerIndex];
+      const colorHex = parseInt(player.color.replace('#', ''), 16);
 
       state = {
         current: { ...denormalized },
         target: { ...denormalized },
         graphics,
-        color: OtherPlayerDragRenderer.PLAYER_COLORS[playerIndex % 4],
+        color: colorHex,
         lastUpdateTime: Date.now(),
       };
 
-      this.playerStates.set(data.playerId, state);
+      this.playerStates.set(data.playerIndex, state);
     } else {
       // 기존 플레이어 - target 업데이트
       state.target = { ...denormalized };
@@ -110,11 +102,11 @@ export class OtherPlayerDragRenderer {
   }
 
   /** 플레이어 드래그 종료 (또는 타임아웃) */
-  public removePlayerDrag(playerId: string): void {
-    const state = this.playerStates.get(playerId);
+  public removePlayerDrag(playerIndex: number): void {
+    const state = this.playerStates.get(playerIndex);
     if (state) {
       state.graphics.destroy();
-      this.playerStates.delete(playerId);
+      this.playerStates.delete(playerIndex);
     }
   }
 
@@ -130,13 +122,13 @@ export class OtherPlayerDragRenderer {
   private update(): void {
     const now = Date.now();
 
-    this.playerStates.forEach((state, playerId) => {
+    this.playerStates.forEach((state, playerIndex) => {
       // 타임아웃 체크
       if (
         now - state.lastUpdateTime >
         OtherPlayerDragRenderer.FADE_TIMEOUT_MS
       ) {
-        this.removePlayerDrag(playerId);
+        this.removePlayerDrag(playerIndex);
         return;
       }
 
@@ -189,7 +181,7 @@ export class OtherPlayerDragRenderer {
   }
 
   /** 플레이어 인덱스 맵 업데이트 */
-  public setPlayerIndexMap(map: Map<string, number>): void {
+  public setPlayerIndexMap(map: Map<number, number>): void {
     this.playerIndexMap = map;
   }
 
@@ -197,6 +189,6 @@ export class OtherPlayerDragRenderer {
     this.updateEvent?.destroy();
     this.unsubscribe?.();
     this.playerStates.forEach((state) => state.graphics.destroy());
-    this.playerStates.clear(); 
+    this.playerStates.clear();
   }
 }

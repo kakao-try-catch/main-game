@@ -122,7 +122,7 @@ export interface SetTimePacket {
 }
 export interface UpdateDragAreaPacket {
   type: GamePacketType.UPDATE_DRAG_AREA;
-  playerId: PlayerId;
+  playerIndex: number;
   startX: number;
   startY: number;
   endX: number;

@@ -121,7 +121,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
     case GamePacketType.UPDATE_DRAG_AREA: {
       const store = useGameStore.getState();
       store.updateOtherPlayerDrag({
-        playerId: packet.playerId,
+        playerIndex: packet.playerIndex,
         startX: packet.startX,
         startY: packet.startY,
         endX: packet.endX,

@@ -17,7 +17,7 @@ const playerRooms = new Map<string, string>(); // todo 얘가 지금 기본 sock
 
 // Player ID -> last drag area & repeat count
 const playerDragState = new Map<
-  string,
+  number,
   {
     startX: number;
     startY: number;
@@ -102,13 +102,13 @@ export function handleClientPacket(
         // 드래그 영역은 정규화가 필요함.
         // 추가: 이전에 보냈던 것과 동일한지 비교해 동일한 패킷이 3번까지만 브로드캐스트,
         // 4번째부터는 무시하도록 함.
-        const key = socket.id;
+        const playerIndex = session.getIndex(socket.id);
         const sx = packet.startX;
         const sy = packet.startY;
         const ex = packet.endX;
         const ey = packet.endY;
 
-        const prev = playerDragState.get(key);
+        const prev = playerDragState.get(playerIndex);
         const isSame =
           !!prev &&
           prev.startX === sx &&
@@ -121,7 +121,7 @@ export function handleClientPacket(
           if (prev.repeatCount <= 3) {
             socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
               type: GamePacketType.UPDATE_DRAG_AREA,
-              playerId: socket.id,
+              playerIndex: playerIndex,
               startX: sx,
               startY: sy,
               endX: ex,
@@ -132,7 +132,7 @@ export function handleClientPacket(
             // 필요하면 로깅 추가
           }
         } else {
-          playerDragState.set(key, {
+          playerDragState.set(playerIndex, {
             startX: sx,
             startY: sy,
             endX: ex,
@@ -141,7 +141,7 @@ export function handleClientPacket(
           });
           socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
             type: GamePacketType.UPDATE_DRAG_AREA,
-            playerId: socket.id,
+            playerIndex: playerIndex,
             startX: sx,
             startY: sy,
             endX: ex,

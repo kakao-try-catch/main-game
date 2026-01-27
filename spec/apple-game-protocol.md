@@ -25,9 +25,9 @@
 다른 플레이어가 현재 드래그 중인 영역을 실시간으로 공유합니다.
 
 - **Data:**
-- `playerId: string`: 드래그 중인 플레이어 식별값
-- `startX: float, startY: float`: 드래그 시작 좌표
-- `endX: float, endY: float`: 현재 드래그 끝점 좌표
+- `playerIndex: number` # 드래그 중인 플레이어 식별값. PlayerData[index]로 받아온다.
+- `startX: float, startY: float` # 드래그 시작 좌표
+- `endX: float, endY: float`# 현재 드래그 끝점 좌표
 
 - **비고:** 클라이언트는 보간(Interpolation)을 통해 부드러운 사각형 UI를 렌더링합니다.
 

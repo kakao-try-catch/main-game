@@ -35,25 +35,26 @@ interface GameResultProps {
   title?: string; // 게임별 타이틀 커스터마이징
 }
 
-function calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
-  if (players.length === 0) return [];
-  const sortedPlayers = [...players].sort((a, b) => {
-    if (b.reportCard.score !== a.reportCard.score)
-      return b.reportCard.score - a.reportCard.score;
-    return a.playerIndex - b.playerIndex;
-  });
-  const rankedPlayers: RankedPlayer[] = [];
-  let currentRank = 1;
-  for (let i = 0; i < sortedPlayers.length; i++) {
-    const player = sortedPlayers[i];
-    if (
-      i > 0 &&
-      sortedPlayers[i - 1].reportCard.score !== player.reportCard.score
-    ) {
-      currentRank = i + 1;
-    }
-    rankedPlayers.push({ ...player, rank: currentRank });
-  }
+// 이미 정렬된 거 받음. 필요 시 서버로 얘를 옮기기
+function calculateRanks(players: PlayerData[]): RankedPlayer[] {
+  // if (players.length === 0) return [];
+  // const sortedPlayers = [...players].sort((a, b) => {
+  //   if (b.reportCard.score !== a.reportCard.score)
+  //     return b.reportCard.score - a.reportCard.score;
+  //   return a.playerIndex - b.playerIndex;
+  // });
+  // const rankedPlayers: RankedPlayer[] = [];
+  // let currentRank = 1;
+  // for (let i = 0; i < sortedPlayers.length; i++) {
+  //   const player = sortedPlayers[i];
+  //   if (
+  //     i > 0 &&
+  //     sortedPlayers[i - 1].reportCard.score !== player.reportCard.score
+  //   ) {
+  //     currentRank = i + 1;
+  //   }
+  //   rankedPlayers.push({ ...player, rank: currentRank });
+  // }
   return rankedPlayers;
 }
 

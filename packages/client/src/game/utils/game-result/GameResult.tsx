@@ -2,7 +2,8 @@
 import React from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
-import type { PlayerResultData } from '../../types/common';
+import { type PlayerData } from '../../../../../common/src/packets';
+import { useGameStore } from '../../../store/gameStore';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
 type CrownSvgProps = { fill: string; style?: React.CSSProperties };
@@ -23,12 +24,11 @@ const CrownSvg: React.FC<CrownSvgProps> = ({ fill, style }) => (
   </svg>
 );
 
-interface RankedPlayer extends PlayerResultData {
+interface RankedPlayer extends PlayerData {
   rank: number;
 }
 
 interface GameResultProps {
-  players: PlayerResultData[];
   onReplay: () => void;
   onLobby: () => void;
   ratio?: number;
@@ -69,7 +69,6 @@ function getCrownProps(rank: number): { visible: boolean; fill: string } {
 }
 
 const GameResult: React.FC<GameResultProps> = ({
-  players,
   onReplay,
   onLobby,
   ratio: propRatio,
@@ -78,7 +77,8 @@ const GameResult: React.FC<GameResultProps> = ({
   const { playSFX } = useSFXContext();
   // 기준 해상도 대비 현재 비율 (사과 게임과 동일)
   const ratio = propRatio ?? ((window as any).__GAME_RATIO || 1);
-  const rankedPlayers = calculateRanks(players);
+  const result = useGameStore((s) => s.gameResults) ?? [];
+  // const rankedPlayers = calculateRanks(players);
 
   // 닉네임 길이에 따라 폰트 크기 조절
   const getNameFontSize = (nameLength: number) => {
@@ -102,12 +102,13 @@ const GameResult: React.FC<GameResultProps> = ({
       >
         <h1 style={getTitleStyle(ratio)}>{title}</h1>
         <div style={getRankContainerStyle(ratio)}>
-          {rankedPlayers.map((player, idx) => {
-            const height = getRankHeight(player.rank) * ratio;
-            const crown = getCrownProps(player.rank);
+          {result.map((player, idx) => {
+            const rank = idx + 1;
+            const height = getRankHeight(rank) * ratio;
+            const crown = getCrownProps(rank);
             return (
               <div
-                key={`player-${player.playerIndex}`}
+                key={`player-${rank}`}
                 style={{
                   ...getRankItemStyle(ratio),
                   marginLeft: idx === 0 ? 0 : -5 * ratio,

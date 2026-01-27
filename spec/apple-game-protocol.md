@@ -49,7 +49,7 @@
 제한 시간이 종료되었음을 알리고 최종 결과를 전달합니다.
 
 - **Data:**
-- `results: Array<{rank: int, playerId: string, score: int}>`: 순위 순으로 정렬된 결과 객체 배열
+- `results: PlayerData[]`: 순위 순으로 정렬된 결과 PlayerData 배열
 
 - **비고:** 서버 권위 데이터로 결과창을 구성하여 클라이언트 간 데이터 불일치를 방지합니다.
 

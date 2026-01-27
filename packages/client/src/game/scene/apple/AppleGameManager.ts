@@ -407,14 +407,10 @@ export default class AppleGameManager {
   public gameEnd(): void {
     // 드래그 선택 비활성화
     this.detachDrag?.();
-    // 플레이어 데이터에 playerIndex 추가
-    const playersWithIndex = this.players.map((player, index) => ({
-      ...player,
-      playerIndex: index,
-    }));
     // React로 게임 종료 이벤트 전달
-    this.scene.events.emit('gameEnd', { players: playersWithIndex });
-    console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
+    // const { players } = useGameStore.getState();
+    // this.scene.events.emit('gameEnd', { players: players });
+    // console.log('🎮 게임 종료! React로 이벤트 전달', players);
   }
 
   /** 현재 플레이어 인덱스 업데이트 */

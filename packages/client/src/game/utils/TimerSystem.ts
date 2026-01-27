@@ -175,8 +175,8 @@ export default class TimerSystem {
     this.stop();
 
     console.log('⏱️ 타이머 종료! 시간이 모두 소진되었습니다.');
-    this.scene.events.emit(TimerEvents.COMPLETE);
-    this.appleGameManager?.gameEnd();
+    // this.scene.events.emit(TimerEvents.COMPLETE);
+    // this.appleGameManager?.gameEnd();
   }
 
   /** 타이머 일시정지 */

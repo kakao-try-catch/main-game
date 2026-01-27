@@ -247,13 +247,13 @@ export class GameSession {
     this.stopGame();
 
     // Calculate Rank
-    const results = Array.from(this.players.values())
-      .sort((a, b) => b.reportCard.score - a.reportCard.score)
-      .map((p, index) => ({
-        rank: index + 1,
-        playerId: p.id,
-        score: p.reportCard.score,
-      }));
+    const results: PlayerData[] = Array.from(this.players.values())
+      .map(({ playerName, color, reportCard }) => ({
+        playerName,
+        color,
+        reportCard,
+      }))
+      .sort((a, b) => b.reportCard.score - a.reportCard.score);
 
     const endPacket: TimeEndPacket = {
       type: GamePacketType.TIME_END,

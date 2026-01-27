@@ -133,7 +133,6 @@ export const handleServerPacket = (packet: ServerPacket) => {
       const store = useGameStore.getState();
       store.setGameResults(packet.results);
       store.setGameStarted(false);
-      // todo 렌더링 필요함.
       console.log('TIME_END packet received:', packet.results);
       break;
     }

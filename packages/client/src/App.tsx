@@ -13,11 +13,6 @@ import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
-import type {
-  PlayerData,
-  PlayerResultData,
-  CurrentUser,
-} from './game/types/common';
 import { CONSTANTS } from './game/types/common';
 import {
   SystemPacketType,
@@ -47,8 +42,8 @@ function AppContent() {
   const screen = useGameStore((s) => s.screen);
 
   const [gameReady, setGameReady] = useState(false);
-  const [gameEnded, setGameEnded] = useState(false);
-  const [finalPlayers, setFinalPlayers] = useState<PlayerResultData[]>([]);
+  const isGameStarted = useGameStore((s) => s.isGameStarted);
+  const setGameStarted = useGameStore((s) => s.setGameStarted);
   const gameRef = useRef<Phaser.Game | null>(null);
 
   // 플래피버드 관련 상태 // todo 이거 왜 여기? 플레이로 통일
@@ -85,16 +80,6 @@ function AppContent() {
     setGameReady(true);
   }, []);
 
-  const handleGameEnd = useCallback(
-    (endPlayers: (PlayerData & { playerIndex: number })[]) => {
-      setFinalPlayers(endPlayers);
-      setGameEnded(true);
-      playSFX('appleGameEnd');
-      pause(); // 게임 종료 시 BGM 중지
-    },
-    [playSFX, pause],
-  );
-
   // 플래피버드 점수 업데이트 핸들러
   const handleFlappyScoreUpdate = useCallback((score: number) => {
     setFlappyScore(score);
@@ -105,7 +90,7 @@ function AppContent() {
     (data: {
       finalScore: number;
       reason: string;
-      players: PlayerResultData[];
+      players: PlayerData[];
     }) => {
       setFlappyFinalData(data);
       setFlappyGameEnded(true);
@@ -119,7 +104,7 @@ function AppContent() {
     console.log('[App] handleReplay 호출됨');
 
     // 상태 초기화
-    setGameEnded(false);
+    setGameStarted(true);
     setFlappyGameEnded(false);
     setFlappyScore(0);
     setFlappyFinalData(null);
@@ -145,7 +130,7 @@ function AppContent() {
   }, []);
 
   const handleLobby = useCallback(() => {
-    setGameEnded(false);
+    setGameStarted(true);
     setFlappyGameEnded(false);
     setFlappyScore(0);
     setFlappyFinalData(null);
@@ -217,10 +202,10 @@ function AppContent() {
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
   useEffect(() => {
-    if (gameEnded) {
+    if (!isGameStarted) {
       pause();
     }
-  }, [gameEnded, pause]);
+  }, [isGameStarted, pause]);
 
   // 랜딩 페이지 표시
   if (screen === 'landing') {
@@ -323,7 +308,7 @@ function AppContent() {
           overflow: 'hidden',
         }}
       >
-        {!gameEnded && !flappyGameEnded && currentGameType && (
+        {isGameStarted && !flappyGameEnded && currentGameType && (
           <GameContainer
             key={gameKey}
             gameType={currentGameType}
@@ -331,16 +316,14 @@ function AppContent() {
             players={players}
             applePreset={applePreset}
             flappyPreset={flappyPreset}
-            onGameEnd={handleGameEnd}
             onScoreUpdate={handleFlappyScoreUpdate}
             onFlappyGameEnd={handleFlappyGameEnd}
             onGameReady={handleGameReady}
           />
         )}
         {/* 사과게임 결과 모달 */}
-        {gameEnded && (
+        {!isGameStarted && (
           <GameResult
-            players={finalPlayers}
             onReplay={handleReplay}
             onLobby={handleLobby}
             title="APPLE GAME TOGETHER"

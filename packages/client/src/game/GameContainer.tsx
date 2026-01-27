@@ -30,7 +30,6 @@ const GAME_CONFIGS = {
 interface GameContainerProps {
   gameType: GameType;
   onGameReady?: (game: Phaser.Game) => void;
-  onGameEnd?: (players: PlayerResultData[]) => void;
   onGameOver?: (data: { reason: string; finalScore: number }) => void;
   onScoreUpdate?: (score: number) => void; // 플래피버드 점수 업데이트
   onFlappyGameEnd?: (data: {
@@ -47,7 +46,6 @@ interface GameContainerProps {
 export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
-  onGameEnd,
   onGameOver,
   onScoreUpdate,
   onFlappyGameEnd,
@@ -159,16 +157,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         //    onAppleScored(data.points);
         //  });
         // }
-
-        if (onGameEnd) {
-          targetScene.events.on(
-            'gameEnd',
-            (data: { players: PlayerResultData[] }) => {
-              console.log('🏁 gameEnd event received:', data);
-              onGameEnd(data.players);
-            },
-          );
-        }
       } else if (gameType === GameType.FLAPPY_BIRD) {
         // 플래피버드 점수 업데이트 이벤트
         if (onScoreUpdate) {

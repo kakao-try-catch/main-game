@@ -58,7 +58,7 @@ export interface JoinRoomPacket {
 export enum RoomUpdateType {
   INIT_ROOM = 0,
   PLAYER_JOIN = 1,
-  PLAYER_QUIT = 2
+  PLAYER_QUIT = 2,
 }
 
 export interface RoomUpdatePacket {
@@ -136,7 +136,7 @@ export interface DropCellIndexPacket {
 }
 export interface TimeEndPacket {
   type: GamePacketType.TIME_END;
-  results: { rank: number; playerId: PlayerId; score: number }[];
+  results: PlayerData[];
 }
 export interface ConfirmDragAreaPacket {
   type: GamePacketType.CONFIRM_DRAG_AREA;

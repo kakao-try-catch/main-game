@@ -69,8 +69,8 @@ interface GameState {
   removeOtherPlayerDrag: (playerId: string) => void;
 
   // 게임 결과 (TIME_END)
-  gameResults: GameResult[] | null;
-  setGameResults: (results: GameResult[]) => void;
+  gameResults: PlayerData[] | null;
+  setGameResults: (results: PlayerData[]) => void;
 
   // 게임 상태 초기화
   resetGameState: () => void;

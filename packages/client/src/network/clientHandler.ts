@@ -29,6 +29,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       // update global store (clientHandler runs outside React)
       const roomPacket = packet as RoomUpdatePacket;
       useGameStore.getState().setPlayers(roomPacket.players || []);
+      useGameStore.getState().setMyselfIndex(roomPacket.yourIndex);
       // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
       if (useGameStore.getState().screen !== 'lobby') {
         useGameStore.getState().setScreen('lobby');
@@ -37,6 +38,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
         'ROOM_UPDATE packet received:',
         roomPacket.players,
         roomPacket.updateType,
+        roomPacket.yourIndex,
       );
       break;
     }

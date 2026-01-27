@@ -35,10 +35,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
         useGameStore.getState().setScreen('lobby');
       }
       console.log(
-        'ROOM_UPDATE packet received:',
+        `ROOM_UPDATE packet received: , ${roomPacket.updateType}, ${roomPacket.yourIndex}`,
         roomPacket.players,
-        roomPacket.updateType,
-        roomPacket.yourIndex,
       );
       break;
     }

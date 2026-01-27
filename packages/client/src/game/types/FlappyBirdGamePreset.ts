@@ -31,6 +31,9 @@ export interface FlappyBirdGamePreset {
 
   /** 파이프 넓이 (두께) */
   pipeWidth: PipeWidthPreset;
+
+  /** 모두 묶기 (3인 이상일 때 폐쇄형 도형으로 연결) */
+  connectAll?: boolean;
 }
 
 /** 프리셋에서 실제 게임 설정으로 변환 */
@@ -39,6 +42,9 @@ export interface ResolvedFlappyBirdConfig {
   pipeSpacing: number;
   pipeGap: number;
   pipeWidth: number;
+  flapBoostBase: number; // 점프 시 기본 전진력 (pipeSpeed에 비례)
+  flapBoostRandom: number; // 점프 시 랜덤 추가 전진력 범위 (pipeSpeed에 비례)
+  connectAll: boolean; // 모두 묶기 (3인 이상일 때 폐쇄형 도형으로 연결)
 }
 
 /** 기본 프리셋 */
@@ -47,78 +53,88 @@ export const DEFAULT_FLAPPYBIRD_PRESET: FlappyBirdGamePreset = {
   pipeSpacing: 'normal',
   pipeGap: 'normal',
   pipeWidth: 'normal',
+  connectAll: false,
 };
 
 /** 프리셋을 실제 게임 설정으로 변환하는 헬퍼 함수 */
 export function resolveFlappyBirdPreset(
   preset: FlappyBirdGamePreset,
 ): ResolvedFlappyBirdConfig {
-  // 1. 파이프 속도 결정
+  // 1. 파이프 속도 결정 (main 브랜치 기준: 1.5)
   let pipeSpeed: number;
   switch (preset.pipeSpeed) {
     case 'slow':
-      pipeSpeed = 2;
+      pipeSpeed = 1.5;
       break;
     case 'normal':
-      pipeSpeed = 3;
+      pipeSpeed = 2.0;
       break;
     case 'fast':
-      pipeSpeed = 5;
+      pipeSpeed = 2.5;
       break;
     case 'manual':
-      pipeSpeed = preset.manualSpeed ?? 3;
+      pipeSpeed = preset.manualSpeed ?? 2.0;
       break;
   }
 
-  // 2. 파이프 좌우 간격 결정
+  // 2. 파이프 좌우 간격 결정 (main 브랜치 기준: 400)
   let pipeSpacing: number;
   switch (preset.pipeSpacing) {
     case 'narrow':
-      pipeSpacing = 200;
-      break;
-    case 'normal':
       pipeSpacing = 300;
       break;
-    case 'wide':
+    case 'normal':
       pipeSpacing = 400;
+      break;
+    case 'wide':
+      pipeSpacing = 500;
       break;
     case 'manual':
       pipeSpacing = preset.manualSpacing ?? 400;
       break;
   }
 
-  // 3. 파이프 상하 간격 (통과 공간) 결정
+  // 3. 파이프 상하 간격 (통과 공간) 결정 (main 브랜치 기준: 200)
   let pipeGap: number;
   switch (preset.pipeGap) {
     case 'narrow':
-      pipeGap = 120;
+      pipeGap = 200;
       break;
     case 'normal':
-      pipeGap = 150;
-      break;
+      pipeGap = 250;
+      break
     case 'wide':
-      pipeGap = 200;
+      pipeGap = 300;
       break;
   }
 
-  // 4. 파이프 넓이 (두께) 결정
+  // 4. 파이프 넓이 (두께) 결정 (main 브랜치 기준: 120)
   let pipeWidth: number;
   switch (preset.pipeWidth) {
     case 'narrow':
-      pipeWidth = 60;
-      break;
-    case 'normal':
       pipeWidth = 80;
       break;
+    case 'normal':
+      pipeWidth = 120;
+      break;
     case 'wide':
-      pipeWidth = 100;
+      pipeWidth = 160;
       break;
   }
+
+  // 5. 점프 시 전진력 결정 (pipeSpeed에 비례)
+  // normal(2.0) 기준 0.3 + 0~0.7 = 0.3 ~ 1.0 범위
+  const speedRatio = pipeSpeed / 2.0; // normal 기준
+  const flapBoostBase = 0.5 * speedRatio;
+  const flapBoostRandom = 0.5 * speedRatio;
 
   return {
     pipeSpeed,
     pipeSpacing,
     pipeGap,
     pipeWidth,
+    flapBoostBase,
+    flapBoostRandom,
+    connectAll: preset.connectAll ?? false,
   };
 }

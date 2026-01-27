@@ -54,6 +54,7 @@ export interface GameSettings {
   pipeWidth?: 'narrow' | 'normal' | 'wide'; // 파이프 넓이
   pipeSpacing?: 'narrow' | 'normal' | 'wide'; // 좌우 파이프 간격
   pipeSpeed?: 'slow' | 'normal' | 'fast'; // 이동 속도
+  connectAll?: boolean; // 모두 묶기 (3인 이상일 때 폐쇄형 도형)
 }
 
 /** 로비 Props */

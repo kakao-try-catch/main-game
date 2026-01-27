@@ -74,6 +74,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       pipeWidth: 'normal', // 파이프 넓이
       pipeSpacing: 'normal', // 좌우 파이프 간격
       pipeSpeed: 'normal', // 이동 속도
+      connectAll: false, // 모두 묶기
     },
     minesweeper: {},
   });
@@ -159,6 +160,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
         pipeWidth: (settings.pipeWidth || 'normal') as PipeWidthPreset,
         pipeSpacing: (settings.pipeSpacing || 'normal') as PipeSpacingPreset,
         pipeSpeed: (settings.pipeSpeed || 'normal') as PipeSpeedPreset,
+        connectAll: settings.connectAll ?? false,
       };
       onGameStart('flappy', preset);
     } else if (selectedGame === 'minesweeper') {
@@ -553,6 +555,47 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
                                 <option value="fast" style={{ color: DIFFICULTY_COLORS.hard }}>빠름</option>
                               </select>
+                            </div>
+                          </div>
+
+                          {/* 모두 묶기 라디오 */}
+                          <div className="setting-item">
+                            <label>모두 묶기:</label>
+                            <div className="radio-group">
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`connectAll-${game.id}`}
+                                  checked={!settings.connectAll}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'connectAll',
+                                      false,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`connectAll-${game.id}`}
+                                  checked={settings.connectAll ?? false}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'connectAll',
+                                      true,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.hard }}>O</span>
+                              </label>
                             </div>
                           </div>
                         </div>

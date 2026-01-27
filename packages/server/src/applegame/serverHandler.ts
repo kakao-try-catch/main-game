@@ -176,7 +176,7 @@ export function handleClientPacket(
 
 // index.ts에서 호출할 초기화/조인 헬퍼
 const MAX_PLAYERS_PER_ROOM = 4;
-export function joinPlayerToGame(
+export async function joinPlayerToGame(
   io: Server,
   socket: Socket,
   roomId: string,
@@ -203,8 +203,25 @@ export function joinPlayerToGame(
     });
     sessions.set(roomId, session);
     console.log(`Created new Game Session for ${roomId}`);
+
+    socket.join(roomId);
+    playerRooms.set(socket.id, roomId);
+    session.addPlayer(socket.id, playerName);
+
+    const roomUpdatePacket2Player: RoomUpdatePacket = {
+      type: SystemPacketType.ROOM_UPDATE,
+      players: session.getPlayers(),
+      updateType: RoomUpdateType.INIT_ROOM,
+      yourIndex: session.getIndex(socket.id),
+    };
+    socket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Player);
+    console.log(
+      `[Server] Sent ROOM_UPDATE (${roomUpdatePacket2Player.updateType}) to ${socket.id}`,
+    );
+    return;
   }
 
+  // todo 얘 rooms에 등록되는 과정 어떻게 됨?
   const room = io.sockets.adapter.rooms.get(roomId);
   const numClients = room ? room.size : 0;
 
@@ -224,28 +241,36 @@ export function joinPlayerToGame(
   }
 
   // Socket join
-  socket.join(roomId);
+  await socket.join(roomId);
   playerRooms.set(socket.id, roomId);
   session.addPlayer(socket.id, playerName);
 
   const roomUpdatePacket2Player: RoomUpdatePacket = {
     type: SystemPacketType.ROOM_UPDATE,
     players: session.getPlayers(),
-    updateType: RoomUpdateType.INIT_ROOM,
+    updateType: RoomUpdateType.PLAYER_JOIN,
     yourIndex: session.getIndex(socket.id),
   };
   socket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Player);
-  console.log(`[Server] Sent ROOM_UPDATE (INIT) to ${socket.id}`);
+  console.log(
+    `[Server] Sent ROOM_UPDATE (${roomUpdatePacket2Player.updateType}) to ${socket.id}`,
+  );
 
-  // Send JOIN to existing players
-  const roomUpdatePacket2Others: RoomUpdatePacket = {
-    type: SystemPacketType.ROOM_UPDATE,
-    players: session.getPlayers(),
-    updateType: RoomUpdateType.PLAYER_JOIN,
-    yourIndex: session.getIndex(socket.id), // 플레이어 각자로 해주어야 함
-  };
-  // todo socket 주인장 제외 보내야 함.
-  socket.to(roomId).emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Others);
+  // Send JOIN to existing players (excluding the new player)
+  for (const [playerId] of session.players) {
+    if (playerId === socket.id) continue; // 새로 접속한 플레이어 제외
+
+    const otherSocket = io.sockets.sockets.get(playerId);
+    if (!otherSocket) continue; // 소켓이 없으면 스킵
+
+    const roomUpdatePacket2Other: RoomUpdatePacket = {
+      type: SystemPacketType.ROOM_UPDATE,
+      players: session.getPlayers(),
+      updateType: RoomUpdateType.PLAYER_JOIN,
+      yourIndex: session.getIndex(playerId), // 각 플레이어 본인의 인덱스
+    };
+    otherSocket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Other);
+  }
   console.log(
     `[Server] Sent ROOM_UPDATE (JOIN) to room ${roomId} (excluding ${socket.id})`,
   );

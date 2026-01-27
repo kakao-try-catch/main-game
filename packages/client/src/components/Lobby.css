@@ -156,7 +156,8 @@
   box-shadow: 0 0 0 4px #92cc41;
 }
 
-.game-item.dimmed {
+.game-item.dimmed .game-thumbnail,
+.game-item.dimmed .game-info {
   opacity: 0.4;
 }
 
@@ -402,12 +403,6 @@
   color: #212529;
 }
 
-/* 방장이 아닌 경우 게임 설정 비활성화 */
-.game-item.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .game-item.disabled:hover {
   transform: none;
   box-shadow: none;
@@ -421,6 +416,49 @@
 .game-item.disabled .settings-edit input {
   background-color: #e0e0e0;
   color: #888;
+}
+
+/* 게임 아이템 호버 툴팁 */
+.game-item-tooltip {
+  position: absolute;
+  bottom: -40px; /* 하단으로 변경 */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background-color: #e76e55; /* 빨간색 */
+  color: white;
+  border-radius: 4px;
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.game-item-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%; /* 화살표 위로 */
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: #e76e55; /* 빨간색 */
+}
+
+/* disabled 상태: opacity 대신 개별 스타일 */
+.game-item.disabled {
+  /* opacity: 0.6; 제거 */
+  cursor: not-allowed;
+}
+
+.game-item.disabled .game-thumbnail,
+.game-item.disabled .game-info {
+  opacity: 0.6; /* 내부 요소에만 적용 */
+}
+
+.game-item.disabled:hover .game-item-tooltip {
+  opacity: 1; /* 툴팁은 opacity 영향 안 받음 */
 }
 
 @keyframes tooltip-fade-in {

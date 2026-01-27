@@ -320,8 +320,12 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                       selectedGame && selectedGame !== game.id ? 'dimmed' : ''
                     } ${isDisabled ? 'disabled' : ''}`}
                     onClick={() => !isDisabled && handleSelectGame(game.id)}
-                    title={isDisabled ? '방장만 게임을 선택할 수 있습니다' : ''}
                   >
+                    {isDisabled && (
+                      <span className="game-item-tooltip">
+                        방장만 게임을 선택할 수 있습니다
+                      </span>
+                    )}
                     <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
                       <h3 className="game-name">{game.name}</h3>

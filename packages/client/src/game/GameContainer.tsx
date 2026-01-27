@@ -38,6 +38,9 @@ interface GameContainerProps {
     reason: string;
     players: PlayerResultData[];
   }) => void; // 플래피버드 게임 종료
+  onFlappyJump?: () => void; // 플래피버드 점프 사운드
+  onFlappyStrike?: () => void; // 플래피버드 충돌 사운드
+  onFlappyScore?: () => void; // 플래피버드 점수 획득 사운드
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
@@ -53,6 +56,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onGameOver,
   onScoreUpdate,
   onFlappyGameEnd,
+  onFlappyJump,
+  onFlappyStrike,
+  onFlappyScore,
   playerCount = 4,
   players = [],
   currentPlayerIndex = 0,
@@ -171,6 +177,30 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           );
         }
       } else if (gameType === 'flappy') {
+        // 플래피버드 점프 사운드 이벤트
+        if (onFlappyJump) {
+          targetScene.events.on('flappyJump', () => {
+            console.log('🦅 flappyJump event received');
+            onFlappyJump();
+          });
+        }
+
+        // 플래피버드 충돌 사운드 이벤트
+        if (onFlappyStrike) {
+          targetScene.events.on('flappyStrike', () => {
+            console.log('💥 flappyStrike event received');
+            onFlappyStrike();
+          });
+        }
+
+        // 플래피버드 점수 획득 사운드 이벤트
+        if (onFlappyScore) {
+          targetScene.events.on('flappyScore', () => {
+            console.log('🎵 flappyScore event received');
+            onFlappyScore();
+          });
+        }
+
         // 플래피버드 점수 업데이트 이벤트
         if (onScoreUpdate) {
           targetScene.events.on(

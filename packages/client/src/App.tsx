@@ -144,6 +144,21 @@ function AppContent() {
     [playSFX, pause, reset],
   );
 
+  // 플래피버드 점프 사운드 핸들러
+  const handleFlappyJump = useCallback(() => {
+    playSFX('flappyJump');
+  }, [playSFX]);
+
+  // 플래피버드 충돌 사운드 핸들러
+  const handleFlappyStrike = useCallback(() => {
+    playSFX('flappyStrike');
+  }, [playSFX]);
+
+  // 플래피버드 점수 획득 사운드 핸들러
+  const handleFlappyScore = useCallback(() => {
+    playSFX('flappyScore');
+  }, [playSFX]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
@@ -380,6 +395,9 @@ function AppContent() {
             onGameEnd={handleGameEnd}
             onScoreUpdate={handleFlappyScoreUpdate}
             onFlappyGameEnd={handleFlappyGameEnd}
+            onFlappyJump={handleFlappyJump}
+            onFlappyStrike={handleFlappyStrike}
+            onFlappyScore={handleFlappyScore}
             onGameReady={handleGameReady}
           />
         )}

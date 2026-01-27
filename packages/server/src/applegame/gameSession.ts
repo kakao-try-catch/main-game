@@ -176,7 +176,10 @@ export class GameSession {
     this.broadcastScoreboard();
 
     // Start Timer
+    console.log('...Game timer');
+    this.timeLeft = 10; // todo 임시
     this.startTimer();
+    console.log('...Game Started!');
   }
 
   public stopGame() {

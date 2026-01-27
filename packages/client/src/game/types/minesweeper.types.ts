@@ -49,9 +49,9 @@ export interface MineSweeperConfig {
 
 // 기본 게임 설정
 export const DEFAULT_MINESWEEPER_CONFIG: MineSweeperConfig = {
-  gridCols: 30,
-  gridRows: 15,
-  mineCount: 90,
+  gridCols: 40,
+  gridRows: 20,
+  mineCount: 100,
   tileRevealScore: 1,
   minePenalty: -20,
   flagCorrectBonus: 10,
@@ -60,6 +60,22 @@ export const DEFAULT_MINESWEEPER_CONFIG: MineSweeperConfig = {
 };
 
 // ===== 소켓 이벤트 타입 =====
+
+// 클라이언트 -> 서버 이벤트
+
+// 타일 열기 요청
+export interface RevealTileRequest {
+  playerId: PlayerId;
+  row: number;
+  col: number;
+}
+
+// 깃발 토글 요청
+export interface ToggleFlagRequest {
+  playerId: PlayerId;
+  row: number;
+  col: number;
+}
 
 // 서버 -> 클라이언트 이벤트
 

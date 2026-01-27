@@ -106,6 +106,18 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 플레이어 업데이트 이벤트 리스너
     this.setupEventListeners();
 
+    // 기본 플레이어 초기화 (Mock 모드에서 색상이 필요함)
+    if (this.players.length === 0) {
+      this.players = Array.from({ length: this.playerCount }, (_, i) => ({
+        id: `player_${i}`,
+        name: `Player ${i + 1}`,
+        score: 0,
+        color: CONSTANTS.PLAYER_COLORS[i] || '#ffffff',
+      }));
+      this.tileManager.setPlayerColors(this.players);
+      console.log('[MineSweeperScene] 기본 플레이어 초기화 및 색상 설정 완료');
+    }
+
     // Mock 모드인 경우 MockServerCore 생성
     if (isMockMode() && this.socket instanceof MockSocket) {
       this.setupMockServer();
@@ -116,6 +128,9 @@ export default class MineSweeperScene extends Phaser.Scene {
 
     // 키보드 입력 설정
     this.setupKeyboardInput();
+
+    // 마우스 입력 설정
+    this.setupMouseInput();
 
     console.log(
       `[MineSweeperScene] 생성 완료: ${this.GRID_COLS}x${this.GRID_ROWS} 그리드, 지뢰 ${this.MINE_COUNT}개`,
@@ -133,7 +148,106 @@ export default class MineSweeperScene extends Phaser.Scene {
       }
     });
 
-    console.log('[MineSweeperScene] 키보드 입력 설정 완료 (D: 디버그 모드)');
+    // 1-4 키로 플레이어 전환 (테스트용)
+    this.input.keyboard?.on('keydown-ONE', () => {
+      this.switchPlayer(0);
+    });
+
+    this.input.keyboard?.on('keydown-TWO', () => {
+      this.switchPlayer(1);
+    });
+
+    this.input.keyboard?.on('keydown-THREE', () => {
+      this.switchPlayer(2);
+    });
+
+    this.input.keyboard?.on('keydown-FOUR', () => {
+      this.switchPlayer(3);
+    });
+
+    console.log(
+      '[MineSweeperScene] 키보드 입력 설정 완료 (D: 디버그 모드, 1-4: 플레이어 전환)',
+    );
+  }
+
+  /**
+   * 플레이어 전환 (테스트용)
+   */
+  private switchPlayer(playerIndex: number): void {
+    if (playerIndex >= 0 && playerIndex < this.playerCount) {
+      this.currentPlayerIndex = playerIndex;
+
+      // 실제 플레이어 ID 사용 (players 배열에서 가져옴)
+      if (this.players[playerIndex]) {
+        this.myPlayerId = this.players[playerIndex].id as PlayerId;
+      } else {
+        this.myPlayerId = `player_${playerIndex}` as PlayerId;
+      }
+
+      // 플레이어 색상 정보 표시
+      const playerColor = this.players[playerIndex]?.color || 'unknown';
+      console.log(`[MineSweeperScene] 플레이어 색상: ${playerColor}`);
+    }
+  }
+
+  /**
+   * 마우스 입력 설정
+   */
+  private setupMouseInput(): void {
+    // 마우스 클릭 이벤트 리스너
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // 타일 위치 가져오기
+      const tilePos = this.tileManager.getTileAtPosition(pointer.x, pointer.y);
+
+      if (!tilePos) {
+        return; // 그리드 밖 클릭
+      }
+
+      const { row, col } = tilePos;
+
+      // 좌클릭: 타일 열기
+      if (pointer.leftButtonDown()) {
+        this.handleTileClick(row, col, false);
+      }
+      // 우클릭: 깃발 토글
+      else if (pointer.rightButtonDown()) {
+        this.handleTileClick(row, col, true);
+      }
+    });
+
+    // 우클릭 컨텍스트 메뉴 방지
+    this.input.mouse?.disableContextMenu();
+
+    console.log(
+      '[MineSweeperScene] 마우스 입력 설정 완료 (좌클릭: 열기, 우클릭: 깃발)',
+    );
+  }
+
+  /**
+   * 타일 클릭 처리
+   */
+  private handleTileClick(
+    row: number,
+    col: number,
+    isRightClick: boolean,
+  ): void {
+    if (isRightClick) {
+      // 우클릭: 깃발 토글
+      this.socket.emit('toggle_flag', {
+        playerId: this.myPlayerId,
+        row,
+        col,
+      });
+      console.log(`[MineSweeperScene] 깃발 토글 요청: (${row}, ${col})`);
+    } else {
+      // 좌클릭: 타일 열기
+      this.socket.emit('reveal_tile', {
+        playerId: this.myPlayerId,
+        row,
+        col,
+      });
+      console.log(`[MineSweeperScene] 타일 열기 요청: (${row}, ${col})`);
+    }
   }
 
   /**
@@ -186,6 +300,7 @@ export default class MineSweeperScene extends Phaser.Scene {
           tileUpdate.state,
           tileUpdate.adjacentMines,
           tileUpdate.isMine,
+          tileUpdate.flaggedBy,
         );
       }
     });
@@ -227,6 +342,11 @@ export default class MineSweeperScene extends Phaser.Scene {
         if (this.mockServerCore) {
           // 이미 초기화된 경우 재초기화
           this.setupMockServer();
+        }
+
+        // TileManager에 플레이어 색상 전달
+        if (this.tileManager) {
+          this.tileManager.setPlayerColors(this.players);
         }
 
         console.log(
@@ -272,6 +392,13 @@ export default class MineSweeperScene extends Phaser.Scene {
 
     // 키보드 이벤트 리스너 제거
     this.input.keyboard?.off('keydown-D');
+    this.input.keyboard?.off('keydown-ONE');
+    this.input.keyboard?.off('keydown-TWO');
+    this.input.keyboard?.off('keydown-THREE');
+    this.input.keyboard?.off('keydown-FOUR');
+
+    // 마우스 이벤트 리스너 제거
+    this.input.off('pointerdown');
 
     console.log('[MineSweeperScene] shutdown 완료');
   }

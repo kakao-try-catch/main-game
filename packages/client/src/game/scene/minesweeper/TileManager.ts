@@ -41,6 +41,9 @@ export default class TileManager {
   private gridStartX: number = 0;
   private gridStartY: number = 0;
 
+  // 플레이어 색상 매핑
+  private playerColors: Map<string, string> = new Map();
+
   constructor(
     scene: Phaser.Scene,
     gameContainer: Phaser.GameObjects.Container,
@@ -64,6 +67,17 @@ export default class TileManager {
     console.log(
       `[TileManager] 초기화 완료: ${this.gridCols}x${this.gridRows} 그리드, 지뢰 ${this.mineCount}개`,
     );
+  }
+
+  /**
+   * 플레이어 색상 설정
+   */
+  public setPlayerColors(players: { id: string; color: string }[]): void {
+    console.log('[TileManager] setPlayerColors 호출됨, players:', players);
+    this.playerColors.clear();
+    for (const player of players) {
+      this.playerColors.set(player.id, player.color);
+    }
   }
 
   /**
@@ -110,27 +124,6 @@ export default class TileManager {
         };
       }
     }
-  }
-
-  /**
-   * 랜덤 지뢰 배치
-   */
-  private placeMines(): void {
-    let minesPlaced = 0;
-    const totalTiles = this.gridRows * this.gridCols;
-    const maxMines = Math.min(this.mineCount, totalTiles - 1);
-
-    while (minesPlaced < maxMines) {
-      const row = Phaser.Math.Between(0, this.gridRows - 1);
-      const col = Phaser.Math.Between(0, this.gridCols - 1);
-
-      if (!this.tiles[row][col].isMine) {
-        this.tiles[row][col].isMine = true;
-        minesPlaced++;
-      }
-    }
-
-    console.log(`[TileManager] 지뢰 ${minesPlaced}개 배치 완료`);
   }
 
   /**
@@ -238,6 +231,7 @@ export default class TileManager {
     state: TileState,
     adjacentMines?: number,
     isMine?: boolean,
+    flaggedBy?: string | null,
   ): void {
     if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
       return;
@@ -277,7 +271,15 @@ export default class TileManager {
         break;
 
       case TileState.FLAGGED:
-        sprite.setFillStyle(0xf39c12); // 주황색
+        // 플레이어별 색상으로 깃발 표시
+        let flagColor = 0xf39c12; // 기본 주황색
+
+        if (flaggedBy && this.playerColors.has(flaggedBy)) {
+          const colorStr = this.playerColors.get(flaggedBy)!;
+          // CSS 색상 문자열을 16진수로 변환 (#ffffff -> 0xffffff)
+          flagColor = parseInt(colorStr.replace('#', ''), 16);
+        }
+        sprite.setFillStyle(flagColor);
         text.setText('🚩');
         text.setVisible(true);
         break;

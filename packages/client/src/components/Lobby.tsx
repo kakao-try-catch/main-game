@@ -528,19 +528,32 @@ function Lobby({ players, onGameStart }: LobbyProps) {
         </button>
         <div
           className="button-wrapper"
-          onMouseEnter={() => !selectedGame && setShowButtonTooltip(true)}
+          onMouseEnter={() =>
+            (!selectedGame || players.length < 2) && setShowButtonTooltip(true)
+          }
           onMouseLeave={() => setShowButtonTooltip(false)}
         >
           <button
             className="nes-btn is-primary"
             onClick={handleStartGame}
-            disabled={!selectedGame || isDisabled}
+            disabled={!selectedGame || isDisabled || players.length < 2}
           >
             게임 시작
           </button>
-          {showButtonTooltip && !selectedGame && (
-            <div className="button-tooltip">게임을 선택해주세요</div>
+          {showButtonTooltip && !isHost && (
+            <div className="button-tooltip">
+              {'방장만 게임을 시작할 수 있습니다.'}
+            </div>
           )}
+          {showButtonTooltip &&
+            isHost &&
+            (players.length < 2 || !selectedGame) && (
+              <div className="button-tooltip">
+                {players.length < 2
+                  ? '최소 2명이 있어야 진행할 수 있습니다.'
+                  : '게임을 선택해주세요'}
+              </div>
+            )}
         </div>
       </div>
     </div>

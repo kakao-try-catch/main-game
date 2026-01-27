@@ -23,11 +23,8 @@ const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
 // PlayerData imported from packets
 
 // 상태 관리 해야 함.
-export interface PlayerState {
+export interface PlayerState extends PlayerData {
   id: string; // Socket ID
-  name: string;
-  color: string;
-  reportCard: ReportCard;
 }
 
 export class GameSession {

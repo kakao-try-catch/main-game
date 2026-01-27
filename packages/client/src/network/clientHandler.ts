@@ -60,7 +60,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
 
     case SystemPacketType.UPDATE_SCORE: {
       const store = useGameStore.getState();
-      // scoreboard 배열의 인덱스가 플레이어 순서와 일치
+      // scoreboard 배열의 인덱스가 플레이어 순서와 일치해야 함. 게임 중엔 안 바뀜?
+      // todo 이거 검증 필요함.
       store.setPlayers((prev) =>
         prev.map((player, index) => ({
           ...player,

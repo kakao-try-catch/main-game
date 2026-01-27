@@ -2,6 +2,17 @@
  * 지뢰찾기 게임 타입 정의
  */
 
+// 프리셋 re-export
+export {
+  type MapSizePreset,
+  type DifficultyPreset,
+  type MineSweeperGamePreset,
+  type ResolvedMineSweeperConfig,
+  DEFAULT_MINESWEEPER_PRESET,
+  DEFAULT_RESOLVED_CONFIG,
+  resolveMineSweeperPreset,
+} from './minesweeperPresets';
+
 // 플레이어 ID
 export type PlayerId = string;
 
@@ -47,11 +58,13 @@ export interface MineSweeperConfig {
   minScore: number;
 }
 
-// 기본 게임 설정
+import { DEFAULT_RESOLVED_CONFIG } from './minesweeperPresets';
+
+// 기본 게임 설정 (DEFAULT_MINESWEEPER_PRESET 기반)
 export const DEFAULT_MINESWEEPER_CONFIG: MineSweeperConfig = {
-  gridCols: 40,
-  gridRows: 20,
-  mineCount: 100,
+  gridCols: DEFAULT_RESOLVED_CONFIG.gridCols,
+  gridRows: DEFAULT_RESOLVED_CONFIG.gridRows,
+  mineCount: DEFAULT_RESOLVED_CONFIG.mineCount,
   tileRevealScore: 1,
   minePenalty: -20,
   flagCorrectBonus: 10,

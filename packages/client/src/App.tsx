@@ -21,11 +21,21 @@ import type {
 import type { PlayerId } from './game/types/flappybird.types';
 import { CONSTANTS } from './game/types/common';
 import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
+import flappyBird1 from './assets/images/flappybird_1.png';
+import flappyBird2 from './assets/images/flappybird_2.png';
+import flappyBird3 from './assets/images/flappybird_3.png';
+import flappyBird4 from './assets/images/flappybird_4.png';
 
 import './App.css';
 import { socketManager } from './network/socket';
 
 const { PLAYER_COLORS } = CONSTANTS;
+const FLAPPY_BIRD_SPRITES = [
+  flappyBird1,
+  flappyBird2,
+  flappyBird3,
+  flappyBird4,
+];
 
 function AppContent() {
   const testPlayerCount = 4;
@@ -357,12 +367,27 @@ function AppContent() {
 
           {/* 플래피버드: 팀 점수 카드 1개 */}
           {currentGameType === 'flappy' && (
-            <PlayerCard
-              key="team-score"
-              name="Team Score"
-              score={flappyScore}
-              color="#209cee" // 메인 커러
-            />
+            <>
+              {players.slice(0, testPlayerCount).map((player, index) => (
+                <PlayerCard
+                  key={player.id}
+                  name={player.name}
+                  color={player.color}
+                  spriteSrc={
+                    FLAPPY_BIRD_SPRITES[
+                      index % FLAPPY_BIRD_SPRITES.length
+                    ]
+                  }
+                  showScore={false}
+                />
+              ))}
+              <PlayerCard
+                key="team-score"
+                name="Team Score"
+                score={flappyScore}
+                color="#209cee" // 메인 커러
+              />
+            </>
           )}
 
           <SoundSetting gameReady={gameReady} />

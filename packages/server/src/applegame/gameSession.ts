@@ -104,6 +104,17 @@ export class GameSession {
     }
   }
 
+  public getIndex(id: string): number {
+    let index = 0;
+    for (const [playerId] of this.players) {
+      if (playerId === id) {
+        return index;
+      }
+      index++;
+    }
+    return -1;
+  }
+
   public startGame() {
     if (this.status === 'playing') return;
 

@@ -25,15 +25,12 @@ import './App.css';
 import { socketManager } from './network/socket';
 // import { use } from 'matter';
 
-const { PLAYER_COLORS } = CONSTANTS;
-
 function AppContent() {
   const testPlayerCount = 4;
   const { pause } = useBGMContext();
   const { playSFX } = useSFXContext();
 
-  // 현재 유저 정보 (서버에서 받아올 예정)
-
+  // todo 제거 예정
   const { nickname, color, setUserInfo } = useUser();
 
   // const [currentScreen, setCurrentScreen] = useState<

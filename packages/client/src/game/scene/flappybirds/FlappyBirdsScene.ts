@@ -219,8 +219,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       // 드로잉 오더 설정: 첫 번째 플레이어가 맨 앞으로 (index 0의 depth가 가장 높도록)
       bird.setDepth(100 - i);
 
-      // 크기 조정 (기존보다 축소: 80x50)
-      bird.setDisplaySize(80 * ratio, 50 * ratio);
+      // 크기 조정 (기존보다 축소: 80x59)
+      bird.setDisplaySize(80 * ratio, 59 * ratio);
 
       this.birdSprites.push(bird);
 
@@ -683,13 +683,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private drawDebugHitboxes() {
     this.debugGraphics.clear();
 
-    // 새 히트박스 (80x50, radius 10)
+    // 새 히트박스 (80x59, radius 10)
     this.debugGraphics.lineStyle(2, 0xff00ff, 1); // 마젠타
     for (const sprite of this.birdSprites) {
       // MockServerCore.ts의 createBirds와 동일한 크기 및 둥근 모서리
       const x = sprite.x - 40; // 80 / 2
-      const y = sprite.y - 25; // 50 / 2
-      this.debugGraphics.strokeRoundedRect(x, y, 80, 50, 10);
+      const y = sprite.y - 29.5; // 59 / 2
+      this.debugGraphics.strokeRoundedRect(x, y, 80, 59, 10);
     }
 
     // 파이프 히트박스

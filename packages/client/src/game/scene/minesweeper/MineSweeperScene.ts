@@ -14,7 +14,10 @@ import {
   type TileUpdateEvent,
   type GameInitEvent,
   type PlayerId,
-  DEFAULT_MINESWEEPER_CONFIG,
+  type MineSweeperGamePreset,
+  type ResolvedMineSweeperConfig,
+  DEFAULT_MINESWEEPER_PRESET,
+  resolveMineSweeperPreset,
 } from '../../types/minesweeper.types';
 
 // 플레이어 데이터 인터페이스
@@ -26,10 +29,10 @@ interface PlayerData {
 }
 
 export default class MineSweeperScene extends Phaser.Scene {
-  // 그리드 설정
-  private readonly GRID_COLS = DEFAULT_MINESWEEPER_CONFIG.gridCols;
-  private readonly GRID_ROWS = DEFAULT_MINESWEEPER_CONFIG.gridRows;
-  private readonly MINE_COUNT = DEFAULT_MINESWEEPER_CONFIG.mineCount;
+  // 그리드 설정 (프리셋에서 resolve)
+  private gameConfig: ResolvedMineSweeperConfig = resolveMineSweeperPreset(
+    DEFAULT_MINESWEEPER_PRESET,
+  );
 
   // 네트워크
   private socket!: Socket | MockSocket;
@@ -94,9 +97,9 @@ export default class MineSweeperScene extends Phaser.Scene {
 
     // 타일 매니저 생성 및 초기화
     this.tileManager = new TileManager(this, this.gameContainer, {
-      gridCols: this.GRID_COLS,
-      gridRows: this.GRID_ROWS,
-      mineCount: this.MINE_COUNT,
+      gridCols: this.gameConfig.gridCols,
+      gridRows: this.gameConfig.gridRows,
+      mineCount: this.gameConfig.mineCount,
     });
     this.tileManager.initialize();
 
@@ -118,7 +121,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     this.setupKeyboardInput();
 
     console.log(
-      `[MineSweeperScene] 생성 완료: ${this.GRID_COLS}x${this.GRID_ROWS} 그리드, 지뢰 ${this.MINE_COUNT}개`,
+      `[MineSweeperScene] 생성 완료: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows} 그리드, 지뢰 ${this.gameConfig.mineCount}개`,
     );
   }
 
@@ -152,9 +155,9 @@ export default class MineSweeperScene extends Phaser.Scene {
 
     // 설정 적용
     this.mockServerCore.setConfig({
-      gridCols: this.GRID_COLS,
-      gridRows: this.GRID_ROWS,
-      mineCount: this.MINE_COUNT,
+      gridCols: this.gameConfig.gridCols,
+      gridRows: this.gameConfig.gridRows,
+      mineCount: this.gameConfig.mineCount,
     });
 
     // 게임 초기화
@@ -198,15 +201,23 @@ export default class MineSweeperScene extends Phaser.Scene {
     this.events.on(
       'updatePlayers',
       (data: {
-        playerCount: number;
-        players: PlayerData[];
-        currentPlayerIndex: number;
+        playerCount?: number;
+        players?: PlayerData[];
+        currentPlayerIndex?: number;
+        preset?: MineSweeperGamePreset;
       }) => {
         console.log('[MineSweeperScene] updatePlayers 이벤트 수신:', data);
 
-        this.playerCount = data.playerCount;
-        this.players = data.players;
-        this.currentPlayerIndex = data.currentPlayerIndex;
+        // 플레이어 수 업데이트
+        if (data.playerCount !== undefined) {
+          this.playerCount = data.playerCount;
+        }
+        if (data.players !== undefined) {
+          this.players = data.players;
+        }
+        if (data.currentPlayerIndex !== undefined) {
+          this.currentPlayerIndex = data.currentPlayerIndex;
+        }
 
         // 현재 플레이어 ID 설정
         if (this.players[this.currentPlayerIndex]) {
@@ -221,6 +232,38 @@ export default class MineSweeperScene extends Phaser.Scene {
             score: 0,
             color: CONSTANTS.PLAYER_COLORS[i] || '#ffffff',
           }));
+        }
+
+        // 프리셋 적용
+        if (data.preset) {
+          const newConfig = resolveMineSweeperPreset(data.preset);
+          console.log('[MineSweeperScene] 새 프리셋 적용:', newConfig);
+
+          // 설정이 변경되었는지 확인
+          const configChanged =
+            newConfig.gridCols !== this.gameConfig.gridCols ||
+            newConfig.gridRows !== this.gameConfig.gridRows ||
+            newConfig.mineCount !== this.gameConfig.mineCount;
+
+          if (configChanged) {
+            this.gameConfig = newConfig;
+
+            // 타일 매니저 재생성
+            if (this.tileManager) {
+              this.tileManager.destroy();
+            }
+            this.tileManager = new TileManager(this, this.gameContainer, {
+              gridCols: this.gameConfig.gridCols,
+              gridRows: this.gameConfig.gridRows,
+              mineCount: this.gameConfig.mineCount,
+            });
+            this.tileManager.initialize();
+            this.tileManager.setPlayerColors(this.players);
+
+            console.log(
+              `[MineSweeperScene] 그리드 재생성: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows}, 지뢰 ${this.gameConfig.mineCount}개`,
+            );
+          }
         }
 
         // Mock 서버가 있으면 플레이어 정보 업데이트

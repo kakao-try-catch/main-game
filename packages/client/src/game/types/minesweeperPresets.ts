@@ -8,9 +8,6 @@ export type MapSizePreset = 'small' | 'medium' | 'large' | 'manual';
 /** 난이도 프리셋 (지뢰 비율) */
 export type DifficultyPreset = 'easy' | 'normal' | 'hard';
 
-/** 제한 시간 프리셋 */
-export type TimeLimit = 120 | 180 | 240 | 'manual';
-
 /** 지뢰찾기 게임 프리셋 설정 */
 export interface MineSweeperGamePreset {
   /** 맵 크기 */
@@ -22,13 +19,6 @@ export interface MineSweeperGamePreset {
 
   /** 난이도 (지뢰 비율) */
   difficulty: DifficultyPreset;
-  /** 수동 설정 시 지뢰 비율 (0~1) */
-  manualMineRatio?: number;
-
-  /** 제한 시간 (초) */
-  timeLimit: TimeLimit;
-  /** 수동 설정 시 시간 (초) */
-  manualTime?: number;
 }
 
 /** 프리셋에서 실제 게임 설정으로 변환 */
@@ -37,14 +27,12 @@ export interface ResolvedMineSweeperConfig {
   gridRows: number;
   mineCount: number;
   mineRatio: number;
-  totalTime: number;
 }
 
 /** 기본 프리셋 */
 export const DEFAULT_MINESWEEPER_PRESET: MineSweeperGamePreset = {
   mapSize: 'medium',
   difficulty: 'normal',
-  timeLimit: 180,
 };
 
 /** 프리셋을 실제 게임 설정으로 변환하는 헬퍼 함수 */
@@ -75,40 +63,27 @@ export function resolveMineSweeperPreset(
 
   // 2. 지뢰 비율 결정
   let mineRatio: number;
-  if (preset.manualMineRatio !== undefined) {
-    mineRatio = preset.manualMineRatio;
-  } else {
-    switch (preset.difficulty) {
-      case 'easy':
-        mineRatio = 0.1; // 10%
-        break;
-      case 'normal':
-        mineRatio = 0.2; // 20%
-        break;
-      case 'hard':
-        mineRatio = 0.3; // 30%
-        break;
-    }
+  switch (preset.difficulty) {
+    case 'easy':
+      mineRatio = 0.1; // 10%
+      break;
+    case 'normal':
+      mineRatio = 0.15; // 15%
+      break;
+    case 'hard':
+      mineRatio = 0.2; // 20%
+      break;
   }
 
   // 3. 지뢰 개수 계산
   const totalTiles = gridCols * gridRows;
   const mineCount = Math.floor(totalTiles * mineRatio);
 
-  // 4. 제한 시간 결정
-  let totalTime: number;
-  if (preset.timeLimit === 'manual') {
-    totalTime = preset.manualTime ?? 180;
-  } else {
-    totalTime = preset.timeLimit;
-  }
-
   return {
     gridCols,
     gridRows,
     mineCount,
     mineRatio,
-    totalTime,
   };
 }
 

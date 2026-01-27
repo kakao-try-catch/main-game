@@ -57,8 +57,9 @@ export interface JoinRoomPacket {
 }
 
 export enum RoomUpdateType {
-  INIT = 0,
-  JOIN = 1,
+  INIT_ROOM = 0,
+  PLAYER_JOIN = 1,
+  PLAYER_QUIT = 2
 }
 
 export interface RoomUpdatePacket {

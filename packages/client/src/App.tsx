@@ -55,6 +55,7 @@ function AppContent() {
 
   // 플래피버드 관련 상태
   const [flappyScore, setFlappyScore] = useState(0); // 팀 점수
+  const [showFlappyGameOverText, setShowFlappyGameOverText] = useState(false); // GAME OVER 텍스트 표시 여부
   const [flappyGameEnded, setFlappyGameEnded] = useState(false); // 플래피버드 게임 종료 여부
   const [flappyFinalData, setFlappyFinalData] = useState<{
     finalScore: number;
@@ -139,10 +140,16 @@ function AppContent() {
       players: PlayerResultData[];
     }) => {
       setFlappyFinalData(data);
-      setFlappyGameEnded(true);
+      setShowFlappyGameOverText(true); // 먼저 GAME OVER 텍스트 표시
       playSFX('appleGameEnd'); // 동일한 사운드 사용
       pause(); // 게임 종료 시 BGM 중지
       reset(); // 게임 종료 시 BGM을 처음으로 되감기
+
+      // 1초 후에 결과 모달 표시
+      setTimeout(() => {
+        setShowFlappyGameOverText(false);
+        setFlappyGameEnded(true);
+      }, 1500);
     },
     [playSFX, pause, reset],
   );
@@ -168,6 +175,7 @@ function AppContent() {
     // 상태 초기화
     setGameReady(false); // 재마운트 후 onGameReady에서 다시 true로 올려 BGM play 트리거
     setGameEnded(false);
+    setShowFlappyGameOverText(false);
     setFlappyGameEnded(false);
     setFlappyScore(0);
     setFlappyFinalData(null);
@@ -195,6 +203,7 @@ function AppContent() {
   const handleLobby = useCallback(() => {
     setGameReady(false); // 로비로 복귀 시 BGM 재생 트리거를 초기화
     setGameEnded(false);
+    setShowFlappyGameOverText(false);
     setFlappyGameEnded(false);
     setFlappyScore(0);
     setFlappyFinalData(null);
@@ -415,6 +424,50 @@ function AppContent() {
               (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
             }
           />
+        )}
+        {/* 플래피버드 GAME OVER 텍스트 (1초 표시) */}
+        {showFlappyGameOverText && flappyFinalData && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1000,
+            }}
+          >
+            <h1
+              style={{
+                fontFamily: 'NeoDunggeunmo',
+                fontSize: '80px',
+                color: '#e76e55',
+                textShadow: '4px 4px 0px rgba(0,0,0,0.3)',
+                marginBottom: '20px',
+              }}
+            >
+              GAME OVER
+            </h1>
+            <p
+              style={{
+                fontFamily: 'NeoDunggeunmo',
+                fontSize: '32px',
+                color: flappyFinalData.players?.find(
+                  (p) => p.playerIndex === Number(flappyFinalData.collidedPlayerId)
+                )?.color || '#fff',
+              }}
+            >
+              {flappyFinalData.players?.find(
+                (p) => p.playerIndex === Number(flappyFinalData.collidedPlayerId)
+              )?.name}{' '}
+              {flappyFinalData.reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!'}
+            </p>
+          </div>
         )}
         {/* 플래피버드 결과 모달 */}
         {flappyGameEnded && flappyFinalData && (

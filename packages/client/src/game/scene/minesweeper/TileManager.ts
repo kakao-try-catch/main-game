@@ -381,12 +381,15 @@ export default class TileManager {
 
   /**
    * 디버그 모드 토글
+   * @param debugTiles 디버그용 서버 내부 타일 데이터 (지뢰 정보 포함)
    */
-  public toggleDebugMode(): void {
+  public toggleDebugMode(
+    debugTiles?: { isMine: boolean; adjacentMines: number }[][],
+  ): void {
     this.debugMode = !this.debugMode;
 
     if (this.debugMode) {
-      this.createDebugOverlays();
+      this.createDebugOverlays(debugTiles);
       console.log('[TileManager] 디버그 모드 활성화');
     } else {
       this.clearDebugOverlays();
@@ -396,8 +399,11 @@ export default class TileManager {
 
   /**
    * 디버그 오버레이 생성 (모든 타일 정보 표시)
+   * @param debugTiles 디버그용 서버 내부 타일 데이터 (지뢰 정보 포함)
    */
-  private createDebugOverlays(): void {
+  private createDebugOverlays(
+    debugTiles?: { isMine: boolean; adjacentMines: number }[][],
+  ): void {
     this.clearDebugOverlays();
 
     for (let row = 0; row < this.gridRows; row++) {
@@ -408,6 +414,11 @@ export default class TileManager {
         if (tile.state !== TileState.HIDDEN) {
           continue;
         }
+
+        // 디버그용 타일 데이터 사용 (없으면 로컬 데이터 사용)
+        const debugTile = debugTiles?.[row]?.[col] ?? tile;
+        const isMine = debugTile.isMine;
+        const adjacentMines = debugTile.adjacentMines;
 
         const x = this.gridStartX + col * this.tileSize + this.tileSize / 2;
         const y = this.gridStartY + row * this.tileSize + this.tileSize / 2;
@@ -420,26 +431,24 @@ export default class TileManager {
           0,
           this.tileSize - 2,
           this.tileSize - 2,
-          tile.isMine ? 0xe74c3c : 0x3498db,
+          isMine ? 0xe74c3c : 0x3498db,
           0.3,
         );
         container.add(overlay);
 
         // 디버그 텍스트
         let debugText = '';
-        if (tile.isMine) {
+        if (isMine) {
           debugText = '💣';
-        } else if (tile.adjacentMines > 0) {
-          debugText = tile.adjacentMines.toString();
+        } else if (adjacentMines > 0) {
+          debugText = adjacentMines.toString();
         }
 
         if (debugText) {
           const text = this.scene.add.text(0, 0, debugText, {
             fontSize: `${Math.floor(this.tileSize * 0.5)}px`,
             fontFamily: 'NeoDunggeunmo',
-            color: tile.isMine
-              ? '#ffffff'
-              : this.getNumberColor(tile.adjacentMines),
+            color: isMine ? '#ffffff' : this.getNumberColor(adjacentMines),
           });
           text.setOrigin(0.5, 0.5);
           text.setAlpha(0.7);

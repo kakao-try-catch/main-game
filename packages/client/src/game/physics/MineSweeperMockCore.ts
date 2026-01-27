@@ -1,7 +1,8 @@
 import { MockSocket } from '../network/MockSocket';
 import {
   TileState,
-  type TileData,
+  type ServerTileData,
+  type ClientTileData,
   type PlayerScoreData,
   type MineSweeperConfig,
   type PlayerId,
@@ -19,8 +20,10 @@ import { CONSTANTS } from '../types/common';
 export class MineSweeperMockCore {
   private socket: MockSocket;
   private config: MineSweeperConfig;
-  private tiles: TileData[][] = [];
+  private tiles: ServerTileData[][] = [];
   private players: Map<PlayerId, PlayerScoreData> = new Map();
+  // 남은 지뢰 수 (총 지뢰 - 깃발 설치 수 - 발견된 지뢰 수)
+  private remainingMines: number = 0;
 
   constructor(socket: MockSocket) {
     this.socket = socket;
@@ -71,11 +74,15 @@ export class MineSweeperMockCore {
     // 인접 지뢰 개수 계산
     this.calculateAdjacentMines();
 
-    // 게임 초기화 이벤트 전송
+    // 남은 지뢰 수 초기화
+    this.remainingMines = this.config.mineCount;
+
+    // 게임 초기화 이벤트 전송 (지뢰 정보 숨김)
     this.socket.triggerEvent('game_init', {
       config: this.config,
-      tiles: this.tiles,
+      tiles: this.getClientTiles(),
       players: Array.from(this.players.values()),
+      remainingMines: this.remainingMines,
       timestamp: Date.now(),
     });
 
@@ -188,10 +195,33 @@ export class MineSweeperMockCore {
   }
 
   /**
-   * 타일 데이터 가져오기 (클라이언트 동기화용)
+   * 클라이언트용 타일 데이터 가져오기 (지뢰 정보 숨김)
    */
-  getTiles(): TileData[][] {
-    return this.tiles;
+  getClientTiles(): ClientTileData[][] {
+    return this.tiles.map((row) =>
+      row.map((tile) => this.toClientTile(tile)),
+    );
+  }
+
+  /**
+   * 서버 타일을 클라이언트용으로 변환 (REVEALED 상태일 때만 지뢰 정보 노출)
+   */
+  private toClientTile(tile: ServerTileData): ClientTileData {
+    const clientTile: ClientTileData = {
+      row: tile.row,
+      col: tile.col,
+      state: tile.state,
+      revealedBy: tile.revealedBy,
+      flaggedBy: tile.flaggedBy,
+    };
+
+    // REVEALED 상태일 때만 지뢰 정보 제공
+    if (tile.state === TileState.REVEALED) {
+      clientTile.isMine = tile.isMine;
+      clientTile.adjacentMines = tile.adjacentMines;
+    }
+
+    return clientTile;
   }
 
   /**
@@ -219,9 +249,19 @@ export class MineSweeperMockCore {
     // 타일 열기 (빈 공간이면 주변도 함께 열기)
     const tileUpdates = this.revealTileWithFloodFill(row, col, playerId);
 
+    // 발견된 지뢰 수 계산 (열린 타일 중 지뢰인 것)
+    const revealedMines = tileUpdates.filter((t) => t.isMine).length;
+    if (revealedMines > 0) {
+      this.remainingMines -= revealedMines;
+      console.log(
+        `[MineSweeperMockCore] 지뢰 ${revealedMines}개 발견, 남은 지뢰: ${this.remainingMines}`,
+      );
+    }
+
     // 타일 업데이트 이벤트 전송
     this.socket.triggerEvent('tile_update', {
       tiles: tileUpdates,
+      remainingMines: this.remainingMines,
       timestamp: Date.now(),
     });
 
@@ -237,24 +277,8 @@ export class MineSweeperMockCore {
     row: number,
     col: number,
     playerId: PlayerId,
-  ): Array<{
-    row: number;
-    col: number;
-    state: TileState;
-    isMine: boolean;
-    adjacentMines: number;
-    revealedBy: PlayerId;
-    flaggedBy: PlayerId | null;
-  }> {
-    const updates: Array<{
-      row: number;
-      col: number;
-      state: TileState;
-      isMine: boolean;
-      adjacentMines: number;
-      revealedBy: PlayerId;
-      flaggedBy: PlayerId | null;
-    }> = [];
+  ): ClientTileData[] {
+    const updates: ClientTileData[] = [];
 
     // BFS를 위한 큐
     const queue: Array<{ row: number; col: number }> = [{ row, col }];
@@ -354,8 +378,10 @@ export class MineSweeperMockCore {
         player.flagsPlaced++;
       }
 
+      // 남은 지뢰 수 감소 (깃발 설치)
+      this.remainingMines--;
       console.log(
-        `[MineSweeperMockCore] 깃발 설치: (${row}, ${col}) by ${playerId}`,
+        `[MineSweeperMockCore] 깃발 설치: (${row}, ${col}) by ${playerId}, 남은 지뢰: ${this.remainingMines}`,
       );
     } else if (tile.state === TileState.FLAGGED) {
       // 다른 플레이어의 깃발인지 확인
@@ -376,8 +402,10 @@ export class MineSweeperMockCore {
         player.flagsPlaced--;
       }
 
+      // 남은 지뢰 수 증가 (깃발 제거)
+      this.remainingMines++;
       console.log(
-        `[MineSweeperMockCore] 깃발 제거: (${row}, ${col}) by ${playerId}`,
+        `[MineSweeperMockCore] 깃발 제거: (${row}, ${col}) by ${playerId}, 남은 지뢰: ${this.remainingMines}`,
       );
     } else {
       return;
@@ -391,18 +419,18 @@ export class MineSweeperMockCore {
       `[MineSweeperMockCore] tile_update 전송 - flaggedBy: ${flaggedBy}, state: ${newState}`,
     );
 
-    // 타일 업데이트 이벤트 전송
+    // 타일 업데이트 이벤트 전송 (FLAGGED/HIDDEN 상태이므로 지뢰 정보 숨김)
     this.socket.triggerEvent('tile_update', {
       tiles: [
         {
           row,
           col,
           state: newState,
-          isMine: tile.isMine,
-          adjacentMines: tile.adjacentMines,
+          revealedBy: null,
           flaggedBy,
         },
       ],
+      remainingMines: this.remainingMines,
       timestamp: Date.now(),
     });
   }
@@ -414,15 +442,7 @@ export class MineSweeperMockCore {
     row: number,
     col: number,
     playerId: PlayerId,
-  ): {
-    row: number;
-    col: number;
-    state: TileState;
-    isMine: boolean;
-    adjacentMines: number;
-    revealedBy: PlayerId;
-    flaggedBy: PlayerId | null;
-  } {
+  ): ClientTileData {
     const tile = this.tiles[row][col];
 
     // 깃발 정보 저장 (상태 변경 전에)
@@ -480,6 +500,21 @@ export class MineSweeperMockCore {
    */
   getConfig(): MineSweeperConfig {
     return this.config;
+  }
+
+  /**
+   * 디버그용: 서버 내부 타일 데이터 가져오기 (지뢰 정보 포함)
+   * ⚠️ 개발/디버그 전용 - 실제 서버에서는 이 메서드를 제공하면 안 됨
+   */
+  getDebugTiles(): ServerTileData[][] {
+    return this.tiles;
+  }
+
+  /**
+   * 남은 지뢰 수 가져오기
+   */
+  getRemainingMines(): number {
+    return this.remainingMines;
   }
 
   /**

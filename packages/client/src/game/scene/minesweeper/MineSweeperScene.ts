@@ -47,6 +47,9 @@ export default class MineSweeperScene extends Phaser.Scene {
   private currentPlayerIndex: number = 0;
   private myPlayerId: PlayerId = 'player_0';
 
+  // 남은 지뢰 수
+  private remainingMines: number = 0;
+
   // UI 컨테이너
   private gameContainer!: Phaser.GameObjects.Container;
 
@@ -147,7 +150,9 @@ export default class MineSweeperScene extends Phaser.Scene {
     // D 키로 디버그 모드 토글
     this.input.keyboard?.on('keydown-D', () => {
       if (this.tileManager) {
-        this.tileManager.toggleDebugMode();
+        // Mock 모드에서는 서버 내부 데이터를 전달하여 디버그 표시
+        const debugTiles = this.mockServerCore?.getDebugTiles();
+        this.tileManager.toggleDebugMode(debugTiles);
       }
     });
 
@@ -292,6 +297,15 @@ export default class MineSweeperScene extends Phaser.Scene {
       if (data.tiles && this.tileManager) {
         this.tileManager.syncTilesFromServer(data.tiles);
       }
+
+      // 남은 지뢰 수 초기화
+      if (data.remainingMines !== undefined) {
+        this.remainingMines = data.remainingMines;
+        this.events.emit('remainingMinesUpdate', this.remainingMines);
+        console.log(
+          `[MineSweeperScene] 초기 남은 지뢰 수: ${this.remainingMines}`,
+        );
+      }
     });
 
     // 타일 업데이트 이벤트
@@ -305,6 +319,13 @@ export default class MineSweeperScene extends Phaser.Scene {
           tileUpdate.isMine,
           tileUpdate.flaggedBy,
         );
+      }
+
+      // 남은 지뢰 수 업데이트
+      if (data.remainingMines !== undefined) {
+        this.remainingMines = data.remainingMines;
+        this.events.emit('remainingMinesUpdate', this.remainingMines);
+        console.log(`[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`);
       }
     });
   }
@@ -404,6 +425,13 @@ export default class MineSweeperScene extends Phaser.Scene {
    */
   public getTileManager(): TileManager {
     return this.tileManager;
+  }
+
+  /**
+   * 남은 지뢰 수 가져오기
+   */
+  public getRemainingMines(): number {
+    return this.remainingMines;
   }
 
   /**

@@ -23,8 +23,8 @@ export enum TileState {
   FLAGGED = 'flagged',
 }
 
-// 타일 데이터
-export interface TileData {
+// 서버 내부용 타일 데이터 (지뢰 정보 포함)
+export interface ServerTileData {
   row: number;
   col: number;
   isMine: boolean;
@@ -33,6 +33,21 @@ export interface TileData {
   revealedBy: PlayerId | null;
   flaggedBy: PlayerId | null;
 }
+
+// 클라이언트용 타일 데이터 (REVEALED 전까지 지뢰 정보 숨김)
+export interface ClientTileData {
+  row: number;
+  col: number;
+  state: TileState;
+  // REVEALED 상태일 때만 제공
+  isMine?: boolean;
+  adjacentMines?: number;
+  revealedBy: PlayerId | null;
+  flaggedBy: PlayerId | null;
+}
+
+// 하위 호환성을 위한 alias
+export type TileData = ServerTileData;
 
 // 플레이어 점수 데이터
 export interface PlayerScoreData {
@@ -104,13 +119,21 @@ export interface TileUpdateEvent {
     revealedBy?: PlayerId | null;
     flaggedBy?: PlayerId | null;
   }[];
+  remainingMines: number;
   timestamp: number;
 }
 
-// 게임 초기화 이벤트 (게임 시작 시 전체 맵 전송)
+// 게임 초기화 이벤트 (게임 시작 시 전체 맵 전송 - 지뢰 정보 제외)
 export interface GameInitEvent {
   config: MineSweeperConfig;
-  tiles: TileData[][];
+  tiles: ClientTileData[][];
   players: PlayerScoreData[];
+  remainingMines: number;
+  timestamp: number;
+}
+
+// 남은 지뢰 수 업데이트 이벤트
+export interface RemainingMinesUpdateEvent {
+  remainingMines: number;
   timestamp: number;
 }

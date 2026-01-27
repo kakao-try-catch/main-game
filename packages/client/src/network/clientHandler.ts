@@ -7,6 +7,7 @@ import {
 } from '../../../common/src/packets.ts';
 import { GameType } from '../../../common/src/config.ts';
 import { useGameStore } from '../store/gameStore';
+import { sfxManager } from '../audio/sfx-manager.ts';
 //import { useDebugStore, useAppleGameStore } from "../store/store.ts";
 
 export const handleServerPacket = (packet: ServerPacket) => {
@@ -64,6 +65,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
           score: packet.scoreboard[index]?.score ?? player.score,
         })),
       );
+      sfxManager.play('appleDrop');
       console.log('UPDATE_SCORE packet received:', packet.scoreboard);
       break;
     }

@@ -7,6 +7,7 @@ import React, {
   useEffect,
 } from 'react';
 import { SFX_CONFIG, type SFXName } from '../config/soundConfig';
+import { sfxManager } from '../audio/sfx-manager';
 
 interface SFXContextType {
   setVolume: (volume: number) => void;
@@ -77,10 +78,12 @@ export const SFXProvider: React.FC<{ children: React.ReactNode }> = ({
       setMasterVolume(clampedVolume);
 
       // SFX 볼륨은 sfxEnabled 상태에 따라 조절
+      // todo 이거 뭐임?
       sfxMapRef.current.forEach((sfx, name) => {
         const baseVolume = sfxBaseVolumesRef.current.get(name) ?? 0.7;
         sfx.volume = sfxEnabled ? baseVolume * clampedVolume : 0;
       });
+      sfxManager.setVolume(clampedVolume);
     },
     [sfxEnabled],
   );
@@ -88,6 +91,11 @@ export const SFXProvider: React.FC<{ children: React.ReactNode }> = ({
   const getVolume = useCallback(() => {
     return masterVolume;
   }, [masterVolume]);
+
+  // sfxEnabled 변경 시 sfxManager와 동기화
+  useEffect(() => {
+    sfxManager.setEnabled(sfxEnabled);
+  }, [sfxEnabled]);
 
   // 범용 SFX 재생 함수
   const playSFX = useCallback(

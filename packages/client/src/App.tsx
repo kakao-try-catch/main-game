@@ -87,27 +87,6 @@ function AppContent() {
   // 게임 컨테이너 재마운트를 위한 key
   const [gameKey, setGameKey] = useState(0);
 
-  // 점수 증가 함수
-  // TODO: score는 추후 ReportCard 통합 후 재작업 예정
-  // todo: 빨간 줄 뜨는 거 봐야 함.
-  const handleAppleScored = useCallback(
-    (points: number) => {
-      try {
-        setPlayers((prevPlayers) =>
-          prevPlayers.map((player, index) =>
-            index === currentUser.playerIndex
-              ? { ...player, score: player.score + points }
-              : player,
-          ),
-        );
-        playSFX('appleDrop');
-      } catch (error) {
-        console.error('Apple scored handler error:', error);
-      }
-    },
-    [currentUser.playerIndex, playSFX],
-  );
-
   const handleGameReady = useCallback((game: Phaser.Game) => {
     console.log('Phaser game is ready!', game);
     gameRef.current = game;
@@ -360,7 +339,6 @@ function AppContent() {
             players={players}
             applePreset={applePreset}
             flappyPreset={flappyPreset}
-            onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
             onScoreUpdate={handleFlappyScoreUpdate}
             onFlappyGameEnd={handleFlappyGameEnd}

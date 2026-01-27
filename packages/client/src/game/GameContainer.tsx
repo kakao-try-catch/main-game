@@ -30,7 +30,6 @@ const GAME_CONFIGS = {
 interface GameContainerProps {
   gameType: GameType;
   onGameReady?: (game: Phaser.Game) => void;
-  onAppleScored?: (points: number) => void;
   onGameEnd?: (players: PlayerResultData[]) => void;
   onGameOver?: (data: { reason: string; finalScore: number }) => void;
   onScoreUpdate?: (score: number) => void; // 플래피버드 점수 업데이트
@@ -48,7 +47,6 @@ interface GameContainerProps {
 export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
-  onAppleScored,
   onGameEnd,
   onGameOver,
   onScoreUpdate,
@@ -148,18 +146,19 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
     onGameReady?.(game);
 
+    // todo 얘내 로직들 싹 다 제어해야 함. 클라측 게임 로직인데 너무 강결합되어있음.
     game.events.once('ready', () => {
       const targetScene = game.scene.getScene(config.sceneName);
       if (!targetScene) return;
 
       // 이벤트 리스너 등록
       if (gameType === GameType.APPLE_GAME) {
-        if (onAppleScored) {
-          targetScene.events.on('appleScored', (data: { points: number }) => {
-            console.log('🍎 appleScored event received:', data);
-            onAppleScored(data.points);
-          });
-        }
+        //if (onAppleScored) {
+        //  targetScene.events.on('appleScored', (data: { points: number }) => {
+        //    console.log('🍎 appleScored event received:', data);
+        //    onAppleScored(data.points);
+        //  });
+        // }
 
         if (onGameEnd) {
           targetScene.events.on(

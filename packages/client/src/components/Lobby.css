@@ -402,6 +402,27 @@
   color: #212529;
 }
 
+/* 방장이 아닌 경우 게임 설정 비활성화 */
+.game-item.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.game-item.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.game-item.disabled .settings-edit {
+  pointer-events: none;
+}
+
+.game-item.disabled .settings-edit select,
+.game-item.disabled .settings-edit input {
+  background-color: #e0e0e0;
+  color: #888;
+}
+
 @keyframes tooltip-fade-in {
   from {
     opacity: 0;

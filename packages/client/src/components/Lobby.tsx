@@ -7,7 +7,6 @@ import type { Game, GameSettings } from '../game/types/common';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 import { useGameStore } from '../store/gameStore';
-
 import { SystemPacketType } from '../../../common/src/packets';
 import {
   MapSize,
@@ -64,6 +63,11 @@ function Lobby({ players, onGameStart }: LobbyProps) {
     flappy: {},
     minesweeper: {},
   });
+
+  // 방장 여부 확인 (myselfIndex가 변경될 때마다 리렌더링)
+  const myselfIndex = useGameStore((s) => s.myselfIndex);
+  const isHost = myselfIndex === 0;
+  const isDisabled = !isHost;
 
   const handleSelectGame = (gameId: string) => {
     setSelectedGame(gameId);
@@ -307,7 +311,6 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                 const settings = gameSettings[game.id];
 
                 return (
-                  // dimmed 는 뭐임?
                   // 이거 다 컴포넌트로 분리 가능한 거 아님?
                   <div
                     key={game.id}
@@ -315,8 +318,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                       selectedGame === game.id ? 'selected' : ''
                     } ${
                       selectedGame && selectedGame !== game.id ? 'dimmed' : ''
-                    }`}
-                    onClick={() => handleSelectGame(game.id)}
+                    } ${isDisabled ? 'disabled' : ''}`}
+                    onClick={() => !isDisabled && handleSelectGame(game.id)}
+                    title={isDisabled ? '방장만 게임을 선택할 수 있습니다' : ''}
                   >
                     <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
@@ -526,7 +530,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
           <button
             className="nes-btn is-primary"
             onClick={handleStartGame}
-            disabled={!selectedGame}
+            disabled={!selectedGame || isDisabled}
           >
             게임 시작
           </button>

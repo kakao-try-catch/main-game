@@ -1,4 +1,8 @@
-import { APPLE_GAME_CONFIG, AppleGameConfig } from '../../../common/src/config';
+import {
+  APPLE_GAME_CONFIG,
+  AppleGameConfig,
+  AppleGameRenderConfig,
+} from '../../../common/src/config';
 import {
   GamePacketType,
   DropCellIndexPacket,
@@ -166,8 +170,9 @@ export class GameSession {
     }
   }
 
-  private generateField(cfg?: AppleGameConfig) {
+  private generateField(cfg?: AppleGameRenderConfig) {
     const used = cfg ?? this.getAppliedAppleConfig();
+    // todo MapSize로부터 grid 얻는 공통 코드 두기
     const count = used.gridCols * used.gridRows;
     const minNumber = used.includeZero ? 0 : used.minNumber;
     this.apples = Array.from(
@@ -178,13 +183,13 @@ export class GameSession {
     );
   }
 
-  private getAppliedAppleConfig(): AppleGameConfig {
+  private getAppliedAppleConfig(): AppleGameRenderConfig {
     const raw = this.gameConfigs.get(GameType.APPLE_GAME) as
       | GameConfig
       | undefined;
     const mapSize = raw?.mapSize ?? MapSize.MEDIUM;
-    let gridCols = APPLE_GAME_CONFIG.gridCols;
-    let gridRows = APPLE_GAME_CONFIG.gridRows;
+    let gridCols = APPLE_GAME_CONFIG.gridCols; // todo 기본값 반영 필요
+    let gridRows = APPLE_GAME_CONFIG.gridRows; // todo 기본값 반영 필요
     switch (mapSize) {
       case MapSize.SMALL:
         gridCols = 11;

@@ -8,6 +8,7 @@ import {
 import { GameType } from '../../../common/src/config.ts';
 import { useGameStore } from '../store/gameStore';
 import { sfxManager } from '../audio/sfx-manager.ts';
+import { bgmManager } from '../audio/bgm-manager.ts';
 //import { useDebugStore, useAppleGameStore } from "../store/store.ts";
 
 export const handleServerPacket = (packet: ServerPacket) => {
@@ -133,6 +134,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
       const store = useGameStore.getState();
       store.setGameResults(packet.results);
       store.setGameStarted(false);
+      sfxManager.play('appleGameEnd');
+      bgmManager.pause(); // 게임 종료 시 BGM 중지
       console.log('TIME_END packet received:', packet.results);
       break;
     }

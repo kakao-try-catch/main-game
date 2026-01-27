@@ -302,10 +302,13 @@ function Lobby({ players, onGameStart }: LobbyProps) {
           <div className="nes-container is-rounded game-section">
             <h2 className="section-title">게임 선택</h2>
             <div className="game-list">
+              {/* 이거 map 이어야 함? */}
               {games.map((game) => {
                 const settings = gameSettings[game.id];
 
                 return (
+                  // dimmed 는 뭐임?
+                  // 이거 다 컴포넌트로 분리 가능한 거 아님?
                   <div
                     key={game.id}
                     className={`game-item ${

@@ -9,6 +9,7 @@ import type {
   PipeWidthPreset,
   PipeSpacingPreset,
   PipeSpeedPreset,
+  RopeLengthPreset,
 } from '../game/types/FlappyBirdGamePreset';
 import type {
   LobbyPlayer,
@@ -74,6 +75,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       pipeWidth: 'normal', // 파이프 넓이
       pipeSpacing: 'normal', // 좌우 파이프 간격
       pipeSpeed: 'normal', // 이동 속도
+      ropeLength: 'normal', // 밧줄 길이
       connectAll: false, // 모두 묶기
     },
     minesweeper: {},
@@ -160,6 +162,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
         pipeWidth: (settings.pipeWidth || 'normal') as PipeWidthPreset,
         pipeSpacing: (settings.pipeSpacing || 'normal') as PipeSpacingPreset,
         pipeSpeed: (settings.pipeSpeed || 'normal') as PipeSpeedPreset,
+        ropeLength: (settings.ropeLength || 'normal') as RopeLengthPreset,
         connectAll: settings.connectAll ?? false,
       };
       onGameStart('flappy', preset);
@@ -554,6 +557,34 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 <option value="slow" style={{ color: DIFFICULTY_COLORS.easy }}>느림</option>
                                 <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
                                 <option value="fast" style={{ color: DIFFICULTY_COLORS.hard }}>빠름</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>줄 길이:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.ropeLength}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'ropeLength',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.ropeLength === 'long'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.ropeLength === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="long" style={{ color: DIFFICULTY_COLORS.easy }}>길음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="short" style={{ color: DIFFICULTY_COLORS.hard }}>짧음</option>
                               </select>
                             </div>
                           </div>

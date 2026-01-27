@@ -219,8 +219,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       // 드로잉 오더 설정: 첫 번째 플레이어가 맨 앞으로 (index 0의 depth가 가장 높도록)
       bird.setDepth(100 - i);
 
-      // 크기 조정 (기존보다 축소: 80x59)
-      bird.setDisplaySize(80 * ratio, 59 * ratio);
+      // 크기 조정 (기존보다 축소: 72x53)
+      bird.setDisplaySize(72 * ratio, 53 * ratio);
 
       this.birdSprites.push(bird);
 
@@ -432,6 +432,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
           this.gameConfig.pipeSpacing !== newConfig.pipeSpacing ||
           this.gameConfig.pipeGap !== newConfig.pipeGap ||
           this.gameConfig.pipeWidth !== newConfig.pipeWidth ||
+          this.gameConfig.ropeLength !== newConfig.ropeLength ||
           this.gameConfig.connectAll !== newConfig.connectAll
         ) {
           connectAllChanged = this.gameConfig.connectAll !== newConfig.connectAll;
@@ -697,37 +698,61 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    */
   private drawDebugHitboxes() {
     this.debugGraphics.clear();
+    const ratio = this.getRatio();
+    const birdHitboxScale = 0.8;
 
-    // 새 히트박스 (80x59, radius 10)
+    // 새 히트박스 (회전 포함, 물리 충돌과 동일한 스케일)
     this.debugGraphics.lineStyle(2, 0xff00ff, 1); // 마젠타
     for (const sprite of this.birdSprites) {
-      // MockServerCore.ts의 createBirds와 동일한 크기 및 둥근 모서리
-      const x = sprite.x - 40; // 80 / 2
-      const y = sprite.y - 29.5; // 59 / 2
-      this.debugGraphics.strokeRoundedRect(x, y, 80, 59, 10);
+      const halfW = (sprite.displayWidth * birdHitboxScale) / 2;
+      const halfH = (sprite.displayHeight * birdHitboxScale) / 2;
+      const cos = Math.cos(sprite.rotation);
+      const sin = Math.sin(sprite.rotation);
+      const corners = [
+        { x: -halfW, y: -halfH },
+        { x: halfW, y: -halfH },
+        { x: halfW, y: halfH },
+        { x: -halfW, y: halfH },
+      ];
+      const points = corners.map((c) => ({
+        x: sprite.x + c.x * cos - c.y * sin,
+        y: sprite.y + c.x * sin + c.y * cos,
+      }));
+
+      this.debugGraphics.beginPath();
+      this.debugGraphics.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        this.debugGraphics.lineTo(points[i].x, points[i].y);
+      }
+      this.debugGraphics.closePath();
+      this.debugGraphics.strokePath();
     }
 
     // 파이프 히트박스
     this.debugGraphics.lineStyle(2, 0x00ffff, 1); // 시안
     for (const pipeData of this.targetPipes) {
-      const halfW = pipeData.width / 2;
-      const gapTop = pipeData.gapY - pipeData.gap / 2;
-      const gapBottom = pipeData.gapY + pipeData.gap / 2;
+      const pipeWidth = pipeData.width * 0.8 * ratio;
+      const halfW = pipeWidth / 2;
+      const gapY = pipeData.gapY * ratio;
+      const gap = pipeData.gap * ratio;
+      const gapTop = gapY - gap / 2;
+      const gapBottom = gapY + gap / 2;
+      const pipeX = pipeData.x * ratio;
 
       // 위쪽 파이프
       this.debugGraphics.strokeRect(
-        pipeData.x - halfW,
+        pipeX - halfW,
         0,
-        pipeData.width,
+        pipeWidth,
         gapTop,
       );
 
       // 아래쪽 파이프
       this.debugGraphics.strokeRect(
-        pipeData.x - halfW,
+        pipeX - halfW,
         gapBottom,
-        pipeData.width,
-        GAME_HEIGHT - gapBottom,
+        pipeWidth,
+        GAME_HEIGHT * ratio - gapBottom,
       );
     }
 
@@ -735,9 +760,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.debugGraphics.lineStyle(2, 0xff0000, 1); // 빨간색
     this.debugGraphics.lineBetween(
       0,
-      FLAPPY_GROUND_Y,
-      GAME_WIDTH,
-      FLAPPY_GROUND_Y,
+      FLAPPY_GROUND_Y * ratio,
+      GAME_WIDTH * ratio,
+      FLAPPY_GROUND_Y * ratio,
     );
   }
 

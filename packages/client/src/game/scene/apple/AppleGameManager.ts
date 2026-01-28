@@ -238,7 +238,10 @@ export default class AppleGameManager {
   /** 지정된 시간으로 타이머 시작 (멀티플레이용) */
   public startTimerWithDuration(seconds: number): void {
     this.timerSystem = new TimerSystem(this.scene, this.timerPrefab, this);
-    this.timerSystem.start(seconds);
+
+    // 서버 시작 시간 가져오기
+    const serverStartTime = useGameStore.getState().serverStartTime;
+    this.timerSystem.start(seconds, serverStartTime || undefined);
     console.log(`⏱️ 타이머 시작: ${seconds}초`);
   }
 
@@ -279,7 +282,9 @@ export default class AppleGameManager {
     const queue = useGameStore.getState().dropCellEventQueue;
     if (queue.length === 0) return;
 
-    console.log(`🍎 로딩 중 누적된 ${queue.length}개의 DROP_CELL_INDEX 이벤트 처리`);
+    console.log(
+      `🍎 로딩 중 누적된 ${queue.length}개의 DROP_CELL_INDEX 이벤트 처리`,
+    );
 
     queue.forEach((event) => {
       const myId = socketManager.getId();

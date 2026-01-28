@@ -55,6 +55,10 @@ interface GameState {
   gameTime: number | null;
   setGameTime: (time: number) => void;
 
+  // 서버 게임 시작 시간 (타이머 동기화용)
+  serverStartTime: number | null;
+  setServerStartTime: (time: number) => void;
+
   // 게임 시작 여부
   isGameStarted: boolean;
   setGameStarted: (started: boolean) => void;
@@ -96,6 +100,7 @@ export const useGameStore = create<GameState>()(
     // 멀티플레이 상태 초기값
     appleField: null,
     gameTime: null,
+    serverStartTime: null,
     isGameStarted: false,
     dropCellEventQueue: [],
     otherPlayerDrags: new Map<number, DragAreaData>(),
@@ -120,6 +125,7 @@ export const useGameStore = create<GameState>()(
     // 멀티플레이 액션
     setAppleField: (apples: number[]) => set({ appleField: apples }),
     setGameTime: (time: number) => set({ gameTime: time }),
+    setServerStartTime: (time: number) => set({ serverStartTime: time }),
     setGameStarted: (started: boolean) => set({ isGameStarted: started }),
     addDropCellEvent: (event: DropCellEvent) =>
       set((state) => ({
@@ -145,6 +151,7 @@ export const useGameStore = create<GameState>()(
       set({
         appleField: null,
         gameTime: null,
+        serverStartTime: null,
         isGameStarted: false,
         dropCellEventQueue: [],
         otherPlayerDrags: new Map<number, DragAreaData>(),

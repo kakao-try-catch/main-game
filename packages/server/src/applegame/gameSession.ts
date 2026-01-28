@@ -186,6 +186,7 @@ export class GameSession {
     const setTimePacket: SetTimePacket = {
       type: GamePacketType.SET_TIME,
       limitTime: 10, //this.timeLeft, 일단 10초로.
+      serverStartTime: Date.now(), // 서버 시작 시간 전송
     };
     this.broadcastCallback(setTimePacket);
 

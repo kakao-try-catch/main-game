@@ -136,6 +136,7 @@ export interface SetFieldPacket {
 export interface SetTimePacket {
   type: GamePacketType.SET_TIME;
   limitTime: number;
+  serverStartTime: number; // 서버에서 게임이 시작된 시간 (timestamp)
 }
 export interface UpdateDragAreaPacket {
   type: GamePacketType.UPDATE_DRAG_AREA;

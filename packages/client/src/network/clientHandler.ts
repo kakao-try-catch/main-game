@@ -119,7 +119,13 @@ export const handleServerPacket = (packet: ServerPacket) => {
     case GamePacketType.SET_TIME: {
       const store = useGameStore.getState();
       store.setGameTime(packet.limitTime);
-      console.log('SET_TIME packet received:', packet.limitTime);
+      store.setServerStartTime(packet.serverStartTime);
+      console.log(
+        'SET_TIME packet received:',
+        packet.limitTime,
+        'serverStartTime:',
+        packet.serverStartTime,
+      );
       break;
     }
 

@@ -273,6 +273,9 @@ export class MineSweeperMockCore {
     console.log(
       `[MineSweeperMockCore] 타일 열림: (${row}, ${col}) by ${playerId}, 총 ${tileUpdates.length}개 열림`,
     );
+
+    // 모든 안전한 타일이 열렸는지 확인
+    this.checkWinCondition();
   }
 
   /**
@@ -316,11 +319,8 @@ export class MineSweeperMockCore {
 
       const currentTile = this.tiles[current.row][current.col];
 
-      // 이미 열린 타일이나 깃발이 있는 타일은 건너뛰기
-      if (
-        currentTile.state === TileState.REVEALED ||
-        currentTile.state === TileState.FLAGGED
-      ) {
+      // 이미 열린 타일은 건너뛰기 (상대방 깃발은 열 수 있음)
+      if (currentTile.state === TileState.REVEALED) {
         continue;
       }
 
@@ -552,6 +552,59 @@ export class MineSweeperMockCore {
    */
   getRemainingMines(): number {
     return this.remainingMines;
+  }
+
+  /**
+   * 승리 조건 확인: 모든 안전한 타일(지뢰가 아닌 타일)이 열렸는지 확인
+   */
+  private checkWinCondition(): void {
+    let safeTilesCount = 0;
+    let revealedSafeTilesCount = 0;
+
+    for (let row = 0; row < this.config.gridRows; row++) {
+      for (let col = 0; col < this.config.gridCols; col++) {
+        const tile = this.tiles[row][col];
+
+        if (!tile.isMine) {
+          safeTilesCount++;
+          if (tile.state === TileState.REVEALED) {
+            revealedSafeTilesCount++;
+          }
+        }
+      }
+    }
+
+    console.log(
+      `[MineSweeperMockCore] 승리 조건 확인: ${revealedSafeTilesCount}/${safeTilesCount} 안전 타일 열림`,
+    );
+
+    // 모든 안전한 타일이 열렸으면 게임 종료
+    if (revealedSafeTilesCount === safeTilesCount) {
+      console.log('[MineSweeperMockCore] 🎉 모든 안전한 타일 열림! 게임 승리!');
+      this.triggerGameWin();
+    }
+  }
+
+  /**
+   * 게임 승리 처리
+   */
+  private triggerGameWin(): void {
+    // 최종 정산 수행
+    const scoreUpdates = this.calculateFinalScores();
+
+    // 정산 결과 로그
+    for (const [playerId, update] of scoreUpdates.entries()) {
+      console.log(
+        `[MineSweeperMockCore] ${playerId} 최종 정산: ${update.scoreChange > 0 ? '+' : ''}${update.scoreChange}점 (정답 깃발: ${update.correctFlags}, 오답 깃발: ${update.incorrectFlags})`,
+      );
+    }
+
+    // 게임 종료 이벤트 전송
+    this.socket.triggerEvent('game_end', {
+      reason: 'win',
+      players: Array.from(this.players.values()),
+      timestamp: Date.now(),
+    });
   }
 
   /**

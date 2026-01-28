@@ -53,6 +53,7 @@ export default class MineSweeperScene extends Phaser.Scene {
   private players: PlayerData[] = [];
   private currentPlayerIndex: number = 0;
   private myPlayerId: PlayerId = 'id_1';
+  private isManualPlayerSwitch: boolean = false; // 수동 플레이어 전환 여부 (테스트용)
 
   // 남은 지뢰 수
   private remainingMines: number = 0;
@@ -264,22 +265,24 @@ export default class MineSweeperScene extends Phaser.Scene {
       }
     });
 
-    // 1-4 키로 플레이어 전환 (테스트용)
-    this.input.keyboard?.on('keydown-ONE', () => {
-      this.switchPlayer(0);
-    });
+    // 1-4 키로 플레이어 전환 (Mock 모드 테스트용)
+    if (isMockMode()) {
+      this.input.keyboard?.on('keydown-ONE', () => {
+        this.switchPlayer(0);
+      });
 
-    this.input.keyboard?.on('keydown-TWO', () => {
-      this.switchPlayer(1);
-    });
+      this.input.keyboard?.on('keydown-TWO', () => {
+        this.switchPlayer(1);
+      });
 
-    this.input.keyboard?.on('keydown-THREE', () => {
-      this.switchPlayer(2);
-    });
+      this.input.keyboard?.on('keydown-THREE', () => {
+        this.switchPlayer(2);
+      });
 
-    this.input.keyboard?.on('keydown-FOUR', () => {
-      this.switchPlayer(3);
-    });
+      this.input.keyboard?.on('keydown-FOUR', () => {
+        this.switchPlayer(3);
+      });
+    }
 
     console.log(
       '[MineSweeperScene] 키보드 입력 설정 완료 (D: 디버그 모드, 1-4: 플레이어 전환)',
@@ -292,6 +295,7 @@ export default class MineSweeperScene extends Phaser.Scene {
   private switchPlayer(playerIndex: number): void {
     if (playerIndex >= 0 && playerIndex < this.playerCount) {
       this.currentPlayerIndex = playerIndex;
+      this.isManualPlayerSwitch = true; // 수동 전환 플래그 설정
 
       // 실제 플레이어 ID 사용 (players 배열에서 가져옴)
       if (this.players[playerIndex]) {
@@ -466,6 +470,16 @@ export default class MineSweeperScene extends Phaser.Scene {
     this.socket.on('game_end', (data: any) => {
       console.log('[MineSweeperScene] 서버로부터 game_end 수신:', data);
 
+      // 타이머 정지
+      if (this.timerSystem) {
+        this.timerSystem.destroy();
+      }
+
+      // 승리로 인한 종료인 경우 메시지 표시
+      if (data.reason === 'win') {
+        console.log('[MineSweeperScene] 🎉 게임 승리! 모든 안전한 타일을 열었습니다!');
+      }
+
       // 서버에서 받은 최종 플레이어 데이터로 업데이트 (있는 경우)
       if (data.players) {
         // 서버에서 받은 플레이어 데이터를 로컬 플레이어 배열과 병합
@@ -505,13 +519,18 @@ export default class MineSweeperScene extends Phaser.Scene {
         if (data.players !== undefined) {
           this.players = data.players;
         }
-        if (data.currentPlayerIndex !== undefined) {
+        // 수동 플레이어 전환이 아닌 경우에만 currentPlayerIndex 업데이트
+        // (Mock 모드에서 1-4키로 플레이어 전환 시에만 해당)
+        if (
+          data.currentPlayerIndex !== undefined &&
+          !this.isManualPlayerSwitch
+        ) {
           this.currentPlayerIndex = data.currentPlayerIndex;
-        }
 
-        // 현재 플레이어 ID 설정
-        if (this.players[this.currentPlayerIndex]) {
-          this.myPlayerId = this.players[this.currentPlayerIndex].id;
+          // 현재 플레이어 ID 설정
+          if (this.players[this.currentPlayerIndex]) {
+            this.myPlayerId = this.players[this.currentPlayerIndex].id;
+          }
         }
 
         // 플레이어 색상 기본값 설정

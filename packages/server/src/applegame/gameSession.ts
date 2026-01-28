@@ -415,10 +415,16 @@ export class GameSession {
           player.reportCard.score,
         );
 
-        // Broadcast Success
+        const winnerIndex = this.getIndex(playerId);
+        if (winnerIndex === -1) {
+          console.error(
+            '[GameSession] Cannot find winner index for playerId',
+            playerId,
+          );
+        }
         const dropCellIndexPacket: DropCellIndexPacket = {
           type: GamePacketType.DROP_CELL_INDEX,
-          winnerId: playerId, // todo 주면 안 됨.
+          winnerIndex: winnerIndex,
           indices: indices,
           totalScore: player.reportCard.score,
         };

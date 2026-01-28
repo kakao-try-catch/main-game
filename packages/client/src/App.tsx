@@ -87,6 +87,22 @@ function AppContent() {
     [playSFX, pause],
   );
 
+  // 게임 세션이 새로 시작될 때(리플레이 포함) 관련 상태 초기화
+  useEffect(() => {
+    if (gameSessionId > 0) {
+      console.log(
+        `[App] Game Session ${gameSessionId} started - resetting states`,
+      );
+      setFlappyScore(0);
+      setFlappyGameEnded(false);
+      setFlappyFinalData(null);
+      // 플레이어 점수 초기화
+      setPlayers((prev) =>
+        prev.map((p) => ({ ...p, reportCard: { ...p.reportCard, score: 0 } })),
+      );
+    }
+  }, [gameSessionId, setPlayers]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 

@@ -17,11 +17,13 @@ import {
   RoomUpdateType,
   ReportCard,
   ReadyScenePacket,
+  ReturnToTheLobbyPacket,
 } from '../../../common/src/packets';
 
 import { GameType, MapSize, GameConfig } from '../../../common/src/config';
 import { Server } from 'socket.io';
 
+// todo 리팩토링 할 때 공통적으로 분리 가능한 것 아님?
 export type GameStatus = 'waiting' | 'playing' | 'ended';
 
 const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
@@ -253,6 +255,32 @@ export class GameSession {
       results,
     };
     this.broadcastCallback(endPacket);
+  }
+
+  public returnToLobby(id: string) {
+    // 1. 게임 결과창 화면인지 검사
+    if (this.status !== 'ended') {
+      console.log('[GameSession] Cannot return to lobby: game is not ended');
+      // todo 클라에게 정보 보내주어야 함?
+      return;
+    }
+
+    // 2. 방장인지 검사
+    if (!this.isHost(id)) {
+      console.log('[GameSession] Cannot return to lobby: not a host');
+      return;
+    }
+
+    // 3. 상태를 waiting으로 초기화
+    this.status = 'waiting';
+
+    // 4. 방 인원 모두에게 ReturnToTheLobby 패킷 전송
+    const returnToLobbyPacket: ReturnToTheLobbyPacket = {
+      type: SystemPacketType.RETURN_TO_THE_LOBBY,
+    };
+    this.broadcastCallback(returnToLobbyPacket);
+
+    console.log(`[GameSession] Returning room ${this.roomId} to lobby`);
   }
 
   public updateGameConfig(selectedGameType: GameType, gameConfig: GameConfig) {

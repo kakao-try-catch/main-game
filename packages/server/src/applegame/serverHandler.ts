@@ -184,6 +184,10 @@ export function handleClientPacket(
         session.updateGameConfig(packet.selectedGameType, packet.gameConfig);
         break;
 
+      case SystemPacketType.RETURN_TO_THE_LOBBY_REQ:
+        session.returnToLobby(socket.id);
+        break;
+
       // TODO: 게임 시작 요청 등이 있다면 추가
     }
   } catch (error) {

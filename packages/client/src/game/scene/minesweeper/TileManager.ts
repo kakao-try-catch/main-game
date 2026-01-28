@@ -30,8 +30,10 @@ export default class TileManager {
   // 타일 관련
   private tileSize: number = 0;
   private tiles: TileRenderData[][] = [];
-  private tileSprites: Phaser.GameObjects.Rectangle[][] = [];
+  private tileSprites: Phaser.GameObjects.Image[][] = [];
   private tileTexts: Phaser.GameObjects.Text[][] = [];
+  private mineSprites: (Phaser.GameObjects.Image | null)[][] = [];
+  private flagSprites: (Phaser.GameObjects.Image | null)[][] = [];
 
   // 디버그 모드
   private debugMode: boolean = false;
@@ -134,33 +136,31 @@ export default class TileManager {
   private createTileSprites(): void {
     this.tileSprites = [];
     this.tileTexts = [];
+    this.mineSprites = [];
+    this.flagSprites = [];
 
     for (let row = 0; row < this.gridRows; row++) {
       this.tileSprites[row] = [];
       this.tileTexts[row] = [];
+      this.mineSprites[row] = [];
+      this.flagSprites[row] = [];
 
       for (let col = 0; col < this.gridCols; col++) {
         const x = this.gridStartX + col * this.tileSize + this.tileSize / 2;
         const y = this.gridStartY + row * this.tileSize + this.tileSize / 2;
 
-        // 타일 배경
-        const tile = this.scene.add.rectangle(
-          x,
-          y,
-          this.tileSize - 2,
-          this.tileSize - 2,
-          0x7f8c8d,
-        );
-        tile.setStrokeStyle(2, 0x95a5a6);
+        // 타일 배경 (이미지 스프라이트)
+        const tile = this.scene.add.image(x, y, 'TileClosed');
+        tile.setDisplaySize(this.tileSize - 2, this.tileSize - 2);
         tile.setData('row', row);
         tile.setData('col', col);
 
         this.tileSprites[row][col] = tile;
         this.gameContainer.add(tile);
 
-        // 타일 텍스트 (숫자/지뢰 표시용)
+        // 타일 텍스트 (숫자 표시용)
         const text = this.scene.add.text(x, y, '', {
-          fontSize: `${Math.floor(this.tileSize * 0.6)}px`,
+          fontSize: `${Math.floor(this.tileSize * 0.8)}px`,
           fontFamily: 'NeoDunggeunmo',
           color: '#ffffff',
         });
@@ -169,6 +169,11 @@ export default class TileManager {
 
         this.tileTexts[row][col] = text;
         this.gameContainer.add(text);
+
+        // 지뢰 스프라이트 (처음에는 null)
+        this.mineSprites[row][col] = null;
+        // 깃발 스프라이트 (처음에는 null)
+        this.flagSprites[row][col] = null;
       }
     }
   }
@@ -252,14 +257,33 @@ export default class TileManager {
     // 상태에 따른 시각적 업데이트
     switch (state) {
       case TileState.REVEALED:
+        sprite.setTexture('TileOpened');
+        // 깃발 스프라이트 숨기기
+        if (this.flagSprites[row][col]) {
+          this.flagSprites[row][col]!.setVisible(false);
+        }
         if (tile.isMine) {
-          // 지뢰 표시
-          sprite.setFillStyle(0xe74c3c); // 빨간색
-          text.setText('💣');
-          text.setVisible(true);
+          // 지뢰 이미지 표시
+          sprite.setTint(0xe74c3c); // 빨간색 틴트
+          text.setVisible(false);
+          // 지뢰 스프라이트 생성 또는 표시
+          if (!this.mineSprites[row][col]) {
+            const x = this.gridStartX + col * this.tileSize + this.tileSize / 2;
+            const y = this.gridStartY + row * this.tileSize + this.tileSize / 2;
+            const mineSprite = this.scene.add.image(x, y, 'mine');
+            mineSprite.setDisplaySize(this.tileSize * 0.8, this.tileSize * 0.8);
+            this.mineSprites[row][col] = mineSprite;
+            this.gameContainer.add(mineSprite);
+          } else {
+            this.mineSprites[row][col]!.setVisible(true);
+          }
         } else {
           // 빈 타일 또는 숫자 표시
-          sprite.setFillStyle(0xbdc3c7); // 밝은 회색
+          sprite.clearTint();
+          // 지뢰 스프라이트 숨기기
+          if (this.mineSprites[row][col]) {
+            this.mineSprites[row][col]!.setVisible(false);
+          }
           if (tile.adjacentMines > 0) {
             text.setText(tile.adjacentMines.toString());
             text.setStyle({
@@ -274,22 +298,51 @@ export default class TileManager {
 
       case TileState.FLAGGED:
         // 플레이어별 색상으로 깃발 표시
-        let flagColor = 0xf39c12; // 기본 주황색
-
-        if (flaggedBy && this.playerColors.has(flaggedBy)) {
-          const colorStr = this.playerColors.get(flaggedBy)!;
-          // CSS 색상 문자열을 16진수로 변환 (#ffffff -> 0xffffff)
-          flagColor = parseInt(colorStr.replace('#', ''), 16);
+        sprite.setTexture('TileClosed');
+        sprite.clearTint();
+        text.setVisible(false);
+        // 깃발 스프라이트 생성 또는 표시
+        if (!this.flagSprites[row][col]) {
+          const x = this.gridStartX + col * this.tileSize + this.tileSize / 2;
+          const y = this.gridStartY + row * this.tileSize + this.tileSize / 2;
+          const flagSprite = this.scene.add.image(x, y, 'flag_other');
+          flagSprite.setDisplaySize(this.tileSize * 0.8, this.tileSize * 0.8);
+          // 플레이어 색상 틴트 적용
+          if (flaggedBy && this.playerColors.has(flaggedBy)) {
+            const colorStr = this.playerColors.get(flaggedBy)!;
+            const flagColor = parseInt(colorStr.replace('#', ''), 16);
+            flagSprite.setTint(flagColor);
+          }
+          this.flagSprites[row][col] = flagSprite;
+          this.gameContainer.add(flagSprite);
+        } else {
+          this.flagSprites[row][col]!.setVisible(true);
+          // 플레이어 색상 틴트 업데이트
+          if (flaggedBy && this.playerColors.has(flaggedBy)) {
+            const colorStr = this.playerColors.get(flaggedBy)!;
+            const flagColor = parseInt(colorStr.replace('#', ''), 16);
+            this.flagSprites[row][col]!.setTint(flagColor);
+          }
         }
-        sprite.setFillStyle(flagColor);
-        text.setText('🚩');
-        text.setVisible(true);
+        // 지뢰 스프라이트 숨기기
+        if (this.mineSprites[row][col]) {
+          this.mineSprites[row][col]!.setVisible(false);
+        }
         break;
 
       case TileState.HIDDEN:
       default:
-        sprite.setFillStyle(0x7f8c8d); // 기본 회색
+        sprite.setTexture('TileClosed');
+        sprite.clearTint();
         text.setVisible(false);
+        // 지뢰 스프라이트 숨기기
+        if (this.mineSprites[row][col]) {
+          this.mineSprites[row][col]!.setVisible(false);
+        }
+        // 깃발 스프라이트 숨기기
+        if (this.flagSprites[row][col]) {
+          this.flagSprites[row][col]!.setVisible(false);
+        }
         break;
     }
   }
@@ -327,7 +380,7 @@ export default class TileManager {
   public getTileSprite(
     row: number,
     col: number,
-  ): Phaser.GameObjects.Rectangle | null {
+  ): Phaser.GameObjects.Image | null {
     if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
       return null;
     }
@@ -371,6 +424,8 @@ export default class TileManager {
       for (let col = 0; col < this.gridCols; col++) {
         this.tileSprites[row][col]?.destroy();
         this.tileTexts[row][col]?.destroy();
+        this.mineSprites[row][col]?.destroy();
+        this.flagSprites[row][col]?.destroy();
       }
     }
 
@@ -491,12 +546,16 @@ export default class TileManager {
       for (let col = 0; col < this.gridCols; col++) {
         this.tileSprites[row][col]?.destroy();
         this.tileTexts[row][col]?.destroy();
+        this.mineSprites[row][col]?.destroy();
+        this.flagSprites[row][col]?.destroy();
       }
     }
 
     this.tiles = [];
     this.tileSprites = [];
     this.tileTexts = [];
+    this.mineSprites = [];
+    this.flagSprites = [];
 
     console.log('[TileManager] 정리 완료');
   }

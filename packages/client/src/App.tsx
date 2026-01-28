@@ -1,17 +1,20 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { GameContainer } from './game/GameContainer';
+import { GameContainer, type GameEndEvent } from './game/GameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
 
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
-import FlappyBirdResult from './game/utils/game-result/FlappyBirdResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import {
+  type MineSweeperGamePreset,
+  DEFAULT_MINESWEEPER_PRESET,
+} from './game/types/minesweeper.types';
 import type {
   PlayerData,
   PlayerResultData,
@@ -95,6 +98,9 @@ function AppContent() {
   const [flappyPreset, setFlappyPreset] = useState<
     FlappyBirdGamePreset | undefined
   >(undefined);
+  const [minesweeperPreset, setMinesweeperPreset] = useState<
+    MineSweeperGamePreset | undefined
+  >(undefined);
 
   // 게임 컨테이너 재마운트를 위한 key
   const [gameKey, setGameKey] = useState(0);
@@ -125,9 +131,19 @@ function AppContent() {
   }, []);
 
   const handleGameEnd = useCallback(
-    (endPlayers: (PlayerData & { playerIndex: number })[]) => {
-      setFinalPlayers(endPlayers);
-      setGameEnded(true);
+    (data: GameEndEvent) => {
+      if (data.gameType === 'flappy') {
+        setFlappyFinalData({
+          finalScore: data.finalScore,
+          reason: data.reason,
+          collidedPlayerId: data.collidedPlayerId,
+          players: data.players,
+        });
+        setFlappyGameEnded(true);
+      } else {
+        setFinalPlayers(data.players);
+        setGameEnded(true);
+      }
       playSFX('appleGameEnd');
       pause(); // 게임 종료 시 BGM 중지
       reset(); // 게임 종료 시 BGM을 처음으로 되감기
@@ -139,23 +155,6 @@ function AppContent() {
   const handleFlappyScoreUpdate = useCallback((score: number) => {
     setFlappyScore(score);
   }, []);
-
-  // 플래피버드 게임 종료 핸들러
-  const handleFlappyGameEnd = useCallback(
-    (data: {
-      finalScore: number;
-      reason: string;
-      collidedPlayerId: PlayerId;
-      players: PlayerResultData[];
-    }) => {
-      setFlappyFinalData(data);
-      setFlappyGameEnded(true);
-      playSFX('appleGameEnd'); // 동일한 사운드 사용
-      pause(); // 게임 종료 시 BGM 중지
-      reset(); // 게임 종료 시 BGM을 처음으로 되감기
-    },
-    [playSFX, pause, reset],
-  );
 
   // 플래피버드 점프 사운드 핸들러
   const handleFlappyJump = useCallback(() => {
@@ -287,6 +286,14 @@ function AppContent() {
       setApplePreset(preset as AppleGamePreset);
     } else if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
+    } else if (gameType === 'minesweeper') {
+      const minesweeperPreset =
+        (preset as MineSweeperGamePreset | undefined)?.mapSize &&
+        (preset as MineSweeperGamePreset | undefined)?.difficulty &&
+        (preset as MineSweeperGamePreset | undefined)?.timeLimit
+          ? (preset as MineSweeperGamePreset)
+          : DEFAULT_MINESWEEPER_PRESET;
+      setMinesweeperPreset(minesweeperPreset);
     }
 
     const gameStartReq: ServerPacket = {
@@ -307,6 +314,9 @@ function AppContent() {
       reset();
     }
   }, [gameEnded, pause, reset]);
+
+  const gameResultRatio =
+    (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1;
 
   // 랜딩 페이지 표시
   if (currentScreen === 'landing') {
@@ -456,10 +466,10 @@ function AppContent() {
             currentPlayerIndex={currentUser.playerIndex}
             applePreset={applePreset}
             flappyPreset={flappyPreset}
+            minesweeperPreset={minesweeperPreset}
             onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
             onScoreUpdate={handleFlappyScoreUpdate}
-            onFlappyGameEnd={handleFlappyGameEnd}
             onFlappyJump={handleFlappyJump}
             onFlappyStrike={handleFlappyStrike}
             onFlappyScore={handleFlappyScore}
@@ -467,34 +477,16 @@ function AppContent() {
             onGameReady={handleGameReady}
           />
         )}
-        {/* 사과게임 결과 모달 */}
-        {gameEnded && (
-          <GameResult
-            players={finalPlayers}
-            onReplay={handleReplay}
-            onLobby={handleLobby}
-            title="APPLE GAME TOGETHER"
-            ratio={
-              (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
-            }
-          />
-        )}
-        {/* 플래피버드 결과 모달 */}
-        {flappyGameEnded && flappyFinalData && (
-          <FlappyBirdResult
-            finalScore={flappyFinalData.finalScore}
-            reason={
-              flappyFinalData.reason as 'pipe_collision' | 'ground_collision'
-            }
-            collidedPlayerId={flappyFinalData.collidedPlayerId}
-            players={flappyFinalData.players}
-            onReplay={handleReplay}
-            onLobby={handleLobby}
-            ratio={
-              (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
-            }
-          />
-        )}
+        <GameResult
+          currentGameType={currentGameType}
+          gameEnded={gameEnded}
+          finalPlayers={finalPlayers}
+          flappyGameEnded={flappyGameEnded}
+          flappyFinalData={flappyFinalData}
+          onReplay={handleReplay}
+          onLobby={handleLobby}
+          ratio={gameResultRatio}
+        />
       </main>
     </div>
   );

@@ -74,3 +74,13 @@ MineSweeperReportCard = {
 score: number,
 flags: number,
 }
+
+# RETURN_TO_THE_LOBBY_REQ (ServerBound)
+
+서버에게 해당 방장이 로비로 가고 싶다고 요청.
+서버측은 요청을 받으면 1. 게임 결과창 화면인지 검사 2. 방장인지 검사
+후에 방 인원 모두를 로비로 보내야 함.
+
+# RETURN_TO_THE_LOBBY (ClientBound)
+
+이 패킷을 받은 클라들은 로비로 screen 전환해야 함.

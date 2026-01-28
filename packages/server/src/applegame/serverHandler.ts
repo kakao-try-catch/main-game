@@ -8,6 +8,11 @@ import {
   RoomUpdateType,
 } from '../../../common/src/packets';
 import { GameSession } from './gameSession';
+import { customAlphabet } from 'nanoid';
+
+// 커스텀 nanoid 생성기
+const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+const generateRoomId = customAlphabet(alphabet, 10);
 
 // Room ID -> Session
 const sessions = new Map<string, GameSession>();
@@ -207,7 +212,10 @@ export async function joinPlayerToGame(
   roomId: string,
   playerName: string,
 ) {
-  roomId = 'HARDCODED_ROOM_1'; // todo: 강제로 하드코드된 방으로 넣기. 나중엔 지워야 함.
+  if (!roomId) {
+    roomId = generateRoomId();
+  }
+
   console.log(
     `[Server] Player ${playerName} (${socket.id}) joining room ${roomId}`,
   );

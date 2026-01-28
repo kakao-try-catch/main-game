@@ -117,7 +117,7 @@ export class GameSession {
       const roomUpdatePacket2Other: RoomUpdatePacket = {
         type: SystemPacketType.ROOM_UPDATE,
         players: this.getPlayers(),
-        updateType: RoomUpdateType.PLAYER_JOIN,
+        updateType: RoomUpdateType.PLAYER_QUIT,
         yourIndex: this.getIndex(playerId),
         roomId: this.roomId,
       };

@@ -6,6 +6,7 @@ import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
 import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
+import type { MineSweeperGamePreset } from './types/minesweeper.types';
 import type { PlayerData, PlayerResultData, GameType } from './types/common';
 import type { PlayerId } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
@@ -56,6 +57,7 @@ interface GameContainerProps {
   currentPlayerIndex?: number;
   applePreset?: AppleGamePreset;
   flappyPreset?: FlappyBirdGamePreset;
+  minesweeperPreset?: MineSweeperGamePreset;
 }
 
 export type GameEndEvent =
@@ -87,6 +89,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   currentPlayerIndex = 0,
   applePreset,
   flappyPreset,
+  minesweeperPreset,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -94,7 +97,14 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   const isValidGameType =
     gameType === 'apple' || gameType === 'flappy' || gameType === 'minesweeper';
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
-  const preset = gameType === 'apple' ? applePreset : flappyPreset;
+  const preset =
+    gameType === 'apple'
+      ? applePreset
+      : gameType === 'flappy'
+        ? flappyPreset
+        : gameType === 'minesweeper'
+          ? minesweeperPreset
+          : undefined;
 
   // 레이아웃 계산 (useMemo로 최적화)
   const layout = useMemo(() => {

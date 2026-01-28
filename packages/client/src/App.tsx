@@ -11,6 +11,10 @@ import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { AppleGamePreset } from './game/types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import {
+  type MineSweeperGamePreset,
+  DEFAULT_MINESWEEPER_PRESET,
+} from './game/types/minesweeper.types';
 import type {
   PlayerData,
   PlayerResultData,
@@ -93,6 +97,9 @@ function AppContent() {
   );
   const [flappyPreset, setFlappyPreset] = useState<
     FlappyBirdGamePreset | undefined
+  >(undefined);
+  const [minesweeperPreset, setMinesweeperPreset] = useState<
+    MineSweeperGamePreset | undefined
   >(undefined);
 
   // 게임 컨테이너 재마운트를 위한 key
@@ -279,6 +286,14 @@ function AppContent() {
       setApplePreset(preset as AppleGamePreset);
     } else if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
+    } else if (gameType === 'minesweeper') {
+      const minesweeperPreset =
+        (preset as MineSweeperGamePreset | undefined)?.mapSize &&
+        (preset as MineSweeperGamePreset | undefined)?.difficulty &&
+        (preset as MineSweeperGamePreset | undefined)?.timeLimit
+          ? (preset as MineSweeperGamePreset)
+          : DEFAULT_MINESWEEPER_PRESET;
+      setMinesweeperPreset(minesweeperPreset);
     }
 
     const gameStartReq: ServerPacket = {
@@ -451,6 +466,7 @@ function AppContent() {
             currentPlayerIndex={currentUser.playerIndex}
             applePreset={applePreset}
             flappyPreset={flappyPreset}
+            minesweeperPreset={minesweeperPreset}
             onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
             onScoreUpdate={handleFlappyScoreUpdate}

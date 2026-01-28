@@ -316,11 +316,8 @@ export class MineSweeperMockCore {
 
       const currentTile = this.tiles[current.row][current.col];
 
-      // 이미 열린 타일이나 깃발이 있는 타일은 건너뛰기
-      if (
-        currentTile.state === TileState.REVEALED ||
-        currentTile.state === TileState.FLAGGED
-      ) {
+      // 이미 열린 타일은 건너뛰기 (상대방 깃발은 열 수 있음)
+      if (currentTile.state === TileState.REVEALED) {
         continue;
       }
 

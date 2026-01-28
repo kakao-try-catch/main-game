@@ -4,6 +4,7 @@ import {
   joinPlayerToGame,
   handleClientPacket,
   handleDisconnect,
+  handleConnection,
 } from './applegame/serverHandler';
 import { ServerPacket, SystemPacketType } from '../../common/src/packets';
 
@@ -20,7 +21,7 @@ const io = new Server(httpServer, {
 });
 
 io.on('connection', (socket: Socket) => {
-  console.log(`[접속] 클라이언트: ${socket.id}`);
+  handleConnection(socket);
 
   socket.onAny((eventName, data) => {
     // console.log(`Event: ${eventName}`, data);

@@ -31,11 +31,28 @@ export function getSession(roomId: string): GameSession | undefined {
   return sessions.get(roomId);
 }
 
-export function handleConnection(io: Server, socket: Socket) {
-  // 클라이언트가 방에 접속 시도 (Connection 직후 로직은 index.ts에 있으나,
-  // 여기서는 로직 분리를 위해 함수 제공)
-  // Note: index.ts에서 이미 hardcoded room logic이 있으므로
-  // 여기서는 패킷 핸들링 위주로 구현함.
+export function handleConnection(socket: Socket) {
+  // 클라이언트 정보 추출
+  const clientIP =
+    (socket.handshake.headers['x-forwarded-for'] as string) ||
+    socket.request?.socket?.remoteAddress ||
+    'unknown';
+  const userAgent = socket.handshake.headers['user-agent'] || 'unknown';
+  const acceptLanguage =
+    socket.handshake.headers['accept-language'] || 'unknown';
+  const connectionTime = socket.handshake.time;
+
+  // 이쁘게 로깅
+  console.log('=====================================');
+  console.log('[접속] 새 클라이언트 연결');
+  console.log('-------------------------------------');
+  console.log(`  Socket ID : ${socket.id}`);
+  console.log(`  IP        : ${clientIP}`);
+  console.log(`  User-Agent: ${userAgent}`);
+  console.log(`  Language  : ${acceptLanguage}`);
+  console.log(`  접속 시간  : ${connectionTime}`);
+  console.log('=====================================');
+  console.log('');
 }
 
 export function handleDisconnect(socketId: string) {

@@ -1,15 +1,8 @@
 import React from 'react';
-import BaseRankedResult, {
-  type BaseRankedResultProps,
-} from './BaseRankedResult';
-import type { PlayerResultData } from '../../types/common';
-import type { MineSweeperResultPlayer } from '../../types/minesweeper.types';
-import TintedFlagIcon from '../../../components/TintedFlagIcon';
+import BaseRankedResult, { type BaseRankedResultProps } from './BaseRankedResult';
 
-export interface MineSweeperResultProps extends Omit<
-  BaseRankedResultProps,
-  'title' | 'renderPlayerSubline'
-> {
+export interface MineSweeperResultProps
+  extends Omit<BaseRankedResultProps, 'title'> {
   stats?: {
     remainingMines?: number;
     minesHit?: number;
@@ -18,29 +11,10 @@ export interface MineSweeperResultProps extends Omit<
   };
 }
 
-const getPlayerSubline = (player: PlayerResultData): React.ReactNode => {
-  const statsPlayer = player as MineSweeperResultPlayer;
-  const totalFlags = statsPlayer.totalFlags ?? 0;
-  if (totalFlags <= 0) return null;
-  const correctFlags = statsPlayer.correctFlags ?? 0;
-  return (
-    <TintedFlagIcon color={player.color} size="1em">
-      <span>{`${correctFlags} / ${totalFlags}`}</span>
-    </TintedFlagIcon>
-  );
-};
-
 const MineSweeperResult: React.FC<MineSweeperResultProps> = (props) => {
-  const { stats, ...baseProps } = props;
+  const { stats, ...rest } = props;
   void stats;
-
-  return (
-    <BaseRankedResult
-      {...baseProps}
-      title="MINESWEEPER TOGETHER"
-      renderPlayerSubline={getPlayerSubline}
-    />
-  );
+  return <BaseRankedResult {...rest} title="MINESWEEPER TOGETHER" />;
 };
 
 export default MineSweeperResult;

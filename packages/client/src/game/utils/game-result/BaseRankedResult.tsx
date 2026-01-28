@@ -1,9 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
 import type { PlayerResultData } from '../../types/common';
-import { useGameStore, isPlayerHost } from '../../../store/gameStore';
-import type { PlayerData } from '../../../../../common/src/common-type';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
 type CrownSvgProps = { fill: string; style?: React.CSSProperties };
@@ -24,6 +22,10 @@ const CrownSvg: React.FC<CrownSvgProps> = ({ fill, style }) => (
   </svg>
 );
 
+interface RankedPlayer extends PlayerResultData {
+  rank: number;
+}
+
 type CrownProps = { visible: boolean; fill: string };
 
 export interface BaseRankedResultProps {
@@ -32,50 +34,59 @@ export interface BaseRankedResultProps {
   onLobby: () => void;
   ratio?: number;
   title: string;
-  renderPlayerSubline?: (player: PlayerData) => React.ReactNode;
 }
 
-const rankHeights: Record<number, number> = {
-  1: 246,
-  2: 186,
-  3: 126,
-  4: 76,
-};
-function getRankHeight(rank: number): number {
-  const height = rankHeights[rank] || 76;
-  return height;
-}
+class RankedPlayersModel {
+  private rankedPlayers: RankedPlayer[];
+  private static readonly rankHeights: Record<number, number> = {
+    1: 246,
+    2: 186,
+    3: 126,
+    4: 76,
+  };
 
-function getCrownProps(rank: number): CrownProps {
-  if (rank === 1) return { visible: true, fill: '#FAA629' };
-  if (rank === 2) return { visible: true, fill: '#A7AFB3' };
-  return { visible: false, fill: 'none' };
-}
+  constructor(players: PlayerResultData[]) {
+    this.rankedPlayers = this.calculateRanks(players);
+  }
 
-function getNameFontSize(nameLength: number): string {
-  if (nameLength <= 3) return '48px';
-  if (nameLength <= 5) return '40px';
-  if (nameLength <= 7) return '34px';
-  return '28px';
+  public getRankedPlayers(): RankedPlayer[] {
+    return this.rankedPlayers;
+  }
 
-  // todo 랭크 계산 필요함. 등수 2개 같은 경우 같은 높이 줘야 해서
-  // private calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
-  //   if (players.length === 0) return [];
-  //   const sortedPlayers = [...players].sort((a, b) => {
-  //     if (b.score !== a.score) return b.score - a.score;
-  //     return a.playerIndex - b.playerIndex;
-  //   });
-  //   const rankedPlayers: RankedPlayer[] = [];
-  //   let currentRank = 1;
-  //   for (let i = 0; i < sortedPlayers.length; i++) {
-  //     const player = sortedPlayers[i];
-  //     if (i > 0 && sortedPlayers[i - 1].score !== player.score) {
-  //       currentRank = i + 1;
-  //     }
-  //     rankedPlayers.push({ ...player, rank: currentRank });
-  //   }
-  //   return rankedPlayers;
-  // }
+  public getRankHeight(rank: number): number {
+    return RankedPlayersModel.rankHeights[rank] || 76;
+  }
+
+  public getCrownProps(rank: number): CrownProps {
+    if (rank === 1) return { visible: true, fill: '#FAA629' };
+    if (rank === 2) return { visible: true, fill: '#A7AFB3' };
+    return { visible: false, fill: 'none' };
+  }
+
+  public getNameFontSize(nameLength: number): string {
+    if (nameLength <= 3) return '48px';
+    if (nameLength <= 5) return '40px';
+    if (nameLength <= 7) return '34px';
+    return '28px';
+  }
+
+  private calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
+    if (players.length === 0) return [];
+    const sortedPlayers = [...players].sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.playerIndex - b.playerIndex;
+    });
+    const rankedPlayers: RankedPlayer[] = [];
+    let currentRank = 1;
+    for (let i = 0; i < sortedPlayers.length; i++) {
+      const player = sortedPlayers[i];
+      if (i > 0 && sortedPlayers[i - 1].score !== player.score) {
+        currentRank = i + 1;
+      }
+      rankedPlayers.push({ ...player, rank: currentRank });
+    }
+    return rankedPlayers;
+  }
 }
 
 class ResultStyleBuilder {
@@ -189,31 +200,6 @@ class ResultStyleBuilder {
     };
   }
 
-  public sublineRow(): React.CSSProperties {
-    return {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: this.px(1),
-      width: '100%',
-      marginBottom: this.px(20),
-    };
-  }
-
-  public sublineItem(): React.CSSProperties {
-    return {
-      width: this.px(220),
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      fontFamily: 'NeoDunggeunmo',
-      fontSize: this.px(32),
-      color: '#212529',
-      textAlign: 'center',
-      lineHeight: this.px(28),
-    };
-  }
-
   public buttonContainer(): React.CSSProperties {
     return {
       display: 'flex',
@@ -235,215 +221,115 @@ class ResultStyleBuilder {
       cursor: 'pointer',
     };
   }
-
-  public toolTipBox(): React.CSSProperties {
-    return {
-      position: 'absolute',
-      bottom: `calc(100% + ${this.px(16)})`,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      padding: `${this.px(12)} ${this.px(24)}`,
-      backgroundColor: '#e76e55',
-      color: 'white',
-      borderRadius: this.px(4),
-      fontSize: this.px(24),
-      whiteSpace: 'nowrap',
-      zIndex: 1000,
-      pointerEvents: 'none',
-    };
-  }
-
-  public toolTipDownArrow(): React.CSSProperties {
-    return {
-      position: 'absolute',
-      top: '100%',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      border: `${this.px(10)} solid transparent`,
-      borderTopColor: '#e76e55',
-    };
-  }
 }
 
 const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
+  players,
   onReplay,
   onLobby,
   ratio: propRatio,
   title,
-  renderPlayerSubline,
 }) => {
   const { playSFX } = useSFXContext();
   const ratio =
     propRatio ??
     ((window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1);
+  const model = useMemo(() => new RankedPlayersModel(players), [players]);
   const styles = useMemo(() => new ResultStyleBuilder(ratio), [ratio]);
-  const result = useGameStore((s) => s.gameResults) ?? [];
-
-  const isHost = isPlayerHost();
-  const [showReplayTooltip, setShowReplayTooltip] = useState(false);
-  const [showLobbyTooltip, setShowLobbyTooltip] = useState(false);
-
-  const playerSublines = renderPlayerSubline
-    ? result.map((player) => renderPlayerSubline(player))
-    : null;
-  const hasSubline =
-    playerSublines?.some(
-      (subline) => subline !== null && subline !== undefined && subline !== '',
-    ) ?? false;
+  const rankedPlayers = model.getRankedPlayers();
 
   return (
-    <>
-      <style>
-        {`
-        .nes-btn:disabled {
-          cursor: not-allowed;
-          opacity: 0.6;
-          pointer-events: none;
-        }
-        .nes-btn:disabled:active {
-          box-shadow: none;
-          transform: none;
-        }
-      `}
-      </style>
-      <div style={styles.overlay()}>
-        <div
-          className="nes-container is-rounded"
-          style={{
-            ...styles.container(),
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          <h1 style={styles.title()}>{title}</h1>
-          <div style={styles.rankContainer()}>
-            {result.map((player, idx) => {
-              const height = getRankHeight(idx + 1) * ratio;
-              const crown = getCrownProps(idx + 1);
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    ...styles.rankItem(),
-                    marginLeft: idx === 0 ? 0 : -5 * ratio,
-                  }}
-                >
-                  {crown.visible && (
-                    <CrownSvg
-                      style={{
-                        ...styles.crown(),
-                        marginTop: 0,
-                        marginBottom: 3 * ratio,
-                      }}
-                      fill={crown.fill}
-                    />
-                  )}
-                  <div
+    <div style={styles.overlay()}>
+      <div
+        className="nes-container is-rounded"
+        style={{
+          ...styles.container(),
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <h1 style={styles.title()}>{title}</h1>
+        <div style={styles.rankContainer()}>
+          {rankedPlayers.map((player, idx) => {
+            const height = model.getRankHeight(player.rank) * ratio;
+            const crown = model.getCrownProps(player.rank);
+            return (
+              <div
+                key={player.id}
+                style={{
+                  ...styles.rankItem(),
+                  marginLeft: idx === 0 ? 0 : -5 * ratio,
+                }}
+              >
+                {crown.visible && (
+                  <CrownSvg
                     style={{
-                      ...styles.playerName(),
+                      ...styles.crown(),
                       marginTop: 0,
-                      fontSize: getNameFontSize(player.playerName.length),
-                      whiteSpace: 'nowrap',
-                      maxWidth: '210px',
-                      textAlign: 'center',
+                      marginBottom: 3 * ratio,
                     }}
-                  >
-                    {player.playerName}
-                  </div>
-                  <div
-                    style={{
-                      ...styles.rankBar(),
-                      height: `${height}px`,
-                      backgroundColor: player.color,
-                    }}
-                  >
-                    <div style={styles.score()}>{player.reportCard.score}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {hasSubline && playerSublines && (
-            <div style={styles.sublineRow()}>
-              {playerSublines.map((subline, idx) => (
+                    fill={crown.fill}
+                  />
+                )}
                 <div
-                  key={idx}
                   style={{
-                    ...styles.sublineItem(),
-                    marginLeft: idx === 0 ? 0 : -5 * ratio,
+                    ...styles.playerName(),
+                    marginTop: 0,
+                    fontSize: model.getNameFontSize(player.name.length),
+                    whiteSpace: 'nowrap',
+                    maxWidth: '210px',
+                    textAlign: 'center',
                   }}
                 >
-                  {subline ?? ''}
+                  {player.name}
                 </div>
-              ))}
-            </div>
-          )}
-          <div style={styles.buttonContainer()}>
-            {/* REPLAY 버튼 */}
-            <div
-              style={{ position: 'relative', display: 'inline-block' }}
-              onMouseEnter={() => !isHost && setShowReplayTooltip(true)}
-              onMouseLeave={() => setShowReplayTooltip(false)}
-            >
-              <button
-                type="button"
-                className="nes-btn is-primary"
-                style={styles.button()}
-                onClick={() => {
-                  if (!isHost) return;
-                  playSFX('buttonClick');
-                  onReplay();
-                }}
-                onMouseEnter={() => {
-                  if (isHost) playSFX('buttonHover');
-                }}
-                disabled={!isHost}
-              >
-                REPLAY
-              </button>
-              {showReplayTooltip && !isHost && (
-                <div style={styles.toolTipBox()}>
-                  방장만 해당 작업을 수행할 수 있습니다.
-                  <div style={styles.toolTipDownArrow()} />
+                <div
+                  style={{
+                    ...styles.rankBar(),
+                    height: `${height}px`,
+                    backgroundColor: player.color,
+                  }}
+                >
+                  <div style={styles.score()}>{player.score}</div>
                 </div>
-              )}
-            </div>
-
-            {/* LOBBY 버튼 */}
-            <div
-              style={{ position: 'relative', display: 'inline-block' }}
-              onMouseEnter={() => !isHost && setShowLobbyTooltip(true)}
-              onMouseLeave={() => setShowLobbyTooltip(false)}
-            >
-              <button
-                type="button"
-                className="nes-btn is-primary"
-                style={styles.button()}
-                onClick={() => {
-                  if (!isHost) return;
-                  playSFX('buttonClick');
-                  onLobby();
-                }}
-                onMouseEnter={() => {
-                  if (isHost) playSFX('buttonHover');
-                }}
-                disabled={!isHost}
-              >
-                LOBBY
-              </button>
-              {showLobbyTooltip && !isHost && (
-                <div style={styles.toolTipBox()}>
-                  방장만 해당 작업을 수행할 수 있습니다.
-                  <div style={styles.toolTipDownArrow()} />
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={styles.buttonContainer()}>
+          <button
+            type="button"
+            className="nes-btn is-primary"
+            style={styles.button()}
+            onClick={() => {
+              playSFX('buttonClick');
+              onReplay();
+            }}
+            onMouseEnter={() => {
+              playSFX('buttonHover');
+            }}
+          >
+            REPLAY
+          </button>
+          <button
+            type="button"
+            className="nes-btn is-primary"
+            style={styles.button()}
+            onClick={() => {
+              playSFX('buttonClick');
+              onLobby();
+            }}
+            onMouseEnter={() => {
+              playSFX('buttonHover');
+            }}
+          >
+            LOBBY
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

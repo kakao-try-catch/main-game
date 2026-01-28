@@ -4,7 +4,7 @@ import { useSFXContext } from '../../../contexts/SFXContext';
 import type { PlayerResultData } from '../../types/common';
 import type { PlayerId } from '../../types/flappybird.types';
 
-interface FlappyBirdResultProps {
+export interface FlappyBirdResultProps {
   finalScore: number;
   reason: 'pipe_collision' | 'ground_collision';
   collidedPlayerId?: PlayerId;

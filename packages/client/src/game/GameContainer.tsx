@@ -3,7 +3,6 @@ import Phaser from 'phaser';
 import AppleGameScene from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
-import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { PlayerData, PlayerResultData } from './types/common';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
@@ -39,7 +38,6 @@ interface GameContainerProps {
   }) => void; // 플래피버드 게임 종료
   playerCount?: number;
   players?: PlayerData[];
-  applePreset?: AppleGamePreset;
   flappyPreset?: FlappyBirdGamePreset;
 }
 
@@ -51,7 +49,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onFlappyGameEnd,
   playerCount = 4,
   players = [],
-  applePreset,
   flappyPreset,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -60,7 +57,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   const isValidGameType =
     gameType === GameType.APPLE_GAME || gameType === GameType.FLAPPY_BIRD;
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
-  const preset = gameType === GameType.APPLE_GAME ? applePreset : flappyPreset;
 
   // 레이아웃 계산 (useMemo로 최적화)
   const layout = useMemo(() => {
@@ -201,7 +197,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         targetScene.events.emit('updatePlayers', {
           playerCount,
           players,
-          preset,
+          ...(gameType === GameType.FLAPPY_BIRD && flappyPreset
+            ? { preset: flappyPreset }
+            : {}),
         });
       };
 
@@ -236,10 +234,12 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       scene.events.emit('updatePlayers', {
         playerCount,
         players,
-        preset,
+        ...(gameType === GameType.FLAPPY_BIRD && flappyPreset
+          ? { preset: flappyPreset }
+          : {}),
       });
     }
-  }, [playerCount, players, preset, config]);
+  }, [playerCount, players, flappyPreset, config, gameType]);
 
   // 구현되지 않은 게임 타입
   if (!config) {

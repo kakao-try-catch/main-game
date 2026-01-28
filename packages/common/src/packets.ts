@@ -1,4 +1,4 @@
-import { GameConfig, GameType } from './config';
+import { type GameConfig, GameType } from './config';
 
 // --- ENUMS ---
 export enum SystemPacketType {

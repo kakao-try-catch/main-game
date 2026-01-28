@@ -55,7 +55,7 @@ function calculateRanks(players: PlayerData[]): RankedPlayer[] {
   //   }
   //   rankedPlayers.push({ ...player, rank: currentRank });
   // }
-  return rankedPlayers;
+  // return rankedPlayers;
 }
 
 function getRankHeight(rank: number): number {

@@ -11,13 +11,13 @@ import FlappyBirdResult from './game/utils/game-result/FlappyBirdResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
-import type { AppleGamePreset } from './game/types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
 import { CONSTANTS } from './game/types/common';
 import {
   SystemPacketType,
   type JoinRoomPacket,
   type ServerPacket,
+  type PlayerData,
 } from '../../common/src/packets';
 import { GameType } from '../../common/src/config.ts';
 
@@ -49,7 +49,7 @@ function AppContent() {
   const [flappyFinalData, setFlappyFinalData] = useState<{
     finalScore: number;
     reason: string;
-    players: PlayerResultData[];
+    players: PlayerData[];
   } | null>(null);
 
   // players: prefer server-provided players (from zustand store), fallback to currentPlayer
@@ -57,13 +57,7 @@ function AppContent() {
   const setPlayers = useGameStore((s) => s.setPlayers);
 
   // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
-  // const [currentGameType, setCurrentGameType] = useState<GameType | undefined>(
-  //   undefined,
-  // );
   const currentGameType = useGameStore((s) => s.selectedGameType || undefined);
-  const [applePreset, setApplePreset] = useState<AppleGamePreset | undefined>(
-    undefined,
-  );
   const [flappyPreset, setFlappyPreset] = useState<
     FlappyBirdGamePreset | undefined
   >(undefined);
@@ -175,15 +169,11 @@ function AppContent() {
   };
 
   const handleGameStart = (gameType: string, preset: unknown) => {
-    // setCurrentGameType(gameType as GameType);
-
     // 새 게임 시작 시 key 변경
     setGameKey((prev) => prev + 1);
 
-    // todo set preset 얘 뭔지 알아내야 함. 이후 game config update 반영으로 통합
-    if (gameType === 'apple') {
-      setApplePreset(preset as AppleGamePreset);
-    } else if (gameType === 'flappy') {
+    // 플래피버드 프리셋만 로컬에서 관리 (사과게임은 gameStore.gameConfig 사용)
+    if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
     }
 
@@ -192,9 +182,6 @@ function AppContent() {
     };
     socketManager.send(gameStartReq);
     console.log('GAME_START_REQ sent: ', gameStartReq);
-
-    // todo ready_scene 받을 때까지 이거 넘어가면 안 됨.
-    // setCurrentScreen('game');
   };
 
   // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
@@ -311,7 +298,6 @@ function AppContent() {
             gameType={currentGameType}
             playerCount={players.length}
             players={players}
-            applePreset={applePreset}
             flappyPreset={flappyPreset}
             onScoreUpdate={handleFlappyScoreUpdate}
             onFlappyGameEnd={handleFlappyGameEnd}

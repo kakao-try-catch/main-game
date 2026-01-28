@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
-import type { AppleGamePreset } from '../game/types/AppleGamePreset';
 import type { Game, GameSettings } from '../game/types/common';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
@@ -173,35 +172,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       return;
     }
 
-    // 사과 게임 설정을 프리셋으로 변환
+    // 사과 게임: gameStore.gameConfig를 사용하므로 별도 프리셋 불필요
     if (selectedGame === 'apple') {
-      const settings = gameSettings.apple;
-
-      // mapSize를 gridSize로 변환
-      let gridSize: 'S' | 'M' | 'L' = 'M';
-      if (settings.mapSize === 'small') gridSize = 'S';
-      else if (settings.mapSize === 'normal') gridSize = 'M';
-      else if (settings.mapSize === 'large') gridSize = 'L';
-
-      // appleRange를 numberRange로 변환
-      let numberRange: '1-9' | '1-5' = '1-9';
-      if (settings.appleRange === '1-5') numberRange = '1-5';
-
-      // TODO 서버가 프리셋 가지고 있어야 하는 것. GAME_CONFIG_UPDATE
-      const isStandardTime = [120, 180, 240].includes(settings.timeLimit || 0);
-      const preset: AppleGamePreset = {
-        gridSize,
-        timeLimit: isStandardTime
-          ? (settings.timeLimit as 120 | 180 | 240)
-          : 'manual',
-        manualTime: isStandardTime
-          ? undefined
-          : (settings.timeLimit as number | undefined),
-        numberRange,
-        includeZero: settings.includeZero || false,
-      };
-
-      onGameStart('apple', preset);
+      onGameStart('apple', null);
     } else if (selectedGame === 'flappy') {
       // 플래피 버드 기본 프리셋
       const preset = {

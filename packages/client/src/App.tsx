@@ -200,6 +200,12 @@ function AppContent() {
     playSFX('appleDrop'); // 테스트용 appleDrop 사운드
   }, [playSFX]);
 
+  // 지뢰찾기 지뢰 폭발 사운드 핸들러
+  const handleMinesweeperMineExplode = useCallback(() => {
+    console.log('[App] 지뢰 폭발 사운드 재생');
+    playSFX('mineExplode');
+  }, [playSFX]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
@@ -413,9 +419,7 @@ function AppContent() {
                   name={player.name}
                   color={player.color}
                   spriteSrc={
-                    FLAPPY_BIRD_SPRITES[
-                      index % FLAPPY_BIRD_SPRITES.length
-                    ]
+                    FLAPPY_BIRD_SPRITES[index % FLAPPY_BIRD_SPRITES.length]
                   }
                   showScore={false}
                 />
@@ -481,6 +485,7 @@ function AppContent() {
             onFlappyScore={handleFlappyScore}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
             onMinesweeperTileReveal={handleMinesweeperTileReveal}
+            onMinesweeperMineExplode={handleMinesweeperMineExplode}
             onGameReady={handleGameReady}
           />
         )}

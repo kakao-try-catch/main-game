@@ -446,8 +446,10 @@ export default class MineSweeperScene extends Phaser.Scene {
           );
         } else {
           // 일반 업데이트 (즉시 반영)
+          let hasNonMineTile = false;
+
           for (const tileUpdate of data.tiles) {
-            this.tileManager.updateTileState(
+            const isMine = this.tileManager.updateTileState(
               tileUpdate.row,
               tileUpdate.col,
               tileUpdate.state,
@@ -455,12 +457,15 @@ export default class MineSweeperScene extends Phaser.Scene {
               tileUpdate.isMine,
               tileUpdate.flaggedBy,
             );
+
+            // 지뢰가 아닌 타일이 열렸는지 확인
+            if (!isMine && tileUpdate.state === TileState.REVEALED) {
+              hasNonMineTile = true;
+            }
           }
-          // 타일 열기 사운드 이벤트 발생 (숫자 타일도 빈 공간과 같은 소리)
-          if (
-            data.tiles.length > 0 &&
-            data.tiles[0].state === TileState.REVEALED
-          ) {
+
+          // 지뢰가 아닌 타일이 열렸을 때만 타일 열기 사운드 이벤트 발생
+          if (hasNonMineTile) {
             this.events.emit('minesweeperTileReveal');
           }
         }
@@ -542,6 +547,14 @@ export default class MineSweeperScene extends Phaser.Scene {
       // TileManager에서 발생한 이벤트를 GameContainer로 전달
       console.log(
         '[MineSweeperScene] minesweeperTileReveal 이벤트 수신 및 재전송',
+      );
+    });
+
+    // 지뢰 폭발 사운드 이벤트 리스너
+    this.events.on('minesweeperMineExplode', () => {
+      // TileManager에서 발생한 이벤트를 GameContainer로 전달
+      console.log(
+        '[MineSweeperScene] minesweeperMineExplode 이벤트 수신 및 재전송',
       );
     });
 

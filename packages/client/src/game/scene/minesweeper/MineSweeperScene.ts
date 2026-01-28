@@ -10,9 +10,12 @@ import { MineSweeperMockCore } from '../../physics/MineSweeperMockCore';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import { CONSTANTS } from '../../types/common';
 import TileManager from './TileManager';
+import TimerPrefab from '../../utils/TimerPrefab';
+import TimerSystem from '../../utils/TimerSystem';
 import {
   type TileUpdateEvent,
   type GameInitEvent,
+  type ScoreUpdateEvent,
   type PlayerId,
   type MineSweeperGamePreset,
   type ResolvedMineSweeperConfig,
@@ -41,11 +44,15 @@ export default class MineSweeperScene extends Phaser.Scene {
   // 타일 매니저
   private tileManager!: TileManager;
 
+  // 타이머 관련
+  private timerPrefab!: TimerPrefab;
+  private timerSystem!: TimerSystem;
+
   // 플레이어 관련
   private playerCount: number = 4;
   private players: PlayerData[] = [];
   private currentPlayerIndex: number = 0;
-  private myPlayerId: PlayerId = 'player_0';
+  private myPlayerId: PlayerId = 'id_1';
 
   // 남은 지뢰 수
   private remainingMines: number = 0;
@@ -94,9 +101,13 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 기존 소켓 이벤트 정리
     this.socket.off('game_init');
     this.socket.off('tile_update');
+    this.socket.off('score_update');
     this.events.off('updatePlayers');
 
     this.editorCreate();
+
+    // 타이머 생성
+    this.createTimer();
 
     // 타일 매니저 생성 및 초기화
     this.tileManager = new TileManager(this, this.gameContainer, {
@@ -115,7 +126,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 기본 플레이어 초기화 (Mock 모드에서 색상이 필요함)
     if (this.players.length === 0) {
       this.players = Array.from({ length: this.playerCount }, (_, i) => ({
-        id: `player_${i}`,
+        id: `id_${i + 1}`,
         name: `Player ${i + 1}`,
         score: 0,
         color: CONSTANTS.PLAYER_COLORS[i] || '#ffffff',
@@ -141,6 +152,103 @@ export default class MineSweeperScene extends Phaser.Scene {
     console.log(
       `[MineSweeperScene] 생성 완료: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows} 그리드, 지뢰 ${this.gameConfig.mineCount}개`,
     );
+
+    // 타이머 시작
+    this.startTimer();
+  }
+
+  /**
+   * 타이머 생성
+   */
+  private createTimer(): void {
+    const ratio = window.__GAME_RATIO || 1;
+    const canvasWidth = this.sys.game.canvas.width;
+    const canvasHeight = this.sys.game.canvas.height;
+    const timerBarMarginTop = 50 * ratio;
+    const timerBarMarginBottom = 50 * ratio;
+    const timerBarCanvasHeight =
+      canvasHeight - timerBarMarginTop - timerBarMarginBottom;
+    const timerBarWidth = 22 * ratio;
+    const timerBarMarginRight = 30 * ratio;
+    const timerBarX = canvasWidth - timerBarMarginRight - timerBarWidth / 2;
+    const timerBarY = timerBarMarginTop + timerBarCanvasHeight;
+
+    this.timerPrefab = new TimerPrefab(
+      this,
+      timerBarX,
+      timerBarY,
+      timerBarCanvasHeight,
+    );
+
+    // 타이머를 컨테이너에 추가
+    this.gameContainer.add(this.timerPrefab);
+
+    console.log('[MineSweeperScene] 타이머 생성 완료');
+  }
+
+  /**
+   * 타이머 시작
+   */
+  private startTimer(): void {
+    this.timerSystem = new TimerSystem(this, this.timerPrefab);
+    this.timerSystem.start(this.gameConfig.totalTime);
+
+    // 타이머 완료 이벤트 리스너 등록
+    this.events.once('timer:complete', () => {
+      this.onGameEnd();
+    });
+
+    console.log(
+      `[MineSweeperScene] 타이머 시작: ${this.gameConfig.totalTime}초`,
+    );
+  }
+
+  /**
+   * 게임 종료 처리
+   */
+  private onGameEnd(): void {
+    console.log('[MineSweeperScene] 게임 종료 - 타이머 완료');
+
+    if (isMockMode() && this.mockServerCore) {
+      // Mock 모드: 클라이언트에서 직접 정산
+      console.log('[MineSweeperScene] Mock 모드 - 깃발 기반 최종 정산 시작');
+      const scoreUpdates = this.mockServerCore.calculateFinalScores();
+
+      // 정산 결과 로그
+      for (const [playerId, update] of scoreUpdates.entries()) {
+        console.log(
+          `[MineSweeperScene] ${playerId} 최종 정산: ${update.scoreChange > 0 ? '+' : ''}${update.scoreChange}점 (정답 깃발: ${update.correctFlags}, 오답 깃발: ${update.incorrectFlags})`,
+        );
+      }
+
+      // 점수 업데이트 이벤트가 처리될 시간을 주기 위해 약간의 딜레이 후 게임 종료
+      setTimeout(() => {
+        this.emitGameEnd();
+      }, 100);
+    } else {
+      // 실제 서버 모드: 서버에 타임업 알림
+      console.log('[MineSweeperScene] 서버 모드 - game_time_up 이벤트 전송');
+      this.socket.emit('game_time_up', {
+        timestamp: Date.now(),
+      });
+      // 서버에서 final_settlement와 game_end 이벤트를 보낼 것임
+      // 여기서는 아무것도 하지 않음 (서버 응답 대기)
+    }
+  }
+
+  /**
+   * 게임 종료 이벤트 발생
+   */
+  private emitGameEnd(): void {
+    // 플레이어 데이터에 playerIndex 추가
+    const playersWithIndex = this.players.map((player, index) => ({
+      ...player,
+      playerIndex: index,
+    }));
+
+    // React로 게임 종료 이벤트 전달
+    this.events.emit('gameEnd', { players: playersWithIndex });
+    console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
   }
 
   /**
@@ -189,7 +297,7 @@ export default class MineSweeperScene extends Phaser.Scene {
       if (this.players[playerIndex]) {
         this.myPlayerId = this.players[playerIndex].id as PlayerId;
       } else {
-        this.myPlayerId = `player_${playerIndex}` as PlayerId;
+        this.myPlayerId = `id_${playerIndex + 1}` as PlayerId;
       }
 
       // 플레이어 색상 정보 표시
@@ -325,8 +433,54 @@ export default class MineSweeperScene extends Phaser.Scene {
       if (data.remainingMines !== undefined) {
         this.remainingMines = data.remainingMines;
         this.events.emit('remainingMinesUpdate', this.remainingMines);
-        console.log(`[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`);
+        console.log(
+          `[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`,
+        );
       }
+    });
+
+    // 점수 업데이트 이벤트
+    this.socket.on('score_update', (data: any) => {
+      console.log('[MineSweeperScene] score_update 수신:', data);
+
+      // 로컬 플레이어 점수 업데이트
+      const player = this.players.find((p) => p.id === data.playerId);
+      if (player) {
+        player.score = data.newScore;
+
+        // React UI에 점수 업데이트 알림
+        this.events.emit('scoreUpdate', {
+          playerId: data.playerId,
+          scoreChange: data.scoreChange,
+          newScore: data.newScore,
+          reason: data.reason,
+        });
+
+        console.log(
+          `[MineSweeperScene] ${data.playerId} 점수: ${data.scoreChange > 0 ? '+' : ''}${data.scoreChange} (총: ${data.newScore}) - ${data.reason}`,
+        );
+      }
+    });
+
+    // 게임 종료 이벤트 (서버에서 전송)
+    this.socket.on('game_end', (data: any) => {
+      console.log('[MineSweeperScene] 서버로부터 game_end 수신:', data);
+
+      // 서버에서 받은 최종 플레이어 데이터로 업데이트 (있는 경우)
+      if (data.players) {
+        // 서버에서 받은 플레이어 데이터를 로컬 플레이어 배열과 병합
+        data.players.forEach((serverPlayer: any) => {
+          const localPlayer = this.players.find(
+            (p) => p.id === serverPlayer.id,
+          );
+          if (localPlayer) {
+            localPlayer.score = serverPlayer.score;
+          }
+        });
+      }
+
+      // 게임 종료 처리
+      this.emitGameEnd();
     });
   }
 
@@ -363,7 +517,7 @@ export default class MineSweeperScene extends Phaser.Scene {
         // 플레이어 색상 기본값 설정
         if (this.players.length === 0) {
           this.players = Array.from({ length: this.playerCount }, (_, i) => ({
-            id: `player_${i}`,
+            id: `id_${i + 1}`,
             name: `Player ${i + 1}`,
             score: 0,
             color: CONSTANTS.PLAYER_COLORS[i] || '#ffffff',
@@ -380,6 +534,8 @@ export default class MineSweeperScene extends Phaser.Scene {
             newConfig.gridCols !== this.gameConfig.gridCols ||
             newConfig.gridRows !== this.gameConfig.gridRows ||
             newConfig.mineCount !== this.gameConfig.mineCount;
+
+          const timeChanged = newConfig.totalTime !== this.gameConfig.totalTime;
 
           if (configChanged) {
             this.gameConfig = newConfig;
@@ -400,12 +556,18 @@ export default class MineSweeperScene extends Phaser.Scene {
               `[MineSweeperScene] 그리드 재생성: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows}, 지뢰 ${this.gameConfig.mineCount}개`,
             );
           }
-        }
 
-        // Mock 서버가 있으면 플레이어 정보 업데이트
-        if (this.mockServerCore) {
-          // 이미 초기화된 경우 재초기화
-          this.setupMockServer();
+          // 타이머 재시작 (시간이 변경된 경우)
+          if (timeChanged) {
+            this.gameConfig = newConfig;
+            if (this.timerSystem) {
+              this.timerSystem.destroy();
+            }
+            this.startTimer();
+            console.log(
+              `[MineSweeperScene] 타이머 재시작: ${this.gameConfig.totalTime}초`,
+            );
+          }
         }
 
         // TileManager에 플레이어 색상 전달
@@ -451,6 +613,11 @@ export default class MineSweeperScene extends Phaser.Scene {
       }
     }
 
+    // 타이머 시스템 정리
+    if (this.timerSystem) {
+      this.timerSystem.destroy();
+    }
+
     // 타일 매니저 정리
     if (this.tileManager) {
       this.tileManager.destroy();
@@ -459,6 +626,8 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 소켓 이벤트 리스너 제거
     this.socket.off('game_init');
     this.socket.off('tile_update');
+    this.socket.off('score_update');
+    this.socket.off('game_end');
     this.events.off('updatePlayers');
 
     // 키보드 이벤트 리스너 제거

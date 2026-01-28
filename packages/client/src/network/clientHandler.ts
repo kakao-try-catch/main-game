@@ -90,6 +90,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
     // --- Game Logic ---
     case GamePacketType.SET_FIELD: {
       const store = useGameStore.getState();
+      // 게임 시작/리플레이 시 상태 초기화 (SET_FIELD가 새 게임의 시작 신호)
+      store.clearDropCellEventQueue();
       store.setAppleField(packet.apples);
       console.log('SET_FIELD packet received:', packet.apples.length, 'apples');
       break;

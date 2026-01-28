@@ -78,11 +78,7 @@ function AppContent() {
 
   // 플래피버드 게임 종료 핸들러
   const handleFlappyGameEnd = useCallback(
-    (data: {
-      finalScore: number;
-      reason: string;
-      players: PlayerData[];
-    }) => {
+    (data: { finalScore: number; reason: string; players: PlayerData[] }) => {
       setFlappyFinalData(data);
       setFlappyGameEnded(true);
       playSFX('appleGameEnd'); // 동일한 사운드 사용
@@ -101,10 +97,7 @@ function AppContent() {
     socketManager.send(replayReq);
     console.log('[App] REPLAY_REQ sent');
 
-    // 게임 상태 초기화 (dropCellEventQueue 포함)
-    useGameStore.getState().resetGameState();
-
-    // 상태 초기화
+    // 상태 초기화 (resetGameState는 READY_SCENE 수신 시 처리됨)
     setGameStarted(true);
     setFlappyGameEnded(false);
     setFlappyScore(0);
@@ -137,9 +130,6 @@ function AppContent() {
     };
     socketManager.send(lobbyReq);
     console.log('[App] RETURN_TO_THE_LOBBY_REQ sent');
-
-    // 게임 상태 초기화 (dropCellEventQueue 포함)
-    useGameStore.getState().resetGameState();
 
     setGameStarted(true);
     setFlappyGameEnded(false);

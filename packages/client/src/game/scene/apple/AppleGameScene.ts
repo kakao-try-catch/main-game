@@ -193,7 +193,10 @@ export default class AppleGameScene extends Phaser.Scene {
           const renderConfig = resolveAppleGameConfig(gameConfig);
 
           // 그리드 크기에 맞춰 레이아웃 재계산
-          this.calculateGridConfig(renderConfig.gridCols, renderConfig.gridRows);
+          this.calculateGridConfig(
+            renderConfig.gridCols,
+            renderConfig.gridRows,
+          );
 
           // AppleGameManager 설정 업데이트
           this.gameManager.updateGameConfig({
@@ -238,12 +241,17 @@ export default class AppleGameScene extends Phaser.Scene {
 
   /** gameStore 구독 설정 (멀티플레이용) */
   private subscribeToGameStore(): void {
-    // SET_FIELD 패킷 수신 시 사과밭 초기화
+    // SET_FIELD 패킷 수신 시 사과밭 초기화 (리플레이 포함)
     this.unsubscribeAppleField = useGameStore.subscribe(
       (state) => state.appleField,
       (appleField) => {
-        if (appleField && !this.isGameInitialized) {
+        if (appleField) {
           console.log('🍎 SET_FIELD 수신: 서버 데이터로 게임 초기화');
+          // 리플레이를 위해 기존 게임 상태 리셋
+          if (this.isGameInitialized) {
+            console.log('🔄 리플레이 감지: 게임 상태 리셋');
+            this.isGameInitialized = false;
+          }
           this.initializeWithServerData(appleField);
         }
       },

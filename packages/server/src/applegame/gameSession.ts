@@ -26,6 +26,7 @@ import { Server } from 'socket.io';
 // todo 리팩토링 할 때 공통적으로 분리 가능한 것 아님?
 export type GameStatus = 'waiting' | 'playing' | 'ended';
 
+// todo color 따로 빼낼 수 있음? 서버에서만 관리하는 기능이긴 함
 const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
 
 // PlayerData imported from packets
@@ -41,6 +42,8 @@ export class GameSession {
 
   // Store last-updated configs for each game type (client-sent sanitized configs)
   private gameConfigs: Map<GameType, GameConfig> = new Map();
+
+  private availableColors: Set<string> = new Set(PLAYER_COLORS);
 
   // 플레이어 공통 상태 관리
   public players: Map<string, PlayerState> = new Map();
@@ -87,8 +90,13 @@ export class GameSession {
   public addPlayer(id: string, name: string) {
     if (this.players.has(id)) return;
 
-    const index = this.players.size;
-    const color = PLAYER_COLORS[index % PLAYER_COLORS.length]; // 순서대로 부여 (4명 넘으면 순환 or 에러처리는 나중에)
+    // 풀에서 색상 하나 가져오기
+    const color = this.availableColors.values().next().value;
+    if (!color) {
+      console.error('[GameSession] No available colors');
+      return;
+    }
+    this.availableColors.delete(color);
 
     this.players.set(id, {
       id: id,
@@ -120,6 +128,11 @@ export class GameSession {
   }
 
   public removePlayer(id: string) {
+    const player = this.players.get(id);
+    if (player) {
+      // 색상 반환
+      this.availableColors.add(player.color);
+    }
     this.players.delete(id);
     // Notify remaining clients about updated room player list
     this.updateRemainingPlayers(id); // io 필요하면 전달하도록 수정 필요

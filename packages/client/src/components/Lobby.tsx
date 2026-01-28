@@ -17,6 +17,12 @@ import type {
   GameSettings,
   LobbyProps,
 } from '../game/types/common';
+import type {
+  MineSweeperGamePreset,
+  MapSizePreset,
+  DifficultyPreset,
+  TimeLimit,
+} from '../game/types/minesweeperPresets';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 
@@ -78,7 +84,11 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       ropeLength: 'normal', // 밧줄 길이
       connectAll: false, // 모두 묶기
     },
-    minesweeper: {},
+    minesweeper: {
+      mapSize: 'medium',
+      timeLimit: 180,
+      mineRatio: 'normal', // easy: 10%, normal: 20%, hard: 30%
+    },
   });
 
   const handleSelectGame = (gameId: string) => {
@@ -167,8 +177,34 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       };
       onGameStart('flappy', preset);
     } else if (selectedGame === 'minesweeper') {
-      // 지뢰찾기는 아직 구현되지 않음
-      onGameStart('minesweeper', {});
+      const settings = gameSettings.minesweeper;
+
+      // mapSize 변환
+      let mapSize: MapSizePreset = 'medium';
+      if (settings.mapSize === 'small') mapSize = 'small';
+      else if (settings.mapSize === 'medium') mapSize = 'medium';
+      else if (settings.mapSize === 'large') mapSize = 'large';
+
+      // difficulty 변환 (mineRatio)
+      let difficulty: DifficultyPreset = 'normal';
+      if (settings.mineRatio === 'easy') difficulty = 'easy';
+      else if (settings.mineRatio === 'normal') difficulty = 'normal';
+      else if (settings.mineRatio === 'hard') difficulty = 'hard';
+
+      const preset: MineSweeperGamePreset = {
+        mapSize,
+        difficulty,
+        timeLimit:
+          settings.timeLimit === -1
+            ? 'manual'
+            : (settings.timeLimit as TimeLimit),
+        manualTime:
+          settings.timeLimit === -1 || ![120, 180, 240].includes(settings.timeLimit || 0)
+            ? settings.timeLimit
+            : undefined,
+      };
+
+      onGameStart('minesweeper', preset);
     }
   };
 
@@ -627,6 +663,165 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 />
                                 <span style={{ color: DIFFICULTY_COLORS.hard }}>O</span>
                               </label>
+                            </div>
+                          </div>
+                        </div>
+                      ) : game.id === 'minesweeper' ? (
+                        <div
+                          className="settings-edit"
+                          onClick={(e) => {
+                            if (selectedGame !== game.id) {
+                              handleSelectGame(game.id);
+                            }
+                            e.stopPropagation();
+                          }}
+                        >
+                          <div className="setting-item">
+                            <label>맵 크기:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.mapSize}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'mapSize',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.mapSize === 'large'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.mapSize === 'medium'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="large" style={{ color: DIFFICULTY_COLORS.easy }}>큼 (60x30)</option>
+                                <option value="medium" style={{ color: DIFFICULTY_COLORS.normal }}>보통 (40x20)</option>
+                                <option value="small" style={{ color: DIFFICULTY_COLORS.hard }}>작음 (20x10)</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item time-limit-setting">
+                            <label>제한 시간:</label>
+                            {settings.timeLimit === -1 ||
+                            (![240, 180, 120].includes(
+                              settings.timeLimit || 0,
+                            ) &&
+                              settings.timeLimit !== undefined) ? (
+                              <input
+                                type="number"
+                                value={
+                                  settings.timeLimit === -1
+                                    ? ''
+                                    : settings.timeLimit
+                                }
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'timeLimit',
+                                    e.target.value
+                                      ? parseInt(e.target.value)
+                                      : -1,
+                                  )
+                                }
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.currentTarget.blur();
+                                  }
+                                }}
+                                className="nes-input is-small"
+                                placeholder="초"
+                                min={MIN_TIME_LIMIT}
+                                max={MAX_TIME_LIMIT}
+                                autoFocus
+                                onBlur={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  if (!e.target.value) {
+                                    handleSettingChange(
+                                      game.id,
+                                      'timeLimit',
+                                      180,
+                                    );
+                                  } else if (
+                                    val < MIN_TIME_LIMIT ||
+                                    val > MAX_TIME_LIMIT
+                                  ) {
+                                    showTimeLimitTooltipForGame(game.id);
+                                    setTimeout(() => {
+                                      handleSettingChange(
+                                        game.id,
+                                        'timeLimit',
+                                        180,
+                                      );
+                                    }, 100);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="nes-select is-small">
+                                <select
+                                  value={settings.timeLimit}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    handleSettingChange(
+                                      game.id,
+                                      'timeLimit',
+                                      val,
+                                    );
+                                  }}
+                                  onFocus={() => handleSelectGame(game.id)}
+                                  style={{
+                                    color:
+                                      settings.timeLimit === 240
+                                        ? DIFFICULTY_COLORS.easy
+                                        : settings.timeLimit === 180
+                                          ? DIFFICULTY_COLORS.normal
+                                          : DIFFICULTY_COLORS.hard,
+                                  }}
+                                >
+                                  <option value={240} style={{ color: DIFFICULTY_COLORS.easy }}>240초</option>
+                                  <option value={180} style={{ color: DIFFICULTY_COLORS.normal }}>180초</option>
+                                  <option value={120} style={{ color: DIFFICULTY_COLORS.hard }}>120초</option>
+                                  <option value={-1}>직접 입력</option>
+                                </select>
+                              </div>
+                            )}
+                            {showTimeLimitTooltip[game.id] && (
+                              <div className="time-limit-tooltip">
+                                제한 시간은 30-300초 사이로 설정해주세요
+                              </div>
+                            )}
+                          </div>
+                          <div className="setting-item">
+                            <label>지뢰 비율:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.mineRatio}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'mineRatio',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.mineRatio === 'easy'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.mineRatio === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="easy" style={{ color: DIFFICULTY_COLORS.easy }}>10%</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>20%</option>
+                                <option value="hard" style={{ color: DIFFICULTY_COLORS.hard }}>30%</option>
+                              </select>
                             </div>
                           </div>
                         </div>

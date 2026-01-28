@@ -561,6 +561,11 @@ export default class MineSweeperScene extends Phaser.Scene {
             this.tileManager.initialize();
             this.tileManager.setPlayerColors(this.players);
 
+            // Mock 모드에서 서버 코어도 동일한 설정으로 재초기화
+            if (isMockMode() && this.socket instanceof MockSocket) {
+              this.setupMockServer();
+            }
+
             console.log(
               `[MineSweeperScene] 그리드 재생성: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows}, 지뢰 ${this.gameConfig.mineCount}개`,
             );

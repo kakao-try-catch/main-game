@@ -56,6 +56,8 @@ export interface GameSettings {
   pipeSpeed?: 'slow' | 'normal' | 'fast'; // 이동 속도
   ropeLength?: 'short' | 'normal' | 'long'; // 밧줄 길이
   connectAll?: boolean; // 모두 묶기 (3인 이상일 때 폐쇄형 도형)
+  // 지뢰찾기 설정
+  mineRatio?: 'easy' | 'normal' | 'hard'; // 지뢰 비율 (10%, 20%, 30%)
 }
 
 /** 로비 Props */

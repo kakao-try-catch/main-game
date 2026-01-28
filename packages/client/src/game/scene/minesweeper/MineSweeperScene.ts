@@ -470,6 +470,16 @@ export default class MineSweeperScene extends Phaser.Scene {
     this.socket.on('game_end', (data: any) => {
       console.log('[MineSweeperScene] 서버로부터 game_end 수신:', data);
 
+      // 타이머 정지
+      if (this.timerSystem) {
+        this.timerSystem.destroy();
+      }
+
+      // 승리로 인한 종료인 경우 메시지 표시
+      if (data.reason === 'win') {
+        console.log('[MineSweeperScene] 🎉 게임 승리! 모든 안전한 타일을 열었습니다!');
+      }
+
       // 서버에서 받은 최종 플레이어 데이터로 업데이트 (있는 경우)
       if (data.players) {
         // 서버에서 받은 플레이어 데이터를 로컬 플레이어 배열과 병합

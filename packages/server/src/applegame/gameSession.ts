@@ -208,16 +208,16 @@ export class GameSession {
       | GameConfig
       | undefined;
     const mapSize = raw?.mapSize ?? MapSize.MEDIUM;
-    let gridCols = APPLE_GAME_CONFIG.gridCols; // todo 기본값 반영 필요
-    let gridRows = APPLE_GAME_CONFIG.gridRows; // todo 기본값 반영 필요
+    let gridCols = 20; // todo 기본값 반영 필요
+    let gridRows = 10; // todo 기본값 반영 필요
     switch (mapSize) {
       case MapSize.SMALL:
-        gridCols = 11;
-        gridRows = 6;
+        gridCols = 16;
+        gridRows = 8;
         break;
       case MapSize.LARGE:
-        gridCols = 25;
-        gridRows = 14;
+        gridCols = 30;
+        gridRows = 15;
         break;
     }
 

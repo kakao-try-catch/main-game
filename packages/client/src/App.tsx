@@ -94,6 +94,9 @@ function AppContent() {
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
+    // 게임 상태 초기화 (dropCellEventQueue 포함)
+    useGameStore.getState().resetGameState();
+
     // 상태 초기화
     setGameStarted(true);
     setFlappyGameEnded(false);
@@ -121,6 +124,9 @@ function AppContent() {
   }, []);
 
   const handleLobby = useCallback(() => {
+    // 게임 상태 초기화 (dropCellEventQueue 포함)
+    useGameStore.getState().resetGameState();
+
     setGameStarted(true);
     setFlappyGameEnded(false);
     setFlappyScore(0);
@@ -169,6 +175,9 @@ function AppContent() {
   };
 
   const handleGameStart = (gameType: string, preset: unknown) => {
+    // 게임 상태 초기화 (이전 게임의 dropCellEventQueue 등 정리)
+    useGameStore.getState().resetGameState();
+
     // 새 게임 시작 시 key 변경
     setGameKey((prev) => prev + 1);
 

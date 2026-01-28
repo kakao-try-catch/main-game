@@ -133,6 +133,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         mode: Phaser.Scale.NONE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
+      // 비활성 탭/창에서도 게임 루프 계속 실행 (멀티 모니터 지원)
+      disableVisibilityChange: true,
     };
 
     const game = new Phaser.Game(gameConfig);

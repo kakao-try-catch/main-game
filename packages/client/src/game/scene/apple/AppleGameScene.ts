@@ -1,10 +1,9 @@
 import Phaser from 'phaser';
 import AppleGameManager from './AppleGameManager';
-import type { AppleGamePreset } from '../../types/AppleGamePreset';
-import { resolvePreset } from '../../types/AppleGamePreset';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import type { PlayerData } from '../../types/common';
 import { useGameStore } from '../../../store/gameStore';
+import { resolveAppleGameConfig } from '../../../../../common/src/appleGameUtils';
 
 // You can write more code here
 
@@ -56,7 +55,6 @@ export default class AppleGameScene extends Phaser.Scene {
     baseY: number;
   };
   private isGameInitialized: boolean = false;
-  private _currentPreset?: AppleGamePreset;
   private unsubscribeAppleField?: () => void;
   private unsubscribeGameTime?: () => void;
   private unsubscribeGameResults?: () => void;
@@ -185,35 +183,28 @@ export default class AppleGameScene extends Phaser.Scene {
       (data: {
         playerCount: number;
         players: PlayerData[];
-        // 얘는 AppleGameManager의 init(currentPlayerIndex: number)로 쓰이던 애
-        // this.setCurrentPlayerIndex(currentPlayerIndex); // 외부에서 받은 값 사용
         currentPlayerIndex: number;
-        preset?: AppleGamePreset;
-        isMultiplayer?: boolean;
       }) => {
         console.log('📩 updatePlayers 이벤트 수신:', data);
 
-        // 프리셋이 있으면 게임 설정 업데이트
-        if (data.preset) {
-          this._currentPreset = data.preset;
-          const resolvedConfig = resolvePreset(data.preset);
+        // gameStore.gameConfig에서 렌더링 설정 가져오기
+        const gameConfig = useGameStore.getState().gameConfig;
+        if (gameConfig) {
+          const renderConfig = resolveAppleGameConfig(gameConfig);
 
           // 그리드 크기에 맞춰 레이아웃 재계산
-          this.calculateGridConfig(
-            resolvedConfig.gridCols,
-            resolvedConfig.gridRows,
-          );
+          this.calculateGridConfig(renderConfig.gridCols, renderConfig.gridRows);
 
           // AppleGameManager 설정 업데이트
           this.gameManager.updateGameConfig({
-            ...resolvedConfig,
+            ...renderConfig,
             baseX: this._appleGridConfig.baseX,
             baseY: this._appleGridConfig.baseY,
             spacingX: this._appleGridConfig.spacingX,
             spacingY: this._appleGridConfig.spacingY,
           });
 
-          console.log('🎮 프리셋 적용:', data.preset, '→', resolvedConfig);
+          console.log('🎮 gameConfig 적용:', gameConfig, '→', renderConfig);
         }
 
         // 플레이어 데이터 저장 (멀티플레이에서 SET_FIELD 대기용)
@@ -223,31 +214,11 @@ export default class AppleGameScene extends Phaser.Scene {
           currentPlayerIndex: data.currentPlayerIndex,
         };
 
-        // 멀티플레이 모드: SET_FIELD 패킷을 기다림
-        // if (data.isMultiplayer) {
-        //
-        //   return;
-        // }
-
         console.log('🌐 멀티플레이 모드: SET_FIELD 패킷 대기 중...');
         const appleField = useGameStore.getState().appleField;
         if (appleField && !this.isGameInitialized) {
-          // todo isGameInitialized는 왜 필요함?
           this.initializeWithServerData(appleField);
-          // this.isGameInitialized = true;
-          // todo 아래 로직 참고 필요할 수도
         }
-
-        // 싱글플레이 모드: 기존 방식으로 바로 초기화
-        // if (!this.isGameInitialized) {
-        //   this.gameManager.updatePlayerData(data.playerCount, data.players);
-        //   this.gameManager.init(data.currentPlayerIndex);
-        //   this.isGameInitialized = true;
-        // } else {
-        //   // 이미 초기화된 경우 업데이트만
-        //   this.gameManager.updatePlayerData(data.playerCount, data.players);
-        //   this.gameManager.setCurrentPlayerIndex(data.currentPlayerIndex);
-        // }
       },
     );
 

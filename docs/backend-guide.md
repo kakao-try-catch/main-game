@@ -1,73 +1,61 @@
 # 백엔드 가이드 - 사과 게임 Config 동기화
 
-> **⚠️ 중요**: 서버 코드 분석 결과, **대부분의 기능이 이미 구현되어 있습니다!**
-> 이 문서는 현재 상태와 수정이 필요한 부분만 명시합니다.
+> **✅ 완료**: 서버-클라이언트 그리드 크기 통일 완료
+> 이 문서는 현재 구현 상태를 설명합니다.
 
 ---
 
 ## 📋 요약: 현재 상태
 
-| 기능                      | 상태                   | 위치                     |
-| ------------------------- | ---------------------- | ------------------------ |
-| 사과 배열 생성            | ✅ 구현됨              | `gameSession.ts:193-204` |
-| SET_FIELD 전송            | ✅ 구현됨              | `gameSession.ts:155-159` |
-| SET_TIME 전송             | ✅ 구현됨              | `gameSession.ts:169-173` |
-| CONFIRM_DRAG_AREA 처리    | ✅ 구현됨              | `gameSession.ts:358-397` |
-| 합 10 검증                | ✅ 구현됨              | `gameSession.ts:369-370` |
-| 점수 계산                 | ✅ 구현됨              | `gameSession.ts:376-377` |
-| 타이머 및 게임 종료       | ✅ 구현됨              | `gameSession.ts:238-270` |
-| **mapSize → 그리드 변환** | ⚠️ **불일치**          | 아래 참고                |
-| UPDATE_SCORE 전송         | ⚠️ 점수 변경 시 미전송 | 아래 참고                |
+| 기능                      | 상태      | 위치                                |
+| ------------------------- | --------- | ----------------------------------- |
+| 사과 배열 생성            | ✅ 구현됨 | `gameSession.ts:193-204`            |
+| SET_FIELD 전송            | ✅ 구현됨 | `gameSession.ts:155-159`            |
+| SET_TIME 전송             | ✅ 구현됨 | `gameSession.ts:169-173`            |
+| CONFIRM_DRAG_AREA 처리    | ✅ 구현됨 | `gameSession.ts:358-397`            |
+| 합 10 검증                | ✅ 구현됨 | `gameSession.ts:369-370`            |
+| 점수 계산                 | ✅ 구현됨 | `gameSession.ts:376-377`            |
+| 타이머 및 게임 종료       | ✅ 구현됨 | `gameSession.ts:238-270`            |
+| **mapSize → 그리드 변환** | ✅ 통일됨 | `common/appleGameUtils.ts` 공통화   |
+| UPDATE_SCORE 전송         | ⚠️ 권장   | 아래 참고                           |
 
 ---
 
-## 🔴 필수 수정: mapSize 그리드 크기 불일치
-
-### 문제점
-
-서버와 클라이언트가 서로 다른 그리드 크기를 사용합니다:
-
-| mapSize | 서버 (gameSession.ts:213-222) | 클라이언트 (AppleGamePreset.ts:58-73) |
-| ------- | ----------------------------- | ------------------------------------- |
-| SMALL   | 11×6 = 66개                   | 16×8 = 128개                          |
-| MEDIUM  | 17×10 = 170개 (기본값)        | 20×10 = 200개                         |
-| LARGE   | 25×14 = 350개                 | 30×15 = 450개                         |
+## ✅ 완료: 그리드 크기 서버-클라이언트 통일
 
 ### 해결 방법
 
-**서버 코드 수정** (`packages/server/src/applegame/gameSession.ts:213-222`):
+`packages/common/src/appleGameUtils.ts`에 공통 유틸리티를 생성하여 서버와 클라이언트가 동일한 그리드 크기를 사용하도록 통일했습니다.
 
 ```typescript
-// 현재 코드 (문제)
-switch (mapSize) {
-  case MapSize.SMALL:
-    gridCols = 11;
-    gridRows = 6;
-    break;
-  case MapSize.LARGE:
-    gridCols = 25;
-    gridRows = 14;
-    break;
-}
+// packages/common/src/appleGameUtils.ts
+export const MAP_SIZE_TO_GRID = {
+  [MapSize.SMALL]: { cols: 16, rows: 8 },
+  [MapSize.MEDIUM]: { cols: 20, rows: 10 },
+  [MapSize.LARGE]: { cols: 30, rows: 15 },
+} as const;
 
-// 수정 후 (클라이언트와 일치)
-switch (mapSize) {
-  case MapSize.SMALL:
-    gridCols = 16;
-    gridRows = 8;
-    break;
-  case MapSize.MEDIUM:
-    gridCols = 20;
-    gridRows = 10;
-    break;
-  case MapSize.LARGE:
-    gridCols = 30;
-    gridRows = 15;
-    break;
+export function resolveAppleGameConfig(cfg: AppleGameConfig): AppleGameRenderConfig {
+  const grid = MAP_SIZE_TO_GRID[cfg.mapSize] ?? MAP_SIZE_TO_GRID[MapSize.MEDIUM];
+  // ...
 }
 ```
 
-**정확한 위치**: `packages/server/src/applegame/gameSession.ts` 라인 213-222
+### 변경된 파일
+
+| 파일                                      | 변경 내용                              |
+| ----------------------------------------- | -------------------------------------- |
+| `common/src/appleGameUtils.ts`            | **신규** - 공통 그리드 유틸리티        |
+| `server/src/applegame/gameSession.ts`     | `resolveAppleGameConfig()` 사용        |
+| `client/src/game/scene/apple/AppleGameScene.ts` | `resolveAppleGameConfig()` 사용   |
+
+### 통일된 그리드 크기
+
+| mapSize | gridCols | gridRows | 총 사과 개수 |
+| ------- | -------- | -------- | ------------ |
+| SMALL   | 16       | 8        | 128개        |
+| MEDIUM  | 20       | 10       | 200개        |
+| LARGE   | 30       | 15       | 450개        |
 
 ---
 
@@ -126,6 +114,7 @@ packages/server/src/
 ```
 packages/common/src/
 ├── config.ts                   # AppleGameConfig, MapSize 정의
+├── appleGameUtils.ts           # 그리드 크기 매핑, resolveAppleGameConfig() ⭐
 └── packets.ts                  # 패킷 타입 정의
 ```
 
@@ -141,12 +130,19 @@ spec/
 
 ## 🔍 주요 코드 위치 참조
 
+### 공통 (`appleGameUtils.ts`)
+
+| 함수/영역                 | 설명                                      |
+| ------------------------- | ----------------------------------------- |
+| `MAP_SIZE_TO_GRID`        | MapSize → gridCols/gridRows 매핑          |
+| `resolveAppleGameConfig()` | AppleGameConfig → AppleGameRenderConfig  |
+
 ### 서버 (`gameSession.ts`)
 
 | 함수/영역                 | 라인    | 설명                                 |
 | ------------------------- | ------- | ------------------------------------ |
 | `generateField()`         | 193-204 | 사과 배열 생성                       |
-| `getAppliedAppleConfig()` | 206-236 | Config 변환 (⚠️ mapSize 불일치 여기) |
+| `getAppliedAppleConfig()` | 206-221 | 공통 유틸 `resolveAppleGameConfig()` 사용 |
 | `startGame()`             | 140-183 | 게임 시작 (SET_FIELD, SET_TIME 전송) |
 | `handleDragConfirm()`     | 358-397 | 드래그 확인 처리 (합 검증, 점수)     |
 | `finishGame()`            | 249-270 | 게임 종료 (TIME_END 전송)            |
@@ -165,10 +161,14 @@ spec/
 
 | 파일                  | 라인    | 설명                                 |
 | --------------------- | ------- | ------------------------------------ |
-| `AppleGamePreset.ts`  | 58-73   | 그리드 크기 정의 (S/M/L)             |
+| `AppleGameScene.ts`   | 192-210 | 공통 유틸 `resolveAppleGameConfig()` 사용 |
+| `gameStore.ts`        | -       | gameConfig 상태 관리 (Single Source of Truth) |
 | `Lobby.tsx`           | 130-132 | generation 인코딩 (0=쉬움, 1=어려움) |
 | `clientHandler.ts`    | 90-96   | SET_FIELD 처리                       |
 | `AppleGameManager.ts` | 362     | 합 10 검증                           |
+
+> **참고**: `AppleGamePreset.ts`의 `resolvePreset()` 함수는 제거되었습니다.
+> 대신 `common/appleGameUtils.ts`의 `resolveAppleGameConfig()`를 사용합니다.
 
 ---
 
@@ -286,12 +286,12 @@ export interface DropCellIndexPacket {
 
 ## 🔧 체크리스트
 
-### 필수 수정
+### ✅ 완료된 항목
 
-- [ ] `gameSession.ts:213-222`: mapSize 그리드 크기 수정
-  - SMALL: 11×6 → **16×8**
-  - MEDIUM: 기본값 17×10 → **20×10**
-  - LARGE: 25×14 → **30×15**
+- [x] 그리드 크기 서버-클라이언트 통일 (`common/appleGameUtils.ts` 생성)
+- [x] 서버 `gameSession.ts`에서 공통 유틸 사용
+- [x] 클라이언트 `AppleGameScene.ts`에서 공통 유틸 사용
+- [x] `applePreset` prop 제거 (gameStore.gameConfig 사용)
 
 ### 권장 수정
 
@@ -330,11 +330,12 @@ export interface DropCellIndexPacket {
 
 ## 🎯 결론
 
-**대부분의 서버 로직이 이미 구현되어 있습니다!**
+**서버-클라이언트 그리드 크기 통일 완료!**
 
-유일하게 수정이 필요한 부분:
+주요 변경사항:
+1. ✅ `common/appleGameUtils.ts` 생성 - 그리드 크기 매핑 공통화
+2. ✅ 서버/클라이언트 모두 `resolveAppleGameConfig()` 사용
+3. ✅ 클라이언트 `applePreset` 제거 → `gameStore.gameConfig` 사용
 
-1. **mapSize 그리드 크기 불일치** → `gameSession.ts:213-222` 수정
-2. **(선택) UPDATE_SCORE 전송** → `handleDragConfirm()` 끝에 추가
-
-수정 후 테스트를 진행하면 됩니다.
+남은 권장 수정:
+- **(선택) UPDATE_SCORE 전송** → `handleDragConfirm()` 끝에 추가

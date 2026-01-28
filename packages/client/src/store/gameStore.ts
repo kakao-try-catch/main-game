@@ -129,7 +129,7 @@ export const useGameStore = create<GameState>()(
         newMap.delete(playerIndex);
         return { otherPlayerDrags: newMap };
       }),
-    setGameResults: (results: GameResult[]) => set({ gameResults: results }),
+    setGameResults: (results: PlayerData[]) => set({ gameResults: results }),
     resetGameState: () =>
       set({
         appleField: null,

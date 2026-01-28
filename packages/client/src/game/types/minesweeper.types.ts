@@ -84,7 +84,7 @@ export const DEFAULT_MINESWEEPER_CONFIG: MineSweeperConfig = {
   minePenalty: -20,
   flagCorrectBonus: 10,
   flagWrongPenalty: -10,
-  minScore: 0,
+  minScore: Number.NEGATIVE_INFINITY, // 음수 허용 (지뢰 많이 밟으면 마이너스)
 };
 
 // ===== 소켓 이벤트 타입 =====
@@ -135,5 +135,15 @@ export interface GameInitEvent {
 // 남은 지뢰 수 업데이트 이벤트
 export interface RemainingMinesUpdateEvent {
   remainingMines: number;
+  timestamp: number;
+}
+
+// 점수 업데이트 이벤트
+export interface ScoreUpdateEvent {
+  playerId: PlayerId;
+  scoreChange: number;
+  newScore: number;
+  position: { row: number; col: number };
+  reason: 'safe_tile' | 'flood_fill' | 'mine_hit';
   timestamp: number;
 }

@@ -19,6 +19,8 @@ export interface MineSweeperGamePreset {
 
   /** 난이도 (지뢰 비율) */
   difficulty: DifficultyPreset;
+  /** 수동 설정 시 지뢰 비율 (0~1) */
+  manualMineRatio?: number;
 }
 
 /** 프리셋에서 실제 게임 설정으로 변환 */
@@ -63,16 +65,20 @@ export function resolveMineSweeperPreset(
 
   // 2. 지뢰 비율 결정
   let mineRatio: number;
-  switch (preset.difficulty) {
-    case 'easy':
-      mineRatio = 0.1; // 10%
-      break;
-    case 'normal':
-      mineRatio = 0.15; // 15%
-      break;
-    case 'hard':
-      mineRatio = 0.2; // 20%
-      break;
+  if (preset.manualMineRatio !== undefined) {
+    mineRatio = preset.manualMineRatio;
+  } else {
+    switch (preset.difficulty) {
+      case 'easy':
+        mineRatio = 0.15; // 15%
+        break;
+      case 'normal':
+        mineRatio = 0.2; // 20%
+        break;
+      case 'hard':
+        mineRatio = 0.25; // 25%
+        break;
+    }
   }
 
   // 3. 지뢰 개수 계산

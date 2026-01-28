@@ -13,6 +13,7 @@ import TileManager from './TileManager';
 import {
   type TileUpdateEvent,
   type GameInitEvent,
+  type ScoreUpdateEvent,
   type PlayerId,
   type MineSweeperGamePreset,
   type ResolvedMineSweeperConfig,
@@ -45,7 +46,7 @@ export default class MineSweeperScene extends Phaser.Scene {
   private playerCount: number = 4;
   private players: PlayerData[] = [];
   private currentPlayerIndex: number = 0;
-  private myPlayerId: PlayerId = 'player_0';
+  private myPlayerId: PlayerId = 'id_1';
 
   // 남은 지뢰 수
   private remainingMines: number = 0;
@@ -94,6 +95,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 기존 소켓 이벤트 정리
     this.socket.off('game_init');
     this.socket.off('tile_update');
+    this.socket.off('score_update');
     this.events.off('updatePlayers');
 
     this.editorCreate();
@@ -115,7 +117,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 기본 플레이어 초기화 (Mock 모드에서 색상이 필요함)
     if (this.players.length === 0) {
       this.players = Array.from({ length: this.playerCount }, (_, i) => ({
-        id: `player_${i}`,
+        id: `id_${i + 1}`,
         name: `Player ${i + 1}`,
         score: 0,
         color: CONSTANTS.PLAYER_COLORS[i] || '#ffffff',
@@ -189,7 +191,7 @@ export default class MineSweeperScene extends Phaser.Scene {
       if (this.players[playerIndex]) {
         this.myPlayerId = this.players[playerIndex].id as PlayerId;
       } else {
-        this.myPlayerId = `player_${playerIndex}` as PlayerId;
+        this.myPlayerId = `id_${playerIndex + 1}` as PlayerId;
       }
 
       // 플레이어 색상 정보 표시
@@ -325,7 +327,32 @@ export default class MineSweeperScene extends Phaser.Scene {
       if (data.remainingMines !== undefined) {
         this.remainingMines = data.remainingMines;
         this.events.emit('remainingMinesUpdate', this.remainingMines);
-        console.log(`[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`);
+        console.log(
+          `[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`,
+        );
+      }
+    });
+
+    // 점수 업데이트 이벤트
+    this.socket.on('score_update', (data: any) => {
+      console.log('[MineSweeperScene] score_update 수신:', data);
+
+      // 로컬 플레이어 점수 업데이트
+      const player = this.players.find((p) => p.id === data.playerId);
+      if (player) {
+        player.score = data.newScore;
+
+        // React UI에 점수 업데이트 알림
+        this.events.emit('scoreUpdate', {
+          playerId: data.playerId,
+          scoreChange: data.scoreChange,
+          newScore: data.newScore,
+          reason: data.reason,
+        });
+
+        console.log(
+          `[MineSweeperScene] ${data.playerId} 점수: ${data.scoreChange > 0 ? '+' : ''}${data.scoreChange} (총: ${data.newScore}) - ${data.reason}`,
+        );
       }
     });
   }
@@ -363,7 +390,7 @@ export default class MineSweeperScene extends Phaser.Scene {
         // 플레이어 색상 기본값 설정
         if (this.players.length === 0) {
           this.players = Array.from({ length: this.playerCount }, (_, i) => ({
-            id: `player_${i}`,
+            id: `id_${i + 1}`,
             name: `Player ${i + 1}`,
             score: 0,
             color: CONSTANTS.PLAYER_COLORS[i] || '#ffffff',
@@ -400,12 +427,6 @@ export default class MineSweeperScene extends Phaser.Scene {
               `[MineSweeperScene] 그리드 재생성: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows}, 지뢰 ${this.gameConfig.mineCount}개`,
             );
           }
-        }
-
-        // Mock 서버가 있으면 플레이어 정보 업데이트
-        if (this.mockServerCore) {
-          // 이미 초기화된 경우 재초기화
-          this.setupMockServer();
         }
 
         // TileManager에 플레이어 색상 전달
@@ -459,6 +480,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 소켓 이벤트 리스너 제거
     this.socket.off('game_init');
     this.socket.off('tile_update');
+    this.socket.off('score_update');
     this.events.off('updatePlayers');
 
     // 키보드 이벤트 리스너 제거

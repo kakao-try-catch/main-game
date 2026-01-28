@@ -118,7 +118,8 @@ export class GameSession {
         type: SystemPacketType.ROOM_UPDATE,
         players: this.getPlayers(),
         updateType: RoomUpdateType.PLAYER_JOIN,
-        yourIndex: this.getIndex(playerId), // 각 플레이어 본인의 인덱스
+        yourIndex: this.getIndex(playerId),
+        roomId: this.roomId,
       };
       otherSocket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Other);
     }

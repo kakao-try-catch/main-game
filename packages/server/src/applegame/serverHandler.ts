@@ -256,6 +256,7 @@ export async function joinPlayerToGame(
       players: session.getPlayers(),
       updateType: RoomUpdateType.INIT_ROOM,
       yourIndex: session.getIndex(socket.id),
+      roomId: roomId,
     };
     socket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Player);
     console.log(
@@ -293,6 +294,7 @@ export async function joinPlayerToGame(
     players: session.getPlayers(),
     updateType: RoomUpdateType.PLAYER_JOIN,
     yourIndex: session.getIndex(socket.id),
+    roomId: roomId,
   };
   socket.emit(SystemPacketType.ROOM_UPDATE, roomUpdatePacket2Player);
   console.log(

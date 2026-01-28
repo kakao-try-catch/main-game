@@ -244,25 +244,51 @@ export default class AppleGameManager {
 
   /** DROP_CELL_INDEX 이벤트 구독 */
   private unsubscribeDropCell?: () => void;
+  private lastProcessedQueueLength: number = 0;
 
   private subscribeToDropCellEvents(): void {
     // 이전 구독 해제
     this.unsubscribeDropCell?.();
 
+    // 새 게임 시작 시 카운터 초기화
+    this.lastProcessedQueueLength = 0;
+
+    // 먼저 로딩 중에 누적된 이벤트들 처리
+    this.processPendingDropCellEvents();
+
+    // 새로운 이벤트 구독 (큐 길이 변화 감지)
     this.unsubscribeDropCell = useGameStore.subscribe(
-      (state) => state.dropCellEvent,
-      (event) => {
-        if (!event) return;
-
-        const myId = socketManager.getId();
-        const isMe = event.winnerId === myId;
-
-        this.handleDropCell(event.indices, isMe);
-
-        // 이벤트 소비 후 클리어
-        useGameStore.getState().setDropCellEvent(null);
+      (state) => state.dropCellEventQueue,
+      (queue) => {
+        // 새로 추가된 이벤트만 처리
+        if (queue.length > this.lastProcessedQueueLength) {
+          const newEvents = queue.slice(this.lastProcessedQueueLength);
+          newEvents.forEach((event) => {
+            const myId = socketManager.getId();
+            const isMe = event.winnerId === myId;
+            this.handleDropCell(event.indices, isMe);
+          });
+          this.lastProcessedQueueLength = queue.length;
+        }
       },
     );
+  }
+
+  /** 로딩 중 누적된 DROP_CELL_INDEX 이벤트 처리 */
+  private processPendingDropCellEvents(): void {
+    const queue = useGameStore.getState().dropCellEventQueue;
+    if (queue.length === 0) return;
+
+    console.log(`🍎 로딩 중 누적된 ${queue.length}개의 DROP_CELL_INDEX 이벤트 처리`);
+
+    queue.forEach((event) => {
+      const myId = socketManager.getId();
+      const isMe = event.winnerId === myId;
+      this.handleDropCell(event.indices, isMe);
+    });
+
+    // 처리된 이벤트 수 기록 (새 이벤트와 구분하기 위함)
+    this.lastProcessedQueueLength = queue.length;
   }
 
   /** 사과 제거 처리 */

@@ -59,9 +59,10 @@ interface GameState {
   isGameStarted: boolean;
   setGameStarted: (started: boolean) => void;
 
-  // 사과 제거 이벤트 (DROP_CELL_INDEX)
-  dropCellEvent: DropCellEvent | null;
-  setDropCellEvent: (event: DropCellEvent | null) => void;
+  // 사과 제거 이벤트 큐 (DROP_CELL_INDEX) - 로딩 중 도착한 이벤트도 누적
+  dropCellEventQueue: DropCellEvent[];
+  addDropCellEvent: (event: DropCellEvent) => void;
+  clearDropCellEventQueue: () => void;
 
   // 타 플레이어 드래그 영역 (UPDATE_DRAG_AREA)
   otherPlayerDrags: Map<number, DragAreaData>;
@@ -92,7 +93,7 @@ export const useGameStore = create<GameState>()(
     appleField: null,
     gameTime: null,
     isGameStarted: false,
-    dropCellEvent: null,
+    dropCellEventQueue: [],
     otherPlayerDrags: new Map<number, DragAreaData>(),
     gameResults: null,
 
@@ -115,8 +116,9 @@ export const useGameStore = create<GameState>()(
     setAppleField: (apples: number[]) => set({ appleField: apples }),
     setGameTime: (time: number) => set({ gameTime: time }),
     setGameStarted: (started: boolean) => set({ isGameStarted: started }),
-    setDropCellEvent: (event: DropCellEvent | null) =>
-      set({ dropCellEvent: event }),
+    addDropCellEvent: (event: DropCellEvent) =>
+      set((state) => ({ dropCellEventQueue: [...state.dropCellEventQueue, event] })),
+    clearDropCellEventQueue: () => set({ dropCellEventQueue: [] }),
     updateOtherPlayerDrag: (data: DragAreaData) =>
       set((state) => {
         const newMap = new Map(state.otherPlayerDrags);
@@ -135,7 +137,7 @@ export const useGameStore = create<GameState>()(
         appleField: null,
         gameTime: null,
         isGameStarted: false,
-        dropCellEvent: null,
+        dropCellEventQueue: [],
         otherPlayerDrags: new Map<number, DragAreaData>(),
         gameResults: null,
       }),

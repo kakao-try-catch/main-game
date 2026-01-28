@@ -74,6 +74,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
 
     case SystemPacketType.READY_SCENE:
       useGameStore.getState().setScreen('game');
+      useGameStore.getState().setGameStarted(true);
       switch (packet.selectedGameType) {
         // 다른 게임 타입이 추가되면 여기에 케이스 추가
         case GameType.APPLE_GAME:
@@ -90,7 +91,6 @@ export const handleServerPacket = (packet: ServerPacket) => {
     case GamePacketType.SET_FIELD: {
       const store = useGameStore.getState();
       store.setAppleField(packet.apples);
-      store.setGameStarted(true); // todo 이건 여기서 할 게 아니지 않음?
       console.log('SET_FIELD packet received:', packet.apples.length, 'apples');
       break;
     }
@@ -99,8 +99,9 @@ export const handleServerPacket = (packet: ServerPacket) => {
       const store = useGameStore.getState();
       const { winnerId, indices, totalScore } = packet;
 
-      // 사과 제거 이벤트 발생 (AppleGameManager에서 처리)
-      store.setDropCellEvent({ winnerId, indices, totalScore });
+      // 사과 제거 이벤트를 큐에 추가 (AppleGameManager에서 처리)
+      // 로딩 중에 도착한 이벤트도 누적되어 게임 초기화 시 처리됨
+      store.addDropCellEvent({ winnerId, indices, totalScore });
 
       console.log(
         'DROP_CELL_INDEX packet received:',

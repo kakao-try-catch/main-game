@@ -502,7 +502,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
         <div
           className="button-wrapper"
           onMouseEnter={() =>
-            (!selectedGame || players.length < 2) && setShowButtonTooltip(true)
+            (!selectedGame || isDisabled || players.length < 2) && setShowButtonTooltip(true)
           }
           onMouseLeave={() => setShowButtonTooltip(false)}
         >

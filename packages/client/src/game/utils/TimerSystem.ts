@@ -33,7 +33,7 @@ export default class TimerSystem {
   private pausedTimestamp = 0;
   private totalPausedDuration = 0;
 
-  private updateEvent?: Phaser.Time.TimerEvent; // 매 프레임 업데이트
+  private updateIntervalId?: number; // setInterval ID (비활성 창에서도 동작)
   private lastSecond = -1; // 초 단위 변화 감지용
   private isFinished = false;
   private isPaused = false;
@@ -109,13 +109,11 @@ export default class TimerSystem {
     // 초기 상태 - 바를 가득 채움
     this.timerPrefab.setBarScale(1);
 
-    // 매 프레임 업데이트 (약 60fps)
-    this.updateEvent = this.scene.time.addEvent({
-      delay: 16, // ~60fps
-      callback: this.update,
-      callbackScope: this,
-      loop: true,
-    });
+    // setInterval 사용 (비활성 창에서도 동작)
+    // Phaser의 time.addEvent는 비활성 창에서 throttle됨
+    this.updateIntervalId = window.setInterval(() => {
+      this.update();
+    }, 16); // ~60fps
 
     console.log(`⏱️ 타이머 시작: ${totalSeconds}초`);
   }
@@ -204,8 +202,10 @@ export default class TimerSystem {
 
   /** 타이머 정지 */
   stop(): void {
-    this.updateEvent?.destroy();
-    this.updateEvent = undefined;
+    if (this.updateIntervalId !== undefined) {
+      window.clearInterval(this.updateIntervalId);
+      this.updateIntervalId = undefined;
+    }
   }
 
   /** 시스템 정리 */

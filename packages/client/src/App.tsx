@@ -94,6 +94,13 @@ function AppContent() {
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
+    // 서버에 리플레이 요청 전송
+    const replayReq: ServerPacket = {
+      type: SystemPacketType.REPLAY_REQ,
+    };
+    socketManager.send(replayReq);
+    console.log('[App] REPLAY_REQ sent');
+
     // 게임 상태 초기화 (dropCellEventQueue 포함)
     useGameStore.getState().resetGameState();
 
@@ -121,9 +128,16 @@ function AppContent() {
     }
 
     console.log('[App] handleReplay 완료 - 게임이 다시 마운트됨');
-  }, []);
+  }, [setGameStarted, setPlayers]);
 
   const handleLobby = useCallback(() => {
+    // 서버에 로비 복귀 요청 전송
+    const lobbyReq: ServerPacket = {
+      type: SystemPacketType.RETURN_TO_THE_LOBBY_REQ,
+    };
+    socketManager.send(lobbyReq);
+    console.log('[App] RETURN_TO_THE_LOBBY_REQ sent');
+
     // 게임 상태 초기화 (dropCellEventQueue 포함)
     useGameStore.getState().resetGameState();
 
@@ -145,7 +159,7 @@ function AppContent() {
         gameRef.current = null;
       }
     }
-  }, []);
+  }, [setGameStarted, setPlayers]);
 
   // 닉네임 설정하고 시작 버튼 누를 때 동작
   const handleStart = (inputNickname: string) => {
@@ -166,7 +180,6 @@ function AppContent() {
 
     const joinRoomPacket: JoinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,
-      playerId: socketManager.getId() ?? '',
       roomId: 'HARDCODED_ROOM_1',
       playerName: inputNickname,
     };

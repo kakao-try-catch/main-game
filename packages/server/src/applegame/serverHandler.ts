@@ -212,10 +212,12 @@ export async function joinPlayerToGame(
     `[Server] Player ${playerName} (${socket.id}) joining room ${roomId}`,
   );
   // 중복 조인 방지
-  //  if (playerRooms.has(socket.id)) {
-  //    socket.emit(SystemPacketType.SYSTEM_MESSAGE, { message: "이미 방에 참여 중입니다." });
-  //    return;
-  //  }
+  if (playerRooms.has(socket.id)) {
+    socket.emit(SystemPacketType.SYSTEM_MESSAGE, {
+      message: '이미 방에 참여 중입니다.',
+    });
+    return;
+  }
 
   let session = sessions.get(roomId);
   if (!session) {

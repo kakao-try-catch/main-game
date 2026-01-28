@@ -230,6 +230,61 @@ export default class TileManager {
   }
 
   /**
+   * 순차적 타일 열기 애니메이션 (거리별로 파동 효과)
+   * @param tiles 거리 정보가 포함된 타일 업데이트 배열
+   * @param delayMs 거리당 딜레이 (기본 50ms)
+   */
+  public revealTilesSequentially(
+    tiles: Array<{
+      row: number;
+      col: number;
+      state: TileState;
+      adjacentMines?: number;
+      isMine?: boolean;
+      flaggedBy?: string | null;
+      distance: number;
+    }>,
+    delayMs: number = 50,
+  ): void {
+    // 거리별로 그룹화
+    const tilesByDistance: Map<number, typeof tiles> = new Map();
+
+    for (const tile of tiles) {
+      if (!tilesByDistance.has(tile.distance)) {
+        tilesByDistance.set(tile.distance, []);
+      }
+      tilesByDistance.get(tile.distance)!.push(tile);
+    }
+
+    // 거리 순서대로 정렬
+    const distances = Array.from(tilesByDistance.keys()).sort((a, b) => a - b);
+
+    // 거리별로 순차적으로 타일 열기
+    distances.forEach((distance, index) => {
+      setTimeout(() => {
+        const tilesAtDistance = tilesByDistance.get(distance)!;
+        for (const tile of tilesAtDistance) {
+          this.updateTileState(
+            tile.row,
+            tile.col,
+            tile.state,
+            tile.adjacentMines,
+            tile.isMine,
+            tile.flaggedBy,
+          );
+        }
+
+        // 각 거리 단계마다 사운드 이벤트 발생
+        this.scene.events.emit('minesweeperTileReveal');
+      }, index * delayMs);
+    });
+
+    console.log(
+      `[TileManager] 순차 애니메이션 시작: ${tiles.length}개 타일, ${distances.length}단계, ${delayMs}ms 간격`,
+    );
+  }
+
+  /**
    * 타일 상태 업데이트 (서버에서 받은 데이터로 시각적 업데이트)
    */
   public updateTileState(

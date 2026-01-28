@@ -194,6 +194,12 @@ function AppContent() {
     [],
   );
 
+  // 지뢰찾기 타일 열기 사운드 핸들러
+  const handleMinesweeperTileReveal = useCallback(() => {
+    console.log('[App] 지뢰찾기 타일 열기 사운드 재생');
+    playSFX('appleDrop'); // 테스트용 appleDrop 사운드
+  }, [playSFX]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
@@ -474,6 +480,7 @@ function AppContent() {
             onFlappyStrike={handleFlappyStrike}
             onFlappyScore={handleFlappyScore}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
+            onMinesweeperTileReveal={handleMinesweeperTileReveal}
             onGameReady={handleGameReady}
           />
         )}

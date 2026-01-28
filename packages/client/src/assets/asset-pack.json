@@ -49,6 +49,46 @@
         "url": "src/assets/images/flappybird_4.png",
         "type": "image",
         "key": "flappybird_4"
+      },
+      {
+        "url": "src/assets/images/background.png",
+        "type": "image",
+        "key": "flappybird_background"
+      },
+      {
+        "url": "src/assets/images/pipe_top.png",
+        "type": "image",
+        "key": "pipe_top"
+      },
+      {
+        "url": "src/assets/images/pipe_bottom.png",
+        "type": "image",
+        "key": "pipe_bottom"
+      },
+      {
+        "url": "src/assets/images/flappybird_ground.png",
+        "type": "image",
+        "key": "flappybird_ground"
+      },
+      {
+        "url": "src/assets/images/TileClosed.png",
+        "type": "image",
+        "key": "TileClosed"
+      },
+      {
+        "url": "src/assets/images/TileOpened.png",
+        "type": "image",
+        "key": "TileOpened"
+      },
+      {
+        "url": "src/assets/images/mine.png",
+        "type": "image",
+        "key": "mine"
+      },
+      {
+        "url": "src/assets/images/flag_other.png",
+        "type": "image",
+        "key": "flag_other"
       }
     ]
   },

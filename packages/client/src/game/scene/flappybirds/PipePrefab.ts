@@ -100,36 +100,34 @@ export default class PipePrefab extends Phaser.GameObjects.Container {
    * @param gapY - 간격 중심 Y 좌표
    * @param gap - 위아래 파이프 사이 간격
    * @param width - 파이프 너비
-   * @param screenHeight - 화면 높이
+   * @param _screenHeight - 화면 높이 (현재 사용하지 않음)
    */
   public setFromServerData(
     gapY: number,
     gap: number,
     width: number,
-    screenHeight: number,
+    _screenHeight: number,
   ): void {
     // 갭의 상단과 하단 위치 계산
     const gapTop = gapY - gap / 2;
     const gapBottom = gapY + gap / 2;
 
-    // 위쪽 파이프 높이 계산
-    const topPipeHeight = gapTop;
-
-    // 아래쪽 파이프 높이 계산
-    const bottomPipeHeight = screenHeight - gapBottom;
+    // 원본 이미지에서 비율을 동적으로 가져옴
+    const aspectRatio = this.upPipe.getAspectRatio();
+    const pipeHeight = width * aspectRatio;
 
     const offsetX = -width / 2;
 
-    // 위쪽 파이프 설정
-    this.upPipe.x = offsetX; // 추가
-    this.upPipe.y = 0;
-    this.upPipe.setHeight(topPipeHeight);
+    // 위쪽 파이프 설정 (Y 위치로 이동)
+    this.upPipe.x = offsetX;
+    this.upPipe.y = gapTop - pipeHeight; // 갭 상단에서 파이프 높이만큼 위에 배치
+    this.upPipe.setHeight(pipeHeight);
     this.upPipe.setThickness(width);
 
-    // 아래쪽 파이프 설정
-    this.downPipe.x = offsetX; // 추가
-    this.downPipe.y = gapBottom;
-    this.downPipe.setHeight(bottomPipeHeight);
+    // 아래쪽 파이프 설정 (Y 위치로 이동)
+    this.downPipe.x = offsetX;
+    this.downPipe.y = gapBottom; // 갭 하단에서 시작
+    this.downPipe.setHeight(pipeHeight);
     this.downPipe.setThickness(width);
   }
 

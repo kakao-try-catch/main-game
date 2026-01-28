@@ -7,10 +7,9 @@ export default class DownPipePrefab extends Phaser.GameObjects.Container {
     super(scene, x ?? 0, y ?? 0);
 
     // pipe_bottom (아래에서 위로 올라오는 파이프 본체)
-    const pipe_bottom = scene.add.rectangle(0, 0, 80, 178);
+    const pipe_bottom = scene.add.image(0, 0, 'pipe_bottom');
     pipe_bottom.setOrigin(0, 0); // 위쪽 기준으로 변경
-    pipe_bottom.isFilled = true;
-    pipe_bottom.fillColor = 3380533;
+    pipe_bottom.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     this.add(pipe_bottom);
     this.pipeBottom = pipe_bottom;
 
@@ -21,7 +20,7 @@ export default class DownPipePrefab extends Phaser.GameObjects.Container {
 
   /* START-USER-CODE */
 
-  private pipeBottom: Phaser.GameObjects.Rectangle;
+  private pipeBottom: Phaser.GameObjects.Image;
 
   /**
    * 아래쪽 파이프의 두께(너비)를 설정합니다.
@@ -29,7 +28,7 @@ export default class DownPipePrefab extends Phaser.GameObjects.Container {
    */
   setThickness(thickness: number): void {
     if (this.pipeBottom) {
-      this.pipeBottom.width = thickness;
+      this.pipeBottom.displayWidth = thickness;
     }
   }
   /**
@@ -38,8 +37,20 @@ export default class DownPipePrefab extends Phaser.GameObjects.Container {
    */
   setHeight(height: number): void {
     if (this.pipeBottom) {
-      this.pipeBottom.height = height;
+      this.pipeBottom.displayHeight = height;
     }
+  }
+
+  /**
+   * 원본 이미지의 가로세로 비율을 반환합니다.
+   * @returns 원본 이미지의 높이/너비 비율
+   */
+  getAspectRatio(): number {
+    if (this.pipeBottom && this.pipeBottom.texture) {
+      const frame = this.pipeBottom.texture.get();
+      return frame.height / frame.width;
+    }
+    return 1; // 기본값
   }
 
   // Write your code here.

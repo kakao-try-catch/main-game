@@ -9,7 +9,7 @@ export type MapSizePreset = 'small' | 'medium' | 'large' | 'manual';
 export type DifficultyPreset = 'easy' | 'normal' | 'hard';
 
 /** 제한 시간 프리셋 */
-export type TimeLimit = 60 | 80 | 100 | 'manual';
+export type TimeLimit = 120 | 180 | 240 | 'manual';
 
 /** 지뢰찾기 게임 프리셋 설정 */
 export interface MineSweeperGamePreset {
@@ -44,7 +44,7 @@ export interface ResolvedMineSweeperConfig {
 export const DEFAULT_MINESWEEPER_PRESET: MineSweeperGamePreset = {
   mapSize: 'medium',
   difficulty: 'normal',
-  timeLimit: 60,
+  timeLimit: 180,
 };
 
 /** 프리셋을 실제 게임 설정으로 변환하는 헬퍼 함수 */
@@ -80,13 +80,13 @@ export function resolveMineSweeperPreset(
   } else {
     switch (preset.difficulty) {
       case 'easy':
-        mineRatio = 0.15; // 15%
+        mineRatio = 0.1; // 10%
         break;
       case 'normal':
         mineRatio = 0.2; // 20%
         break;
       case 'hard':
-        mineRatio = 0.25; // 25%
+        mineRatio = 0.3; // 30%
         break;
     }
   }
@@ -98,7 +98,7 @@ export function resolveMineSweeperPreset(
   // 4. 제한 시간 결정
   let totalTime: number;
   if (preset.timeLimit === 'manual') {
-    totalTime = preset.manualTime ?? 80;
+    totalTime = preset.manualTime ?? 180;
   } else {
     totalTime = preset.timeLimit;
   }

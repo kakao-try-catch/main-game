@@ -51,6 +51,12 @@ interface GameContainerProps {
   onFlappyJump?: () => void; // 플래피버드 점프 사운드
   onFlappyStrike?: () => void; // 플래피버드 충돌 사운드
   onFlappyScore?: () => void; // 플래피버드 점수 획득 사운드
+  onMinesweeperScoreUpdate?: (data: {
+    playerId: string;
+    scoreChange: number;
+    newScore: number;
+    reason: string;
+  }) => void; // 지뢰찾기 점수 업데이트
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
@@ -69,6 +75,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onFlappyJump,
   onFlappyStrike,
   onFlappyScore,
+  onMinesweeperScoreUpdate,
   playerCount = 4,
   players = [],
   currentPlayerIndex = 0,
@@ -78,7 +85,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const isValidGameType = gameType === 'apple' || gameType === 'flappy' || gameType === 'minesweeper';
+  const isValidGameType =
+    gameType === 'apple' || gameType === 'flappy' || gameType === 'minesweeper';
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
   const preset = gameType === 'apple' ? applePreset : flappyPreset;
 
@@ -245,6 +253,33 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             (data: { reason: string; finalScore: number }) => {
               console.log('💀 game_over event received:', data);
               onGameOver(data);
+            },
+          );
+        }
+      } else if (gameType === 'minesweeper') {
+        // 지뢰찾기 점수 업데이트 이벤트
+        if (onMinesweeperScoreUpdate) {
+          targetScene.events.on(
+            'scoreUpdate',
+            (data: {
+              playerId: string;
+              scoreChange: number;
+              newScore: number;
+              reason: string;
+            }) => {
+              console.log('💣 minesweeper scoreUpdate event received:', data);
+              onMinesweeperScoreUpdate(data);
+            },
+          );
+        }
+
+        // 지뢰찾기 게임 종료 이벤트 (타이머 완료)
+        if (onGameEnd) {
+          targetScene.events.on(
+            'gameEnd',
+            (data: { players: PlayerResultData[] }) => {
+              console.log('🏁 minesweeper gameEnd event received:', data);
+              onGameEnd(data.players);
             },
           );
         }

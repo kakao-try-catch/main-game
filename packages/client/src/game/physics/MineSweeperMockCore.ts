@@ -37,17 +37,24 @@ export class MineSweeperMockCore {
    * 플레이어 수 설정
    */
   setPlayerCount(count: number): void {
+    const existingPlayers = new Map(this.players);
+
     this.players.clear();
     for (let i = 0; i < count; i++) {
-      const playerId = `player_${i}` as PlayerId;
+      const playerId = `id_${i + 1}` as PlayerId;
+      const existingPlayer = existingPlayers.get(playerId);
+
       this.players.set(playerId, {
         playerId: playerId,
-        playerName: `Player ${i + 1}`,
-        playerColor: CONSTANTS.PLAYER_COLORS[i] || '#ffffff',
-        score: 0,
-        tilesRevealed: 0,
-        minesHit: 0,
-        flagsPlaced: 0,
+        playerName: existingPlayer?.playerName || `Player ${i + 1}`,
+        playerColor:
+          existingPlayer?.playerColor ||
+          CONSTANTS.PLAYER_COLORS[i] ||
+          '#ffffff',
+        score: existingPlayer?.score || 0,
+        tilesRevealed: existingPlayer?.tilesRevealed || 0,
+        minesHit: existingPlayer?.minesHit || 0,
+        flagsPlaced: existingPlayer?.flagsPlaced || 0,
       });
     }
     console.log(`[MineSweeperMockCore] 플레이어 ${count}명 설정 완료`);
@@ -198,9 +205,7 @@ export class MineSweeperMockCore {
    * 클라이언트용 타일 데이터 가져오기 (지뢰 정보 숨김)
    */
   getClientTiles(): ClientTileData[][] {
-    return this.tiles.map((row) =>
-      row.map((tile) => this.toClientTile(tile)),
-    );
+    return this.tiles.map((row) => row.map((tile) => this.toClientTile(tile)));
   }
 
   /**
@@ -284,6 +289,11 @@ export class MineSweeperMockCore {
     const queue: Array<{ row: number; col: number }> = [{ row, col }];
     const visited = new Set<string>();
 
+    // 점수 계산을 위한 변수
+    let totalScoreChange = 0;
+    let mineCount = 0;
+    let safeCount = 0;
+
     while (queue.length > 0) {
       const current = queue.shift()!;
       const key = `${current.row},${current.col}`;
@@ -314,9 +324,22 @@ export class MineSweeperMockCore {
         continue;
       }
 
-      // 타일 열기
-      const update = this.revealTile(current.row, current.col, playerId);
+      // 타일 열기 (점수 계산은 여기서 하지 않음)
+      const update = this.revealTileInternal(
+        current.row,
+        current.col,
+        playerId,
+      );
       updates.push(update);
+
+      // 점수 계산
+      if (currentTile.isMine) {
+        mineCount++;
+        totalScoreChange += this.config.minePenalty;
+      } else {
+        safeCount++;
+        totalScoreChange += this.config.tileRevealScore;
+      }
 
       // 빈 공간(인접 지뢰 0개)이고 지뢰가 아니면 주변 8방향 타일도 큐에 추가
       if (currentTile.adjacentMines === 0 && !currentTile.isMine) {
@@ -334,6 +357,33 @@ export class MineSweeperMockCore {
           }
         }
       }
+    }
+
+    // 플레이어 점수 업데이트
+    const player = this.players.get(playerId);
+    if (player && updates.length > 0) {
+      player.score += totalScoreChange;
+
+      // 점수 업데이트 이벤트 전송
+      const reason =
+        updates.length > 1
+          ? 'flood_fill'
+          : mineCount > 0
+            ? 'mine_hit'
+            : 'safe_tile';
+
+      this.socket.triggerEvent('score_update', {
+        playerId,
+        scoreChange: totalScoreChange,
+        newScore: player.score,
+        position: { row, col },
+        reason,
+        timestamp: Date.now(),
+      });
+
+      console.log(
+        `[MineSweeperMockCore] 점수 업데이트: ${playerId} ${totalScoreChange > 0 ? '+' : ''}${totalScoreChange} (총: ${player.score}) - ${reason}`,
+      );
     }
 
     return updates;
@@ -436,9 +486,9 @@ export class MineSweeperMockCore {
   }
 
   /**
-   * 타일 열기 (내부 메서드)
+   * 타일 열기 (내부 메서드 - 점수 계산 없이 상태만 변경)
    */
-  private revealTile(
+  private revealTileInternal(
     row: number,
     col: number,
     playerId: PlayerId,
@@ -467,20 +517,7 @@ export class MineSweeperMockCore {
       }
 
       if (tile.isMine) {
-        // 지뢰를 밟은 경우
         player.minesHit++;
-        player.score += this.config.minePenalty;
-        console.log(
-          `[MineSweeperMockCore] ${playerId}가 지뢰를 밟았습니다! 점수: ${player.score}`,
-        );
-      } else {
-        // 안전한 타일을 연 경우
-        player.score += this.config.tileRevealScore;
-      }
-
-      // 최소 점수 제한
-      if (player.score < this.config.minScore) {
-        player.score = this.config.minScore;
       }
     }
 
@@ -515,6 +552,81 @@ export class MineSweeperMockCore {
    */
   getRemainingMines(): number {
     return this.remainingMines;
+  }
+
+  /**
+   * 게임 종료 시 깃발 기반 일괄 정산
+   * - 깃발 위치에 실제 지뢰가 있음(성공): 개당 +10점
+   * - 깃발 위치에 지뢰가 없음(실패): 개당 -10점
+   */
+  calculateFinalScores(): Map<
+    PlayerId,
+    { scoreChange: number; correctFlags: number; incorrectFlags: number }
+  > {
+    const scoreUpdates = new Map<
+      PlayerId,
+      { scoreChange: number; correctFlags: number; incorrectFlags: number }
+    >();
+
+    // 모든 플레이어 초기화
+    for (const playerId of this.players.keys()) {
+      scoreUpdates.set(playerId, {
+        scoreChange: 0,
+        correctFlags: 0,
+        incorrectFlags: 0,
+      });
+    }
+
+    // 모든 타일을 순회하며 깃발 확인
+    for (let row = 0; row < this.config.gridRows; row++) {
+      for (let col = 0; col < this.config.gridCols; col++) {
+        const tile = this.tiles[row][col];
+
+        // 깃발이 설치된 타일만 확인
+        if (tile.state === TileState.FLAGGED && tile.flaggedBy) {
+          const playerId = tile.flaggedBy;
+          const update = scoreUpdates.get(playerId);
+
+          if (update) {
+            if (tile.isMine) {
+              // 성공: 지뢰 위치에 깃발
+              update.scoreChange += 10;
+              update.correctFlags++;
+            } else {
+              // 실패: 지뢰가 아닌 곳에 깃발
+              update.scoreChange -= 10;
+              update.incorrectFlags++;
+            }
+          }
+        }
+      }
+    }
+
+    // 각 플레이어 점수 업데이트 및 이벤트 전송
+    for (const [playerId, update] of scoreUpdates.entries()) {
+      if (update.scoreChange !== 0) {
+        const player = this.players.get(playerId);
+        if (player) {
+          player.score += update.scoreChange;
+
+          // 점수 업데이트 이벤트 전송
+          this.socket.triggerEvent('score_update', {
+            playerId,
+            scoreChange: update.scoreChange,
+            newScore: player.score,
+            position: null,
+            reason: 'final_settlement',
+            timestamp: Date.now(),
+          });
+
+          console.log(
+            `[MineSweeperMockCore] 최종 정산: ${playerId} ${update.scoreChange > 0 ? '+' : ''}${update.scoreChange} (정답: ${update.correctFlags}, 오답: ${update.incorrectFlags}) - 총점: ${player.score}`,
+          );
+        }
+      }
+    }
+
+    return scoreUpdates;
   }
 
   /**

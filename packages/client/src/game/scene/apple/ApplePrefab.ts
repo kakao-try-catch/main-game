@@ -72,11 +72,18 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
   }
   /** 사과가 떨어지는 애니메이션을 재생한 후 1초 뒤에 destroy합니다. */
   playFallAndDestroy(): void {
+    // 씬이 유효한지 확인
+    if (!this.scene || !this.scene.tweens) {
+      this.destroy();
+      return;
+    }
+
     // 프레임 숨기기
     this.setFrameVisible(false);
 
     // 랜덤 방향 (왼쪽 또는 오른쪽)
     const horizontalDistance = Phaser.Math.Between(-150, 150);
+    const startY = this.y;
 
     // 포물선을 그리면서 떨어지는 애니메이션
     // X축: 일정한 속도로 이동 (포물선의 수평 이동)
@@ -91,14 +98,16 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
     // 1단계: 위로 올라감 (감속)
     this.scene.tweens.add({
       targets: this,
-      y: this.y - 50, // 위로 50px 올라감
+      y: startY - 50, // 위로 50px 올라감
       duration: 400,
       ease: 'Quad.easeOut',
       onComplete: () => {
+        // 씬이 파괴되었는지 확인
+        if (!this.scene || !this.scene.tweens) return;
         // 2단계: 아래로 떨어짐 (가속)
         this.scene.tweens.add({
           targets: this,
-          y: this.y + 300, // 아래로 떨어짐
+          y: startY + 250, // 아래로 떨어짐 (startY 기준)
           duration: 600,
           ease: 'Quad.easeIn',
         });
@@ -113,13 +122,22 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
       duration: 1000,
       ease: 'Linear',
       onComplete: () => {
-        this.destroy();
+        // 이미 파괴되었는지 확인
+        if (this.scene) {
+          this.destroy();
+        }
       },
     });
   }
 
   /** 다른 플레이어가 딴 사과 - 블랙홀 효과로 소멸 */
   playBlackholeDestroy(): void {
+    // 씬이 유효한지 확인
+    if (!this.scene || !this.scene.tweens) {
+      this.destroy();
+      return;
+    }
+
     this.setFrameVisible(false);
 
     // 축소되면서 사라지는 효과
@@ -131,7 +149,10 @@ export default class ApplePrefab extends Phaser.GameObjects.Container {
       duration: 300,
       ease: 'Back.easeIn',
       onComplete: () => {
-        this.destroy();
+        // 이미 파괴되었는지 확인
+        if (this.scene) {
+          this.destroy();
+        }
       },
     });
   }

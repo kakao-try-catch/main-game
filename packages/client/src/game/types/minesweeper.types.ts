@@ -6,6 +6,7 @@
 export {
   type MapSizePreset,
   type DifficultyPreset,
+  type TimeLimit,
   type MineSweeperGamePreset,
   type ResolvedMineSweeperConfig,
   DEFAULT_MINESWEEPER_PRESET,

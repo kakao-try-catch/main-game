@@ -86,7 +86,9 @@ export default class TileManager {
   private calculateTileSize(): void {
     const ratio = window.__GAME_RATIO || 1;
 
-    const availableWidth = GAME_WIDTH * ratio;
+    // 타이머를 위한 공간 확보 (오른쪽에 80px 여유 공간)
+    const timerReservedSpace = 40 * ratio;
+    const availableWidth = GAME_WIDTH * ratio - timerReservedSpace;
     const availableHeight = GAME_HEIGHT * ratio;
 
     // 그리드에 맞는 타일 크기 계산
@@ -96,7 +98,7 @@ export default class TileManager {
     // 정사각형 타일 유지 (더 작은 쪽에 맞춤)
     this.tileSize = Math.floor(Math.min(tileWidth, tileHeight));
 
-    // 그리드 시작 위치 계산 (중앙 정렬)
+    // 그리드 시작 위치 계산 (축소된 가로 공간 내에서 중앙 정렬)
     const gridWidth = this.gridCols * this.tileSize;
     const gridHeight = this.gridRows * this.tileSize;
     this.gridStartX = (availableWidth - gridWidth) / 2;

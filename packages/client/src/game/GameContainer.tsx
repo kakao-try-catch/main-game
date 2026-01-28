@@ -269,6 +269,17 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
+
+        // 지뢰찾기 게임 종료 이벤트 (타이머 완료)
+        if (onGameEnd) {
+          targetScene.events.on(
+            'gameEnd',
+            (data: { players: PlayerResultData[] }) => {
+              console.log('🏁 minesweeper gameEnd event received:', data);
+              onGameEnd(data.players);
+            },
+          );
+        }
       }
 
       // 씬에 플레이어 데이터 전달

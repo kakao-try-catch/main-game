@@ -10,6 +10,8 @@ import { MineSweeperMockCore } from '../../physics/MineSweeperMockCore';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import { CONSTANTS } from '../../types/common';
 import TileManager from './TileManager';
+import TimerPrefab from '../../utils/TimerPrefab';
+import TimerSystem from '../../utils/TimerSystem';
 import {
   type TileUpdateEvent,
   type GameInitEvent,
@@ -41,6 +43,10 @@ export default class MineSweeperScene extends Phaser.Scene {
 
   // 타일 매니저
   private tileManager!: TileManager;
+
+  // 타이머 관련
+  private timerPrefab!: TimerPrefab;
+  private timerSystem!: TimerSystem;
 
   // 플레이어 관련
   private playerCount: number = 4;
@@ -100,6 +106,9 @@ export default class MineSweeperScene extends Phaser.Scene {
 
     this.editorCreate();
 
+    // 타이머 생성
+    this.createTimer();
+
     // 타일 매니저 생성 및 초기화
     this.tileManager = new TileManager(this, this.gameContainer, {
       gridCols: this.gameConfig.gridCols,
@@ -143,6 +152,72 @@ export default class MineSweeperScene extends Phaser.Scene {
     console.log(
       `[MineSweeperScene] 생성 완료: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows} 그리드, 지뢰 ${this.gameConfig.mineCount}개`,
     );
+
+    // 타이머 시작
+    this.startTimer();
+  }
+
+  /**
+   * 타이머 생성
+   */
+  private createTimer(): void {
+    const ratio = window.__GAME_RATIO || 1;
+    const canvasWidth = this.sys.game.canvas.width;
+    const canvasHeight = this.sys.game.canvas.height;
+    const timerBarMarginTop = 50 * ratio;
+    const timerBarMarginBottom = 50 * ratio;
+    const timerBarCanvasHeight =
+      canvasHeight - timerBarMarginTop - timerBarMarginBottom;
+    const timerBarWidth = 22 * ratio;
+    const timerBarMarginRight = 30 * ratio;
+    const timerBarX = canvasWidth - timerBarMarginRight - timerBarWidth / 2;
+    const timerBarY = timerBarMarginTop + timerBarCanvasHeight;
+
+    this.timerPrefab = new TimerPrefab(
+      this,
+      timerBarX,
+      timerBarY,
+      timerBarCanvasHeight,
+    );
+
+    // 타이머를 컨테이너에 추가
+    this.gameContainer.add(this.timerPrefab);
+
+    console.log('[MineSweeperScene] 타이머 생성 완료');
+  }
+
+  /**
+   * 타이머 시작
+   */
+  private startTimer(): void {
+    this.timerSystem = new TimerSystem(this, this.timerPrefab);
+    this.timerSystem.start(this.gameConfig.totalTime);
+
+    // 타이머 완료 이벤트 리스너 등록
+    this.events.once('timer:complete', () => {
+      this.onGameEnd();
+    });
+
+    console.log(
+      `[MineSweeperScene] 타이머 시작: ${this.gameConfig.totalTime}초`,
+    );
+  }
+
+  /**
+   * 게임 종료 처리
+   */
+  private onGameEnd(): void {
+    console.log('[MineSweeperScene] 게임 종료 - 타이머 완료');
+
+    // 플레이어 데이터에 playerIndex 추가
+    const playersWithIndex = this.players.map((player, index) => ({
+      ...player,
+      playerIndex: index,
+    }));
+
+    // React로 게임 종료 이벤트 전달
+    this.events.emit('gameEnd', { players: playersWithIndex });
+    console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
   }
 
   /**
@@ -408,6 +483,8 @@ export default class MineSweeperScene extends Phaser.Scene {
             newConfig.gridRows !== this.gameConfig.gridRows ||
             newConfig.mineCount !== this.gameConfig.mineCount;
 
+          const timeChanged = newConfig.totalTime !== this.gameConfig.totalTime;
+
           if (configChanged) {
             this.gameConfig = newConfig;
 
@@ -425,6 +502,18 @@ export default class MineSweeperScene extends Phaser.Scene {
 
             console.log(
               `[MineSweeperScene] 그리드 재생성: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows}, 지뢰 ${this.gameConfig.mineCount}개`,
+            );
+          }
+
+          // 타이머 재시작 (시간이 변경된 경우)
+          if (timeChanged) {
+            this.gameConfig = newConfig;
+            if (this.timerSystem) {
+              this.timerSystem.destroy();
+            }
+            this.startTimer();
+            console.log(
+              `[MineSweeperScene] 타이머 재시작: ${this.gameConfig.totalTime}초`,
             );
           }
         }
@@ -470,6 +559,11 @@ export default class MineSweeperScene extends Phaser.Scene {
       if (this.socket instanceof MockSocket) {
         this.socket.clearServerCore();
       }
+    }
+
+    // 타이머 시스템 정리
+    if (this.timerSystem) {
+      this.timerSystem.destroy();
     }
 
     // 타일 매니저 정리

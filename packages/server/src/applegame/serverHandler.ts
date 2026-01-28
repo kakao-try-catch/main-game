@@ -140,7 +140,7 @@ export function handleClientPacket(
 
         if (isSame) {
           prev.repeatCount = (prev.repeatCount || 0) + 1;
-          if (prev.repeatCount <= 3) {
+          if (prev.repeatCount <= 3 || true) {
             socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
               type: GamePacketType.UPDATE_DRAG_AREA,
               playerIndex: playerIndex,

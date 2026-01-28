@@ -61,9 +61,9 @@ export class DragAreaSender {
     // 중복 체크 - 3번 이상 동일하면 전송 스킵
     if (this.isSameRect(this.pendingRect, this.lastSentRect)) {
       this.duplicateCount++;
-      if (this.duplicateCount >= DragAreaSender.MAX_DUPLICATE_COUNT) {
-        return;
-      }
+      // if (this.duplicateCount >= DragAreaSender.MAX_DUPLICATE_COUNT) {
+      //   return;
+      // }
     } else {
       this.duplicateCount = 0;
     }
@@ -80,10 +80,7 @@ export class DragAreaSender {
     this.lastSentRect = { ...this.pendingRect };
   }
 
-  private isSameRect(
-    a: NormalizedRect,
-    b: NormalizedRect | null,
-  ): boolean {
+  private isSameRect(a: NormalizedRect, b: NormalizedRect | null): boolean {
     if (!b) return false;
     const epsilon = DragAreaSender.EPSILON;
     return (

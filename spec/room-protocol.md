@@ -84,3 +84,9 @@ flags: number,
 # RETURN_TO_THE_LOBBY (ClientBound)
 
 이 패킷을 받은 클라들은 로비로 screen 전환해야 함.
+
+# REPLAY_REQ (ServerBound)
+
+서버에게 해당 방 방장이 리플레이 한다고 요청
+서버측은 요청을 받으면 1. 게임 결과창 화면인지 검사 2. 방장인지 검사
+후에 다시 해당 게임을 진행시키기

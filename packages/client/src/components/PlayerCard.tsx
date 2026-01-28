@@ -5,6 +5,9 @@ interface PlayerCardProps {
   name?: string;
   score?: number;
   color?: string;
+  spriteSrc?: string;
+  spriteAlt?: string;
+  showScore?: boolean;
 }
 
 export const getNameFontSize = (nameLength: number): string => {
@@ -17,7 +20,14 @@ export default function PlayerCard({
   name = 'NONE',
   score = 0,
   color = '#000',
+  spriteSrc,
+  spriteAlt,
+  showScore = true,
 }: PlayerCardProps) {
+  const cardHeight = spriteSrc ? 110 : 80;
+  const displayScore = showScore;
+  const safeScore = typeof score === 'number' ? score : 0;
+
   return (
     <div style={cardWrapperStyle}>
       <div
@@ -25,11 +35,18 @@ export default function PlayerCard({
         style={{
           ...contentLayout,
           padding: '4px 8px',
-          minHeight: '80px',
-          height: '80px',
+          minHeight: `${cardHeight}px`,
+          height: `${cardHeight}px`,
           backgroundColor: '#ffffff',
         }}
       >
+        {spriteSrc && (
+          <img
+            src={spriteSrc}
+            alt={spriteAlt ?? `${name} bird`}
+            style={spriteStyle}
+          />
+        )}
         <div style={nameContainerStyle}>
           <span
             style={{
@@ -41,9 +58,11 @@ export default function PlayerCard({
             {name}
           </span>
         </div>
-        <span style={{ color: '#212529', fontSize: '28px' }}>
-          {score.toLocaleString()}
-        </span>
+        {displayScore && (
+          <span style={{ color: '#212529', fontSize: '28px' }}>
+            {safeScore.toLocaleString()}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -75,4 +94,10 @@ const nameContainerStyle: React.CSSProperties = {
 const nameStyle: React.CSSProperties = {
   wordBreak: 'keep-all',
   textAlign: 'center',
+};
+
+const spriteStyle: React.CSSProperties = {
+  height: '40px',
+  width: 'auto',
+  imageRendering: 'pixelated',
 };

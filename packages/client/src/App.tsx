@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { GameContainer } from './game/GameContainer';
+import { GameContainer, type GameEndEvent } from './game/GameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
@@ -124,9 +124,19 @@ function AppContent() {
   }, []);
 
   const handleGameEnd = useCallback(
-    (endPlayers: (PlayerData & { playerIndex: number })[]) => {
-      setFinalPlayers(endPlayers);
-      setGameEnded(true);
+    (data: GameEndEvent) => {
+      if (data.gameType === 'flappy') {
+        setFlappyFinalData({
+          finalScore: data.finalScore,
+          reason: data.reason,
+          collidedPlayerId: data.collidedPlayerId,
+          players: data.players,
+        });
+        setFlappyGameEnded(true);
+      } else {
+        setFinalPlayers(data.players);
+        setGameEnded(true);
+      }
       playSFX('appleGameEnd');
       pause(); // 게임 종료 시 BGM 중지
       reset(); // 게임 종료 시 BGM을 처음으로 되감기
@@ -138,23 +148,6 @@ function AppContent() {
   const handleFlappyScoreUpdate = useCallback((score: number) => {
     setFlappyScore(score);
   }, []);
-
-  // 플래피버드 게임 종료 핸들러
-  const handleFlappyGameEnd = useCallback(
-    (data: {
-      finalScore: number;
-      reason: string;
-      collidedPlayerId: PlayerId;
-      players: PlayerResultData[];
-    }) => {
-      setFlappyFinalData(data);
-      setFlappyGameEnded(true);
-      playSFX('appleGameEnd'); // 동일한 사운드 사용
-      pause(); // 게임 종료 시 BGM 중지
-      reset(); // 게임 종료 시 BGM을 처음으로 되감기
-    },
-    [playSFX, pause, reset],
-  );
 
   // 플래피버드 점프 사운드 핸들러
   const handleFlappyJump = useCallback(() => {
@@ -461,7 +454,6 @@ function AppContent() {
             onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
             onScoreUpdate={handleFlappyScoreUpdate}
-            onFlappyGameEnd={handleFlappyGameEnd}
             onFlappyJump={handleFlappyJump}
             onFlappyStrike={handleFlappyStrike}
             onFlappyScore={handleFlappyScore}

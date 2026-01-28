@@ -39,15 +39,9 @@ interface GameContainerProps {
   gameType: GameType;
   onGameReady?: (game: Phaser.Game) => void;
   onAppleScored?: (points: number) => void;
-  onGameEnd?: (players: PlayerResultData[]) => void;
+  onGameEnd?: (data: GameEndEvent) => void;
   onGameOver?: (data: { reason: string; finalScore: number }) => void;
   onScoreUpdate?: (score: number) => void; // 플래피버드 점수 업데이트
-  onFlappyGameEnd?: (data: {
-    finalScore: number;
-    reason: string;
-    collidedPlayerId: PlayerId;
-    players: PlayerResultData[];
-  }) => void; // 플래피버드 게임 종료
   onFlappyJump?: () => void; // 플래피버드 점프 사운드
   onFlappyStrike?: () => void; // 플래피버드 충돌 사운드
   onFlappyScore?: () => void; // 플래피버드 점수 획득 사운드
@@ -64,6 +58,19 @@ interface GameContainerProps {
   flappyPreset?: FlappyBirdGamePreset;
 }
 
+export type GameEndEvent =
+  | {
+      gameType: 'apple' | 'minesweeper';
+      players: PlayerResultData[];
+    }
+  | {
+      gameType: 'flappy';
+      finalScore: number;
+      reason: string;
+      collidedPlayerId: PlayerId;
+      players: PlayerResultData[];
+    };
+
 export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
@@ -71,7 +78,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onGameEnd,
   onGameOver,
   onScoreUpdate,
-  onFlappyGameEnd,
   onFlappyJump,
   onFlappyStrike,
   onFlappyScore,
@@ -190,7 +196,10 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             'gameEnd',
             (data: { players: PlayerResultData[] }) => {
               console.log('🏁 gameEnd event received:', data);
-              onGameEnd(data.players);
+              onGameEnd({
+                gameType: 'apple',
+                players: data.players,
+              });
             },
           );
         }
@@ -231,7 +240,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         }
 
         // 플래피버드 게임 종료 이벤트
-        if (onFlappyGameEnd) {
+        if (onGameEnd) {
           targetScene.events.on(
             'gameEnd',
             (data: {
@@ -241,7 +250,13 @@ export const GameContainer: React.FC<GameContainerProps> = ({
               players: PlayerResultData[];
             }) => {
               console.log('🏁 flappy gameEnd event received:', data);
-              onFlappyGameEnd(data);
+              onGameEnd({
+                gameType: 'flappy',
+                finalScore: data.finalScore,
+                reason: data.reason,
+                collidedPlayerId: data.collidedPlayerId,
+                players: data.players,
+              });
             },
           );
         }
@@ -279,7 +294,10 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             'gameEnd',
             (data: { players: PlayerResultData[] }) => {
               console.log('🏁 minesweeper gameEnd event received:', data);
-              onGameEnd(data.players);
+              onGameEnd({
+                gameType: 'minesweeper',
+                players: data.players,
+              });
             },
           );
         }

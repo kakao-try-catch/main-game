@@ -226,6 +226,14 @@ export async function joinPlayerToGame(
       // Broadcast callback
       io.to(roomId).emit(packet.type, payload);
     });
+
+    // 세션이 게임 중이면 접속 불가
+    if (session.status === 'playing') {
+      socket.emit(SystemPacketType.SYSTEM_MESSAGE, {
+        message: '해당 세션은 현재 게임 중이라서 접속할 수 없습니다.',
+      });
+      return;
+    }
     sessions.set(roomId, session);
     console.log(`Created new Game Session for ${roomId}`);
 

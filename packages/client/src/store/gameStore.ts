@@ -55,6 +55,10 @@ interface GameState {
   gameTime: number | null;
   setGameTime: (time: number) => void;
 
+  // 서버 게임 시작 시간 (타이머 동기화용)
+  serverStartTime: number | null;
+  setServerStartTime: (time: number) => void;
+
   // 게임 시작 여부
   isGameStarted: boolean;
   setGameStarted: (started: boolean) => void;
@@ -72,6 +76,10 @@ interface GameState {
   // 게임 결과 (TIME_END)
   gameResults: PlayerData[] | null;
   setGameResults: (results: PlayerData[]) => void;
+
+  // 게임 세션 ID (리플레이/재시작 시 증가하여 컴포넌트 재마운트 트리거)
+  gameSessionId: number;
+  incrementGameSession: () => void;
 
   // 게임 상태 초기화
   resetGameState: () => void;
@@ -92,10 +100,12 @@ export const useGameStore = create<GameState>()(
     // 멀티플레이 상태 초기값
     appleField: null,
     gameTime: null,
+    serverStartTime: null,
     isGameStarted: false,
     dropCellEventQueue: [],
     otherPlayerDrags: new Map<number, DragAreaData>(),
     gameResults: null,
+    gameSessionId: 0,
 
     // 기존 액션
     setCount: (newCount: number) => set({ count: newCount }),
@@ -115,9 +125,12 @@ export const useGameStore = create<GameState>()(
     // 멀티플레이 액션
     setAppleField: (apples: number[]) => set({ appleField: apples }),
     setGameTime: (time: number) => set({ gameTime: time }),
+    setServerStartTime: (time: number) => set({ serverStartTime: time }),
     setGameStarted: (started: boolean) => set({ isGameStarted: started }),
     addDropCellEvent: (event: DropCellEvent) =>
-      set((state) => ({ dropCellEventQueue: [...state.dropCellEventQueue, event] })),
+      set((state) => ({
+        dropCellEventQueue: [...state.dropCellEventQueue, event],
+      })),
     clearDropCellEventQueue: () => set({ dropCellEventQueue: [] }),
     updateOtherPlayerDrag: (data: DragAreaData) =>
       set((state) => {
@@ -132,10 +145,13 @@ export const useGameStore = create<GameState>()(
         return { otherPlayerDrags: newMap };
       }),
     setGameResults: (results: PlayerData[]) => set({ gameResults: results }),
+    incrementGameSession: () =>
+      set((state) => ({ gameSessionId: state.gameSessionId + 1 })),
     resetGameState: () =>
       set({
         appleField: null,
         gameTime: null,
+        serverStartTime: null,
         isGameStarted: false,
         dropCellEventQueue: [],
         otherPlayerDrags: new Map<number, DragAreaData>(),

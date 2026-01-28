@@ -62,8 +62,8 @@ function AppContent() {
     FlappyBirdGamePreset | undefined
   >(undefined);
 
-  // 게임 컨테이너 재마운트를 위한 key
-  const [gameKey, setGameKey] = useState(0);
+  // 게임 컨테이너 재마운트를 위한 세션 ID (gameStore에서 관리)
+  const gameSessionId = useGameStore((s) => s.gameSessionId);
 
   const handleGameReady = useCallback((game: Phaser.Game) => {
     console.log('Phaser game is ready!', game);
@@ -78,11 +78,7 @@ function AppContent() {
 
   // 플래피버드 게임 종료 핸들러
   const handleFlappyGameEnd = useCallback(
-    (data: {
-      finalScore: number;
-      reason: string;
-      players: PlayerData[];
-    }) => {
+    (data: { finalScore: number; reason: string; players: PlayerData[] }) => {
       setFlappyFinalData(data);
       setFlappyGameEnded(true);
       playSFX('appleGameEnd'); // 동일한 사운드 사용
@@ -91,60 +87,44 @@ function AppContent() {
     [playSFX, pause],
   );
 
+  // 게임 세션이 새로 시작될 때(리플레이 포함) 관련 상태 초기화
+  useEffect(() => {
+    if (gameSessionId > 0) {
+      console.log(
+        `[App] Game Session ${gameSessionId} started - resetting states`,
+      );
+      setFlappyScore(0);
+      setFlappyGameEnded(false);
+      setFlappyFinalData(null);
+      // 플레이어 점수 초기화
+      setPlayers((prev) =>
+        prev.map((p) => ({ ...p, reportCard: { ...p.reportCard, score: 0 } })),
+      );
+    }
+  }, [gameSessionId, setPlayers]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
-    // 게임 상태 초기화 (dropCellEventQueue 포함)
-    useGameStore.getState().resetGameState();
+    // 서버에 리플레이 요청 전송
+    const replayReq: ServerPacket = {
+      type: SystemPacketType.REPLAY_REQ,
+    };
+    socketManager.send(replayReq);
+    console.log('[App] REPLAY_REQ sent');
 
-    // 상태 초기화
-    setGameStarted(true);
-    setFlappyGameEnded(false);
-    setFlappyScore(0);
-    setFlappyFinalData(null);
-    setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
-
-    // 게임 컨테이너 key 증가로 강제 재마운트
-    setGameKey((prev) => prev + 1);
-
-    // 게임 인스턴스 완전 파괴
-    if (gameRef.current) {
-      try {
-        console.log('[App] 게임 인스턴스 파괴 시작');
-        gameRef.current.destroy(true);
-        gameRef.current = null;
-        console.log('[App] 게임 인스턴스 파괴 완료');
-      } catch (error) {
-        console.error('[App] 게임 파괴 중 오류:', error);
-        gameRef.current = null;
-      }
-    }
-
-    console.log('[App] handleReplay 완료 - 게임이 다시 마운트됨');
+    // 나머지 처리는 서버의 READY_SCENE 패킷을 받았을 때 처리됨
   }, []);
 
   const handleLobby = useCallback(() => {
-    // 게임 상태 초기화 (dropCellEventQueue 포함)
-    useGameStore.getState().resetGameState();
+    // 서버에 로비 복귀 요청 전송
+    const lobbyReq: ServerPacket = {
+      type: SystemPacketType.RETURN_TO_THE_LOBBY_REQ,
+    };
+    socketManager.send(lobbyReq);
+    console.log('[App] RETURN_TO_THE_LOBBY_REQ sent');
 
-    setGameStarted(true);
-    setFlappyGameEnded(false);
-    setFlappyScore(0);
-    setFlappyFinalData(null);
-    setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
-    useGameStore.getState().setScreen('lobby');
-    // setCurrentScreen('lobby');
-
-    // 게임 인스턴스 파괴
-    if (gameRef.current) {
-      try {
-        gameRef.current.destroy(true);
-        gameRef.current = null;
-      } catch (error) {
-        console.error('[App] 로비 복귀 시 게임 파괴 중 오류:', error);
-        gameRef.current = null;
-      }
-    }
+    // 나머지 처리는 서버의 RETURN_TO_THE_LOBBY 패킷을 받았을 때 처리됨
   }, []);
 
   // 닉네임 설정하고 시작 버튼 누를 때 동작
@@ -166,7 +146,6 @@ function AppContent() {
 
     const joinRoomPacket: JoinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,
-      playerId: socketManager.getId() ?? '',
       roomId: 'HARDCODED_ROOM_1',
       playerName: inputNickname,
     };
@@ -175,12 +154,6 @@ function AppContent() {
   };
 
   const handleGameStart = (gameType: string, preset: unknown) => {
-    // 게임 상태 초기화 (이전 게임의 dropCellEventQueue 등 정리)
-    useGameStore.getState().resetGameState();
-
-    // 새 게임 시작 시 key 변경
-    setGameKey((prev) => prev + 1);
-
     // 플래피버드 프리셋만 로컬에서 관리 (사과게임은 gameStore.gameConfig 사용)
     if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
@@ -303,7 +276,7 @@ function AppContent() {
       >
         {isGameStarted && !flappyGameEnded && currentGameType && (
           <GameContainer
-            key={gameKey}
+            key={gameSessionId}
             gameType={currentGameType}
             playerCount={players.length}
             players={players}

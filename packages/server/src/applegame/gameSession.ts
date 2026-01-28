@@ -257,6 +257,23 @@ export class GameSession {
     this.broadcastCallback(endPacket);
   }
 
+  public handleReplayRequest(id: string) {
+    // 1. 게임 결과창 화면인지 검사
+    if (this.status !== 'ended') {
+      console.log('[GameSession] Cannot replay: game is not ended');
+      return;
+    }
+
+    // 2. 방장인지 검사
+    if (!this.isHost(id)) {
+      console.log('[GameSession] Cannot replay: not a host');
+      return;
+    }
+
+    // 3. 게임 재시작 (startGame이 상태 초기화 + 패킷 시퀀스 전송 처리)
+    this.startGame();
+  }
+
   public returnToLobby(id: string) {
     // 1. 게임 결과창 화면인지 검사
     if (this.status !== 'ended') {

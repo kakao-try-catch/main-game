@@ -188,6 +188,10 @@ export function handleClientPacket(
         session.returnToLobby(socket.id);
         break;
 
+      case SystemPacketType.REPLAY_REQ:
+        session.handleReplayRequest(socket.id);
+        break;
+
       // TODO: 게임 시작 요청 등이 있다면 추가
     }
   } catch (error) {

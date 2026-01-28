@@ -375,7 +375,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 }}
                               />
                             ) : (
-                              <div className="nes-select is-small">
+                              <div className="nes-select is-small is-compact">
                                 <select
                                   value={settings.timeLimit}
                                   onChange={(e) => {
@@ -411,7 +411,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           </div>
                           <div className="setting-item">
                             <label>사과 생성:</label>
-                            <div className="nes-select is-small">
+                            <div className="nes-select is-small is-compact">
                               <select
                                 value={settings.appleRange}
                                 onChange={(e) =>
@@ -425,12 +425,12 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 style={{
                                   color:
                                     settings.appleRange === '1-9'
-                                      ? DIFFICULTY_COLORS.easy
+                                      ? DIFFICULTY_COLORS.normal
                                       : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="1-9" style={{ color: DIFFICULTY_COLORS.easy }}>쉬움(1-9)</option>
-                                <option value="1-5" style={{ color: DIFFICULTY_COLORS.hard }}>어려움(1-5)</option>
+                                <option value="1-9" style={{ color: DIFFICULTY_COLORS.normal }}>1-9</option>
+                                <option value="1-5" style={{ color: DIFFICULTY_COLORS.hard }}>1-5</option>
                               </select>
                             </div>
                           </div>
@@ -513,34 +513,6 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                             </div>
                           </div>
                           <div className="setting-item">
-                            <label>파이프 넓이:</label>
-                            <div className="nes-select is-small">
-                              <select
-                                value={settings.pipeWidth}
-                                onChange={(e) =>
-                                  handleSettingChange(
-                                    game.id,
-                                    'pipeWidth',
-                                    e.target.value,
-                                  )
-                                }
-                                onFocus={() => handleSelectGame(game.id)}
-                                style={{
-                                  color:
-                                    settings.pipeWidth === 'narrow'
-                                      ? DIFFICULTY_COLORS.easy
-                                      : settings.pipeWidth === 'normal'
-                                        ? DIFFICULTY_COLORS.normal
-                                        : DIFFICULTY_COLORS.hard,
-                                }}
-                              >
-                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.easy }}>좁음</option>
-                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
-                                <option value="wide" style={{ color: DIFFICULTY_COLORS.hard }}>넓음</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div className="setting-item">
                             <label>좌우 간격:</label>
                             <div className="nes-select is-small">
                               <select
@@ -565,6 +537,34 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
                                 <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
                                 <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>파이프 두께:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeWidth}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeWidth',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.pipeWidth === 'narrow'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.pipeWidth === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.easy }}>좁음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.hard }}>넓음</option>
                               </select>
                             </div>
                           </div>
@@ -762,7 +762,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 }}
                               />
                             ) : (
-                              <div className="nes-select is-small">
+                              <div className="nes-select is-small is-compact">
                                 <select
                                   value={settings.timeLimit}
                                   onChange={(e) => {
@@ -798,7 +798,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           </div>
                           <div className="setting-item">
                             <label>지뢰 비율:</label>
-                            <div className="nes-select is-small">
+                            <div className="nes-select is-small is-compact">
                               <select
                                 value={settings.mineRatio}
                                 onChange={(e) =>

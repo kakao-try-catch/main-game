@@ -243,6 +243,10 @@
   min-width: 80px;
 }
 
+.setting-item .nes-select.is-compact select {
+  min-width: 80px;
+}
+
 .setting-item .nes-input {
   width: 80px;
   font-size: 12px;

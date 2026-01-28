@@ -27,7 +27,6 @@ export enum GamePacketType {
 }
 
 // --- COMMON TYPES ---
-type PlayerId = string;
 type AppleIndex = number;
 
 export interface PlayerData {
@@ -53,7 +52,6 @@ export interface UpdateNumberPacket {
 }
 export interface JoinRoomPacket {
   type: SystemPacketType.JOIN_ROOM;
-  playerId: PlayerId;
   roomId: string;
   playerName: string;
 }
@@ -148,7 +146,7 @@ export interface UpdateDragAreaPacket {
 }
 export interface DropCellIndexPacket {
   type: GamePacketType.DROP_CELL_INDEX;
-  winnerId: PlayerId;
+  winnerIndex: number;
   indices: AppleIndex[];
   totalScore: number;
 }

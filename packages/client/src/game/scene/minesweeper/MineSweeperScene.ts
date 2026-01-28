@@ -209,6 +209,37 @@ export default class MineSweeperScene extends Phaser.Scene {
   private onGameEnd(): void {
     console.log('[MineSweeperScene] 게임 종료 - 타이머 완료');
 
+    if (isMockMode() && this.mockServerCore) {
+      // Mock 모드: 클라이언트에서 직접 정산
+      console.log('[MineSweeperScene] Mock 모드 - 깃발 기반 최종 정산 시작');
+      const scoreUpdates = this.mockServerCore.calculateFinalScores();
+
+      // 정산 결과 로그
+      for (const [playerId, update] of scoreUpdates.entries()) {
+        console.log(
+          `[MineSweeperScene] ${playerId} 최종 정산: ${update.scoreChange > 0 ? '+' : ''}${update.scoreChange}점 (정답 깃발: ${update.correctFlags}, 오답 깃발: ${update.incorrectFlags})`,
+        );
+      }
+
+      // 점수 업데이트 이벤트가 처리될 시간을 주기 위해 약간의 딜레이 후 게임 종료
+      setTimeout(() => {
+        this.emitGameEnd();
+      }, 100);
+    } else {
+      // 실제 서버 모드: 서버에 타임업 알림
+      console.log('[MineSweeperScene] 서버 모드 - game_time_up 이벤트 전송');
+      this.socket.emit('game_time_up', {
+        timestamp: Date.now(),
+      });
+      // 서버에서 final_settlement와 game_end 이벤트를 보낼 것임
+      // 여기서는 아무것도 하지 않음 (서버 응답 대기)
+    }
+  }
+
+  /**
+   * 게임 종료 이벤트 발생
+   */
+  private emitGameEnd(): void {
     // 플레이어 데이터에 playerIndex 추가
     const playersWithIndex = this.players.map((player, index) => ({
       ...player,
@@ -430,6 +461,27 @@ export default class MineSweeperScene extends Phaser.Scene {
         );
       }
     });
+
+    // 게임 종료 이벤트 (서버에서 전송)
+    this.socket.on('game_end', (data: any) => {
+      console.log('[MineSweeperScene] 서버로부터 game_end 수신:', data);
+
+      // 서버에서 받은 최종 플레이어 데이터로 업데이트 (있는 경우)
+      if (data.players) {
+        // 서버에서 받은 플레이어 데이터를 로컬 플레이어 배열과 병합
+        data.players.forEach((serverPlayer: any) => {
+          const localPlayer = this.players.find(
+            (p) => p.id === serverPlayer.id,
+          );
+          if (localPlayer) {
+            localPlayer.score = serverPlayer.score;
+          }
+        });
+      }
+
+      // 게임 종료 처리
+      this.emitGameEnd();
+    });
   }
 
   /**
@@ -575,6 +627,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     this.socket.off('game_init');
     this.socket.off('tile_update');
     this.socket.off('score_update');
+    this.socket.off('game_end');
     this.events.off('updatePlayers');
 
     // 키보드 이벤트 리스너 제거

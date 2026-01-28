@@ -555,6 +555,81 @@ export class MineSweeperMockCore {
   }
 
   /**
+   * 게임 종료 시 깃발 기반 일괄 정산
+   * - 깃발 위치에 실제 지뢰가 있음(성공): 개당 +10점
+   * - 깃발 위치에 지뢰가 없음(실패): 개당 -10점
+   */
+  calculateFinalScores(): Map<
+    PlayerId,
+    { scoreChange: number; correctFlags: number; incorrectFlags: number }
+  > {
+    const scoreUpdates = new Map<
+      PlayerId,
+      { scoreChange: number; correctFlags: number; incorrectFlags: number }
+    >();
+
+    // 모든 플레이어 초기화
+    for (const playerId of this.players.keys()) {
+      scoreUpdates.set(playerId, {
+        scoreChange: 0,
+        correctFlags: 0,
+        incorrectFlags: 0,
+      });
+    }
+
+    // 모든 타일을 순회하며 깃발 확인
+    for (let row = 0; row < this.config.gridRows; row++) {
+      for (let col = 0; col < this.config.gridCols; col++) {
+        const tile = this.tiles[row][col];
+
+        // 깃발이 설치된 타일만 확인
+        if (tile.state === TileState.FLAGGED && tile.flaggedBy) {
+          const playerId = tile.flaggedBy;
+          const update = scoreUpdates.get(playerId);
+
+          if (update) {
+            if (tile.isMine) {
+              // 성공: 지뢰 위치에 깃발
+              update.scoreChange += 10;
+              update.correctFlags++;
+            } else {
+              // 실패: 지뢰가 아닌 곳에 깃발
+              update.scoreChange -= 10;
+              update.incorrectFlags++;
+            }
+          }
+        }
+      }
+    }
+
+    // 각 플레이어 점수 업데이트 및 이벤트 전송
+    for (const [playerId, update] of scoreUpdates.entries()) {
+      if (update.scoreChange !== 0) {
+        const player = this.players.get(playerId);
+        if (player) {
+          player.score += update.scoreChange;
+
+          // 점수 업데이트 이벤트 전송
+          this.socket.triggerEvent('score_update', {
+            playerId,
+            scoreChange: update.scoreChange,
+            newScore: player.score,
+            position: null,
+            reason: 'final_settlement',
+            timestamp: Date.now(),
+          });
+
+          console.log(
+            `[MineSweeperMockCore] 최종 정산: ${playerId} ${update.scoreChange > 0 ? '+' : ''}${update.scoreChange} (정답: ${update.correctFlags}, 오답: ${update.incorrectFlags}) - 총점: ${player.score}`,
+          );
+        }
+      }
+    }
+
+    return scoreUpdates;
+  }
+
+  /**
    * 정리
    */
   destroy(): void {

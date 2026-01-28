@@ -36,12 +36,12 @@
 사과 획득 성공 시 모든 클라이언트에게 알립니다.
 
 - **Data:**
-- `winnerId: string`: 사과를 딴 플레이어 ID
+- `winnerIndex: number`: 사과를 딴 플레이어 index
 - `indices: int[]`: 제거된 사과들의 index 배열
 - `totalScore: int`: 해당 플레이어의 갱신된 총점 (획득 점수는 indices.length로 계산)
 
-- **UX 처리:** \* `winnerId == Me`: 투명화된 사과 확정 제거 애니메이션.
-- `winnerId != Me`: 해당 index 사과 즉시 소멸(블랙홀 효과 등) 및 상대 점수 갱신.
+- **UX 처리:** \* `winnerIndex == myselfIndex(from gameStore)`: 투명화된 사과 확정 제거 애니메이션.
+- `winnerIndex != myselfIndex`: 해당 index 사과 즉시 소멸(블랙홀 효과 등) 및 상대 점수 갱신.
 
 ### 1.5 TIME_END
 

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from 'react';
+import React, { useState } from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
 import { type PlayerData } from '../../../../../common/src/packets';
-import { useGameStore } from '../../../store/gameStore';
+import { useGameStore, isPlayerHost } from '../../../store/gameStore';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
 type CrownSvgProps = { fill: string; style?: React.CSSProperties };
@@ -81,6 +81,11 @@ const GameResult: React.FC<GameResultProps> = ({
   const result = useGameStore((s) => s.gameResults) ?? [];
   // const rankedPlayers = calculateRanks(players);
 
+  // 방장 여부 확인
+  const isHost = isPlayerHost();
+  const [showReplayTooltip, setShowReplayTooltip] = useState(false);
+  const [showLobbyTooltip, setShowLobbyTooltip] = useState(false);
+
   // 닉네임 길이에 따라 폰트 크기 조절
   const getNameFontSize = (nameLength: number) => {
     if (nameLength <= 3) return '48px';
@@ -90,100 +95,191 @@ const GameResult: React.FC<GameResultProps> = ({
   };
 
   return (
-    <div style={getOverlayStyle()}>
-      <div
-        className="nes-container is-rounded"
-        style={{
-          ...getContainerStyle(ratio),
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      >
-        <h1 style={getTitleStyle(ratio)}>{title}</h1>
-        <div style={getRankContainerStyle(ratio)}>
-          {result.map((player, idx) => {
-            const rank = idx + 1;
-            const height = getRankHeight(rank) * ratio;
-            const crown = getCrownProps(rank);
-            return (
-              <div
-                key={`player-${rank}`}
-                style={{
-                  ...getRankItemStyle(ratio),
-                  marginLeft: idx === 0 ? 0 : -5 * ratio,
-                }}
-              >
-                {crown.visible && (
-                  <CrownSvg
+    <>
+      <style>
+        {`
+          .nes-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            pointer-events: none;
+          }
+          .nes-btn:disabled:active {
+            box-shadow: none;
+            transform: none;
+          }
+        `}
+      </style>
+      <div style={getOverlayStyle()}>
+        <div
+          className="nes-container is-rounded"
+          style={{
+            ...getContainerStyle(ratio),
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <h1 style={getTitleStyle(ratio)}>{title}</h1>
+          <div style={getRankContainerStyle(ratio)}>
+            {result.map((player, idx) => {
+              const rank = idx + 1;
+              const height = getRankHeight(rank) * ratio;
+              const crown = getCrownProps(rank);
+              return (
+                <div
+                  key={`player-${rank}`}
+                  style={{
+                    ...getRankItemStyle(ratio),
+                    marginLeft: idx === 0 ? 0 : -5 * ratio,
+                  }}
+                >
+                  {crown.visible && (
+                    <CrownSvg
+                      style={{
+                        ...getCrownStyle(ratio),
+                        marginTop: 0,
+                        marginBottom: 3 * ratio,
+                      }}
+                      fill={crown.fill}
+                    />
+                  )}
+                  <div
                     style={{
-                      ...getCrownStyle(ratio),
+                      ...getPlayerNameStyle(ratio),
                       marginTop: 0,
-                      marginBottom: 3 * ratio,
+                      fontSize: getNameFontSize(player.playerName.length),
+                      whiteSpace: 'nowrap',
+                      maxWidth: '210px',
+                      textAlign: 'center',
                     }}
-                    fill={crown.fill}
-                  />
-                )}
-                <div
-                  style={{
-                    ...getPlayerNameStyle(ratio),
-                    marginTop: 0,
-                    fontSize: getNameFontSize(player.playerName.length),
-                    whiteSpace: 'nowrap',
-                    maxWidth: '210px',
-                    textAlign: 'center',
-                  }}
-                >
-                  {player.playerName}
-                </div>
-                <div
-                  style={{
-                    ...getRankBarStyle(ratio),
-                    height: `${height}px`,
-                    backgroundColor: player.color,
-                  }}
-                >
-                  <div style={getScoreStyle(ratio)}>
-                    {player.reportCard.score}
+                  >
+                    {player.playerName}
+                  </div>
+                  <div
+                    style={{
+                      ...getRankBarStyle(ratio),
+                      height: `${height}px`,
+                      backgroundColor: player.color,
+                    }}
+                  >
+                    <div style={getScoreStyle(ratio)}>
+                      {player.reportCard.score}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={getButtonContainerStyle(ratio)}>
-          <button
-            type="button"
-            className="nes-btn is-primary"
-            style={getButtonStyle(ratio)}
-            onClick={() => {
-              playSFX('buttonClick');
-              onReplay();
-            }}
-            onMouseEnter={() => {
-              playSFX('buttonHover');
-            }}
-          >
-            REPLAY
-          </button>
-          <button
-            type="button"
-            className="nes-btn is-primary"
-            style={getButtonStyle(ratio)}
-            onClick={() => {
-              playSFX('buttonClick');
-              onLobby();
-            }}
-            onMouseEnter={() => {
-              playSFX('buttonHover');
-            }}
-          >
-            LOBBY
-          </button>
+              );
+            })}
+          </div>
+          <div style={getButtonContainerStyle(ratio)}>
+            <div
+              style={{ position: 'relative', display: 'inline-block' }}
+              onMouseEnter={() => !isHost && setShowReplayTooltip(true)}
+              onMouseLeave={() => setShowReplayTooltip(false)}
+            >
+              <button
+                type="button"
+                className="nes-btn is-primary"
+                style={getButtonStyle(ratio)}
+                onClick={() => {
+                  if (!isHost) return;
+                  playSFX('buttonClick');
+                  onReplay();
+                }}
+                onMouseEnter={() => {
+                  if (isHost) playSFX('buttonHover');
+                }}
+                disabled={!isHost}
+              >
+                REPLAY
+              </button>
+              {showReplayTooltip && !isHost && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: `calc(100% + ${10 * ratio}px)`,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    padding: `${8 * ratio}px ${16 * ratio}px`,
+                    backgroundColor: '#e76e55',
+                    color: 'white',
+                    borderRadius: `${4 * ratio}px`,
+                    fontSize: `${14 * ratio}px`,
+                    whiteSpace: 'nowrap',
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  방장만 해당 작업을 수행할 수 있습니다.
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      border: `${6 * ratio}px solid transparent`,
+                      borderTopColor: '#e76e55',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            <div
+              style={{ position: 'relative', display: 'inline-block' }}
+              onMouseEnter={() => !isHost && setShowLobbyTooltip(true)}
+              onMouseLeave={() => setShowLobbyTooltip(false)}
+            >
+              <button
+                type="button"
+                className="nes-btn is-primary"
+                style={getButtonStyle(ratio)}
+                onClick={() => {
+                  if (!isHost) return;
+                  playSFX('buttonClick');
+                  onLobby();
+                }}
+                onMouseEnter={() => {
+                  if (isHost) playSFX('buttonHover');
+                }}
+                disabled={!isHost}
+              >
+                LOBBY
+              </button>
+              {showLobbyTooltip && !isHost && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: `calc(100% + ${10 * ratio}px)`,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    padding: `${8 * ratio}px ${16 * ratio}px`,
+                    backgroundColor: '#e76e55',
+                    color: 'white',
+                    borderRadius: `${4 * ratio}px`,
+                    fontSize: `${14 * ratio}px`,
+                    whiteSpace: 'nowrap',
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  방장만 해당 작업을 수행할 수 있습니다.
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      border: `${6 * ratio}px solid transparent`,
+                      borderTopColor: '#e76e55',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -75,6 +75,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
     case SystemPacketType.READY_SCENE:
       useGameStore.getState().setScreen('game');
       useGameStore.getState().setGameStarted(true);
+      // 게임 세션 ID 증가로 게임 컨테이너 재마운트 트리거
+      useGameStore.getState().incrementGameSession();
       switch (packet.selectedGameType) {
         // 다른 게임 타입이 추가되면 여기에 케이스 추가
         case GameType.APPLE_GAME:
@@ -140,6 +142,13 @@ export const handleServerPacket = (packet: ServerPacket) => {
       sfxManager.play('appleGameEnd');
       bgmManager.pause(); // 게임 종료 시 BGM 중지
       console.log('TIME_END packet received:', packet.results);
+      break;
+    }
+
+    case SystemPacketType.RETURN_TO_THE_LOBBY: {
+      const store = useGameStore.getState();
+      store.setScreen('lobby');
+      console.log('RETURN_TO_THE_LOBBY packet received: returning to lobby');
       break;
     }
 

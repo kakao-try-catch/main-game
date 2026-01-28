@@ -245,6 +245,11 @@ export default class AppleGameScene extends Phaser.Scene {
     this.unsubscribeAppleField = useGameStore.subscribe(
       (state) => state.appleField,
       (appleField) => {
+        // 씬이 파괴되었거나 비활성 상태면 무시
+        if (!this.scene || !this.sys || !this.sys.game) {
+          return;
+        }
+
         if (appleField) {
           console.log('🍎 SET_FIELD 수신: 서버 데이터로 게임 초기화');
           // 리플레이를 위해 기존 게임 상태 리셋
@@ -261,6 +266,11 @@ export default class AppleGameScene extends Phaser.Scene {
     this.unsubscribeGameTime = useGameStore.subscribe(
       (state) => state.gameTime,
       (gameTime) => {
+        // 씬이 파괴되었거나 비활성 상태면 무시
+        if (!this.scene || !this.sys || !this.sys.game) {
+          return;
+        }
+
         if (gameTime && this.isGameInitialized) {
           console.log(`⏱️ SET_TIME 수신: ${gameTime}초`);
           this.gameManager.startTimerWithDuration(gameTime);
@@ -272,6 +282,11 @@ export default class AppleGameScene extends Phaser.Scene {
     this.unsubscribeGameResults = useGameStore.subscribe(
       (state) => state.gameResults,
       (results) => {
+        // 씬이 파괴되었거나 비활성 상태면 무시
+        if (!this.scene || !this.sys || !this.sys.game) {
+          return;
+        }
+
         if (results) {
           console.log('🏁 TIME_END 수신: 게임 종료');
           this.gameManager.gameEnd();
@@ -282,6 +297,17 @@ export default class AppleGameScene extends Phaser.Scene {
 
   /** 서버 데이터로 게임 초기화 (멀티플레이용) */
   private initializeWithServerData(appleField: number[]): void {
+    // 씬이 활성화되어 있지 않으면 초기화하지 않음
+    if (!this.scene || !this.sys || !this.sys.game) {
+      console.warn('⚠️ 씬이 파괴되었습니다. 초기화를 건너뜁니다.');
+      return;
+    }
+
+    if (!this.scene.isActive(this.scene.key)) {
+      console.warn('⚠️ 씬이 비활성 상태입니다. 초기화를 건너뜁니다.');
+      return;
+    }
+
     const playerData = this._pendingPlayerData;
     if (!playerData) {
       console.warn(
@@ -309,6 +335,22 @@ export default class AppleGameScene extends Phaser.Scene {
     if (gameTime) {
       this.gameManager.startTimerWithDuration(gameTime);
     }
+  }
+
+  /**
+   * 씬 종료 시 구독 해제
+   * Phaser의 lifecycle 메서드로, 씬이 셧다운될 때 자동 호출됨
+   */
+  shutdown(): void {
+    console.log('🧹 AppleGameScene shutdown: 구독 해제');
+
+    // gameStore 구독 해제
+    this.unsubscribeAppleField?.();
+    this.unsubscribeGameTime?.();
+    this.unsubscribeGameResults?.();
+
+    // 플래그 초기화
+    this.isGameInitialized = false;
   }
 
   /* END-USER-CODE */

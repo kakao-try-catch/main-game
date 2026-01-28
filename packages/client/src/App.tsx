@@ -6,7 +6,6 @@ import { UserProvider, useUser } from './contexts/UserContext';
 
 import PlayerCard from './components/PlayerCard';
 import GameResult from './game/utils/game-result/GameResult';
-import FlappyBirdResult from './game/utils/game-result/FlappyBirdResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
@@ -285,6 +284,9 @@ function AppContent() {
     }
   }, [gameEnded, pause, reset]);
 
+  const gameResultRatio =
+    (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1;
+
   // 랜딩 페이지 표시
   if (currentScreen === 'landing') {
     return <LandingPage onStart={handleStart} />;
@@ -430,34 +432,16 @@ function AppContent() {
             onGameReady={handleGameReady}
           />
         )}
-        {/* 사과게임 결과 모달 */}
-        {gameEnded && (
-          <GameResult
-            players={finalPlayers}
-            onReplay={handleReplay}
-            onLobby={handleLobby}
-            title="APPLE GAME TOGETHER"
-            ratio={
-              (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
-            }
-          />
-        )}
-        {/* 플래피버드 결과 모달 */}
-        {flappyGameEnded && flappyFinalData && (
-          <FlappyBirdResult
-            finalScore={flappyFinalData.finalScore}
-            reason={
-              flappyFinalData.reason as 'pipe_collision' | 'ground_collision'
-            }
-            collidedPlayerId={flappyFinalData.collidedPlayerId}
-            players={flappyFinalData.players}
-            onReplay={handleReplay}
-            onLobby={handleLobby}
-            ratio={
-              (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
-            }
-          />
-        )}
+        <GameResult
+          currentGameType={currentGameType}
+          gameEnded={gameEnded}
+          finalPlayers={finalPlayers}
+          flappyGameEnded={flappyGameEnded}
+          flappyFinalData={flappyFinalData}
+          onReplay={handleReplay}
+          onLobby={handleLobby}
+          ratio={gameResultRatio}
+        />
       </main>
     </div>
   );

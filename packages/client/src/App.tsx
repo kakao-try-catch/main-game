@@ -206,6 +206,12 @@ function AppContent() {
     playSFX('mineExplode');
   }, [playSFX]);
 
+  // 지뢰찾기 깃발 설치 사운드 핸들러
+  const handleMinesweeperFlagPlaced = useCallback(() => {
+    console.log('[App] 깃발 설치 사운드 재생');
+    playSFX('mineFlag');
+  }, [playSFX]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
@@ -486,6 +492,7 @@ function AppContent() {
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
             onMinesweeperTileReveal={handleMinesweeperTileReveal}
             onMinesweeperMineExplode={handleMinesweeperMineExplode}
+            onMinesweeperFlagPlaced={handleMinesweeperFlagPlaced}
             onGameReady={handleGameReady}
           />
         )}

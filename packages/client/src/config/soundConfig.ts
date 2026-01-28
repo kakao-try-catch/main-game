@@ -35,6 +35,7 @@ import flappyScoreSound from '../assets/sounds/SFX/flappyScore.mp3';
 // 지뢰찾기 SFX
 // import mineClickSound from '../assets/sounds/SFX/mineClick.mp3';
 import mineExplodeSound from '../assets/sounds/SFX/mine.mp3';
+import mineFlagSound from '../assets/sounds/SFX/flag.mp3';
 
 // ============= Type Definitions =============
 
@@ -68,7 +69,8 @@ export type SFXName =
   | 'flappyScore'
 
   // 지뢰찾기 SFX
-  | 'mineExplode';
+  | 'mineExplode'
+  | 'mineFlag';
 
 // 플래피버드 SFX (추후 추가)
 // | 'flappyHit'
@@ -152,6 +154,11 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
     file: mineExplodeSound,
     volume: 0.9,
     startTime: 0.11,
+  },
+  mineFlag: {
+    file: mineFlagSound,
+    volume: 0.7,
+    startTime: 0,
   },
 
   // TODO: 플래피버드 효과음 추가

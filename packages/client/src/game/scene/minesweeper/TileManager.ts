@@ -398,6 +398,8 @@ export default class TileManager {
         if (this.mineSprites[row][col]) {
           this.mineSprites[row][col]!.setVisible(false);
         }
+        // 깃발 설치 사운드 이벤트 발생
+        this.scene.events.emit('minesweeperFlagPlaced');
         break;
 
       case TileState.HIDDEN:

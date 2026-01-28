@@ -67,6 +67,7 @@ export interface RoomUpdatePacket {
   players: PlayerData[];
   updateType: RoomUpdateType;
   yourIndex: number;
+  roomId: string;
 }
 
 export interface SystemMessagePacket {

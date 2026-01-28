@@ -11,6 +11,8 @@ export enum SystemPacketType {
   GAME_START_REQ = 'GAME_START_REQ',
   READY_SCENE = 'READY_SCENE',
   UPDATE_SCORE = 'UPDATE_SCORE',
+  RETURN_TO_THE_LOBBY_REQ = 'RETURN_TO_THE_LOBBY_REQ',
+  RETURN_TO_THE_LOBBY = 'RETURN_TO_THE_LOBBY',
 }
 
 export enum GamePacketType {
@@ -100,6 +102,14 @@ export interface UpdateScorePacket {
   scoreboard: ReportCard[];
 }
 
+export interface ReturnToTheLobbyReqPacket {
+  type: SystemPacketType.RETURN_TO_THE_LOBBY_REQ;
+}
+
+export interface ReturnToTheLobbyPacket {
+  type: SystemPacketType.RETURN_TO_THE_LOBBY;
+}
+
 export type SystemPacket =
   | UpdateNumberPacket
   | JoinRoomPacket
@@ -109,7 +119,9 @@ export type SystemPacket =
   | GameConfigUpdatePacket
   | GameStartReqPacket
   | ReadyScenePacket
-  | UpdateScorePacket;
+  | UpdateScorePacket
+  | ReturnToTheLobbyReqPacket
+  | ReturnToTheLobbyPacket;
 
 // --- GAME PACKETS ---
 export interface SetFieldPacket {

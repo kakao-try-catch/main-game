@@ -236,7 +236,7 @@ export async function joinPlayerToGame(
       });
       return;
     }
-    sessions.set(roomId, session);
+    sessions.set(roomId, session); // todo 얘는 생성할 때만 있어도 되는 거 아님?
     console.log(`Created new Game Session for ${roomId}`);
 
     socket.join(roomId);

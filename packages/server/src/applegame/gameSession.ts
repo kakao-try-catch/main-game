@@ -3,6 +3,7 @@ import {
   AppleGameConfig,
   AppleGameRenderConfig,
 } from '../../../common/src/config';
+import { resolveAppleGameConfig } from '../../../common/src/appleGameUtils';
 import {
   GamePacketType,
   DropCellIndexPacket,
@@ -207,32 +208,17 @@ export class GameSession {
     const raw = this.gameConfigs.get(GameType.APPLE_GAME) as
       | GameConfig
       | undefined;
-    const mapSize = raw?.mapSize ?? MapSize.MEDIUM;
-    let gridCols = 20; // todo 기본값 반영 필요
-    let gridRows = 10; // todo 기본값 반영 필요
-    switch (mapSize) {
-      case MapSize.SMALL:
-        gridCols = 16;
-        gridRows = 8;
-        break;
-      case MapSize.LARGE:
-        gridCols = 30;
-        gridRows = 15;
-        break;
-    }
 
-    const maxNumber = raw?.generation === 1 ? 5 : 9;
-    const totalTime = this.sanitizeTime(raw?.time);
-
-    return {
-      gridCols,
-      gridRows,
-      minNumber: raw?.zero ? 0 : APPLE_GAME_CONFIG.minNumber,
-      maxNumber,
-      totalTime,
-      maxPlayers: APPLE_GAME_CONFIG.maxPlayers,
-      includeZero: !!raw?.zero,
+    // 기본 설정 생성
+    const cfg: AppleGameConfig = {
+      mapSize: raw?.mapSize ?? MapSize.MEDIUM,
+      time: this.sanitizeTime(raw?.time),
+      generation: raw?.generation ?? 0,
+      zero: raw?.zero ?? false,
     };
+
+    // 공통 유틸리티 사용
+    return resolveAppleGameConfig(cfg);
   }
 
   private startTimer() {

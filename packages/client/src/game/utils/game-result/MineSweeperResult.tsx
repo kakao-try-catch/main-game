@@ -1,10 +1,15 @@
 import React from 'react';
-import BaseRankedResult, { type BaseRankedResultProps } from './BaseRankedResult';
+import BaseRankedResult, {
+  type BaseRankedResultProps,
+} from './BaseRankedResult';
 import type { PlayerResultData } from '../../types/common';
 import type { MineSweeperResultPlayer } from '../../types/minesweeper.types';
+import flagPng from '../../../assets/images/flag_other.png';
 
-export interface MineSweeperResultProps
-  extends Omit<BaseRankedResultProps, 'title' | 'renderPlayerSubline'> {
+export interface MineSweeperResultProps extends Omit<
+  BaseRankedResultProps,
+  'title' | 'renderPlayerSubline'
+> {
   stats?: {
     remainingMines?: number;
     minesHit?: number;
@@ -13,12 +18,23 @@ export interface MineSweeperResultProps
   };
 }
 
-const getPlayerSubline = (player: PlayerResultData): string | null => {
+const getPlayerSubline = (player: PlayerResultData): React.ReactNode => {
   const statsPlayer = player as MineSweeperResultPlayer;
   const totalFlags = statsPlayer.totalFlags ?? 0;
   if (totalFlags <= 0) return null;
   const correctFlags = statsPlayer.correctFlags ?? 0;
-  return `${correctFlags}/${totalFlags}`;
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+      }}
+    >
+      <img src={flagPng} alt="flag" style={{ width: '1em', height: '1em' }} />
+      <span>{`${correctFlags} / ${totalFlags}`}</span>
+    </span>
+  );
 };
 
 const MineSweeperResult: React.FC<MineSweeperResultProps> = (props) => {

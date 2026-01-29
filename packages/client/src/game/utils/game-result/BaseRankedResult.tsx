@@ -219,7 +219,7 @@ class ResultStyleBuilder {
       justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'NeoDunggeunmo',
-      fontSize: this.px(24),
+      fontSize: this.px(32),
       color: '#212529',
       textAlign: 'center',
       lineHeight: this.px(28),

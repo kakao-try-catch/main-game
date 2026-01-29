@@ -1,6 +1,6 @@
 import {
   SystemPacketType,
-  GamePacketType,
+  AppleGamePacketType,
   type ServerPacket,
   type RoomUpdatePacket,
   type GameConfigUpdatePacket,
@@ -93,8 +93,31 @@ export const handleServerPacket = (packet: ServerPacket) => {
       console.log('READY_SCENE packet received', packet);
       break;
 
+    case SystemPacketType.TIME_END: {
+      const store = useGameStore.getState();
+      store.setGameResults(packet.results);
+      store.setGameStarted(false);
+      sfxManager.play('appleGameEnd');
+      bgmManager.pause(); // 게임 종료 시 BGM 중지
+      console.log('TIME_END packet received:', packet.results);
+      break;
+    }
+
+    case SystemPacketType.SET_TIME: {
+      const store = useGameStore.getState();
+      store.setGameTime(packet.limitTime);
+      store.setServerStartTime(packet.serverStartTime);
+      console.log(
+        'SET_TIME packet received:',
+        packet.limitTime,
+        'serverStartTime:',
+        packet.serverStartTime,
+      );
+      break;
+    }
+
     // --- Game Logic ---
-    case GamePacketType.SET_FIELD: {
+    case AppleGamePacketType.SET_FIELD: {
       const store = useGameStore.getState();
       // 게임 시작/리플레이 시 상태 초기화 (SET_FIELD가 새 게임의 시작 신호)
       store.clearDropCellEventQueue();
@@ -103,7 +126,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
-    case GamePacketType.DROP_CELL_INDEX: {
+    case AppleGamePacketType.DROP_CELL_INDEX: {
       const store = useGameStore.getState();
       const { winnerId, indices, totalScore } = packet;
 
@@ -120,20 +143,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
-    case GamePacketType.SET_TIME: {
-      const store = useGameStore.getState();
-      store.setGameTime(packet.limitTime);
-      store.setServerStartTime(packet.serverStartTime);
-      console.log(
-        'SET_TIME packet received:',
-        packet.limitTime,
-        'serverStartTime:',
-        packet.serverStartTime,
-      );
-      break;
-    }
-
-    case GamePacketType.UPDATE_DRAG_AREA: {
+    case AppleGamePacketType.UPDATE_DRAG_AREA: {
       const store = useGameStore.getState();
       store.updateOtherPlayerDrag({
         playerIndex: packet.playerIndex,
@@ -142,16 +152,6 @@ export const handleServerPacket = (packet: ServerPacket) => {
         endX: packet.endX,
         endY: packet.endY,
       });
-      break;
-    }
-
-    case GamePacketType.TIME_END: {
-      const store = useGameStore.getState();
-      store.setGameResults(packet.results);
-      store.setGameStarted(false);
-      sfxManager.play('appleGameEnd');
-      bgmManager.pause(); // 게임 종료 시 BGM 중지
-      console.log('TIME_END packet received:', packet.results);
       break;
     }
 

@@ -5,20 +5,19 @@ import {
 } from '../../../common/src/config';
 import { resolveAppleGameConfig } from '../../../common/src/appleGameUtils';
 import {
-  GamePacketType,
+  AppleGamePacketType,
   DropCellIndexPacket,
   TimeEndPacket,
   SetFieldPacket,
   SetTimePacket,
-  PlayerData,
   UpdateScorePacket,
   SystemPacketType,
   RoomUpdatePacket,
   RoomUpdateType,
-  ReportCard,
   ReadyScenePacket,
   ReturnToTheLobbyPacket,
 } from '../../../common/src/packets';
+import { PlayerData, ReportCard } from '../../../common/src/common-type';
 
 import { GameType, MapSize, GameConfig } from '../../../common/src/config';
 import { Server } from 'socket.io';
@@ -170,7 +169,7 @@ export class GameSession {
 
     // Broadcast Field
     const setFieldPacket: SetFieldPacket = {
-      type: GamePacketType.SET_FIELD,
+      type: AppleGamePacketType.SET_FIELD,
       apples: this.apples,
     };
     this.broadcastCallback(setFieldPacket);
@@ -184,7 +183,7 @@ export class GameSession {
 
     // Broadcast Time
     const setTimePacket: SetTimePacket = {
-      type: GamePacketType.SET_TIME,
+      type: SystemPacketType.SET_TIME,
       limitTime: 10, //this.timeLeft, 일단 10초로.
       serverStartTime: Date.now(), // 서버 시작 시간 전송
     };
@@ -222,9 +221,7 @@ export class GameSession {
   }
 
   private getAppliedAppleConfig(): AppleGameRenderConfig {
-    const raw = this.gameConfigs.get(GameType.APPLE_GAME) as
-      | GameConfig
-      | undefined;
+    const raw = this.gameConfigs.get(GameType.APPLE_GAME) as AppleGameConfig;
 
     // 기본 설정 생성
     const cfg: AppleGameConfig = {
@@ -266,7 +263,7 @@ export class GameSession {
       .sort((a, b) => b.reportCard.score - a.reportCard.score);
 
     const endPacket: TimeEndPacket = {
-      type: GamePacketType.TIME_END,
+      type: SystemPacketType.TIME_END,
       results,
     };
     this.broadcastCallback(endPacket);
@@ -326,13 +323,15 @@ export class GameSession {
     const prevSelectedGameType = this.selectedGameType;
     // Update the session's selected game type based on the incoming packet
     this.selectedGameType = selectedGameType;
+
+    // todo apple game config 라면 apple game config로 형변환 해주고 config 업데이트 작업하는 거
     // Validate & sanitize incoming config before storing.
     // IMPORTANT: If a field is missing or invalid, prefer the existing stored
     // config value for this session. Only fall back to global defaults when
     // there is no existing stored value.
-    const existingCfg = this.gameConfigs.get(GameType.APPLE_GAME) as
-      | GameConfig
-      | undefined;
+    const existingCfg = this.gameConfigs.get(
+      GameType.APPLE_GAME,
+    ) as AppleGameConfig;
 
     const sanitizeForApple = (raw: any) => {
       const out: any = {};
@@ -368,7 +367,7 @@ export class GameSession {
 
     let storedConfig: GameConfig = gameConfig;
     if (selectedGameType === GameType.APPLE_GAME) {
-      storedConfig = sanitizeForApple(gameConfig as any);
+      storedConfig = sanitizeForApple(gameConfig) as AppleGameConfig;
       // If the new sanitized config has no differences from the existing
       // stored config for this session, avoid storing and broadcasting it.
       const prev = existingCfg;
@@ -438,7 +437,7 @@ export class GameSession {
           );
         }
         const dropCellIndexPacket: DropCellIndexPacket = {
-          type: GamePacketType.DROP_CELL_INDEX,
+          type: AppleGamePacketType.DROP_CELL_INDEX,
           winnerIndex: winnerIndex,
           indices: indices,
           totalScore: player.reportCard.score,

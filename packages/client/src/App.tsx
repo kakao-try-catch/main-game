@@ -21,7 +21,7 @@ import type {
   GameType,
   CurrentUser,
 } from './game/types/common';
-import type { PlayerId } from './game/types/flappybird.types';
+import type { PlayerId, GameOverEvent } from './game/types/flappybird.types';
 import { CONSTANTS } from './game/types/common';
 import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
 import flappyBird1 from './assets/images/flappybird_1.png';
@@ -71,7 +71,7 @@ function AppContent() {
   const [flappyGameEnded, setFlappyGameEnded] = useState(false); // 플래피버드 게임 종료 여부
   const [flappyFinalData, setFlappyFinalData] = useState<{
     finalScore: number;
-    reason: string;
+    reason: GameOverEvent['reason'];
     collidedPlayerId: PlayerId;
     players: PlayerResultData[];
   } | null>(null);

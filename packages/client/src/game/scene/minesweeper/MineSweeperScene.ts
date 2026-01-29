@@ -437,6 +437,7 @@ export default class MineSweeperScene extends Phaser.Scene {
           tileUpdate.state,
           tileUpdate.adjacentMines,
           tileUpdate.isMine,
+          tileUpdate.revealedBy,
           tileUpdate.flaggedBy,
         );
 

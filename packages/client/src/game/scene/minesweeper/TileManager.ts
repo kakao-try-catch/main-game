@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+﻿import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import { TileState } from '../../types/minesweeper.types';
 
@@ -9,6 +9,7 @@ export interface TileRenderData {
   isMine: boolean;
   adjacentMines: number;
   state: TileState;
+  revealedBy?: string | null;
   flaggedBy?: string | null;
 }
 
@@ -126,6 +127,7 @@ export default class TileManager {
           isMine: false,
           adjacentMines: 0,
           state: TileState.HIDDEN,
+          revealedBy: null,
         };
       }
     }
@@ -223,6 +225,7 @@ export default class TileManager {
           this.tiles[row][col].isMine = serverTile.isMine;
           this.tiles[row][col].adjacentMines = serverTile.adjacentMines;
           this.tiles[row][col].state = serverTile.state;
+          this.tiles[row][col].revealedBy = serverTile.revealedBy;
         }
       }
     }
@@ -239,6 +242,7 @@ export default class TileManager {
     state: TileState,
     adjacentMines?: number,
     isMine?: boolean,
+    revealedBy?: string | null,
     flaggedBy?: string | null,
   ): void {
     if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
@@ -254,6 +258,7 @@ export default class TileManager {
     tile.state = state;
     if (adjacentMines !== undefined) tile.adjacentMines = adjacentMines;
     if (isMine !== undefined) tile.isMine = isMine;
+    if (revealedBy !== undefined) tile.revealedBy = revealedBy;
     tile.flaggedBy = flaggedBy;
 
     // 상태에 따른 시각적 업데이트
@@ -281,7 +286,13 @@ export default class TileManager {
           }
         } else {
           // 빈 타일 또는 숫자 표시
-          sprite.clearTint();
+          if (tile.revealedBy && this.playerColors.has(tile.revealedBy)) {
+            const colorStr = this.playerColors.get(tile.revealedBy)!;
+            const lightTint = this.getLightTint(colorStr, 0.3);
+            sprite.setTint(lightTint);
+          } else {
+            sprite.clearTint();
+          }
           // 지뢰 스프라이트 숨기기
           if (this.mineSprites[row][col]) {
             this.mineSprites[row][col]!.setVisible(false);
@@ -347,6 +358,25 @@ export default class TileManager {
         }
         break;
     }
+  }
+
+  /**
+   * 색상을 흰색과 블렌딩하여 밝은 색상 반환
+   * @param colorStr #RRGGBB 형식의 색상
+   * @param ratio 원본 색상 비율 (0.0 = 흰색, 1.0 = 원본)
+   */
+  private getLightTint(colorStr: string, ratio: number): number {
+    const hex = colorStr.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // 흰색(255)과 블렌딩
+    const lightR = Math.round(255 + (r - 255) * ratio);
+    const lightG = Math.round(255 + (g - 255) * ratio);
+    const lightB = Math.round(255 + (b - 255) * ratio);
+
+    return (lightR << 16) | (lightG << 8) | lightB;
   }
 
   /**
@@ -535,28 +565,6 @@ export default class TileManager {
    */
   public isDebugMode(): boolean {
     return this.debugMode;
-  }
-
-  /**
-   * 깃발이 설치된 타일 목록 가져오기
-   */
-  public getFlaggedTiles(): { row: number; col: number; flaggedBy: string | null }[] {
-    const flaggedTiles: { row: number; col: number; flaggedBy: string | null }[] = [];
-
-    for (let row = 0; row < this.gridRows; row++) {
-      for (let col = 0; col < this.gridCols; col++) {
-        const tile = this.tiles[row][col];
-        if (tile.state === TileState.FLAGGED && tile.flaggedBy) {
-          flaggedTiles.push({
-            row,
-            col,
-            flaggedBy: tile.flaggedBy,
-          });
-        }
-      }
-    }
-
-    return flaggedTiles;
   }
 
   /**

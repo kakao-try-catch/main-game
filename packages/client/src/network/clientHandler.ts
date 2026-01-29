@@ -22,6 +22,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
 
     // todo 클라 핸들러는 이거 필요없는데?
+    // JOIN_ROOM 패킷은 클라이언트가 서버로 보내는 것이므로 여기서 처리 불필요
     case SystemPacketType.JOIN_ROOM:
       console.log(`Player ${packet.playerId} joined ${packet.roomId}`);
       break;
@@ -128,15 +129,15 @@ export const handleServerPacket = (packet: ServerPacket) => {
 
     case AppleGamePacketType.DROP_CELL_INDEX: {
       const store = useGameStore.getState();
-      const { winnerId, indices, totalScore } = packet;
+      const { winnerIndex, indices, totalScore } = packet;
 
       // 사과 제거 이벤트를 큐에 추가 (AppleGameManager에서 처리)
       // 로딩 중에 도착한 이벤트도 누적되어 게임 초기화 시 처리됨
-      store.addDropCellEvent({ winnerId, indices, totalScore });
+      store.addDropCellEvent({ winnerIndex, indices, totalScore });
 
       console.log(
         'DROP_CELL_INDEX packet received:',
-        winnerId,
+        winnerIndex,
         indices,
         totalScore,
       );

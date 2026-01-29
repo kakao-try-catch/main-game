@@ -14,7 +14,7 @@ export interface DragAreaData {
 
 // 사과 제거 이벤트 타입
 export interface DropCellEvent {
-  winnerId: string;
+  winnerIndex: number;
   indices: number[];
   totalScore: number;
 }

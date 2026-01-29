@@ -448,13 +448,15 @@ export default class MineSweeperScene extends Phaser.Scene {
       console.log('[MineSweeperScene] score_update 수신:', data);
 
       // 로컬 플레이어 점수 업데이트
-      const player = this.players.find((p) => p.id === data.playerId);
+      const playerIndex = this.players.findIndex((p) => p.id === data.playerId);
+      const player = playerIndex !== -1 ? this.players[playerIndex] : null;
+
       if (player) {
         player.score = data.newScore;
 
         // React UI에 점수 업데이트 알림
         this.events.emit('scoreUpdate', {
-          playerId: data.playerId,
+          playerIndex,
           scoreChange: data.scoreChange,
           newScore: data.newScore,
           reason: data.reason,

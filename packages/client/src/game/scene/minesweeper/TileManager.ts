@@ -266,12 +266,19 @@ export default class TileManager {
       case TileState.REVEALED:
         sprite.setTexture('TileOpened');
         // 깃발 스프라이트 숨기기
+        const tileAlpha = 0.6;
         if (this.flagSprites[row][col]) {
           this.flagSprites[row][col]!.setVisible(false);
         }
         if (tile.isMine) {
-          // 지뢰 이미지 표시
-          sprite.setTint(0xe74c3c); // 빨간색 틴트
+          // 지뢰 이미지 표시 - 플레이어 색상 적용
+          if (tile.revealedBy && this.playerColors.has(tile.revealedBy)) {
+            const colorStr = this.playerColors.get(tile.revealedBy)!;
+            const lightTint = this.getLightTint(colorStr, tileAlpha);
+            sprite.setTint(lightTint);
+          } else {
+            sprite.setTint(0xe74c3c); // 기본 빨간색 틴트
+          }
           text.setVisible(false);
           // 지뢰 스프라이트 생성 또는 표시
           if (!this.mineSprites[row][col]) {
@@ -288,7 +295,7 @@ export default class TileManager {
           // 빈 타일 또는 숫자 표시
           if (tile.revealedBy && this.playerColors.has(tile.revealedBy)) {
             const colorStr = this.playerColors.get(tile.revealedBy)!;
-            const lightTint = this.getLightTint(colorStr, 0.3);
+            const lightTint = this.getLightTint(colorStr, tileAlpha);
             sprite.setTint(lightTint);
           } else {
             sprite.clearTint();
@@ -312,7 +319,14 @@ export default class TileManager {
       case TileState.FLAGGED:
         // 플레이어별 색상으로 깃발 표시
         sprite.setTexture('TileClosed');
-        sprite.clearTint();
+        // 타일 배경에도 플레이어 색상 적용
+        if (flaggedBy && this.playerColors.has(flaggedBy)) {
+          const colorStr = this.playerColors.get(flaggedBy)!;
+          const lightTint = this.getLightTint(colorStr, 0.5);
+          sprite.setTint(lightTint);
+        } else {
+          sprite.clearTint();
+        }
         text.setVisible(false);
         // 깃발 스프라이트 생성 또는 표시
         if (!this.flagSprites[row][col]) {

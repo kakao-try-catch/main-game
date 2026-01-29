@@ -17,23 +17,16 @@ import {
   ReadyScenePacket,
   ReturnToTheLobbyPacket,
 } from '../../../common/src/packets';
-import { PlayerData, ReportCard } from '../../../common/src/common-type';
+import {
+  GameStatus,
+  PLAYER_COLORS,
+  PlayerData,
+  PlayerState,
+  ReportCard,
+} from '../../../common/src/common-type';
 
 import { GameType, MapSize, GameConfig } from '../../../common/src/config';
 import { Server } from 'socket.io';
-
-// todo 리팩토링 할 때 공통적으로 분리 가능한 것 아님?
-export type GameStatus = 'waiting' | 'playing' | 'ended';
-
-// todo color 따로 빼낼 수 있음? 서버에서만 관리하는 기능이긴 함
-const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
-
-// PlayerData imported from packets
-
-// 상태 관리 해야 함.
-export interface PlayerState extends PlayerData {
-  id: string; // Socket ID
-}
 
 export class GameSession {
   // selected game in this session (lobby choice)

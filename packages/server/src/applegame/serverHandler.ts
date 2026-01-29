@@ -228,6 +228,20 @@ export async function joinPlayerToGame(
   }
 
   let session = sessions.get(roomId);
+
+  // 게임이 진행 중이거나 결과 화면이면 접속 거부
+  if (session && session.status !== 'waiting') {
+    const message =
+      session.status === 'playing'
+        ? '게임이 이미 진행 중입니다.'
+        : '게임이 아직 종료되지 않았습니다.';
+    socket.emit(SystemPacketType.SYSTEM_MESSAGE, {
+      message,
+    });
+    socket.disconnect();
+    return;
+  }
+
   if (!session) {
     session = new GameSession(io, roomId, (packet: ServerPacket) => {
       // packet에서 type과 나머지 데이터를 분리
@@ -236,14 +250,6 @@ export async function joinPlayerToGame(
       // Broadcast callback
       io.to(roomId).emit(packet.type, payload);
     });
-
-    // 세션이 게임 중이면 접속 불가
-    if (session.status === 'playing') {
-      socket.emit(SystemPacketType.SYSTEM_MESSAGE, {
-        message: '해당 세션은 현재 게임 중이라서 접속할 수 없습니다.',
-      });
-      return;
-    }
     sessions.set(roomId, session); // todo 얘는 생성할 때만 있어도 되는 거 아님?
     console.log(`Created new Game Session for ${roomId}`);
 

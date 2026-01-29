@@ -53,9 +53,13 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
-    case SystemPacketType.SYSTEM_MESSAGE:
+    case SystemPacketType.SYSTEM_MESSAGE: {
       console.log('SYSTEM_MESSAGE packet received:', packet.message);
+      useGameStore.getState().setConnectionError({
+        message: packet.message,
+      });
       break;
+    }
 
     case SystemPacketType.UPDATE_SCORE: {
       const store = useGameStore.getState();

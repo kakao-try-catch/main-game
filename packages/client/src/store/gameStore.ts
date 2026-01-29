@@ -83,6 +83,10 @@ interface GameState {
 
   // 게임 상태 초기화
   resetGameState: () => void;
+
+  // 접속 에러 메시지 (게임 진행 중 접속 시도 등)
+  connectionError: { message: string } | null;
+  setConnectionError: (err: { message: string } | null) => void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -106,6 +110,7 @@ export const useGameStore = create<GameState>()(
     otherPlayerDrags: new Map<number, DragAreaData>(),
     gameResults: null,
     gameSessionId: 0,
+    connectionError: null,
 
     // 기존 액션
     setCount: (newCount: number) => set({ count: newCount }),
@@ -157,6 +162,7 @@ export const useGameStore = create<GameState>()(
         otherPlayerDrags: new Map<number, DragAreaData>(),
         gameResults: null,
       }),
+    setConnectionError: (err) => set({ connectionError: err }),
   })),
 );
 

@@ -42,7 +42,7 @@ const FLAPPY_BIRD_SPRITES = [
 
 function AppContent() {
   const testPlayerCount = 4;
-  const { pause, reset } = useBGMContext();
+  const { pause, reset, loadBGM } = useBGMContext();
   const { playSFX } = useSFXContext();
 
   // 현재 유저 정보 (서버에서 받아올 예정)
@@ -194,6 +194,24 @@ function AppContent() {
     [],
   );
 
+  // 지뢰찾기 타일 열기 사운드 핸들러
+  const handleMinesweeperTileReveal = useCallback(() => {
+    console.log('[App] 지뢰찾기 타일 열기 사운드 재생');
+    playSFX('appleDrop'); // 테스트용 appleDrop 사운드
+  }, [playSFX]);
+
+  // 지뢰찾기 지뢰 폭발 사운드 핸들러
+  const handleMinesweeperMineExplode = useCallback(() => {
+    console.log('[App] 지뢰 폭발 사운드 재생');
+    playSFX('mineExplode');
+  }, [playSFX]);
+
+  // 지뢰찾기 깃발 설치 사운드 핸들러
+  const handleMinesweeperFlagPlaced = useCallback(() => {
+    console.log('[App] 깃발 설치 사운드 재생');
+    playSFX('mineFlag');
+  }, [playSFX]);
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
@@ -284,8 +302,10 @@ function AppContent() {
 
     if (gameType === 'apple') {
       setApplePreset(preset as AppleGamePreset);
+      loadBGM('appleGame');
     } else if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
+      loadBGM('flappyBird');
     } else if (gameType === 'minesweeper') {
       const minesweeperPreset =
         (preset as MineSweeperGamePreset | undefined)?.mapSize &&
@@ -294,6 +314,7 @@ function AppContent() {
           ? (preset as MineSweeperGamePreset)
           : DEFAULT_MINESWEEPER_PRESET;
       setMinesweeperPreset(minesweeperPreset);
+      loadBGM('minesweeper');
     }
 
     const gameStartReq: ServerPacket = {
@@ -407,9 +428,7 @@ function AppContent() {
                   name={player.name}
                   color={player.color}
                   spriteSrc={
-                    FLAPPY_BIRD_SPRITES[
-                      index % FLAPPY_BIRD_SPRITES.length
-                    ]
+                    FLAPPY_BIRD_SPRITES[index % FLAPPY_BIRD_SPRITES.length]
                   }
                   showScore={false}
                 />
@@ -474,6 +493,9 @@ function AppContent() {
             onFlappyStrike={handleFlappyStrike}
             onFlappyScore={handleFlappyScore}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
+            onMinesweeperTileReveal={handleMinesweeperTileReveal}
+            onMinesweeperMineExplode={handleMinesweeperMineExplode}
+            onMinesweeperFlagPlaced={handleMinesweeperFlagPlaced}
             onGameReady={handleGameReady}
           />
         )}

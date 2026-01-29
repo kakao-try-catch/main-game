@@ -52,6 +52,9 @@ interface GameContainerProps {
     newScore: number;
     reason: string;
   }) => void; // 지뢰찾기 점수 업데이트
+  onMinesweeperTileReveal?: () => void; // 지뢰찾기 타일 열기 사운드
+  onMinesweeperMineExplode?: () => void; // 지뢰찾기 지뢰 폭발 사운드
+  onMinesweeperFlagPlaced?: () => void; // 지뢰찾기 깃발 설치 사운드
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
@@ -86,6 +89,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onFlappyStrike,
   onFlappyScore,
   onMinesweeperScoreUpdate,
+  onMinesweeperTileReveal,
+  onMinesweeperMineExplode,
+  onMinesweeperFlagPlaced,
   playerCount = 4,
   players = [],
   currentPlayerIndex = 0,
@@ -284,6 +290,29 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           );
         }
       } else if (gameType === 'minesweeper') {
+        // 지뢰찾기 타일 열기 사운드 이벤트
+        if (onMinesweeperTileReveal) {
+          targetScene.events.on('minesweeperTileReveal', () => {
+            onMinesweeperTileReveal();
+          });
+        }
+
+        // 지뢰찾기 지뢰 폭발 사운드 이벤트
+        if (onMinesweeperMineExplode) {
+          targetScene.events.on('minesweeperMineExplode', () => {
+            console.log('💣 minesweeperMineExplode event received');
+            onMinesweeperMineExplode();
+          });
+        }
+
+        // 지뢰찾기 깃발 설치 사운드 이벤트
+        if (onMinesweeperFlagPlaced) {
+          targetScene.events.on('minesweeperFlagPlaced', () => {
+            console.log('🚩 minesweeperFlagPlaced event received');
+            onMinesweeperFlagPlaced();
+          });
+        }
+
         // 지뢰찾기 점수 업데이트 이벤트
         if (onMinesweeperScoreUpdate) {
           targetScene.events.on(

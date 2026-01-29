@@ -230,7 +230,72 @@ export default class TileManager {
   }
 
   /**
+   * 순차적 타일 열기 애니메이션 (거리별로 파동 효과)
+   * @param tiles 거리 정보가 포함된 타일 업데이트 배열
+   * @param delayMs 거리당 딜레이 (기본 50ms)
+   */
+  public revealTilesSequentially(
+    tiles: Array<{
+      row: number;
+      col: number;
+      state: TileState;
+      adjacentMines?: number;
+      isMine?: boolean;
+      flaggedBy?: string | null;
+      distance: number;
+    }>,
+    delayMs: number = 50,
+  ): void {
+    // 거리별로 그룹화
+    const tilesByDistance: Map<number, typeof tiles> = new Map();
+
+    for (const tile of tiles) {
+      if (!tilesByDistance.has(tile.distance)) {
+        tilesByDistance.set(tile.distance, []);
+      }
+      tilesByDistance.get(tile.distance)!.push(tile);
+    }
+
+    // 거리 순서대로 정렬
+    const distances = Array.from(tilesByDistance.keys()).sort((a, b) => a - b);
+
+    // 거리별로 순차적으로 타일 열기
+    distances.forEach((distance, index) => {
+      setTimeout(() => {
+        const tilesAtDistance = tilesByDistance.get(distance)!;
+        let hasNonMineTile = false;
+
+        for (const tile of tilesAtDistance) {
+          const isMine = this.updateTileState(
+            tile.row,
+            tile.col,
+            tile.state,
+            tile.adjacentMines,
+            tile.isMine,
+            tile.flaggedBy,
+          );
+
+          // 지뢰가 아닌 타일이 하나라도 있으면 사운드 재생
+          if (!isMine && tile.state === TileState.REVEALED) {
+            hasNonMineTile = true;
+          }
+        }
+
+        // 지뢰가 아닌 타일이 있을 때만 타일 열기 사운드 이벤트 발생
+        if (hasNonMineTile) {
+          this.scene.events.emit('minesweeperTileReveal');
+        }
+      }, index * delayMs);
+    });
+
+    console.log(
+      `[TileManager] 순차 애니메이션 시작: ${tiles.length}개 타일, ${distances.length}단계, ${delayMs}ms 간격`,
+    );
+  }
+
+  /**
    * 타일 상태 업데이트 (서버에서 받은 데이터로 시각적 업데이트)
+   * @returns 지뢰 타일인지 여부 (true: 지뢰, false: 안전한 타일)
    */
   public updateTileState(
     row: number,
@@ -239,20 +304,22 @@ export default class TileManager {
     adjacentMines?: number,
     isMine?: boolean,
     flaggedBy?: string | null,
-  ): void {
+  ): boolean {
     if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
-      return;
+      return false;
     }
 
     const tile = this.tiles[row][col];
     const sprite = this.tileSprites[row][col];
     const text = this.tileTexts[row][col];
 
-    if (!tile || !sprite || !text) return;
+    if (!tile || !sprite || !text) return false;
 
     tile.state = state;
     if (adjacentMines !== undefined) tile.adjacentMines = adjacentMines;
     if (isMine !== undefined) tile.isMine = isMine;
+
+    let isMineTile = false;
 
     // 상태에 따른 시각적 업데이트
     switch (state) {
@@ -263,6 +330,7 @@ export default class TileManager {
           this.flagSprites[row][col]!.setVisible(false);
         }
         if (tile.isMine) {
+          isMineTile = true;
           // 지뢰 이미지 표시
           sprite.setTint(0xe74c3c); // 빨간색 틴트
           text.setVisible(false);
@@ -277,6 +345,8 @@ export default class TileManager {
           } else {
             this.mineSprites[row][col]!.setVisible(true);
           }
+          // 지뢰 폭발 사운드 이벤트 발생
+          this.scene.events.emit('minesweeperMineExplode');
         } else {
           // 빈 타일 또는 숫자 표시
           sprite.clearTint();
@@ -328,6 +398,8 @@ export default class TileManager {
         if (this.mineSprites[row][col]) {
           this.mineSprites[row][col]!.setVisible(false);
         }
+        // 깃발 설치 사운드 이벤트 발생
+        this.scene.events.emit('minesweeperFlagPlaced');
         break;
 
       case TileState.HIDDEN:
@@ -345,6 +417,8 @@ export default class TileManager {
         }
         break;
     }
+
+    return isMineTile;
   }
 
   /**

@@ -65,4 +65,4 @@ class SocketManager {
 }
 
 export const socketManager = new SocketManager();
-socketManager.connect('https://jayde-parageusic-lois.ngrok-free.dev:3000');
+socketManager.connect('https://jayde-parageusic-lois.ngrok-free.dev');

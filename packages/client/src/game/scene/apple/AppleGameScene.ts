@@ -3,7 +3,7 @@ import AppleGameManager from './AppleGameManager';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import type { PlayerData } from '../../types/common';
 import { useGameStore } from '../../../store/gameStore';
-import { resolveAppleGameConfig } from '../../../../../common/src/appleGameUtils';
+import { resolveAppleGameConfig } from '../../../../../common/src/config';
 
 // You can write more code here
 

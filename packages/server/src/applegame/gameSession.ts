@@ -3,7 +3,7 @@ import {
   AppleGameConfig,
   AppleGameRenderConfig,
 } from '../../../common/src/config';
-import { resolveAppleGameConfig } from '../../../common/src/appleGameUtils';
+import { resolveAppleGameConfig } from '../../../common/src/config';
 import {
   AppleGamePacketType,
   DropCellIndexPacket,

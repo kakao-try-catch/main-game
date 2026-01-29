@@ -15,15 +15,8 @@ import {
   type MineSweeperGamePreset,
   DEFAULT_MINESWEEPER_PRESET,
 } from './game/types/minesweeper.types';
-import type {
-  PlayerData,
-  PlayerResultData,
-  GameType,
-  CurrentUser,
-} from './game/types/common';
+import { GameType } from '../../common/src/config';
 import type { PlayerId } from './game/types/flappybird.types';
-import { CONSTANTS } from './game/types/common';
-// import { GameType } from '../../common/src/config.ts';
 import {
   SystemPacketType,
   type JoinRoomPacket,
@@ -38,7 +31,6 @@ import flappyBird4 from './assets/images/flappybird_4.png';
 import './App.css';
 import { socketManager } from './network/socket';
 
-const { PLAYER_COLORS } = CONSTANTS;
 const FLAPPY_BIRD_SPRITES = [
   flappyBird1,
   flappyBird2,
@@ -52,7 +44,7 @@ function AppContent() {
   const { playSFX } = useSFXContext();
 
   // todo 제거 예정
-  const { nickname, color, setUserInfo } = useUser();
+  // const { nickname, color, setUserInfo } = useUser();
 
   // const [currentScreen, setCurrentScreen] = useState<
   //   'landing' | 'lobby' | 'game' | 'flappybird'
@@ -108,8 +100,9 @@ function AppContent() {
         });
         setFlappyGameEnded(true);
       } else {
-        setFinalPlayers(data.players);
-        setGameEnded(true);
+        // setFinalPlayers(data.players); // todo final players 는 제거 대상
+        setGameStarted(false);
+        // setGameEnded(true);
       }
       playSFX('appleGameEnd');
       pause(); // 게임 종료 시 BGM 중지
@@ -346,12 +339,12 @@ function AppContent() {
               ))}
 
           {/* 플래피버드: 팀 점수 카드 1개 */}
-          {currentGameType === 'flappy' && ( // todo/merge:  GameType.FLAPPY_BIRD
+          {currentGameType === GameType.FLAPPY_BIRD && ( // todo/merge:  GameType.FLAPPY_BIRD
             <>
               {players.slice(0, testPlayerCount).map((player, index) => (
                 <PlayerCard
-                  key={player.id}
-                  name={player.name}
+                  key={index}
+                  name={player.playerName}
                   color={player.color}
                   spriteSrc={
                     FLAPPY_BIRD_SPRITES[index % FLAPPY_BIRD_SPRITES.length]
@@ -369,14 +362,14 @@ function AppContent() {
           )}
 
           {/* 지뢰찾기: 4개 플레이어카드 */}
-          {currentGameType === 'minesweeper' &&
+          {currentGameType === GameType.MINESWEEPER &&
             players
               .slice(0, testPlayerCount)
-              .map((player) => (
+              .map((player, index) => (
                 <PlayerCard
-                  key={player.id}
-                  name={player.name}
-                  score={player.score}
+                  key={index}
+                  name={player.playerName}
+                  score={player.reportCard.score}
                   color={player.color}
                 />
               ))}
@@ -422,10 +415,10 @@ function AppContent() {
         )}
         <GameResult
           currentGameType={currentGameType}
-          gameEnded={gameEnded}
-          finalPlayers={finalPlayers}
+          gameEnded={!isGameStarted}
+          // finalPlayers={finalPlayers} // todo finalplayers는 없음
           flappyGameEnded={flappyGameEnded}
-          flappyFinalData={flappyFinalData}
+          flappyFinalData={flappyFinalData} // todo ?
           onReplay={handleReplay}
           onLobby={handleLobby}
           ratio={gameResultRatio}

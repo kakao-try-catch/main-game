@@ -4,31 +4,39 @@ import AppleGameScene from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
-import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { MineSweeperGamePreset } from './types/minesweeper.types';
-import type { PlayerData, PlayerResultData, GameType } from './types/common';
+import type { PlayerData, PlayerResultData } from './types/common';
 import type { PlayerId } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 import { GameType } from '../../../common/src/config.ts';
 
+interface ConfigDetails {
+  sceneName: string;
+  readonly sceneClasses: readonly SceneConstructor[];
+  maxWidth: number;
+  maxHeight: number;
+  backgroundColor: string;
+}
+
 // 게임 설정 상수 분리
-const GAME_CONFIGS = {
-  APPLE_GAME: {
+// todo 다 BootScene이 공통
+const GAME_CONFIGS: Record<GameType, ConfigDetails> = {
+  [GameType.APPLE_GAME]: {
     sceneName: 'AppleGameScene',
     sceneClasses: [BootScene, AppleGameScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#FFFFFF',
   },
-  FLAPPY_BIRD: {
+  [GameType.FLAPPY_BIRD]: {
     sceneName: 'FlappyBirdsScene',
     sceneClasses: [BootScene, FlappyBirdsScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#46d1fd',
   },
-  minesweeper: {
+  [GameType.MINESWEEPER]: {
     sceneName: 'MineSweeperScene',
     sceneClasses: [BootScene, MineSweeperScene] as const,
     maxWidth: GAME_WIDTH,
@@ -84,7 +92,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   playerCount = 4,
   players = [],
   flappyPreset,
-  minesweeperPreset,
+  // minesweeperPreset, todo preset 통일
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -92,16 +100,19 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   const isValidGameType =
     //   gameType === GameType.APPLE_GAME || gameType === GameType.FLAPPY_BIRD;
     // const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
-    gameType === 'apple' || gameType === 'flappy' || gameType === 'minesweeper';
+    gameType === GameType.APPLE_GAME ||
+    gameType === GameType.FLAPPY_BIRD ||
+    gameType === GameType.MINESWEEPER;
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
-  const preset =
-    gameType === 'apple'
-      ? applePreset
-      : gameType === 'flappy'
-        ? flappyPreset
-        : gameType === 'minesweeper'
-          ? minesweeperPreset
-          : undefined;
+  // todo 얘 활용 안 되는데요?
+  // const preset =
+  //   gameType === GameType.APPLE_GAME
+  //     ? applePreset
+  //     : gameType === GameType.FLAPPY_BIRD
+  //       ? flappyPreset
+  //       : gameType === GameType.MINESWEEPER
+  //         ? minesweeperPreset
+  //         : undefined;
 
   // 레이아웃 계산 (useMemo로 최적화)
   const layout = useMemo(() => {
@@ -193,9 +204,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       if (!targetScene) return;
 
       // 이벤트 리스너 등록
-      if (gameType === 'apple') {
-        Z;
-      } else if (gameType === 'flappy') {
+      if (gameType === GameType.APPLE_GAME) {
+        // todo
+      } else if (gameType === GameType.FLAPPY_BIRD) {
         // 플래피버드 점프 사운드 이벤트
         if (onFlappyJump) {
           targetScene.events.on('flappyJump', () => {
@@ -231,6 +242,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         }
 
         // 플래피버드 게임 종료 이벤트
+        // todo 해결해야 함. 다 클라쪽으로 그거 됨.
         if (onGameEnd) {
           targetScene.events.on(
             'gameEnd',
@@ -262,7 +274,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
-      } else if (gameType === 'minesweeper') {
+      } else if (gameType === GameType.MINESWEEPER) {
         // 지뢰찾기 점수 업데이트 이벤트
         if (onMinesweeperScoreUpdate) {
           targetScene.events.on(

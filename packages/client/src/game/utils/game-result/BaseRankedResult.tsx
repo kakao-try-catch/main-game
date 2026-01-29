@@ -34,6 +34,7 @@ export interface BaseRankedResultProps {
   onLobby: () => void;
   ratio?: number;
   title: string;
+  renderPlayerSubline?: (player: PlayerResultData) => React.ReactNode;
 }
 
 class RankedPlayersModel {
@@ -200,6 +201,31 @@ class ResultStyleBuilder {
     };
   }
 
+  public sublineRow(): React.CSSProperties {
+    return {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: this.px(1),
+      width: '100%',
+      marginBottom: this.px(20),
+    };
+  }
+
+  public sublineItem(): React.CSSProperties {
+    return {
+      width: this.px(220),
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      fontFamily: 'NeoDunggeunmo',
+      fontSize: this.px(24),
+      color: '#212529',
+      textAlign: 'center',
+      lineHeight: this.px(28),
+    };
+  }
+
   public buttonContainer(): React.CSSProperties {
     return {
       display: 'flex',
@@ -229,6 +255,7 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
   onLobby,
   ratio: propRatio,
   title,
+  renderPlayerSubline,
 }) => {
   const { playSFX } = useSFXContext();
   const ratio =
@@ -237,6 +264,13 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
   const model = useMemo(() => new RankedPlayersModel(players), [players]);
   const styles = useMemo(() => new ResultStyleBuilder(ratio), [ratio]);
   const rankedPlayers = model.getRankedPlayers();
+  const playerSublines = renderPlayerSubline
+    ? rankedPlayers.map((player) => renderPlayerSubline(player))
+    : null;
+  const hasSubline =
+    playerSublines?.some(
+      (subline) => subline !== null && subline !== undefined && subline !== '',
+    ) ?? false;
 
   return (
     <div style={styles.overlay()}>
@@ -298,6 +332,21 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
             );
           })}
         </div>
+        {hasSubline && playerSublines && (
+          <div style={styles.sublineRow()}>
+            {playerSublines.map((subline, idx) => (
+              <div
+                key={rankedPlayers[idx]?.id ?? idx}
+                style={{
+                  ...styles.sublineItem(),
+                  marginLeft: idx === 0 ? 0 : -5 * ratio,
+                }}
+              >
+                {subline ?? ''}
+              </div>
+            ))}
+          </div>
+        )}
         <div style={styles.buttonContainer()}>
           <button
             type="button"

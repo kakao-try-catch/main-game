@@ -1,8 +1,10 @@
 import React from 'react';
 import BaseRankedResult, { type BaseRankedResultProps } from './BaseRankedResult';
+import type { PlayerResultData } from '../../types/common';
+import type { MineSweeperResultPlayer } from '../../types/minesweeper.types';
 
 export interface MineSweeperResultProps
-  extends Omit<BaseRankedResultProps, 'title'> {
+  extends Omit<BaseRankedResultProps, 'title' | 'renderPlayerSubline'> {
   stats?: {
     remainingMines?: number;
     minesHit?: number;
@@ -11,10 +13,25 @@ export interface MineSweeperResultProps
   };
 }
 
+const getPlayerSubline = (player: PlayerResultData): string | null => {
+  const statsPlayer = player as MineSweeperResultPlayer;
+  const totalFlags = statsPlayer.totalFlags ?? 0;
+  if (totalFlags <= 0) return null;
+  const correctFlags = statsPlayer.correctFlags ?? 0;
+  return `${correctFlags}/${totalFlags}`;
+};
+
 const MineSweeperResult: React.FC<MineSweeperResultProps> = (props) => {
-  const { stats, ...rest } = props;
+  const { stats, ...baseProps } = props;
   void stats;
-  return <BaseRankedResult {...rest} title="MINESWEEPER TOGETHER" />;
+
+  return (
+    <BaseRankedResult
+      {...baseProps}
+      title="MINESWEEPER TOGETHER"
+      renderPlayerSubline={getPlayerSubline}
+    />
+  );
 };
 
 export default MineSweeperResult;

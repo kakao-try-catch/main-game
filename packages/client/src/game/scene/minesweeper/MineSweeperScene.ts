@@ -227,7 +227,7 @@ export default class MineSweeperScene extends Phaser.Scene {
 
       // 점수 업데이트 이벤트가 처리될 시간을 주기 위해 약간의 딜레이 후 게임 종료
       setTimeout(() => {
-        this.emitGameEnd();
+        this.emitGameEnd(scoreUpdates);
       }, 100);
     } else {
       // 실제 서버 모드: 서버에 타임업 알림
@@ -243,12 +243,44 @@ export default class MineSweeperScene extends Phaser.Scene {
   /**
    * 게임 종료 이벤트 발생
    */
-  private emitGameEnd(): void {
-    // 플레이어 데이터에 playerIndex 추가
-    const playersWithIndex = this.players.map((player, index) => ({
-      ...player,
-      playerIndex: index,
-    }));
+  private emitGameEnd(
+    scoreUpdates?: Map<
+      string,
+      { scoreChange: number; correctFlags: number; incorrectFlags: number }
+    >,
+  ): void {
+    // 플레이어 데이터에 playerIndex와 깃발 통계 추가
+    const playersWithIndex = this.players.map((player, index) => {
+      const update = scoreUpdates?.get(player.id);
+      return {
+        ...player,
+        playerIndex: index,
+        correctFlags: update?.correctFlags ?? 0,
+        totalFlags: (update?.correctFlags ?? 0) + (update?.incorrectFlags ?? 0),
+      };
+    });
+
+    // React로 게임 종료 이벤트 전달
+    this.events.emit('gameEnd', { players: playersWithIndex });
+    console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
+  }
+
+  /**
+   * 게임 종료 이벤트 발생 (서버에서 받은 깃발 통계 사용)
+   */
+  private emitGameEndWithFlagStats(
+    flagStatsMap: Map<string, { correctFlags: number; totalFlags: number }>,
+  ): void {
+    // 플레이어 데이터에 playerIndex와 깃발 통계 추가
+    const playersWithIndex = this.players.map((player, index) => {
+      const stats = flagStatsMap.get(player.id);
+      return {
+        ...player,
+        playerIndex: index,
+        correctFlags: stats?.correctFlags ?? 0,
+        totalFlags: stats?.totalFlags ?? 0,
+      };
+    });
 
     // React로 게임 종료 이벤트 전달
     this.events.emit('gameEnd', { players: playersWithIndex });
@@ -504,20 +536,32 @@ export default class MineSweeperScene extends Phaser.Scene {
       }
 
       // 서버에서 받은 최종 플레이어 데이터로 업데이트 (있는 경우)
+      // 깃발 통계도 함께 저장
+      const flagStatsMap = new Map<
+        string,
+        { correctFlags: number; totalFlags: number }
+      >();
+
       if (data.players) {
         // 서버에서 받은 플레이어 데이터를 로컬 플레이어 배열과 병합
         data.players.forEach((serverPlayer: any) => {
           const localPlayer = this.players.find(
-            (p) => p.id === serverPlayer.id,
+            (p) => p.id === serverPlayer.playerId || p.id === serverPlayer.id,
           );
           if (localPlayer) {
             localPlayer.score = serverPlayer.score;
           }
+          // 깃발 통계 저장
+          const playerId = serverPlayer.playerId || serverPlayer.id;
+          flagStatsMap.set(playerId, {
+            correctFlags: serverPlayer.correctFlags ?? 0,
+            totalFlags: serverPlayer.totalFlags ?? 0,
+          });
         });
       }
 
-      // 게임 종료 처리
-      this.emitGameEnd();
+      // 게임 종료 처리 (깃발 통계 포함)
+      this.emitGameEndWithFlagStats(flagStatsMap);
     });
   }
 

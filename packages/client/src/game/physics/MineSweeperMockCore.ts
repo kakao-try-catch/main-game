@@ -599,10 +599,23 @@ export class MineSweeperMockCore {
       );
     }
 
+    // 플레이어 데이터에 깃발 통계 추가
+    const playersWithFlagStats = Array.from(this.players.values()).map(
+      (player) => {
+        const update = scoreUpdates.get(player.playerId);
+        return {
+          ...player,
+          correctFlags: update?.correctFlags ?? 0,
+          totalFlags:
+            (update?.correctFlags ?? 0) + (update?.incorrectFlags ?? 0),
+        };
+      },
+    );
+
     // 게임 종료 이벤트 전송
     this.socket.triggerEvent('game_end', {
       reason: 'win',
-      players: Array.from(this.players.values()),
+      players: playersWithFlagStats,
       timestamp: Date.now(),
     });
   }

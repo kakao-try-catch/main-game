@@ -98,13 +98,27 @@ export const SFXProvider: React.FC<{ children: React.ReactNode }> = ({
       if (sfx) {
         // 볼륨이 0이면 효과음 재생하지 않음
         if (sfx.volume === 0) return;
-        if (!allowOverlap && !sfx.paused) return;
 
         const defaultStartTime = sfxStartTimesRef.current.get(soundName) ?? 0;
-        sfx.currentTime = startTime ?? defaultStartTime;
-        sfx
-          .play()
-          .catch((e) => console.log(`SFX "${soundName}" 재생 실패:`, e));
+        const actualStartTime = startTime ?? defaultStartTime;
+
+        if (allowOverlap) {
+          // 중첩 허용: 새 Audio 객체 생성하여 재생
+          const newSfx = new Audio(sfx.src);
+          newSfx.volume = sfx.volume;
+          newSfx.currentTime = actualStartTime;
+          newSfx
+            .play()
+            .catch((e) => console.log(`SFX "${soundName}" 재생 실패:`, e));
+          // 재생 완료 후 자동으로 정리됨 (가비지 컬렉션)
+        } else {
+          // 중첩 비허용: 기존 재생 중이면 무시
+          if (!sfx.paused) return;
+          sfx.currentTime = actualStartTime;
+          sfx
+            .play()
+            .catch((e) => console.log(`SFX "${soundName}" 재생 실패:`, e));
+        }
       }
     },
     [sfxEnabled],

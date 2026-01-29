@@ -14,7 +14,7 @@ const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
     // todo 다른 플레이어 참여 어떻게?
-    origin: 'http://localhost:5173', // 모든 도메인 허용 (프론트 주소가 다를 것이므로?)
+    origin: ['http://localhost:5173', 'http://192.168.0.41:5173'],
     methods: ['GET', 'POST'],
   },
   transports: ['websocket'], // 서버도 웹소켓만 허용하도록 일치시킴
@@ -35,7 +35,7 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
-httpServer.listen(3000, () => {
+httpServer.listen(3000, '0.0.0.0', () => {
   console.log('🚀 소켓 서버가 3000번 포트에서 대기 중...');
 });
 

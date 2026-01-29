@@ -25,6 +25,7 @@ import type {
 } from '../game/types/minesweeperPresets';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
+import { useSFXContext } from '../contexts/SFXContext';
 
 const {
   PLAYER_COLORS,
@@ -43,6 +44,7 @@ const DIFFICULTY_COLORS = {
 } as const;
 
 function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
+  const { playSFX } = useSFXContext();
   // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
   const players: LobbyPlayer[] = [
     { ...currentPlayer, color: PLAYER_COLORS[0] },
@@ -273,7 +275,12 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                     } ${
                       selectedGame && selectedGame !== game.id ? 'dimmed' : ''
                     }`}
-                    onClick={() => handleSelectGame(game.id)}
+                    onClick={(e) => {
+                      if (selectedGame !== game.id) {
+                        playSFX('buttonClick');
+                        handleSelectGame(game.id);
+                      }
+                    }}
                   >
                     <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
@@ -283,6 +290,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           className="settings-edit"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -479,6 +487,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           className="settings-edit settings-flappy"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -671,6 +680,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           className="settings-edit"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -868,18 +878,31 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
 
       {/* 하단: 버튼들 */}
       <div className="lobby-footer">
-        <button className="nes-btn" onClick={handleCopyLink}>
+        <button
+          className="nes-btn"
+          onClick={() => {
+            playSFX('buttonClick');
+            handleCopyLink();
+          }}
+          onMouseEnter={() => playSFX('buttonHover')}
+        >
           <i className="nes-icon is-small link"></i>
           초대 링크 복사
         </button>
         <div
           className="button-wrapper"
-          onMouseEnter={() => !selectedGame && setShowButtonTooltip(true)}
+          onMouseEnter={() => {
+            playSFX('buttonHover');
+            !selectedGame && setShowButtonTooltip(true);
+          }}
           onMouseLeave={() => setShowButtonTooltip(false)}
         >
           <button
             className="nes-btn is-primary"
-            onClick={handleStartGame}
+            onClick={() => {
+              playSFX('buttonClick');
+              handleStartGame();
+            }}
             disabled={!selectedGame}
           >
             게임 시작

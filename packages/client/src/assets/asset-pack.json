@@ -3,90 +3,90 @@
     "files": [
       {
         "url": {
-          "IMG": "결과.png"
+          "IMG": "/assets/images/결과.png"
         },
         "type": "texture",
         "key": "결과"
       },
       {
         "url": {
-          "IMG": "src/assets/사과게임 1안.png"
+          "IMG": "/assets/images/사과게임 1안.png"
         },
         "type": "texture",
         "key": "사과게임 1안"
       },
       {
-        "url": "crown.png",
+        "url": "/assets/images/crown.png",
         "type": "image",
         "key": "crown"
       },
       {
-        "url": "src/assets/images/apple.png",
+        "url": "/assets/images/apple.png",
         "type": "image",
         "key": "apple"
       },
       {
-        "url": "src/assets/images/selectedApple.png",
+        "url": "/assets/images/selectedApple.png",
         "type": "image",
         "key": "selectedApple"
       },
       {
-        "url": "src/assets/images/flappybird_1.png",
+        "url": "/assets/images/flappybird_1.png",
         "type": "image",
         "key": "flappybird_1"
       },
       {
-        "url": "src/assets/images/flappybird_2.png",
+        "url": "/assets/images/flappybird_2.png",
         "type": "image",
         "key": "flappybird_2"
       },
       {
-        "url": "src/assets/images/flappybird_3.png",
+        "url": "/assets/images/flappybird_3.png",
         "type": "image",
         "key": "flappybird_3"
       },
       {
-        "url": "src/assets/images/flappybird_4.png",
+        "url": "/assets/images/flappybird_4.png",
         "type": "image",
         "key": "flappybird_4"
       },
       {
-        "url": "src/assets/images/background.png",
+        "url": "/assets/images/background.png",
         "type": "image",
         "key": "flappybird_background"
       },
       {
-        "url": "src/assets/images/pipe_top.png",
+        "url": "/assets/images/pipe_top.png",
         "type": "image",
         "key": "pipe_top"
       },
       {
-        "url": "src/assets/images/pipe_bottom.png",
+        "url": "/assets/images/pipe_bottom.png",
         "type": "image",
         "key": "pipe_bottom"
       },
       {
-        "url": "src/assets/images/flappybird_ground.png",
+        "url": "/assets/images/flappybird_ground.png",
         "type": "image",
         "key": "flappybird_ground"
       },
       {
-        "url": "src/assets/images/TileClosed.png",
+        "url": "/assets/images/TileClosed.png",
         "type": "image",
         "key": "TileClosed"
       },
       {
-        "url": "src/assets/images/TileOpened.png",
+        "url": "/assets/images/TileOpened.png",
         "type": "image",
         "key": "TileOpened"
       },
       {
-        "url": "src/assets/images/mine.png",
+        "url": "/assets/images/mine.png",
         "type": "image",
         "key": "mine"
       },
       {
-        "url": "src/assets/images/flag_other.png",
+        "url": "/assets/images/flag_other.png",
         "type": "image",
         "key": "flag_other"
       }

@@ -8,7 +8,7 @@ import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { MineSweeperGamePreset } from './types/minesweeper.types';
 import type { PlayerData, PlayerResultData, GameType } from './types/common';
-import type { PlayerId } from './types/flappybird.types';
+import type { PlayerId, GameOverEvent } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 
 // 게임 설정 상수 분리
@@ -63,6 +63,8 @@ interface GameContainerProps {
   minesweeperPreset?: MineSweeperGamePreset;
 }
 
+type FlappyCollisionReason = GameOverEvent['reason'];
+
 export type GameEndEvent =
   | {
       gameType: 'apple' | 'minesweeper';
@@ -71,7 +73,7 @@ export type GameEndEvent =
   | {
       gameType: 'flappy';
       finalScore: number;
-      reason: string;
+      reason: FlappyCollisionReason;
       collidedPlayerId: PlayerId;
       players: PlayerResultData[];
     };
@@ -261,7 +263,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             'gameEnd',
             (data: {
               finalScore: number;
-              reason: string;
+              reason: FlappyCollisionReason;
               collidedPlayerId: PlayerId;
               players: PlayerResultData[];
             }) => {
@@ -281,7 +283,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         if (onGameOver) {
           targetScene.events.on(
             'game_over',
-            (data: { reason: string; finalScore: number }) => {
+            (data: { reason: FlappyCollisionReason; finalScore: number }) => {
               console.log('💀 game_over event received:', data);
               onGameOver(data);
             },

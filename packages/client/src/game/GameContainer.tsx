@@ -11,6 +11,8 @@ import type { PlayerId } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 import { GameType } from '../../../common/src/config.ts';
 
+type SceneConstructor = new (...args: any[]) => Phaser.Scene;
+
 interface ConfigDetails {
   sceneName: string;
   readonly sceneClasses: readonly SceneConstructor[];
@@ -56,7 +58,7 @@ interface GameContainerProps {
   onFlappyStrike?: () => void; // 플래피버드 충돌 사운드
   onFlappyScore?: () => void; // 플래피버드 점수 획득 사운드
   onMinesweeperScoreUpdate?: (data: {
-    playerId: string;
+    playerIndex: number;
     scoreChange: number;
     newScore: number;
     reason: string;
@@ -280,7 +282,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           targetScene.events.on(
             'scoreUpdate',
             (data: {
-              playerId: string;
+              playerIndex: number;
               scoreChange: number;
               newScore: number;
               reason: string;

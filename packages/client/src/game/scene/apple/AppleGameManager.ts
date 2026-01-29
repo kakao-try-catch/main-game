@@ -267,8 +267,8 @@ export default class AppleGameManager {
         if (queue.length > this.lastProcessedQueueLength) {
           const newEvents = queue.slice(this.lastProcessedQueueLength);
           newEvents.forEach((event) => {
-            const myId = socketManager.getId();
-            const isMe = event.winnerId === myId;
+            const myselfIndex = useGameStore.getState().myselfIndex;
+            const isMe = event.winnerIndex === myselfIndex;
             this.handleDropCell(event.indices, isMe);
           });
           this.lastProcessedQueueLength = queue.length;
@@ -287,8 +287,8 @@ export default class AppleGameManager {
     );
 
     queue.forEach((event) => {
-      const myId = socketManager.getId();
-      const isMe = event.winnerId === myId;
+      const myselfIndex = useGameStore.getState().myselfIndex;
+      const isMe = event.winnerIndex === myselfIndex;
       this.handleDropCell(event.indices, isMe);
     });
 

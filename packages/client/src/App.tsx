@@ -134,16 +134,19 @@ function AppContent() {
   // 지뢰찾기 점수 업데이트 핸들러
   const handleMinesweeperScoreUpdate = useCallback(
     (data: {
-      playerId: string;
+      playerIndex: number;
       scoreChange: number;
       newScore: number;
       reason: string;
     }) => {
       try {
         setPlayers((prevPlayers) =>
-          prevPlayers.map((player) =>
-            player.id === data.playerId
-              ? { ...player, score: data.newScore }
+          prevPlayers.map((player, index) =>
+            index === data.playerIndex
+              ? {
+                  ...player,
+                  reportCard: { ...player.reportCard, score: data.newScore },
+                }
               : player,
           ),
         );

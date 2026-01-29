@@ -26,12 +26,18 @@ import { CONSTANTS } from '../../types/common';
 import type {
   FlappyBirdGamePreset,
   ResolvedFlappyBirdConfig,
-} from '../../types/FlappyBirdGamePreset';
-import {
-  resolveFlappyBirdPreset,
-  DEFAULT_FLAPPYBIRD_PRESET,
-} from '../../types/FlappyBirdGamePreset';
+} from '../../../../../common/src/config';
+import { resolveFlappyBirdPreset } from '../../../../../common/src/config';
 import PipeManager from './PipeManager';
+
+export const DEFAULT_FLAPPYBIRD_PRESET: FlappyBirdGamePreset = {
+  pipeSpeed: 'normal',
+  pipeSpacing: 'normal',
+  pipeGap: 'normal',
+  pipeWidth: 'normal',
+  ropeLength: 'normal',
+  connectAll: false,
+};
 
 export default class FlappyBirdsScene extends Phaser.Scene {
   private socket!: Socket | MockSocket;

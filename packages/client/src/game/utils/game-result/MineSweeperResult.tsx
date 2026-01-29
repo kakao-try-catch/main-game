@@ -23,6 +23,20 @@ const getPlayerSubline = (player: PlayerResultData): React.ReactNode => {
   const totalFlags = statsPlayer.totalFlags ?? 0;
   if (totalFlags <= 0) return null;
   const correctFlags = statsPlayer.correctFlags ?? 0;
+  const flagStyle: React.CSSProperties = {
+    width: '1em',
+    height: '1em',
+    display: 'inline-block',
+    backgroundColor: player.color,
+    WebkitMaskImage: `url(${flagPng})`,
+    WebkitMaskRepeat: 'no-repeat',
+    WebkitMaskSize: 'contain',
+    WebkitMaskPosition: 'center',
+    maskImage: `url(${flagPng})`,
+    maskRepeat: 'no-repeat',
+    maskSize: 'contain',
+    maskPosition: 'center',
+  };
   return (
     <span
       style={{
@@ -31,7 +45,7 @@ const getPlayerSubline = (player: PlayerResultData): React.ReactNode => {
         gap: '6px',
       }}
     >
-      <img src={flagPng} alt="flag" style={{ width: '1em', height: '1em' }} />
+      <span role="img" aria-label="flag" style={flagStyle} />
       <span>{`${correctFlags} / ${totalFlags}`}</span>
     </span>
   );

@@ -32,6 +32,20 @@ export default function PlayerCard({
   const displayScore = showScore;
   const safeScore = typeof score === 'number' ? score : 0;
   const safeFlagCount = typeof flagCount === 'number' ? flagCount : 0;
+  const flagStyle: React.CSSProperties = {
+    width: 24,
+    height: 24,
+    display: 'inline-block',
+    backgroundColor: color,
+    WebkitMaskImage: spriteFlag ? `url(${spriteFlag})` : undefined,
+    WebkitMaskRepeat: 'no-repeat',
+    WebkitMaskSize: 'contain',
+    WebkitMaskPosition: 'center',
+    maskImage: spriteFlag ? `url(${spriteFlag})` : undefined,
+    maskRepeat: 'no-repeat',
+    maskSize: 'contain',
+    maskPosition: 'center',
+  };
 
   return (
     <div style={cardWrapperStyle}>
@@ -65,11 +79,7 @@ export default function PlayerCard({
         </div>
         {spriteFlag && (
           <div style={flagContainerStyle}>
-            <img
-              src={spriteFlag}
-              alt="flag"
-              style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
-            />
+            <span role="img" aria-label="flag" style={flagStyle} />
             <span
               style={{ color: '#212529', fontSize: '20px', marginLeft: '4px' }}
             >

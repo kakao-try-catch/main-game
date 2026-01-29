@@ -135,7 +135,7 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
   // 플래피버드 효과음
   flappyJump: {
     file: flappyJumpSound,
-    volume: 1.5,
+    volume: 0.9,
     startTime: 0,
   },
   flappyStrike: {

@@ -6,7 +6,7 @@ import {
   RoomUpdatePacket,
   RoomUpdateType,
 } from '../../../common/src/packets';
-import { GameSession } from './gameSession';
+import { GameSession } from '../../../common/src/config';
 import { customAlphabet } from 'nanoid';
 
 // 커스텀 nanoid 생성기

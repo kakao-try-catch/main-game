@@ -28,6 +28,7 @@ import flappyBird1 from './assets/images/flappybird_1.png';
 import flappyBird2 from './assets/images/flappybird_2.png';
 import flappyBird3 from './assets/images/flappybird_3.png';
 import flappyBird4 from './assets/images/flappybird_4.png';
+import flagPng from './assets/images/flag_other.png';
 
 import './App.css';
 import { socketManager } from './network/socket';
@@ -75,6 +76,9 @@ function AppContent() {
     collidedPlayerId: PlayerId;
     players: PlayerResultData[];
   } | null>(null);
+
+  // 지뢰찾기 깃발 카운트 (플레이어별)
+  const [flagCounts, setFlagCounts] = useState<Record<string, number>>({});
 
   const [players, setPlayers] = useState<PlayerData[]>([
     {
@@ -194,6 +198,18 @@ function AppContent() {
     [],
   );
 
+  // 지뢰찾기 깃발 카운트 업데이트 핸들러
+  const handleFlagCountUpdate = useCallback(
+    (newFlagCounts: Record<string, number>) => {
+      try {
+        setFlagCounts(newFlagCounts);
+      } catch (error) {
+        console.error('Flag count update handler error:', error);
+      }
+    },
+    [],
+  );
+
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
@@ -204,6 +220,7 @@ function AppContent() {
     setFlappyScore(0);
     setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+    setFlagCounts({});
 
     // 게임 컨테이너 key 증가로 강제 재마운트
     setGameKey((prev) => prev + 1);
@@ -231,6 +248,7 @@ function AppContent() {
     setFlappyScore(0);
     setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+    setFlagCounts({});
     reset(); // 로비로 복귀 시에도 BGM을 처음으로 되감기
     setCurrentScreen('lobby');
 
@@ -407,9 +425,7 @@ function AppContent() {
                   name={player.name}
                   color={player.color}
                   spriteSrc={
-                    FLAPPY_BIRD_SPRITES[
-                      index % FLAPPY_BIRD_SPRITES.length
-                    ]
+                    FLAPPY_BIRD_SPRITES[index % FLAPPY_BIRD_SPRITES.length]
                   }
                   showScore={false}
                 />
@@ -433,6 +449,8 @@ function AppContent() {
                   name={player.name}
                   score={player.score}
                   color={player.color}
+                  spriteFlag={flagPng}
+                  flagCount={flagCounts[player.id] || 0}
                 />
               ))}
 
@@ -474,6 +492,7 @@ function AppContent() {
             onFlappyStrike={handleFlappyStrike}
             onFlappyScore={handleFlappyScore}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
+            onFlagCountUpdate={handleFlagCountUpdate}
             onGameReady={handleGameReady}
           />
         )}

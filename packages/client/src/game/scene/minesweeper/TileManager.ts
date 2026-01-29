@@ -9,6 +9,7 @@ export interface TileRenderData {
   isMine: boolean;
   adjacentMines: number;
   state: TileState;
+  flaggedBy?: string | null;
 }
 
 // 타일 매니저 설정
@@ -253,6 +254,7 @@ export default class TileManager {
     tile.state = state;
     if (adjacentMines !== undefined) tile.adjacentMines = adjacentMines;
     if (isMine !== undefined) tile.isMine = isMine;
+    tile.flaggedBy = flaggedBy;
 
     // 상태에 따른 시각적 업데이트
     switch (state) {
@@ -533,6 +535,28 @@ export default class TileManager {
    */
   public isDebugMode(): boolean {
     return this.debugMode;
+  }
+
+  /**
+   * 깃발이 설치된 타일 목록 가져오기
+   */
+  public getFlaggedTiles(): { row: number; col: number; flaggedBy: string | null }[] {
+    const flaggedTiles: { row: number; col: number; flaggedBy: string | null }[] = [];
+
+    for (let row = 0; row < this.gridRows; row++) {
+      for (let col = 0; col < this.gridCols; col++) {
+        const tile = this.tiles[row][col];
+        if (tile.state === TileState.FLAGGED && tile.flaggedBy) {
+          flaggedTiles.push({
+            row,
+            col,
+            flaggedBy: tile.flaggedBy,
+          });
+        }
+      }
+    }
+
+    return flaggedTiles;
   }
 
   /**

@@ -8,6 +8,8 @@ interface PlayerCardProps {
   spriteSrc?: string;
   spriteAlt?: string;
   showScore?: boolean;
+  flagCount?: number;
+  spriteFlag?: string;
 }
 
 export const getNameFontSize = (nameLength: number): string => {
@@ -23,10 +25,13 @@ export default function PlayerCard({
   spriteSrc,
   spriteAlt,
   showScore = true,
+  flagCount = 0,
+  spriteFlag,
 }: PlayerCardProps) {
-  const cardHeight = spriteSrc ? 110 : 80;
+  const cardHeight = spriteSrc || spriteFlag ? 110 : 80;
   const displayScore = showScore;
   const safeScore = typeof score === 'number' ? score : 0;
+  const safeFlagCount = typeof flagCount === 'number' ? flagCount : 0;
 
   return (
     <div style={cardWrapperStyle}>
@@ -58,6 +63,20 @@ export default function PlayerCard({
             {name}
           </span>
         </div>
+        {spriteFlag && (
+          <div style={flagContainerStyle}>
+            <img
+              src={spriteFlag}
+              alt="flag"
+              style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
+            />
+            <span
+              style={{ color: '#212529', fontSize: '20px', marginLeft: '4px' }}
+            >
+              {safeFlagCount}
+            </span>
+          </div>
+        )}
         {displayScore && (
           <span style={{ color: '#212529', fontSize: '28px' }}>
             {safeScore.toLocaleString()}
@@ -100,4 +119,11 @@ const spriteStyle: React.CSSProperties = {
   height: '40px',
   width: 'auto',
   imageRendering: 'pixelated',
+};
+
+const flagContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '32px',
 };

@@ -52,6 +52,7 @@ interface GameContainerProps {
     newScore: number;
     reason: string;
   }) => void; // 지뢰찾기 점수 업데이트
+  onFlagCountUpdate?: (flagCounts: Record<string, number>) => void; // 지뢰찾기 깃발 카운트 업데이트
   playerCount?: number;
   players?: PlayerData[];
   currentPlayerIndex?: number;
@@ -84,6 +85,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onFlappyStrike,
   onFlappyScore,
   onMinesweeperScoreUpdate,
+  onFlagCountUpdate,
   playerCount = 4,
   players = [],
   currentPlayerIndex = 0,
@@ -308,6 +310,17 @@ export const GameContainer: React.FC<GameContainerProps> = ({
                 gameType: 'minesweeper',
                 players: data.players,
               });
+            },
+          );
+        }
+
+        // 지뢰찾기 깃발 카운트 업데이트 이벤트
+        if (onFlagCountUpdate) {
+          targetScene.events.on(
+            'flagCountUpdate',
+            (data: Record<string, number>) => {
+              console.log('🚩 minesweeper flagCountUpdate event received:', data);
+              onFlagCountUpdate(data);
             },
           );
         }

@@ -58,6 +58,9 @@ export default class MineSweeperScene extends Phaser.Scene {
   // 남은 지뢰 수
   private remainingMines: number = 0;
 
+  // 플레이어별 깃발 카운트
+  private flagCounts: Map<string, number> = new Map();
+
   // UI 컨테이너
   private gameContainer!: Phaser.GameObjects.Container;
 
@@ -423,6 +426,11 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 타일 업데이트 이벤트
     this.socket.on('tile_update', (data: TileUpdateEvent) => {
       for (const tileUpdate of data.tiles) {
+        // 이전 상태 저장 (깃발 카운트 업데이트용)
+        const prevTile = this.tileManager.getTile(tileUpdate.row, tileUpdate.col);
+        const wasFlagged = prevTile?.state === 'flagged';
+        const prevOwner = prevTile?.flaggedBy;
+
         this.tileManager.updateTileState(
           tileUpdate.row,
           tileUpdate.col,
@@ -431,6 +439,20 @@ export default class MineSweeperScene extends Phaser.Scene {
           tileUpdate.isMine,
           tileUpdate.flaggedBy,
         );
+
+        // 깃발 카운트 업데이트
+        if (tileUpdate.state === 'flagged' && tileUpdate.flaggedBy) {
+          // 깃발 설치: 해당 플레이어 카운트 증가
+          const currentCount = this.flagCounts.get(tileUpdate.flaggedBy) || 0;
+          this.flagCounts.set(tileUpdate.flaggedBy, currentCount + 1);
+          this.emitFlagCountUpdate();
+        } else if (wasFlagged && prevOwner) {
+          // 이전에 깃발이 있었는데 제거됨 (hidden 또는 revealed)
+          // 해당 플레이어 카운트 감소
+          const count = this.flagCounts.get(prevOwner) || 0;
+          this.flagCounts.set(prevOwner, Math.max(0, count - 1));
+          this.emitFlagCountUpdate();
+        }
       }
 
       // 남은 지뢰 수 업데이트
@@ -618,6 +640,21 @@ export default class MineSweeperScene extends Phaser.Scene {
    */
   public getRemainingMines(): number {
     return this.remainingMines;
+  }
+
+  /**
+   * 깃발 카운트 업데이트 이벤트 발생
+   */
+  private emitFlagCountUpdate(): void {
+    const flagCountData: Record<string, number> = {};
+
+    // 모든 플레이어의 깃발 카운트 초기화
+    for (const player of this.players) {
+      flagCountData[player.id] = this.flagCounts.get(player.id) || 0;
+    }
+
+    this.events.emit('flagCountUpdate', flagCountData);
+    console.log('[MineSweeperScene] flagCountUpdate 이벤트 발생:', flagCountData);
   }
 
   /**

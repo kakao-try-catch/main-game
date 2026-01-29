@@ -1,9 +1,8 @@
 import { Server, Socket } from 'socket.io';
 import {
-  GamePacketType,
+  AppleGamePacketType,
   SystemPacketType,
   ServerPacket,
-  GamePacket,
   RoomUpdatePacket,
   RoomUpdateType,
 } from '../../../common/src/packets';
@@ -118,7 +117,7 @@ export function handleClientPacket(
         break;
       }
 
-      case GamePacketType.DRAWING_DRAG_AREA: {
+      case AppleGamePacketType.DRAWING_DRAG_AREA: {
         // 브로드캐스트 (나 제외)
         // 검증 로직 필요함. 게임 안쪽 영역이 맞는지, 그리고 정규화된 건지
         // 드래그 영역은 정규화가 필요함.
@@ -141,8 +140,8 @@ export function handleClientPacket(
         if (isSame) {
           prev.repeatCount = (prev.repeatCount || 0) + 1;
           if (prev.repeatCount <= 3 || true) {
-            socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
-              type: GamePacketType.UPDATE_DRAG_AREA,
+            socket.to(roomId).emit(AppleGamePacketType.UPDATE_DRAG_AREA, {
+              type: AppleGamePacketType.UPDATE_DRAG_AREA,
               playerIndex: playerIndex,
               startX: sx,
               startY: sy,
@@ -161,8 +160,8 @@ export function handleClientPacket(
             endY: ey,
             repeatCount: 1,
           });
-          socket.to(roomId).emit(GamePacketType.UPDATE_DRAG_AREA, {
-            type: GamePacketType.UPDATE_DRAG_AREA,
+          socket.to(roomId).emit(AppleGamePacketType.UPDATE_DRAG_AREA, {
+            type: AppleGamePacketType.UPDATE_DRAG_AREA,
             playerIndex: playerIndex,
             startX: sx,
             startY: sy,
@@ -174,7 +173,7 @@ export function handleClientPacket(
         break;
       }
 
-      case GamePacketType.CONFIRM_DRAG_AREA:
+      case AppleGamePacketType.CONFIRM_DRAG_AREA:
         session.handleDragConfirm(socket.id, packet.indices);
         break;
 
@@ -322,7 +321,7 @@ export async function joinPlayerToGame(
   //   session.startGame();
   // } else if (session.status === 'playing') {
   //   // 이미 진행중이면 현재 상태 전송 (Reconnection logic)
-  //   socket.emit(GamePacketType.SET_FIELD, { type: GamePacketType.SET_FIELD, apples: session.apples });
-  //   socket.emit(GamePacketType.SET_TIME, { type: GamePacketType.SET_TIME, limitTime: session.timeLeft });
+  //   socket.emit(GamePacketType.SET_FIELD, { type: AppleGamePacketType.SET_FIELD, apples: session.apples });
+  //   socket.emit(GamePacketType.SET_TIME, { type: AppleGamePacketType.SET_TIME, limitTime: session.timeLeft });
   // }
 }

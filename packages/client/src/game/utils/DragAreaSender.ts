@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { socketManager } from '../../network/socket';
-import { GamePacketType } from '../../../../common/src/packets';
+import { AppleGamePacketType } from '../../../../common/src/packets';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig';
 
 interface NormalizedRect {
@@ -70,7 +70,7 @@ export class DragAreaSender {
 
     // 패킷 전송
     socketManager.send({
-      type: GamePacketType.DRAWING_DRAG_AREA,
+      type: AppleGamePacketType.DRAWING_DRAG_AREA,
       startX: this.pendingRect.startX,
       startY: this.pendingRect.startY,
       endX: this.pendingRect.endX,

@@ -7,17 +7,17 @@
 
 ## 📋 요약: 현재 상태
 
-| 기능                      | 상태      | 위치                                |
-| ------------------------- | --------- | ----------------------------------- |
-| 사과 배열 생성            | ✅ 구현됨 | `gameSession.ts:193-204`            |
-| SET_FIELD 전송            | ✅ 구현됨 | `gameSession.ts:155-159`            |
-| SET_TIME 전송             | ✅ 구현됨 | `gameSession.ts:169-173`            |
-| CONFIRM_DRAG_AREA 처리    | ✅ 구현됨 | `gameSession.ts:358-397`            |
-| 합 10 검증                | ✅ 구현됨 | `gameSession.ts:369-370`            |
-| 점수 계산                 | ✅ 구현됨 | `gameSession.ts:376-377`            |
-| 타이머 및 게임 종료       | ✅ 구현됨 | `gameSession.ts:238-270`            |
-| **mapSize → 그리드 변환** | ✅ 통일됨 | `common/appleGameUtils.ts` 공통화   |
-| UPDATE_SCORE 전송         | ⚠️ 권장   | 아래 참고                           |
+| 기능                      | 상태      | 위치                              |
+| ------------------------- | --------- | --------------------------------- |
+| 사과 배열 생성            | ✅ 구현됨 | `gameSession.ts:193-204`          |
+| SET_FIELD 전송            | ✅ 구현됨 | `gameSession.ts:155-159`          |
+| SET_TIME 전송             | ✅ 구현됨 | `gameSession.ts:169-173`          |
+| CONFIRM_DRAG_AREA 처리    | ✅ 구현됨 | `gameSession.ts:358-397`          |
+| 합 10 검증                | ✅ 구현됨 | `gameSession.ts:369-370`          |
+| 점수 계산                 | ✅ 구현됨 | `gameSession.ts:376-377`          |
+| 타이머 및 게임 종료       | ✅ 구현됨 | `gameSession.ts:238-270`          |
+| **mapSize → 그리드 변환** | ✅ 통일됨 | `common/appleGameUtils.ts` 공통화 |
+| UPDATE_SCORE 전송         | ⚠️ 권장   | 아래 참고                         |
 
 ---
 
@@ -35,19 +35,22 @@ export const MAP_SIZE_TO_GRID = {
   [MapSize.LARGE]: { cols: 30, rows: 15 },
 } as const;
 
-export function resolveAppleGameConfig(cfg: AppleGameConfig): AppleGameRenderConfig {
-  const grid = MAP_SIZE_TO_GRID[cfg.mapSize] ?? MAP_SIZE_TO_GRID[MapSize.MEDIUM];
+export function resolveAppleGameConfig(
+  cfg: AppleGameConfig,
+): AppleGameRenderConfig {
+  const grid =
+    MAP_SIZE_TO_GRID[cfg.mapSize] ?? MAP_SIZE_TO_GRID[MapSize.MEDIUM];
   // ...
 }
 ```
 
 ### 변경된 파일
 
-| 파일                                      | 변경 내용                              |
-| ----------------------------------------- | -------------------------------------- |
-| `common/src/appleGameUtils.ts`            | **신규** - 공통 그리드 유틸리티        |
-| `server/src/applegame/gameSession.ts`     | `resolveAppleGameConfig()` 사용        |
-| `client/src/game/scene/apple/AppleGameScene.ts` | `resolveAppleGameConfig()` 사용   |
+| 파일                                            | 변경 내용                       |
+| ----------------------------------------------- | ------------------------------- |
+| `common/src/appleGameUtils.ts`                  | **신규** - 공통 그리드 유틸리티 |
+| `server/src/applegame/gameSession.ts`           | `resolveAppleGameConfig()` 사용 |
+| `client/src/game/scene/apple/AppleGameScene.ts` | `resolveAppleGameConfig()` 사용 |
 
 ### 통일된 그리드 크기
 
@@ -72,7 +75,7 @@ export function resolveAppleGameConfig(cfg: AppleGameConfig): AppleGameRenderCon
 ```typescript
 // Broadcast Success
 const dropCellIndexPacket: DropCellIndexPacket = {
-  type: GamePacketType.DROP_CELL_INDEX,
+  type: AppleGamePacketType.DROP_CELL_INDEX,
   winnerId: playerId,
   indices: indices,
   totalScore: player.reportCard.score,
@@ -132,21 +135,21 @@ spec/
 
 ### 공통 (`appleGameUtils.ts`)
 
-| 함수/영역                 | 설명                                      |
-| ------------------------- | ----------------------------------------- |
-| `MAP_SIZE_TO_GRID`        | MapSize → gridCols/gridRows 매핑          |
-| `resolveAppleGameConfig()` | AppleGameConfig → AppleGameRenderConfig  |
+| 함수/영역                  | 설명                                    |
+| -------------------------- | --------------------------------------- |
+| `MAP_SIZE_TO_GRID`         | MapSize → gridCols/gridRows 매핑        |
+| `resolveAppleGameConfig()` | AppleGameConfig → AppleGameRenderConfig |
 
 ### 서버 (`gameSession.ts`)
 
-| 함수/영역                 | 라인    | 설명                                 |
-| ------------------------- | ------- | ------------------------------------ |
-| `generateField()`         | 193-204 | 사과 배열 생성                       |
+| 함수/영역                 | 라인    | 설명                                      |
+| ------------------------- | ------- | ----------------------------------------- |
+| `generateField()`         | 193-204 | 사과 배열 생성                            |
 | `getAppliedAppleConfig()` | 206-221 | 공통 유틸 `resolveAppleGameConfig()` 사용 |
-| `startGame()`             | 140-183 | 게임 시작 (SET_FIELD, SET_TIME 전송) |
-| `handleDragConfirm()`     | 358-397 | 드래그 확인 처리 (합 검증, 점수)     |
-| `finishGame()`            | 249-270 | 게임 종료 (TIME_END 전송)            |
-| `updateGameConfig()`      | 272-356 | Config 업데이트 (sanitize 포함)      |
+| `startGame()`             | 140-183 | 게임 시작 (SET_FIELD, SET_TIME 전송)      |
+| `handleDragConfirm()`     | 358-397 | 드래그 확인 처리 (합 검증, 점수)          |
+| `finishGame()`            | 249-270 | 게임 종료 (TIME_END 전송)                 |
+| `updateGameConfig()`      | 272-356 | Config 업데이트 (sanitize 포함)           |
 
 ### 서버 (`serverHandler.ts`)
 
@@ -159,13 +162,13 @@ spec/
 
 ### 클라이언트 (참고용)
 
-| 파일                  | 라인    | 설명                                 |
-| --------------------- | ------- | ------------------------------------ |
-| `AppleGameScene.ts`   | 192-210 | 공통 유틸 `resolveAppleGameConfig()` 사용 |
+| 파일                  | 라인    | 설명                                          |
+| --------------------- | ------- | --------------------------------------------- |
+| `AppleGameScene.ts`   | 192-210 | 공통 유틸 `resolveAppleGameConfig()` 사용     |
 | `gameStore.ts`        | -       | gameConfig 상태 관리 (Single Source of Truth) |
-| `Lobby.tsx`           | 130-132 | generation 인코딩 (0=쉬움, 1=어려움) |
-| `clientHandler.ts`    | 90-96   | SET_FIELD 처리                       |
-| `AppleGameManager.ts` | 362     | 합 10 검증                           |
+| `Lobby.tsx`           | 130-132 | generation 인코딩 (0=쉬움, 1=어려움)          |
+| `clientHandler.ts`    | 90-96   | SET_FIELD 처리                                |
+| `AppleGameManager.ts` | 362     | 합 10 검증                                    |
 
 > **참고**: `AppleGamePreset.ts`의 `resolvePreset()` 함수는 제거되었습니다.
 > 대신 `common/appleGameUtils.ts`의 `resolveAppleGameConfig()`를 사용합니다.
@@ -273,7 +276,7 @@ const maxNumber = raw?.generation === 1 ? 5 : 9;
 
 ```typescript
 export interface DropCellIndexPacket {
-  type: GamePacketType.DROP_CELL_INDEX;
+  type: AppleGamePacketType.DROP_CELL_INDEX;
   winnerId: PlayerId;
   indices: AppleIndex[];
   totalScore: number; // 누적 총점만 있음 (addedScore 없음)
@@ -333,9 +336,11 @@ export interface DropCellIndexPacket {
 **서버-클라이언트 그리드 크기 통일 완료!**
 
 주요 변경사항:
+
 1. ✅ `common/appleGameUtils.ts` 생성 - 그리드 크기 매핑 공통화
 2. ✅ 서버/클라이언트 모두 `resolveAppleGameConfig()` 사용
 3. ✅ 클라이언트 `applePreset` 제거 → `gameStore.gameConfig` 사용
 
 남은 권장 수정:
+
 - **(선택) UPDATE_SCORE 전송** → `handleDragConfirm()` 끝에 추가

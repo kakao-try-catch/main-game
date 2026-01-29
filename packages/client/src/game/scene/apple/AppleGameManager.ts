@@ -4,7 +4,7 @@ import TimerPrefab from '../../utils/TimerPrefab';
 import TimerSystem from '../../utils/TimerSystem';
 import { attachDragSelection } from '../../utils/dragSelection';
 import { socketManager } from '../../../network/socket';
-import { GamePacketType } from '../../../../../common/src/packets';
+import { AppleGamePacketType } from '../../../../../common/src/packets';
 import type { PlayerData } from '../../types/common';
 import { hexStringToNumber, adjustBrightness } from '../../utils/colorUtils';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
@@ -411,7 +411,7 @@ export default class AppleGameManager {
 
       // 패킷 전송
       socketManager.send({
-        type: GamePacketType.CONFIRM_DRAG_AREA,
+        type: AppleGamePacketType.CONFIRM_DRAG_AREA,
         indices,
       });
 

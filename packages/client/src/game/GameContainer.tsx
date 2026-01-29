@@ -243,26 +243,26 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
         // 플래피버드 게임 종료 이벤트
         // todo 해결해야 함. 다 클라쪽으로 그거 됨.
-        if (onGameEnd) {
-          targetScene.events.on(
-            'gameEnd',
-            (data: {
-              finalScore: number;
-              reason: string;
-              collidedPlayerId: PlayerId;
-              players: PlayerResultData[];
-            }) => {
-              console.log('🏁 flappy gameEnd event received:', data);
-              onGameEnd({
-                gameType: 'flappy',
-                finalScore: data.finalScore,
-                reason: data.reason,
-                collidedPlayerId: data.collidedPlayerId,
-                players: data.players,
-              });
-            },
-          );
-        }
+        // if (onGameEnd) {
+        //   targetScene.events.on(
+        //     'gameEnd',
+        //     (data: {
+        //       finalScore: number;
+        //       reason: string;
+        //       collidedPlayerId: PlayerId;
+        //       players: PlayerResultData[];
+        //     }) => {
+        //       console.log('🏁 flappy gameEnd event received:', data);
+        //       onGameEnd({
+        //         gameType: 'flappy',
+        //         finalScore: data.finalScore,
+        //         reason: data.reason,
+        //         collidedPlayerId: data.collidedPlayerId,
+        //         players: data.players,
+        //       });
+        //     },
+        //   );
+        // }
 
         // 기존 game_over 이벤트 (호환성 유지)
         if (onGameOver) {
@@ -292,18 +292,18 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         }
 
         // 지뢰찾기 게임 종료 이벤트 (타이머 완료)
-        if (onGameEnd) {
-          targetScene.events.on(
-            'gameEnd',
-            (data: { players: PlayerResultData[] }) => {
-              console.log('🏁 minesweeper gameEnd event received:', data);
-              onGameEnd({
-                gameType: 'minesweeper',
-                players: data.players,
-              });
-            },
-          );
-        }
+        // if (onGameEnd) {
+        //   targetScene.events.on(
+        //     'gameEnd',
+        //     (data: { players: PlayerResultData[] }) => {
+        //       console.log('🏁 minesweeper gameEnd event received:', data);
+        //       onGameEnd({
+        //         gameType: 'minesweeper',
+        //         players: data.players,
+        //       });
+        //     },
+        //   );
+        // }
       }
 
       // 씬에 플레이어 데이터 전달

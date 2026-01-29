@@ -118,46 +118,46 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
   // 사과 게임 효과음
   appleDrop: {
     file: appleDropSound,
-    volume: 0.7,
+    volume: 1.0,
     startTime: 0,
   },
   appleGameStart: {
     file: gameStartSound,
-    volume: 0.8,
+    volume: 1.0,
     startTime: 0,
   },
   appleGameEnd: {
     file: gameEndSound,
-    volume: 0.8,
+    volume: 1.0,
     startTime: 0,
   },
 
   // 플래피버드 효과음
   flappyJump: {
     file: flappyJumpSound,
-    volume: 0.9,
+    volume: 1.0,
     startTime: 0,
   },
   flappyStrike: {
     file: flappyStrikeSound,
-    volume: 0.8,
+    volume: 1.0,
     startTime: 0,
   },
   flappyScore: {
     file: flappyScoreSound,
-    volume: 0.7,
+    volume: 1.0,
     startTime: 0,
   },
 
   // 지뢰찾기 효과음
   mineExplode: {
     file: mineExplodeSound,
-    volume: 0.9,
-    startTime: 0.11,
+    volume: 1.0,
+    startTime: 0,
   },
   mineFlag: {
     file: mineFlagSound,
-    volume: 0.7,
+    volume: 1.0,
     startTime: 0,
   },
 

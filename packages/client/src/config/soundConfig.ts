@@ -107,7 +107,7 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
   buttonClick: {
     file: buttonClickSound,
     volume: 1.0,
-    startTime: 0.2,
+    startTime: 0,
   },
   buttonHover: {
     file: buttonHoverSound,

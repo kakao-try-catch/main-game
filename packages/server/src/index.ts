@@ -14,7 +14,7 @@ const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
     // todo 다른 플레이어 참여 어떻게?
-    origin: ['http://localhost:5173', 'http://192.168.0.41:5173'],
+    origin: ['*'],
     methods: ['GET', 'POST'],
   },
   transports: ['websocket'], // 서버도 웹소켓만 허용하도록 일치시킴

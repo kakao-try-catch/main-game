@@ -197,14 +197,14 @@ class ResultStyleBuilder {
   public toolTipBox(): React.CSSProperties {
     return {
       position: 'absolute',
-      bottom: `calc(100% + ${this.px(10)})`,
+      bottom: `calc(100% + ${this.px(16)})`,
       left: '50%',
       transform: 'translateX(-50%)',
-      padding: `${this.px(8)} ${this.px(16)}`,
+      padding: `${this.px(12)} ${this.px(24)}`,
       backgroundColor: '#e76e55',
       color: 'white',
       borderRadius: this.px(4),
-      fontSize: this.px(14),
+      fontSize: this.px(24),
       whiteSpace: 'nowrap',
       zIndex: 1000,
       pointerEvents: 'none',
@@ -217,7 +217,7 @@ class ResultStyleBuilder {
       top: '100%',
       left: '50%',
       transform: 'translateX(-50%)',
-      border: `${this.px(6)} solid transparent`,
+      border: `${this.px(10)} solid transparent`,
       borderTopColor: '#e76e55',
     };
   }

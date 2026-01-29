@@ -57,14 +57,6 @@ export class GameSession {
     this.initDefaults();
   }
 
-  private sanitizeTime(rawTime: any): number {
-    const timeNum =
-      typeof rawTime === 'number' && isFinite(rawTime)
-        ? rawTime
-        : APPLE_GAME_CONFIG.totalTime;
-    return Math.max(10, Math.min(300, Math.floor(timeNum)));
-  }
-
   // initialize defaults for game configs so lobby has a baseline
   private initDefaults() {
     if (!this.gameConfigs.has(GameType.APPLE_GAME)) {

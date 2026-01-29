@@ -207,3 +207,11 @@ export function resolveAppleGameConfig(
     includeZero: cfg.zero,
   };
 }
+
+function sanitizeTime(rawTime: any): number {
+  const timeNum =
+    typeof rawTime === 'number' && isFinite(rawTime)
+      ? rawTime
+      : APPLE_GAME_CONFIG.totalTime;
+  return Math.max(10, Math.min(300, Math.floor(timeNum)));
+}

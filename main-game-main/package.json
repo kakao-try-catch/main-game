@@ -1,0 +1,21 @@
+{
+  "name": "main-game",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter ./packages/client dev",
+    "build": "pnpm --filter ./packages/common build && pnpm --filter ./packages/client build",
+    "preview": "pnpm --filter ./packages/client preview",
+    "lint": "pnpm --filter ./packages/client lint",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.8.0",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "zustand": "^5.0.10"
+  }
+}

@@ -1,0 +1,79 @@
+{
+    "id": "ba830f99-c38d-424b-9a13-e2b108230040",
+    "sceneType": "SCENE",
+    "settings": {
+        "exportClass": true,
+        "displayName": "AppleGameScene",
+        "preloadPackFiles": [],
+        "createMethodName": "editorCreate",
+        "sceneKey": "AppleGameScene",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 1380,
+        "borderHeight": 862
+    },
+    "displayList": [
+        {
+            "type": "Rectangle",
+            "id": "2a19136a-5187-44ca-a6ac-3b60ecf6963e",
+            "label": "background",
+            "originX": 0,
+            "originY": 0,
+            "isFilled": true,
+            "fillColor": "e4fbdf",
+            "width": 1380,
+            "height": 862
+        },
+        {
+            "type": "Rectangle",
+            "id": "ab92b09a-9ebb-453d-83cc-270f8f65e749",
+            "label": "timerBar",
+            "x": 1324,
+            "y": 75,
+            "originX": 0,
+            "originY": 0,
+            "isFilled": true,
+            "fillColor": "#3fa425",
+            "width": 22,
+            "height": 752
+        },
+        {
+            "type": "Text",
+            "id": "07763ce7-d58f-4156-9d4c-bacc177493b2",
+            "label": "timeTxt",
+            "x": 1298,
+            "y": 24,
+            "scaleX": 0.9,
+            "scaleY": 1.3,
+            "text": "TIME",
+            "fontSize": "32px",
+            "fontStyle": "bold",
+            "color": "#000000ff",
+            "stroke": "#000000ff"
+        }
+    ],
+    "plainObjects": [
+        {
+            "id": "390db566-7e56-4b2b-82db-3b26f537c3f3",
+            "type": "EditableTilemap",
+            "label": "editabletilemap",
+            "width": 1234,
+            "height": 734,
+            "tileWidth": 68,
+            "tileHeight": 68,
+            "tilesets": [],
+            "layers": []
+        }
+    ],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    },
+    "lists": [
+        {
+            "id": "05da5531-649e-4266-9f91-e87cbdff5154",
+            "label": "list"
+        }
+    ]
+}

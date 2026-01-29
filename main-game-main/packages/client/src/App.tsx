@@ -1,0 +1,514 @@
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { GameContainer, type GameEndEvent } from './game/GameContainer';
+import { BGMProvider, useBGMContext } from './contexts/BGMContext';
+import { SFXProvider, useSFXContext } from './contexts/SFXContext';
+import { UserProvider, useUser } from './contexts/UserContext';
+
+import PlayerCard from './components/PlayerCard';
+import GameResult from './game/utils/game-result/GameResult';
+import SoundSetting from './components/SoundSetting';
+import LandingPage from './components/LandingPage';
+import Lobby from './components/Lobby';
+import type { AppleGamePreset } from './game/types/AppleGamePreset';
+import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import {
+  type MineSweeperGamePreset,
+  DEFAULT_MINESWEEPER_PRESET,
+} from './game/types/minesweeper.types';
+import type {
+  PlayerData,
+  PlayerResultData,
+  GameType,
+  CurrentUser,
+} from './game/types/common';
+import type { PlayerId } from './game/types/flappybird.types';
+import { CONSTANTS } from './game/types/common';
+import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
+import flappyBird1 from './assets/images/flappybird_1.png';
+import flappyBird2 from './assets/images/flappybird_2.png';
+import flappyBird3 from './assets/images/flappybird_3.png';
+import flappyBird4 from './assets/images/flappybird_4.png';
+
+import './App.css';
+import { socketManager } from './network/socket';
+
+const { PLAYER_COLORS } = CONSTANTS;
+const FLAPPY_BIRD_SPRITES = [
+  flappyBird1,
+  flappyBird2,
+  flappyBird3,
+  flappyBird4,
+];
+
+function AppContent() {
+  const testPlayerCount = 4;
+  const { pause, reset } = useBGMContext();
+  const { playSFX } = useSFXContext();
+
+  // 현재 유저 정보 (서버에서 받아올 예정)
+
+  const { nickname, color, setUserInfo } = useUser();
+
+  const [currentScreen, setCurrentScreen] = useState<
+    'landing' | 'lobby' | 'game' | 'flappybird'
+  >('landing');
+
+  // 현재 유저 정보 (서버에서 받아올 예정)
+  const [currentUser, setCurrentUser] = useState<CurrentUser>({
+    id: 'id_1',
+    playerIndex: 0,
+    name: nickname || '1P',
+    isHost: false, // 방장 여부는 서버/방 생성 로직에서 결정됨
+  });
+
+  const [gameReady, setGameReady] = useState(false);
+  const [gameEnded, setGameEnded] = useState(false);
+  const [finalPlayers, setFinalPlayers] = useState<PlayerResultData[]>([]);
+  const gameRef = useRef<Phaser.Game | null>(null);
+
+  // 플래피버드 관련 상태
+  const [flappyScore, setFlappyScore] = useState(0); // 팀 점수
+  const [flappyGameEnded, setFlappyGameEnded] = useState(false); // 플래피버드 게임 종료 여부
+  const [flappyFinalData, setFlappyFinalData] = useState<{
+    finalScore: number;
+    reason: string;
+    collidedPlayerId: PlayerId;
+    players: PlayerResultData[];
+  } | null>(null);
+
+  const [players, setPlayers] = useState<PlayerData[]>([
+    {
+      id: 'id_1',
+      name: nickname || '1P',
+      score: 0,
+      color: color || PLAYER_COLORS[0],
+    },
+    { id: 'id_2', name: '2P', score: 0, color: PLAYER_COLORS[1] },
+    { id: 'id_3', name: '3P', score: 0, color: PLAYER_COLORS[2] },
+    { id: 'id_4', name: '4P', score: 0, color: PLAYER_COLORS[3] },
+  ]);
+
+  // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
+  const [currentGameType, setCurrentGameType] = useState<GameType | undefined>(
+    undefined,
+  );
+  const [applePreset, setApplePreset] = useState<AppleGamePreset | undefined>(
+    undefined,
+  );
+  const [flappyPreset, setFlappyPreset] = useState<
+    FlappyBirdGamePreset | undefined
+  >(undefined);
+  const [minesweeperPreset, setMinesweeperPreset] = useState<
+    MineSweeperGamePreset | undefined
+  >(undefined);
+
+  // 게임 컨테이너 재마운트를 위한 key
+  const [gameKey, setGameKey] = useState(0);
+
+  // 점수 증가 함수
+  const handleAppleScored = useCallback(
+    (points: number) => {
+      try {
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((player) =>
+            player.id === currentUser.id
+              ? { ...player, score: player.score + points }
+              : player,
+          ),
+        );
+        playSFX('appleDrop');
+      } catch (error) {
+        console.error('Apple scored handler error:', error);
+      }
+    },
+    [currentUser.id, playSFX],
+  );
+
+  const handleGameReady = useCallback((game: Phaser.Game) => {
+    console.log('Phaser game is ready!', game);
+    gameRef.current = game;
+    setGameReady(true);
+  }, []);
+
+  const handleGameEnd = useCallback(
+    (data: GameEndEvent) => {
+      if (data.gameType === 'flappy') {
+        setFlappyFinalData({
+          finalScore: data.finalScore,
+          reason: data.reason,
+          collidedPlayerId: data.collidedPlayerId,
+          players: data.players,
+        });
+        setFlappyGameEnded(true);
+      } else {
+        setFinalPlayers(data.players);
+        setGameEnded(true);
+      }
+      playSFX('appleGameEnd');
+      pause(); // 게임 종료 시 BGM 중지
+      reset(); // 게임 종료 시 BGM을 처음으로 되감기
+    },
+    [playSFX, pause, reset],
+  );
+
+  // 플래피버드 점수 업데이트 핸들러
+  const handleFlappyScoreUpdate = useCallback((score: number) => {
+    setFlappyScore(score);
+  }, []);
+
+  // 플래피버드 점프 사운드 핸들러
+  const handleFlappyJump = useCallback(() => {
+    playSFX('flappyJump');
+  }, [playSFX]);
+
+  // 플래피버드 충돌 사운드 핸들러
+  const handleFlappyStrike = useCallback(() => {
+    playSFX('flappyStrike');
+  }, [playSFX]);
+
+  // 플래피버드 점수 획득 사운드 핸들러
+  const handleFlappyScore = useCallback(() => {
+    playSFX('flappyScore');
+  }, [playSFX]);
+
+  // 지뢰찾기 점수 업데이트 핸들러
+  const handleMinesweeperScoreUpdate = useCallback(
+    (data: {
+      playerId: string;
+      scoreChange: number;
+      newScore: number;
+      reason: string;
+    }) => {
+      try {
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((player) =>
+            player.id === data.playerId
+              ? { ...player, score: data.newScore }
+              : player,
+          ),
+        );
+      } catch (error) {
+        console.error('Minesweeper score update handler error:', error);
+      }
+    },
+    [],
+  );
+
+  const handleReplay = useCallback(() => {
+    console.log('[App] handleReplay 호출됨');
+
+    // 상태 초기화
+    setGameReady(false); // 재마운트 후 onGameReady에서 다시 true로 올려 BGM play 트리거
+    setGameEnded(false);
+    setFlappyGameEnded(false);
+    setFlappyScore(0);
+    setFlappyFinalData(null);
+    setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+
+    // 게임 컨테이너 key 증가로 강제 재마운트
+    setGameKey((prev) => prev + 1);
+
+    // 게임 인스턴스 완전 파괴
+    if (gameRef.current) {
+      try {
+        console.log('[App] 게임 인스턴스 파괴 시작');
+        gameRef.current.destroy(true);
+        gameRef.current = null;
+        console.log('[App] 게임 인스턴스 파괴 완료');
+      } catch (error) {
+        console.error('[App] 게임 파괴 중 오류:', error);
+        gameRef.current = null;
+      }
+    }
+
+    console.log('[App] handleReplay 완료 - 게임이 다시 마운트됨');
+  }, []);
+
+  const handleLobby = useCallback(() => {
+    setGameReady(false); // 로비로 복귀 시 BGM 재생 트리거를 초기화
+    setGameEnded(false);
+    setFlappyGameEnded(false);
+    setFlappyScore(0);
+    setFlappyFinalData(null);
+    setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+    reset(); // 로비로 복귀 시에도 BGM을 처음으로 되감기
+    setCurrentScreen('lobby');
+
+    // 게임 인스턴스 파괴
+    if (gameRef.current) {
+      try {
+        gameRef.current.destroy(true);
+        gameRef.current = null;
+      } catch (error) {
+        console.error('[App] 로비 복귀 시 게임 파괴 중 오류:', error);
+        gameRef.current = null;
+      }
+    }
+  }, []);
+
+  // 닉네임 설정하고 시작 버튼 누를 때 동작
+  const handleStart = (inputNickname: string) => {
+    const userColor = PLAYER_COLORS[0]; // 처음 유저는 첫 번째 색상
+    setUserInfo(inputNickname, userColor, true);
+    setCurrentUser((prev) => ({ ...prev, name: inputNickname }));
+    setPlayers((prev) =>
+      prev.map((player, index) =>
+        index === 0
+          ? { ...player, name: inputNickname, color: userColor }
+          : player,
+      ),
+    );
+
+    const joinRoomPacket: {
+      type: SystemPacketType.JOIN_ROOM;
+      playerId: string;
+      roomId: string;
+      playerName: string;
+    } = {
+      type: SystemPacketType.JOIN_ROOM,
+      playerId: socketManager.getId() ?? '',
+      roomId: 'HARDCODED_ROOM_1',
+      playerName: inputNickname,
+    };
+    socketManager.send(joinRoomPacket);
+    console.log('JOIN_ROOM sent: ', joinRoomPacket);
+    // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
+    setCurrentScreen('lobby'); // todo 일단 프론트가 작업할 수 있도록 주석 처리 풀어둚.
+  };
+
+  const handleGameStart = (gameType: string, preset: unknown) => {
+    setCurrentGameType(gameType as GameType);
+
+    // 새 게임 시작 시 key 변경
+    setGameKey((prev) => prev + 1);
+
+    if (gameType === 'apple') {
+      setApplePreset(preset as AppleGamePreset);
+    } else if (gameType === 'flappy') {
+      setFlappyPreset(preset as FlappyBirdGamePreset);
+    } else if (gameType === 'minesweeper') {
+      const minesweeperPreset =
+        (preset as MineSweeperGamePreset | undefined)?.mapSize &&
+        (preset as MineSweeperGamePreset | undefined)?.difficulty &&
+        (preset as MineSweeperGamePreset | undefined)?.timeLimit
+          ? (preset as MineSweeperGamePreset)
+          : DEFAULT_MINESWEEPER_PRESET;
+      setMinesweeperPreset(minesweeperPreset);
+    }
+
+    const gameStartReq: ServerPacket = {
+      type: SystemPacketType.GAME_START_REQ || 'GAME_START_REQ',
+    };
+    socketManager.send(gameStartReq);
+    console.log('GAME_START_REQ sent: ', gameStartReq);
+
+    setCurrentScreen('game');
+    // todo game_config_update
+    // todo ready_scene
+  };
+
+  // BGM 제어: 게임 종료 시에만 정지 (로비에서는 정지하지 않음)
+  useEffect(() => {
+    if (gameEnded) {
+      pause();
+      reset();
+    }
+  }, [gameEnded, pause, reset]);
+
+  const gameResultRatio =
+    (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1;
+
+  // 랜딩 페이지 표시
+  if (currentScreen === 'landing') {
+    return <LandingPage onStart={handleStart} />;
+  }
+
+  // 로비 표시
+  if (currentScreen === 'lobby') {
+    return (
+      <Lobby
+        currentPlayer={{
+          id: currentUser.id,
+          name: currentUser.name,
+          color: '#209cee',
+          isHost: currentUser.isHost,
+        }}
+        onGameStart={handleGameStart}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="App"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        width: '100vw',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        overflow: 'hidden',
+        margin: 0,
+        padding: 0,
+      }}
+    >
+      <header
+        className="App-header"
+        style={{
+          width: '100%',
+          textAlign: 'center',
+          margin: '0',
+          flexShrink: 0,
+        }}
+      />
+
+      {/* <SocketCounter /> */}
+
+      {/* 상단 영역 */}
+      <div
+        style={{
+          width: '100%',
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          marginTop: '4px',
+          overflow: 'auto',
+          minHeight: 0,
+        }}
+      >
+        <div
+          style={{
+            ...playerListStyle,
+            marginLeft: `0px`,
+            position: 'relative',
+            marginTop: '0px',
+          }}
+        >
+          {/* 사과게임: 4개 플레이어카드 */}
+          {currentGameType === 'apple' &&
+            players
+              .slice(0, testPlayerCount)
+              .map((player) => (
+                <PlayerCard
+                  key={player.id}
+                  name={player.name}
+                  score={player.score}
+                  color={player.color}
+                />
+              ))}
+
+          {/* 플래피버드: 팀 점수 카드 1개 */}
+          {currentGameType === 'flappy' && (
+            <>
+              {players.slice(0, testPlayerCount).map((player, index) => (
+                <PlayerCard
+                  key={player.id}
+                  name={player.name}
+                  color={player.color}
+                  spriteSrc={
+                    FLAPPY_BIRD_SPRITES[
+                      index % FLAPPY_BIRD_SPRITES.length
+                    ]
+                  }
+                  showScore={false}
+                />
+              ))}
+              <PlayerCard
+                key="team-score"
+                name="Team Score"
+                score={flappyScore}
+                color="#209cee" // 메인 커러
+              />
+            </>
+          )}
+
+          {/* 지뢰찾기: 4개 플레이어카드 */}
+          {currentGameType === 'minesweeper' &&
+            players
+              .slice(0, testPlayerCount)
+              .map((player) => (
+                <PlayerCard
+                  key={player.id}
+                  name={player.name}
+                  score={player.score}
+                  color={player.color}
+                />
+              ))}
+
+          <SoundSetting gameReady={gameReady} />
+        </div>
+      </div>
+
+      {/* 하단 영역 */}
+      <main
+        className="game-container"
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+          flex: 4,
+          margin: 0,
+          padding: 0,
+          minHeight: 0,
+          maxHeight: '80vh',
+          overflow: 'hidden',
+        }}
+      >
+        {/* 게임 오버 후에도 씬 유지 (결과 모달이 씬 위에 표시됨) */}
+        {currentGameType && (
+          <GameContainer
+            key={gameKey}
+            gameType={currentGameType}
+            playerCount={players.length}
+            players={players}
+            currentPlayerIndex={currentUser.playerIndex}
+            applePreset={applePreset}
+            flappyPreset={flappyPreset}
+            minesweeperPreset={minesweeperPreset}
+            onAppleScored={handleAppleScored}
+            onGameEnd={handleGameEnd}
+            onScoreUpdate={handleFlappyScoreUpdate}
+            onFlappyJump={handleFlappyJump}
+            onFlappyStrike={handleFlappyStrike}
+            onFlappyScore={handleFlappyScore}
+            onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
+            onGameReady={handleGameReady}
+          />
+        )}
+        <GameResult
+          currentGameType={currentGameType}
+          gameEnded={gameEnded}
+          finalPlayers={finalPlayers}
+          flappyGameEnded={flappyGameEnded}
+          flappyFinalData={flappyFinalData}
+          onReplay={handleReplay}
+          onLobby={handleLobby}
+          ratio={gameResultRatio}
+        />
+      </main>
+    </div>
+  );
+}
+
+const playerListStyle: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '8px',
+  marginTop: '0px',
+  alignSelf: 'center',
+  justifyContent: 'center',
+};
+
+export default function App() {
+  return (
+    <UserProvider>
+      <BGMProvider>
+        <SFXProvider>
+          <AppContent />
+        </SFXProvider>
+      </BGMProvider>
+    </UserProvider>
+  );
+}

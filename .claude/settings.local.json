@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(powershell -Command \"cd ''c:\\\\Users\\\\USER\\\\Documents\\\\GitHub\\\\main-game\\\\packages\\\\client''; npx tsc --noEmit\")",
+      "Bash(powershell -Command \"cd 'c:\\\\Users\\\\USER\\\\Documents\\\\GitHub\\\\main-game\\\\packages\\\\common'; npx tsc --noEmit\":*)",
+      "Bash(powershell -Command \"cd ''c:\\\\Users\\\\USER\\\\Documents\\\\GitHub\\\\main-game\\\\packages\\\\server''; npx tsc --noEmit\")",
+      "Bash(powershell -Command \"cd 'c:\\\\Users\\\\USER\\\\Documents\\\\GitHub\\\\main-game\\\\packages\\\\client'; npm run build:*)",
+      "Bash(powershell -Command \"cd ''c:\\\\Users\\\\USER\\\\Documents\\\\GitHub\\\\main-game\\\\packages\\\\client''; npm run build 2>&1 | Select-Object -First 100\")",
+      "Bash(powershell -Command \"cd ''c:\\\\Users\\\\USER\\\\Documents\\\\GitHub\\\\main-game\\\\packages\\\\client''; npm run build 2>&1\")",
+      "Bash(powershell -Command \"cd 'c:\\\\Users\\\\USER\\\\Documents\\\\GitHub\\\\main-game\\\\packages\\\\server'; pnpm add nanoid\":*)",
+      "Bash(pnpm run build)",
+      "Bash(pnpm build:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\USER\\Documents\\GitHub\\main-game"
     ]
   }
 }

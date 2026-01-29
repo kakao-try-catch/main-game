@@ -1,0 +1,78 @@
+{
+    "id": "62278415-6c92-473c-96be-cdadd920fb18",
+    "settings": {
+        "createMethodName": "",
+        "preloadMethodName": "",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "exportClass": true,
+        "autoImport": false,
+        "importFileExtension": false,
+        "generateAwakeHandler": false,
+        "compilerInsertSpaces": false,
+        "compilerTabSize": 4,
+        "borderWidth": 1440,
+        "borderHeight": 896,
+        "borderX": 0,
+        "borderY": 0
+    },
+    "sceneType": "PREFAB",
+    "displayList": [
+        {
+            "unlock": [
+                "x",
+                "y"
+            ],
+            "type": "Container",
+            "id": "175831e5-ba75-47f7-af02-e547eb57cc43",
+            "label": "up pipe_container",
+            "x": 0,
+            "y": 0,
+            "list": [
+                {
+                    "type": "Rectangle",
+                    "id": "9d6898d1-1daf-47ff-884b-8f374adf9e85",
+                    "label": "pipe_bottom_1",
+                    "y": -8,
+                    "originY": 0,
+                    "isFilled": true,
+                    "fillColor": "#339535",
+                    "width": 128,
+                    "height": 178
+                },
+                {
+                    "type": "Rectangle",
+                    "id": "150334e8-c5ab-4bf2-ad2a-8b388bb1d2e1",
+                    "label": "pipe_top_1",
+                    "y": 170,
+                    "originY": 1,
+                    "isFilled": true,
+                    "fillColor": "#339535",
+                    "width": 150,
+                    "height": 20
+                },
+                {
+                    "type": "b2Body",
+                    "id": "d3affde5-a446-41f7-8fab-f11895fb0fc0",
+                    "label": "b2body_1",
+                    "positionX": 1212,
+                    "positionY": -7,
+                    "fixedRotation": true,
+                    "list": [
+                        {
+                            "type": "b2BoxShape",
+                            "id": "2dbf367b-6196-491b-9170-748efc6b170f",
+                            "label": "col_pipe_big",
+                            "halfWidth": 64,
+                            "halfHeight": 100
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "app": "Phaser Editor 2D - Scene Editor",
+        "url": "https://phasereditor2d.com",
+        "contentType": "phasereditor2d.core.scene.SceneContentType"
+    }
+}

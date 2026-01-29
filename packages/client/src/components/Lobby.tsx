@@ -13,12 +13,6 @@ import type {
   RopeLengthPreset,
 } from '../game/types/FlappyBirdGamePreset';
 import type {
-  LobbyPlayer,
-  Game,
-  GameSettings,
-  LobbyProps,
-} from '../game/types/common';
-import type {
   MineSweeperGamePreset,
   MapSizePreset,
   DifficultyPreset,
@@ -51,7 +45,6 @@ const {
   DEFAULT_TIME_LIMIT,
 } = CONSTANTS;
 
-function Lobby({ players, onGameStart }: LobbyProps) {
 /** 난이도 색상 (쉬움/보통/어려움) */
 const DIFFICULTY_COLORS = {
   easy: '#4CAF50',
@@ -59,12 +52,7 @@ const DIFFICULTY_COLORS = {
   hard: '#F44336',
 } as const;
 
-function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
-  // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
-  const players: LobbyPlayer[] = [
-    { ...currentPlayer, color: PLAYER_COLORS[0] },
-  ];
-
+function Lobby({ players, onGameStart }: LobbyProps) {
   // 게임 리스트
   const [games] = useState<Game[]>([
     { id: 'apple', name: '다같이 사과 게임', thumbnail: '🍎' },
@@ -229,18 +217,16 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       else if (settings.mapSize === 'large') gridSize = 'L';
 
       // appleRange를 numberRange로 변환
-      let numberRange: '1-9' | '1-5' | '1-3' = '1-9';
+      let numberRange: '1-9' | '1-5' = '1-9';
       if (settings.appleRange === '1-5') numberRange = '1-5';
-      else if (settings.appleRange === '1-3') numberRange = '1-3';
 
       // TODO 서버가 프리셋 가지고 있어야 하는 것. GAME_CONFIG_UPDATE
       const preset: AppleGamePreset = {
         gridSize,
         timeLimit:
-          settings.timeLimit === -1
-            ? 'manual'
-            : (settings.timeLimit as 90 | 120 | 180),
-        manualTime: settings.timeLimit === -1 ? undefined : settings.timeLimit,
+          typeof settings.timeLimit === 'number' && settings.timeLimit !== -1
+            ? settings.timeLimit
+            : 120,
         numberRange,
         includeZero: settings.includeZero || false,
       };

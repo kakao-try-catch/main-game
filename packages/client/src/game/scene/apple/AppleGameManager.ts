@@ -263,12 +263,18 @@ export default class AppleGameManager {
     this.unsubscribeDropCell = useGameStore.subscribe(
       (state) => state.dropCellEventQueue,
       (queue) => {
+        // 씬이 파괴되었으면 무시
+        if (!this.scene || !this.scene.sys || !this.scene.sys.game) {
+          return;
+        }
+
         // 새로 추가된 이벤트만 처리
         if (queue.length > this.lastProcessedQueueLength) {
           const newEvents = queue.slice(this.lastProcessedQueueLength);
+          const myIndex = useGameStore.getState().myselfIndex;
           newEvents.forEach((event) => {
-            const myId = socketManager.getId();
-            const isMe = event.winnerId === myId;
+            // winnerId는 플레이어 인덱스 문자열 (예: "0", "1", "2")
+            const isMe = event.winnerId === myIndex.toString();
             this.handleDropCell(event.indices, isMe);
           });
           this.lastProcessedQueueLength = queue.length;
@@ -279,16 +285,18 @@ export default class AppleGameManager {
 
   /** 로딩 중 누적된 DROP_CELL_INDEX 이벤트 처리 */
   private processPendingDropCellEvents(): void {
-    const queue = useGameStore.getState().dropCellEventQueue;
+    const store = useGameStore.getState();
+    const queue = store.dropCellEventQueue;
     if (queue.length === 0) return;
 
     console.log(
       `🍎 로딩 중 누적된 ${queue.length}개의 DROP_CELL_INDEX 이벤트 처리`,
     );
 
+    const myIndex = store.myselfIndex;
     queue.forEach((event) => {
-      const myId = socketManager.getId();
-      const isMe = event.winnerId === myId;
+      // winnerId는 플레이어 인덱스 문자열 (예: "0", "1", "2")
+      const isMe = event.winnerId === myIndex.toString();
       this.handleDropCell(event.indices, isMe);
     });
 
@@ -448,9 +456,9 @@ export default class AppleGameManager {
     // 드래그 선택 비활성화
     this.detachDrag?.();
     // React로 게임 종료 이벤트 전달
-    // const { players } = useGameStore.getState();
-    // this.scene.events.emit('gameEnd', { players: players });
-    // console.log('🎮 게임 종료! React로 이벤트 전달', players);
+    const { players } = useGameStore.getState();
+    this.scene.events.emit('gameEnd', { players: players });
+    console.log('🎮 게임 종료! React로 이벤트 전달', players);
   }
 
   /** 현재 플레이어 인덱스 업데이트 */

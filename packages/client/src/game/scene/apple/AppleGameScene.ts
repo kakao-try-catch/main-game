@@ -231,11 +231,21 @@ export default class AppleGameScene extends Phaser.Scene {
     // 멀티플레이: gameStore 구독 설정
     this.subscribeToGameStore();
 
-    // 씬 종료 시 구독 해제
+    // 구독 설정 후, 이미 appleField가 설정되어 있으면 초기화 시도
+    // (SET_FIELD가 구독 전에 도착한 경우 대비)
+    const currentAppleField = useGameStore.getState().appleField;
+    if (currentAppleField && !this.isGameInitialized) {
+      console.log('🍎 구독 설정 시 이미 appleField 존재 - updatePlayers 대기 중');
+      // _pendingPlayerData가 아직 없으므로 updatePlayers에서 처리하도록 둠
+    }
+
+    // 씬 종료 시 구독 해제 및 정리
     this.events.once('shutdown', () => {
       this.unsubscribeAppleField?.();
       this.unsubscribeGameTime?.();
       this.unsubscribeGameResults?.();
+      // AppleGameManager 정리 (dropCellEventQueue 구독 해제, 드래그 리스너 제거 포함)
+      this.gameManager?.destroy();
     });
   }
 
@@ -348,6 +358,9 @@ export default class AppleGameScene extends Phaser.Scene {
     this.unsubscribeAppleField?.();
     this.unsubscribeGameTime?.();
     this.unsubscribeGameResults?.();
+
+    // AppleGameManager 정리 (dropCellEventQueue 구독 해제 포함)
+    this.gameManager?.destroy();
 
     // 플래그 초기화
     this.isGameInitialized = false;

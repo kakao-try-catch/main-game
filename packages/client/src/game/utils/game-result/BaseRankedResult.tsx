@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
+import { isPlayerHost } from '../../../store/gameStore';
 import type { PlayerResultData } from '../../types/common';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
@@ -73,14 +74,18 @@ class RankedPlayersModel {
   private calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
     if (players.length === 0) return [];
     const sortedPlayers = [...players].sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
+      if (b.reportCard.score !== a.reportCard.score)
+        return b.reportCard.score - a.reportCard.score;
       return a.playerIndex - b.playerIndex;
     });
     const rankedPlayers: RankedPlayer[] = [];
     let currentRank = 1;
     for (let i = 0; i < sortedPlayers.length; i++) {
       const player = sortedPlayers[i];
-      if (i > 0 && sortedPlayers[i - 1].score !== player.score) {
+      if (
+        i > 0 &&
+        sortedPlayers[i - 1].reportCard.score !== player.reportCard.score
+      ) {
         currentRank = i + 1;
       }
       rankedPlayers.push({ ...player, rank: currentRank });
@@ -257,7 +262,7 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
             const crown = model.getCrownProps(player.rank);
             return (
               <div
-                key={player.id}
+                key={`player-${player.playerIndex}`}
                 style={{
                   ...styles.rankItem(),
                   marginLeft: idx === 0 ? 0 : -5 * ratio,
@@ -277,13 +282,13 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
                   style={{
                     ...styles.playerName(),
                     marginTop: 0,
-                    fontSize: model.getNameFontSize(player.name.length),
+                    fontSize: model.getNameFontSize(player.playerName.length),
                     whiteSpace: 'nowrap',
                     maxWidth: '210px',
                     textAlign: 'center',
                   }}
                 >
-                  {player.name}
+                  {player.playerName}
                 </div>
                 <div
                   style={{
@@ -292,7 +297,7 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
                     backgroundColor: player.color,
                   }}
                 >
-                  <div style={styles.score()}>{player.score}</div>
+                  <div style={styles.score()}>{player.reportCard.score}</div>
                 </div>
               </div>
             );
@@ -303,6 +308,7 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
             type="button"
             className="nes-btn is-primary"
             style={styles.button()}
+            disabled={!isPlayerHost()}
             onClick={() => {
               playSFX('buttonClick');
               onReplay();
@@ -317,6 +323,7 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
             type="button"
             className="nes-btn is-primary"
             style={styles.button()}
+            disabled={!isPlayerHost()}
             onClick={() => {
               playSFX('buttonClick');
               onLobby();

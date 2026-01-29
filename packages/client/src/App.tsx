@@ -11,31 +11,19 @@ import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import {
+  type MineSweeperGamePreset,
+  DEFAULT_MINESWEEPER_PRESET,
+} from './game/types/minesweeper.types';
+import type { PlayerResultData } from './game/types/common';
+import type { PlayerId } from './game/types/flappybird.types';
 import { CONSTANTS } from './game/types/common';
 import {
   SystemPacketType,
   type JoinRoomPacket,
   type ServerPacket,
-  type PlayerData,
 } from '../../common/src/packets';
 import { GameType } from '../../common/src/config.ts';
-
-import './App.css';
-import { socketManager } from './network/socket';
-// import { use } from 'matter';
-import {
-  type MineSweeperGamePreset,
-  DEFAULT_MINESWEEPER_PRESET,
-} from './game/types/minesweeper.types';
-import type {
-  PlayerData,
-  PlayerResultData,
-  GameType,
-  CurrentUser,
-} from './game/types/common';
-import type { PlayerId } from './game/types/flappybird.types';
-import { CONSTANTS } from './game/types/common';
-import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
 import flappyBird1 from './assets/images/flappybird_1.png';
 import flappyBird2 from './assets/images/flappybird_2.png';
 import flappyBird3 from './assets/images/flappybird_3.png';
@@ -60,23 +48,24 @@ function AppContent() {
   // todo 제거 예정
   const { nickname, color, setUserInfo } = useUser();
 
-  // const [currentScreen, setCurrentScreen] = useState<
-  //   'landing' | 'lobby' | 'game' | 'flappybird'
-  // >('landing');
   const screen = useGameStore((s) => s.screen);
+  // setScreen은 clientHandler에서 서버 패킷 수신 시 호출됨
 
   const [gameReady, setGameReady] = useState(false);
   const isGameStarted = useGameStore((s) => s.isGameStarted);
   const setGameStarted = useGameStore((s) => s.setGameStarted);
   const gameRef = useRef<Phaser.Game | null>(null);
 
-  // 플래피버드 관련 상태 // todo 이거 왜 여기? 플레이로 통일
-  const [flappyScore, setFlappyScore] = useState(0); // 팀 점수
-  const [flappyGameEnded, setFlappyGameEnded] = useState(false); // 플래피버드 게임 종료 여부
+  // 게임 종료 관련 상태
+  const [gameEnded, setGameEnded] = useState(false);
+  const [finalPlayers, setFinalPlayers] = useState<PlayerResultData[]>([]);
+
+  // 플래피버드 관련 상태
+  const [flappyScore, setFlappyScore] = useState(0);
+  const [flappyGameEnded, setFlappyGameEnded] = useState(false);
   const [flappyFinalData, setFlappyFinalData] = useState<{
     finalScore: number;
-    reason: string;
-    players: PlayerData[];
+    reason: 'pipe_collision' | 'ground_collision';
     collidedPlayerId: PlayerId;
     players: PlayerResultData[];
   } | null>(null);
@@ -108,7 +97,7 @@ function AppContent() {
       if (data.gameType === 'flappy') {
         setFlappyFinalData({
           finalScore: data.finalScore,
-          reason: data.reason,
+          reason: data.reason as 'pipe_collision' | 'ground_collision',
           collidedPlayerId: data.collidedPlayerId,
           players: data.players,
         });
@@ -118,8 +107,8 @@ function AppContent() {
         setGameEnded(true);
       }
       playSFX('appleGameEnd');
-      pause(); // 게임 종료 시 BGM 중지
-      reset(); // 게임 종료 시 BGM을 처음으로 되감기
+      pause();
+      reset();
     },
     [playSFX, pause, reset],
   );
@@ -131,11 +120,20 @@ function AppContent() {
 
   // 플래피버드 게임 종료 핸들러
   const handleFlappyGameEnd = useCallback(
-    (data: { finalScore: number; reason: string; players: PlayerData[] }) => {
+    (data: {
+      finalScore: number;
+      reason: 'pipe_collision' | 'ground_collision';
+      players: PlayerResultData[];
+      collidedPlayerId: PlayerId;
+    }) => {
       setFlappyFinalData(data);
       setFlappyGameEnded(true);
-      playSFX('appleGameEnd'); // 동일한 사운드 사용
-      pause(); // 게임 종료 시 BGM 중지
+      playSFX('appleGameEnd');
+      pause();
+    },
+    [playSFX, pause],
+  );
+
   // 플래피버드 점프 사운드 핸들러
   const handleFlappyJump = useCallback(() => {
     playSFX('flappyJump');
@@ -161,9 +159,12 @@ function AppContent() {
     }) => {
       try {
         setPlayers((prevPlayers) =>
-          prevPlayers.map((player) =>
-            player.id === data.playerId
-              ? { ...player, score: data.newScore }
+          prevPlayers.map((player, index) =>
+            index.toString() === data.playerId
+              ? {
+                  ...player,
+                  reportCard: { ...player.reportCard, score: data.newScore },
+                }
               : player,
           ),
         );
@@ -171,18 +172,22 @@ function AppContent() {
         console.error('Minesweeper score update handler error:', error);
       }
     },
-    [],
+    [setPlayers],
   );
 
   // 게임 세션이 새로 시작될 때(리플레이 포함) 관련 상태 초기화
+  // 서버의 READY_SCENE 패킷 수신 시 gameSessionId가 증가하여 트리거됨
   useEffect(() => {
     if (gameSessionId > 0) {
       console.log(
         `[App] Game Session ${gameSessionId} started - resetting states`,
       );
+      setGameReady(false);
       setFlappyScore(0);
       setFlappyGameEnded(false);
       setFlappyFinalData(null);
+      setGameEnded(false);
+      setFinalPlayers([]);
       // 플레이어 점수 초기화
       setPlayers((prev) =>
         prev.map((p) => ({ ...p, reportCard: { ...p.reportCard, score: 0 } })),
@@ -193,59 +198,27 @@ function AppContent() {
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
 
-    // 서버에 리플레이 요청 전송
+    // 서버에 리플레이 요청 전송만 수행
+    // 실제 상태 초기화는 서버의 READY_SCENE 패킷 수신 시 처리됨
     const replayReq: ServerPacket = {
       type: SystemPacketType.REPLAY_REQ,
     };
     socketManager.send(replayReq);
     console.log('[App] REPLAY_REQ sent');
-    // 상태 초기화
-    setGameReady(false); // 재마운트 후 onGameReady에서 다시 true로 올려 BGM play 트리거
-    setGameEnded(false);
-    setFlappyGameEnded(false);
-    setFlappyScore(0);
-    setFlappyFinalData(null);
-    setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
-
-    // 나머지 처리는 서버의 READY_SCENE 패킷을 받았을 때 처리됨
   }, []);
 
   const handleLobby = useCallback(() => {
-    // 서버에 로비 복귀 요청 전송
+    // 서버에 로비 복귀 요청 전송만 수행
+    // 실제 상태 초기화는 서버의 RETURN_TO_THE_LOBBY 패킷 수신 시 처리됨
     const lobbyReq: ServerPacket = {
       type: SystemPacketType.RETURN_TO_THE_LOBBY_REQ,
     };
     socketManager.send(lobbyReq);
     console.log('[App] RETURN_TO_THE_LOBBY_REQ sent');
-    setGameReady(false); // 로비로 복귀 시 BGM 재생 트리거를 초기화
-    setGameEnded(false);
-    setFlappyGameEnded(false);
-    setFlappyScore(0);
-    setFlappyFinalData(null);
-    setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
-    reset(); // 로비로 복귀 시에도 BGM을 처음으로 되감기
-    setCurrentScreen('lobby');
-
-    // 나머지 처리는 서버의 RETURN_TO_THE_LOBBY 패킷을 받았을 때 처리됨
   }, []);
 
   // 닉네임 설정하고 시작 버튼 누를 때 동작
   const handleStart = (inputNickname: string) => {
-    // todo 색상도 서버가 알아서 줌.
-    // const userColor = PLAYER_COLORS[0]; // 처음 유저는 첫 번째 색상
-    // // todo 이거 이렇게 할 필요없고 내가 그 방의 몇 번째인지만 관리해주면 될 것 같음. number로.
-    // // todo 그 다음에는 gameStore의 players에서 index 찍어서 내 PlayerData 뽑아내고 그걸로 보면 될 듯?
-    // setUserInfo(inputNickname, userColor, true);
-    // setCurrentUser((prev) => ({ ...prev, name: inputNickname }));
-    //
-    // setPlayers((prev) =>
-    //   prev.map((player, index) =>
-    //     index === 0
-    //       ? { ...player, playerName: inputNickname, color: userColor }
-    //       : player,
-    //   ),
-    // );
-
     const joinRoomPacket: JoinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,
       roomId: 'HARDCODED_ROOM_1',
@@ -282,8 +255,7 @@ function AppContent() {
       pause();
       reset();
     }
-  }, [isGameStarted, pause]);
-  }, [gameEnded, pause, reset]);
+  }, [isGameStarted, pause, reset]);
 
   const gameResultRatio =
     (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1;
@@ -322,8 +294,6 @@ function AppContent() {
         }}
       />
 
-      {/* <SocketCounter /> */}
-
       {/* 상단 영역 */}
       <div
         style={{
@@ -346,7 +316,6 @@ function AppContent() {
           }}
         >
           {/* 사과게임: 4개 플레이어카드 */}
-          {/* TODO: score는 추후 ReportCard 통합 후 재작업 예정 */}
           {currentGameType === GameType.APPLE_GAME &&
             players
               .slice(0, testPlayerCount)
@@ -360,17 +329,15 @@ function AppContent() {
               ))}
 
           {/* 플래피버드: 팀 점수 카드 1개 */}
-          {currentGameType === 'flappy' && (
+          {currentGameType === GameType.FLAPPY_BIRD && (
             <>
               {players.slice(0, testPlayerCount).map((player, index) => (
                 <PlayerCard
-                  key={player.id}
-                  name={player.name}
+                  key={`player-${index}`}
+                  name={player.playerName}
                   color={player.color}
                   spriteSrc={
-                    FLAPPY_BIRD_SPRITES[
-                      index % FLAPPY_BIRD_SPRITES.length
-                    ]
+                    FLAPPY_BIRD_SPRITES[index % FLAPPY_BIRD_SPRITES.length]
                   }
                   showScore={false}
                 />
@@ -379,20 +346,20 @@ function AppContent() {
                 key="team-score"
                 name="Team Score"
                 score={flappyScore}
-                color="#209cee" // 메인 커러
+                color="#209cee"
               />
             </>
           )}
 
           {/* 지뢰찾기: 4개 플레이어카드 */}
-          {currentGameType === 'minesweeper' &&
+          {currentGameType === GameType.MINESWEEPER &&
             players
               .slice(0, testPlayerCount)
-              .map((player) => (
+              .map((player, index) => (
                 <PlayerCard
-                  key={player.id}
-                  name={player.name}
-                  score={player.score}
+                  key={`player-${index}`}
+                  name={player.playerName}
+                  score={player.reportCard.score}
                   color={player.color}
                 />
               ))}
@@ -426,7 +393,6 @@ function AppContent() {
             players={players}
             flappyPreset={flappyPreset}
             minesweeperPreset={minesweeperPreset}
-            onAppleScored={handleAppleScored}
             onGameEnd={handleGameEnd}
             onScoreUpdate={handleFlappyScoreUpdate}
             onFlappyJump={handleFlappyJump}
@@ -436,33 +402,17 @@ function AppContent() {
             onGameReady={handleGameReady}
           />
         )}
-        {/* 사과게임 결과 모달 */}
-        {!isGameStarted && (
-          <GameResult
-            onReplay={handleReplay}
-            onLobby={handleLobby}
-            title="APPLE GAME TOGETHER"
-            ratio={
-              (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
-            }
-          />
-        )}
-        {/* 플래피버드 결과 모달 */}
-        {flappyGameEnded && flappyFinalData && (
-          <FlappyBirdResult
-            finalScore={flappyFinalData.finalScore}
-            reason={
-              flappyFinalData.reason as 'pipe_collision' | 'ground_collision'
-            }
-            onReplay={handleReplay}
-            onLobby={handleLobby}
-            ratio={
-              (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1
-            }
-          />
-        )}
+        {/* 통합 게임 결과 모달 */}
         <GameResult
-          currentGameType={currentGameType}
+          currentGameType={
+            currentGameType === GameType.APPLE_GAME
+              ? 'apple'
+              : currentGameType === GameType.FLAPPY_BIRD
+                ? 'flappy'
+                : currentGameType === GameType.MINESWEEPER
+                  ? 'minesweeper'
+                  : undefined
+          }
           gameEnded={gameEnded}
           finalPlayers={finalPlayers}
           flappyGameEnded={flappyGameEnded}

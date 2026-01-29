@@ -23,7 +23,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
 
     // todo 클라 핸들러는 이거 필요없는데?
     case SystemPacketType.JOIN_ROOM:
-      console.log(`Player ${packet.playerId} joined ${packet.roomId}`);
+      console.log(`Player joined ${packet.roomId}`);
       break;
 
     case SystemPacketType.ROOM_UPDATE: {
@@ -72,11 +72,18 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
-    case SystemPacketType.READY_SCENE:
-      useGameStore.getState().setScreen('game');
-      useGameStore.getState().setGameStarted(true);
-      // 게임 세션 ID 증가로 게임 컨테이너 재마운트 트리거
-      useGameStore.getState().incrementGameSession();
+    case SystemPacketType.READY_SCENE: {
+      const store = useGameStore.getState();
+      // 게임 세션 ID를 먼저 증가시켜 GameContainer 재마운트 트리거
+      // (이렇게 하면 OLD 씬이 먼저 파괴되고 NEW 씬이 생성됨)
+      store.incrementGameSession();
+      // 게임 관련 상태 개별 초기화
+      // - appleField: SET_FIELD에서 새 데이터로 덮어씌워짐
+      // - gameTime, serverStartTime: SET_TIME에서 설정됨
+      store.clearDropCellEventQueue();
+      store.setGameResults(null);
+      store.setScreen('game');
+      store.setGameStarted(true);
       switch (packet.selectedGameType) {
         // 다른 게임 타입이 추가되면 여기에 케이스 추가
         case GameType.APPLE_GAME:
@@ -88,6 +95,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       }
       console.log('READY_SCENE packet received', packet);
       break;
+    }
 
     // --- Game Logic ---
     case GamePacketType.SET_FIELD: {
@@ -101,15 +109,19 @@ export const handleServerPacket = (packet: ServerPacket) => {
 
     case GamePacketType.DROP_CELL_INDEX: {
       const store = useGameStore.getState();
-      const { winnerId, indices, totalScore } = packet;
+      const { winnerIndex, indices, totalScore } = packet;
 
       // 사과 제거 이벤트를 큐에 추가 (AppleGameManager에서 처리)
       // 로딩 중에 도착한 이벤트도 누적되어 게임 초기화 시 처리됨
-      store.addDropCellEvent({ winnerId, indices, totalScore });
+      store.addDropCellEvent({
+        winnerId: winnerIndex.toString(),
+        indices,
+        totalScore,
+      });
 
       console.log(
         'DROP_CELL_INDEX packet received:',
-        winnerId,
+        winnerIndex,
         indices,
         totalScore,
       );
@@ -153,6 +165,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
 
     case SystemPacketType.RETURN_TO_THE_LOBBY: {
       const store = useGameStore.getState();
+      // 게임 상태 완전 초기화 후 로비로 이동
+      store.resetGameState();
       store.setScreen('lobby');
       console.log('RETURN_TO_THE_LOBBY packet received: returning to lobby');
       break;

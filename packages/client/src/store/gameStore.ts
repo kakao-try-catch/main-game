@@ -75,7 +75,7 @@ interface GameState {
 
   // 게임 결과 (TIME_END)
   gameResults: PlayerData[] | null;
-  setGameResults: (results: PlayerData[]) => void;
+  setGameResults: (results: PlayerData[] | null) => void;
 
   // 게임 세션 ID (리플레이/재시작 시 증가하여 컴포넌트 재마운트 트리거)
   gameSessionId: number;
@@ -144,7 +144,7 @@ export const useGameStore = create<GameState>()(
         newMap.delete(playerIndex);
         return { otherPlayerDrags: newMap };
       }),
-    setGameResults: (results: PlayerData[]) => set({ gameResults: results }),
+    setGameResults: (results: PlayerData[] | null) => set({ gameResults: results }),
     incrementGameSession: () =>
       set((state) => ({ gameSessionId: state.gameSessionId + 1 })),
     resetGameState: () =>

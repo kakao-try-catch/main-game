@@ -3,34 +3,32 @@ import Phaser from 'phaser';
 import AppleGameScene from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
-import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
-import type { PlayerData, PlayerResultData } from './types/common';
 import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
-import type { AppleGamePreset } from './types/AppleGamePreset';
 import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { MineSweeperGamePreset } from './types/minesweeper.types';
-import type { PlayerData, PlayerResultData, GameType } from './types/common';
+import type { PlayerResultData } from './types/common';
 import type { PlayerId } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 import { GameType } from '../../../common/src/config.ts';
+import type { PlayerData } from '../../../common/src/packets';
 
 // 게임 설정 상수 분리
 const GAME_CONFIGS = {
-  APPLE_GAME: {
+  [GameType.APPLE_GAME]: {
     sceneName: 'AppleGameScene',
     sceneClasses: [BootScene, AppleGameScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#FFFFFF',
   },
-  FLAPPY_BIRD: {
+  [GameType.FLAPPY_BIRD]: {
     sceneName: 'FlappyBirdsScene',
     sceneClasses: [BootScene, FlappyBirdsScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#46d1fd',
   },
-  minesweeper: {
+  [GameType.MINESWEEPER]: {
     sceneName: 'MineSweeperScene',
     sceneClasses: [BootScene, MineSweeperScene] as const,
     maxWidth: GAME_WIDTH,
@@ -77,6 +75,8 @@ export type GameEndEvent =
 export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
+  onAppleScored,
+  onGameEnd,
   onGameOver,
   onScoreUpdate,
   onFlappyJump,
@@ -92,18 +92,10 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   const parentRef = useRef<HTMLDivElement>(null);
 
   const isValidGameType =
-    gameType === GameType.APPLE_GAME || gameType === GameType.FLAPPY_BIRD;
+    gameType === GameType.APPLE_GAME ||
+    gameType === GameType.FLAPPY_BIRD ||
+    gameType === GameType.MINESWEEPER;
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
-    gameType === 'apple' || gameType === 'flappy' || gameType === 'minesweeper';
-  const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
-  const preset =
-    gameType === 'apple'
-      ? applePreset
-      : gameType === 'flappy'
-        ? flappyPreset
-        : gameType === 'minesweeper'
-          ? minesweeperPreset
-          : undefined;
 
   // 레이아웃 계산 (useMemo로 최적화)
   const layout = useMemo(() => {
@@ -143,7 +135,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       }
 
       const ratio = width / config.maxWidth;
-      window.__GAME_RATIO = ratio;
+      (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO = ratio;
     };
 
     updateRatio();
@@ -155,7 +147,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   useEffect(() => {
     if (!config || gameRef.current || !parentRef.current) return;
 
-    window.__GAME_RATIO = layout.ratio;
+    (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO = layout.ratio;
 
     // 씬 인스턴스 생성 (BootScene에 다음 씬 이름 전달)
     const scenes = config.sceneClasses.map((SceneClass) => {
@@ -181,6 +173,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       // 비활성 탭/창에서도 게임 루프 계속 실행 (멀티 모니터 지원)
+      // @ts-expect-error: Phaser supports this option but type definition is missing
       disableVisibilityChange: true,
     };
 
@@ -195,7 +188,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       if (!targetScene) return;
 
       // 이벤트 리스너 등록
-      if (gameType === 'apple') {
+      if (gameType === GameType.APPLE_GAME) {
         if (onAppleScored) {
           targetScene.events.on('appleScored', (data: { points: number }) => {
             console.log('🍎 appleScored event received:', data);
@@ -215,7 +208,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
-      } else if (gameType === 'flappy') {
+      } else if (gameType === GameType.FLAPPY_BIRD) {
         // 플래피버드 점프 사운드 이벤트
         if (onFlappyJump) {
           targetScene.events.on('flappyJump', () => {
@@ -283,7 +276,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
-      } else if (gameType === 'minesweeper') {
+      } else if (gameType === GameType.MINESWEEPER) {
         // 지뢰찾기 점수 업데이트 이벤트
         if (onMinesweeperScoreUpdate) {
           targetScene.events.on(
@@ -323,6 +316,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           ...(gameType === GameType.FLAPPY_BIRD && flappyPreset
             ? { preset: flappyPreset }
             : {}),
+          ...(gameType === GameType.MINESWEEPER && minesweeperPreset
+            ? { preset: minesweeperPreset }
+            : {}),
         });
       };
 
@@ -360,9 +356,12 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         ...(gameType === GameType.FLAPPY_BIRD && flappyPreset
           ? { preset: flappyPreset }
           : {}),
+        ...(gameType === GameType.MINESWEEPER && minesweeperPreset
+          ? { preset: minesweeperPreset }
+          : {}),
       });
     }
-  }, [playerCount, players, flappyPreset, config, gameType]);
+  }, [playerCount, players, flappyPreset, minesweeperPreset, config, gameType]);
 
   // 구현되지 않은 게임 타입
   if (!config) {

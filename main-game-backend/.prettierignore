@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Cache
+.cache
+.parcel-cache
+.turbo
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Generated files
+*.min.js
+*.min.css
+
+# Phaser scene files (auto-generated)
+*.scene
+
+# Package manager
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Misc
+coverage
+.DS_Store

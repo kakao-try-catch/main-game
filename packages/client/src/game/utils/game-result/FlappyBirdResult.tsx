@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
+import { isPlayerHost } from '../../../store/gameStore';
 import type { PlayerResultData } from '../../types/common';
 import type { PlayerId } from '../../types/flappybird.types';
 
@@ -44,7 +45,7 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
   const collidedPlayer = players?.find(
     (p) => p.playerIndex === Number(collidedPlayerId)
   );
-  const playerName = collidedPlayer?.name || '';
+  const playerName = collidedPlayer?.playerName || '';
   const playerColor = collidedPlayer?.color || '#333';
 
   const collisionType = reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!';
@@ -84,6 +85,7 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
             type="button"
             className="nes-btn is-primary"
             style={getButtonStyle(ratio)}
+            disabled={!isPlayerHost()}
             onClick={() => {
               playSFX('buttonClick');
               onReplay();
@@ -95,6 +97,7 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
             type="button"
             className="nes-btn"
             style={getButtonStyle(ratio)}
+            disabled={!isPlayerHost()}
             onClick={() => {
               playSFX('buttonClick');
               onLobby();

@@ -189,12 +189,15 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         mode: Phaser.Scale.NONE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
-      // 비활성 탭/창에서도 게임 루프 계속 실행 (멀티 모니터 지원)
-      disableVisibilityChange: true,
     };
 
     const game = new Phaser.Game(gameConfig);
     gameRef.current = game;
+
+    // Phaser 3에서는 disableVisibilityChange가 제거됨
+    // 대신 pauseOnBlur를 false로 설정하여 탭 전환 시 오디오/사운드 일시정지 방지
+    // 참고: 브라우저의 Page Visibility API로 인해 게임 루프 자체는 비활성 탭에서 일시정지됨 (브라우저 제한)
+    game.sound.pauseOnBlur = false;
 
     onGameReady?.(game);
 

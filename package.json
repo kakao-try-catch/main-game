@@ -17,5 +17,6 @@
   },
   "dependencies": {
     "zustand": "^5.0.10"
-  }
+  },
+  "packageManager": "pnpm@9.12.3"
 }

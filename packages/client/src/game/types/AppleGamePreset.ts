@@ -10,7 +10,7 @@
 export type AppleGridSize = 'S' | 'M' | 'L';
 
 /** 제한 시간 프리셋 */
-export type TimeLimit = 120 | 180 | 240 | number;
+export type TimeLimit = 90 | 120 | 180 | 'manual';
 
 /** 사과 숫자 범위 프리셋 (1-9, 1-5만 지원) */
 export type NumberRange = '1-9' | '1-5';

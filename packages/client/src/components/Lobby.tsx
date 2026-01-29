@@ -2,7 +2,28 @@ import { useState, useEffect } from 'react';
 import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
-import type { Game, GameSettings } from '../game/types/common';
+// import type { Game, GameSettings } from '../game/types/common';
+import type { AppleGamePreset } from '../game/types/AppleGamePreset';
+import type {
+  FlappyBirdGamePreset,
+  PipeGapPreset,
+  PipeWidthPreset,
+  PipeSpacingPreset,
+  PipeSpeedPreset,
+  RopeLengthPreset,
+} from '../game/types/FlappyBirdGamePreset';
+import type {
+  LobbyPlayer,
+  Game,
+  GameSettings,
+  LobbyProps,
+} from '../game/types/common';
+import type {
+  MineSweeperGamePreset,
+  MapSizePreset,
+  DifficultyPreset,
+  TimeLimit,
+} from '../game/types/minesweeperPresets';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 import { useGameStore } from '../store/gameStore';
@@ -30,6 +51,12 @@ const {
   DEFAULT_TIME_LIMIT,
 } = CONSTANTS;
 
+/** 난이도 색상 (쉬움/보통/어려움) */
+const DIFFICULTY_COLORS = {
+  easy: '#4CAF50',
+  normal: '#FF9800',
+  hard: '#F44336',
+} as const;
 function Lobby({ players, onGameStart }: LobbyProps) {
   // 게임 리스트
   const [games] = useState<Game[]>([
@@ -59,8 +86,19 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       appleRange: '1-9',
       includeZero: false,
     },
-    flappy: {},
-    minesweeper: {},
+    flappy: {
+      pipeGap: 'normal', // 상하 파이프 간격
+      pipeWidth: 'normal', // 파이프 넓이
+      pipeSpacing: 'normal', // 좌우 파이프 간격
+      pipeSpeed: 'normal', // 이동 속도
+      ropeLength: 'normal', // 밧줄 길이
+      connectAll: false, // 모두 묶기
+    },
+    minesweeper: {
+      mapSize: 'medium',
+      timeLimit: 180,
+      mineRatio: 'normal', // easy: 10%, normal: 20%, hard: 30%
+    },
   });
 
   // 방장 여부 확인 (myselfIndex가 변경될 때마다 리렌더링)
@@ -176,15 +214,46 @@ function Lobby({ players, onGameStart }: LobbyProps) {
     if (selectedGame === 'apple') {
       onGameStart('apple', null);
     } else if (selectedGame === 'flappy') {
-      // 플래피 버드 기본 프리셋
-      const preset = {
-        pipeSpeed: 'normal' as const,
-        pipeSpacing: 'normal' as const,
+      const settings = gameSettings.flappy;
+
+      const preset: FlappyBirdGamePreset = {
+        pipeGap: (settings.pipeGap || 'normal') as PipeGapPreset,
+        pipeWidth: (settings.pipeWidth || 'normal') as PipeWidthPreset,
+        pipeSpacing: (settings.pipeSpacing || 'normal') as PipeSpacingPreset,
+        pipeSpeed: (settings.pipeSpeed || 'normal') as PipeSpeedPreset,
+        ropeLength: (settings.ropeLength || 'normal') as RopeLengthPreset,
+        connectAll: settings.connectAll ?? false,
       };
       onGameStart('flappy', preset);
     } else if (selectedGame === 'minesweeper') {
-      // 지뢰찾기는 아직 구현되지 않음
-      onGameStart('minesweeper', {});
+      const settings = gameSettings.minesweeper;
+
+      // mapSize 변환
+      let mapSize: MapSizePreset = 'medium';
+      if (settings.mapSize === 'small') mapSize = 'small';
+      else if (settings.mapSize === 'medium') mapSize = 'medium';
+      else if (settings.mapSize === 'large') mapSize = 'large';
+
+      // difficulty 변환 (mineRatio)
+      let difficulty: DifficultyPreset = 'normal';
+      if (settings.mineRatio === 'easy') difficulty = 'easy';
+      else if (settings.mineRatio === 'normal') difficulty = 'normal';
+      else if (settings.mineRatio === 'hard') difficulty = 'hard';
+
+      const preset: MineSweeperGamePreset = {
+        mapSize,
+        difficulty,
+        timeLimit:
+          settings.timeLimit === -1
+            ? 'manual'
+            : (settings.timeLimit as TimeLimit),
+        manualTime:
+          settings.timeLimit === -1 || ![120, 180, 240].includes(settings.timeLimit || 0)
+            ? settings.timeLimit
+            : undefined,
+      };
+
+      onGameStart('minesweeper', preset);
     }
   };
 
@@ -277,7 +346,15 @@ function Lobby({ players, onGameStart }: LobbyProps) {
         {/* 오른쪽: 게임 리스트 */}
         <div className="lobby-right">
           <div className="nes-container is-rounded game-section">
-            <h2 className="section-title">게임 선택</h2>
+            <div className="section-header">
+              <h2 className="section-title">게임 선택</h2>
+              <div className="difficulty-legend">
+                <span className="legend-label">난이도:</span>
+                <span style={{ color: DIFFICULTY_COLORS.easy }}>쉬움</span>
+                <span style={{ color: DIFFICULTY_COLORS.normal }}>보통</span>
+                <span style={{ color: DIFFICULTY_COLORS.hard }}>어려움</span>
+              </div>
+            </div>
             <div className="game-list">
               {/* 이거 map 이어야 함? */}
               {games.map((game) => {
@@ -324,17 +401,26 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.mapSize === 'large'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.mapSize === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
                               >
-                                <option value="small">작음</option>
-                                <option value="normal">보통</option>
-                                <option value="large">큼</option>
+                                <option value="large" style={{ color: DIFFICULTY_COLORS.easy }}>큼 (30x15)</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통 (20x10)</option>
+                                <option value="small" style={{ color: DIFFICULTY_COLORS.hard }}>작음 (16x8)</option>
                               </select>
                             </div>
                           </div>
                           <div className="setting-item time-limit-setting">
                             <label>제한 시간:</label>
                             {settings.timeLimit === -1 ||
-                            (![120, 180, 240].includes(
+                            (![180, 120, 90].includes(
                               settings.timeLimit || 0,
                             ) &&
                               settings.timeLimit !== undefined) ? (
@@ -401,10 +487,19 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                       val,
                                     );
                                   }}
+                                  onFocus={() => handleSelectGame(game.id)}
+                                  style={{
+                                    color:
+                                      settings.timeLimit === 180
+                                        ? DIFFICULTY_COLORS.easy
+                                        : settings.timeLimit === 120
+                                          ? DIFFICULTY_COLORS.normal
+                                          : DIFFICULTY_COLORS.hard,
+                                  }}
                                 >
-                                  <option value={120}>120초</option>
-                                  <option value={180}>180초</option>
-                                  <option value={240}>240초</option>
+                                  <option value={180} style={{ color: DIFFICULTY_COLORS.easy }}>180초</option>
+                                  <option value={120} style={{ color: DIFFICULTY_COLORS.normal }}>120초</option>
+                                  <option value={90} style={{ color: DIFFICULTY_COLORS.hard }}>90초</option>
                                   <option value={-1}>직접 입력</option>
                                 </select>
                               </div>
@@ -427,27 +522,406 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                     e.target.value,
                                   )
                                 }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.appleRange === '1-9'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : DIFFICULTY_COLORS.hard,
+                                }}
                               >
-                                <option value="1-9">쉬움(1-9)</option>
-                                <option value="1-5">어려움(1-5)</option>
+                                <option value="1-9" style={{ color: DIFFICULTY_COLORS.easy }}>쉬움(1-9)</option>
+                                <option value="1-5" style={{ color: DIFFICULTY_COLORS.hard }}>어려움(1-5)</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>0 생성:</label>
+                            <div className="radio-group">
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`includeZero-${game.id}`}
+                                  checked={!settings.includeZero}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'includeZero',
+                                      false,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`includeZero-${game.id}`}
+                                  checked={settings.includeZero}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'includeZero',
+                                      true,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.hard }}>O</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      ) : game.id === 'flappy' ? (
+                        <div
+                          className="settings-edit settings-flappy"
+                          onClick={(e) => {
+                            if (selectedGame !== game.id) {
+                              handleSelectGame(game.id);
+                            }
+                            e.stopPropagation();
+                          }}
+                        >
+                          <div className="setting-item">
+                            <label>상하 간격:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeGap}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeGap',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.pipeGap === 'wide'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.pipeGap === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>파이프 넓이:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeWidth}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeWidth',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.pipeWidth === 'narrow'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.pipeWidth === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.easy }}>좁음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.hard }}>넓음</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>좌우 간격:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeSpacing}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeSpacing',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.pipeSpacing === 'wide'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.pipeSpacing === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>이동 속도:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeSpeed}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeSpeed',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.pipeSpeed === 'slow'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.pipeSpeed === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="slow" style={{ color: DIFFICULTY_COLORS.easy }}>느림</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="fast" style={{ color: DIFFICULTY_COLORS.hard }}>빠름</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>줄 길이:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.ropeLength}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'ropeLength',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.ropeLength === 'long'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.ropeLength === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="long" style={{ color: DIFFICULTY_COLORS.easy }}>길음</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
+                                <option value="short" style={{ color: DIFFICULTY_COLORS.hard }}>짧음</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* 모두 묶기 라디오 */}
+                          <div className="setting-item">
+                            <label>모두 묶기:</label>
+                            <div className="radio-group">
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`connectAll-${game.id}`}
+                                  checked={!settings.connectAll}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'connectAll',
+                                      false,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  className="nes-radio"
+                                  name={`connectAll-${game.id}`}
+                                  checked={settings.connectAll ?? false}
+                                  onChange={() =>
+                                    handleSettingChange(
+                                      game.id,
+                                      'connectAll',
+                                      true,
+                                    )
+                                  }
+                                  onFocus={() => handleSelectGame(game.id)}
+                                />
+                                <span style={{ color: DIFFICULTY_COLORS.hard }}>O</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      ) : game.id === 'minesweeper' ? (
+                        <div
+                          className="settings-edit"
+                          onClick={(e) => {
+                            if (selectedGame !== game.id) {
+                              handleSelectGame(game.id);
+                            }
+                            e.stopPropagation();
+                          }}
+                        >
+                          <div className="setting-item">
+                            <label>맵 크기:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.mapSize}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'mapSize',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.mapSize === 'large'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.mapSize === 'medium'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option value="large" style={{ color: DIFFICULTY_COLORS.easy }}>큼 (60x30)</option>
+                                <option value="medium" style={{ color: DIFFICULTY_COLORS.normal }}>보통 (40x20)</option>
+                                <option value="small" style={{ color: DIFFICULTY_COLORS.hard }}>작음 (20x10)</option>
                               </select>
                             </div>
                           </div>
                           <div className="setting-item time-limit-setting">
-                            <label>0 생성:</label>
-                            <div className="nes-select is-small">
-                              <select
-                                value={settings.includeZero ? 'O' : 'X'}
+                            <label>제한 시간:</label>
+                            {settings.timeLimit === -1 ||
+                            (![240, 180, 120].includes(
+                              settings.timeLimit || 0,
+                            ) &&
+                              settings.timeLimit !== undefined) ? (
+                              <input
+                                type="number"
+                                value={
+                                  settings.timeLimit === -1
+                                    ? ''
+                                    : settings.timeLimit
+                                }
                                 onChange={(e) =>
                                   handleSettingChange(
                                     game.id,
-                                    'includeZero',
-                                    e.target.value === 'O',
+                                    'timeLimit',
+                                    e.target.value
+                                      ? parseInt(e.target.value)
+                                      : -1,
                                   )
                                 }
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.currentTarget.blur();
+                                  }
+                                }}
+                                className="nes-input is-small"
+                                placeholder="초"
+                                min={MIN_TIME_LIMIT}
+                                max={MAX_TIME_LIMIT}
+                                autoFocus
+                                onBlur={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  if (!e.target.value) {
+                                    handleSettingChange(
+                                      game.id,
+                                      'timeLimit',
+                                      180,
+                                    );
+                                  } else if (
+                                    val < MIN_TIME_LIMIT ||
+                                    val > MAX_TIME_LIMIT
+                                  ) {
+                                    showTimeLimitTooltipForGame(game.id);
+                                    setTimeout(() => {
+                                      handleSettingChange(
+                                        game.id,
+                                        'timeLimit',
+                                        180,
+                                      );
+                                    }, 100);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="nes-select is-small">
+                                <select
+                                  value={settings.timeLimit}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    handleSettingChange(
+                                      game.id,
+                                      'timeLimit',
+                                      val,
+                                    );
+                                  }}
+                                  onFocus={() => handleSelectGame(game.id)}
+                                  style={{
+                                    color:
+                                      settings.timeLimit === 240
+                                        ? DIFFICULTY_COLORS.easy
+                                        : settings.timeLimit === 180
+                                          ? DIFFICULTY_COLORS.normal
+                                          : DIFFICULTY_COLORS.hard,
+                                  }}
+                                >
+                                  <option value={240} style={{ color: DIFFICULTY_COLORS.easy }}>240초</option>
+                                  <option value={180} style={{ color: DIFFICULTY_COLORS.normal }}>180초</option>
+                                  <option value={120} style={{ color: DIFFICULTY_COLORS.hard }}>120초</option>
+                                  <option value={-1}>직접 입력</option>
+                                </select>
+                              </div>
+                            )}
+                            {showTimeLimitTooltip[game.id] && (
+                              <div className="time-limit-tooltip">
+                                제한 시간은 30-300초 사이로 설정해주세요
+                              </div>
+                            )}
+                          </div>
+                          <div className="setting-item">
+                            <label>지뢰 비율:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.mineRatio}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'mineRatio',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.mineRatio === 'easy'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.mineRatio === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
                               >
-                                <option value="X">X</option>
-                                <option value="O">O</option>
+                                <option value="easy" style={{ color: DIFFICULTY_COLORS.easy }}>10%</option>
+                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>20%</option>
+                                <option value="hard" style={{ color: DIFFICULTY_COLORS.hard }}>30%</option>
                               </select>
                             </div>
                           </div>

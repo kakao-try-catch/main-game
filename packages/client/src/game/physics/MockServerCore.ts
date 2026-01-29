@@ -43,24 +43,27 @@ export class MockServerCore {
   private screenHeight: number = GAME_HEIGHT;
 
   // 물리 파라미터
-  private readonly GRAVITY_Y = 1.2; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
-  private readonly BIRD_WIDTH = 80; // 57 * 1.4 (해상도 변경 반영)
-  private readonly BIRD_HEIGHT = 50; // 36 * 1.4 (해상도 변경 반영)
+  private readonly GRAVITY_Y = 1; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
+  private readonly BIRD_WIDTH = 72; // 80 * 0.9 (10% 축소)
+  private readonly BIRD_HEIGHT = 53; // 59 * 0.9 (10% 축소, 정수)
   private readonly FLAP_VELOCITY = -10; // 플랩 정도
+  private readonly FLAP_VERTICAL_JITTER_RATIO = 0.2; // 규칙적 플랩 정렬 방지용 수직 변동 비율
   private isGameOverState: boolean = false; // 게임 오버 상태 추적
+  private lastFlapTime: Map<number, number> = new Map(); // 각 새의 마지막 점프 시간
+  private frameCount: number = 0; // 프레임 카운터
 
   // 밧줄 물리 파라미터
-  private readonly IDEAL_LENGTH = 100; // 밧줄 여유 길이 단축 (120 -> 100)
-  private readonly ROPE_STIFFNESS = 0.3; // 밧줄 장력 최대치 근사값
-  private readonly ROPE_SOFTNESS = 50; // 장력 완화 계수 (로그 함수 대체용)
+  private ropeLength: number = 100; // 밧줄 기준 길이
+  private ropeConnections: [number, number][] = []; // 밧줄 연결 쌍
 
-  // 파이프 파라미터
-  private readonly PIPE_WIDTH = 80;
-  private readonly PIPE_GAP = 200;
+  // 파이프 파라미터 (프리셋에서 설정)
+  private pipeWidth: number = 120;
+  private pipeGap: number = 200;
   private pipeSpacing: number = 400; // 파이프 간 거리
-
-  // 파이프 속도 관리 (원래 속도 1.5로 복구)
   private pipeSpeed: number = 1.5;
+  private flapBoostBase: number = 0.3; // 점프 시 기본 전진력
+  private flapBoostRandom: number = 0.7; // 점프 시 랜덤 추가 전진력 범위
+  private connectAll: boolean = false; // 모두 묶기
 
   constructor(socket: MockSocket) {
     this.socket = socket;
@@ -103,11 +106,20 @@ export class MockServerCore {
     this.isGameOverState = false;
     this.pipes = [];
     this.nextPipeId = 0;
+    this.lastFlapTime.clear();
+    this.frameCount = 0;
 
     // 설정 적용
     if (config) {
       this.pipeSpeed = config.pipeSpeed;
       this.pipeSpacing = config.pipeSpacing;
+      this.pipeGap = config.pipeGap;
+      this.pipeWidth = config.pipeWidth;
+      this.flapBoostBase = config.flapBoostBase;
+      this.flapBoostRandom = config.flapBoostRandom;
+      this.ropeLength = config.ropeLength;
+      this.connectAll = config.connectAll;
+      console.log(`[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}, ropeLength=${config.ropeLength}, flapBoost=${config.flapBoostBase}+${config.flapBoostRandom}, connectAll=${config.connectAll}`);
     }
 
     // 바닥 생성
@@ -116,9 +128,32 @@ export class MockServerCore {
     // 설정된 플레이어 수만큼 새 생성
     this.createBirds(this.playerCount);
 
-    // ※ 이제 고정된 Constraint 대신 update 루프에서 동적인 장력을 계산하여 적용합니다.
+    // 밧줄 연결 쌍 계산 (2인: 선형, 3인+: 폐쇄형 도형)
+    this.ropeConnections = this.calculateRopeConnections(this.playerCount);
 
-    console.log('[MockServerCore] 게임 초기화 완료');
+    console.log(`[MockServerCore] 게임 초기화 완료 (밧줄 연결: ${this.ropeConnections.map(c => `${c[0]}-${c[1]}`).join(', ')})`);
+  }
+
+  /**
+   * 밧줄 연결 쌍 계산
+   * connectAll=false: 선형 연결 (0-1, 1-2, 2-3)
+   * connectAll=true: 폐쇄형 도형 (2인: 선형, 3인: 삼각형, 4인: 사각형)
+   */
+  private calculateRopeConnections(playerCount: number): [number, number][] {
+    if (playerCount < 2) return [];
+
+    // 선형 연결 (기본)
+    const connections: [number, number][] = [];
+    for (let i = 0; i < playerCount - 1; i++) {
+      connections.push([i, i + 1]);
+    }
+
+    // 모두 묶기: 마지막 새와 첫 번째 새 연결 (3인 이상)
+    if (this.connectAll && playerCount >= 3) {
+      connections.push([playerCount - 1, 0]);
+    }
+
+    return connections;
   }
 
   /**
@@ -137,10 +172,8 @@ export class MockServerCore {
         label: 'ground',
         collisionFilter: {
           category: CATEGORY_GROUND,
-          mask: CATEGORY_BIRD,
+          mask: 0, // 물리 충돌 비활성화 - checkCollisions에서만 처리
         },
-        friction: 0.5,
-        restitution: 0.2, // 약간의 탄성
       },
     );
 
@@ -151,30 +184,28 @@ export class MockServerCore {
    * 새 생성
    */
   private createBirds(count: number) {
-    const startX = 250; // 좀 더 앞쪽에서 시작
-    const startY = 300;
-    const spacing = 90; // 새들 사이 간격을 촘촘하게 (120 -> 90)
+    // 초기 위치 계산
+    const positions = this.calculateBirdPositions(count);
 
     for (let i = 0; i < count; i++) {
-      // 각 새에 약간의 Y 오프셋을 주어 초기 장력 생성 (물리 안정화)
-      const yOffset = i * 3; // 0, 5, 10, 15 픽셀 차이
+      const { x, y } = positions[i];
 
-      // 새의 형태가 57*36 이므로 원형보다는 직사각형(또는 둥근 사각형)이 적합
+      // 새의 형태가 57*42 이므로 원형보다는 직사각형(또는 둥근 사각형)이 적합
       const bird = Matter.Bodies.rectangle(
-        startX + i * spacing,
-        startY + yOffset,
+        x,
+        y,
         this.BIRD_WIDTH,
         this.BIRD_HEIGHT,
         {
           chamfer: { radius: 10 }, // 모서리를 약간 둥글게 처리
           density: 0.001,
-          restitution: 0.5,
+          restitution: 0.2, // 탄성 없음
           friction: 0.1,
           frictionAir: 0.05,
           label: 'bird',
           collisionFilter: {
             category: CATEGORY_BIRD,
-            mask: CATEGORY_BIRD | CATEGORY_PIPE | CATEGORY_GROUND, // 서로 튕겨나가도록 다시 추가 (게임오버는 아님)
+            mask: CATEGORY_BIRD | CATEGORY_PIPE | CATEGORY_GROUND, // 물리 충돌 비활성화 - checkCollisions에서만 처리
           },
         },
       );
@@ -183,7 +214,57 @@ export class MockServerCore {
       Matter.World.add(this.world, bird);
     }
 
-    console.log(`[MockServerCore] ${count}개의 새 생성 완료 (초기 장력 적용)`);
+    console.log(`[MockServerCore] ${count}개의 새 생성 완료 (connectAll=${this.connectAll})`);
+  }
+
+  /**
+   * 새 초기 위치 계산
+   * connectAll=false: 수평 일렬
+   * connectAll=true: 3인 삼각형, 4인 마름모
+   */
+  private calculateBirdPositions(count: number): { x: number; y: number }[] {
+    const centerX = 300;
+    const centerY = 350;
+    const spacing = 80; // 새들 사이 거리
+
+    // 기본: 수평 일렬 배치
+    if (!this.connectAll || count < 3) {
+      const startX = 250;
+      const startY = 300;
+      return Array.from({ length: count }, (_, i) => ({
+        x: startX + i * 90,
+        y: startY + i * 3, // 약간의 Y 오프셋
+      }));
+    }
+
+    // 모두 묶기: 도형 형태로 배치
+    if (count === 3) {
+      // 삼각형: 위에 1명, 아래에 2명
+      return [
+        { x: centerX, y: centerY - spacing * 0.6 }, // 상단
+        { x: centerX - spacing, y: centerY + spacing * 0.4 }, // 하단 좌
+        { x: centerX + spacing, y: centerY + spacing * 0.4 }, // 하단 우
+      ];
+    }
+
+    if (count === 4) {
+      // 마름모: 상-좌-하-우
+      return [
+        { x: centerX, y: centerY - spacing }, // 상단
+        { x: centerX - spacing, y: centerY }, // 좌측
+        { x: centerX, y: centerY + spacing }, // 하단
+        { x: centerX + spacing, y: centerY }, // 우측
+      ];
+    }
+
+    // 5인 이상: 원형 배치
+    return Array.from({ length: count }, (_, i) => {
+      const angle = (2 * Math.PI * i) / count - Math.PI / 2; // 12시 방향부터 시작
+      return {
+        x: centerX + spacing * Math.cos(angle),
+        y: centerY + spacing * Math.sin(angle),
+      };
+    });
   }
 
   /**
@@ -217,11 +298,14 @@ export class MockServerCore {
    * 물리 업데이트 및 브로드캐스트
    */
   private update() {
+    this.frameCount++;
+
     // 1. 파이프 업데이트 (전체 상태에 대해 한 번만)
     this.updatePipes();
 
     // 2. 개별 새 물리 제어
-    for (const bird of this.birds) {
+    for (let i = 0; i < this.birds.length; i++) {
+      const bird = this.birds[i];
       if (bird.isStatic) continue;
 
       if (this.isGameOverState) {
@@ -233,20 +317,45 @@ export class MockServerCore {
         continue;
       }
 
-      // 1. 공기 저항 (수평 속도 감쇠)
+      // 1. 기본 전진 속도 유지 (pipeSpeed 기준으로 일정한 게임 진행)
+      // 점프를 하지 않으면 감속되어 뒤로 밀림
+      const baseForwardSpeed = this.pipeSpeed * 1.5; // 파이프 속도의 1.5배
+      const currentVelX = bird.velocity.x;
+
+      // 마지막 점프로부터 경과된 프레임 수 (60fps 기준)
+      const lastFlap = this.lastFlapTime.get(i) ?? 0;
+      const framesSinceFlap = this.frameCount - lastFlap;
+
+      // 점프하지 않은 시간이 길수록 더 많이 감속 (30프레임 = 0.5초 기준)
+      const noFlapPenalty = framesSinceFlap > 30 ? 0.97 : 0.995; // 점프 안하면 더 빠른 감속
+
+      // 기본 속도보다 느리면 가속, 빠르면 공기저항으로 감속
+      let newVelX: number;
+      if (currentVelX < baseForwardSpeed) {
+        newVelX = currentVelX + 0.05; // 점진적 가속
+      } else {
+        newVelX = currentVelX * noFlapPenalty; // 점프 안한 새는 더 빠르게 감속
+      }
+
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x * 0.985, // 관성을 유지하면서 자연스럽게 감속
+        x: newVelX,
         y: bird.velocity.y,
       });
-
-      // 그룹 중심 유지 및 개별 순서 보정 로직을 완전히 삭제함.
-      // 이제 새들은 플랩 세기에 따라画面 앞을 뚫고 나가거나 뒤로 완전히 밀려날 수 있음.
     }
 
-    // 3. 가변 장력 적용
-    this.applyDynamicTension();
+    // 3. 밧줄 최대 길이 제한 (단단한 줄)
+    this.enforceRopeConstraint();
 
-    // 2. 물리 서브스테핑 (바닥 뚫림 현상 완벽 차단)
+    // 3-1. velocityY 기반으로 새의 각도 업데이트 (클라이언트 시각적 표시와 일치시킴)
+    for (const bird of this.birds) {
+      if (!bird.isStatic) {
+        // velocityY * 10을 -30 ~ 90도 범위로 클램프 후 라디안 변환
+        const angleDeg = Math.max(-30, Math.min(90, bird.velocity.y * 10));
+        Matter.Body.setAngle(bird, angleDeg * (Math.PI / 180));
+      }
+    }
+
+    // 4. 물리 서브스테핑 (바닥 뚫림 현상 완벽 차단)
     // 60fps 프레임을 5번으로 쪼개서 정밀 연산
     const subSteps = 5;
     const stepTime = 1000 / 60 / subSteps;
@@ -278,41 +387,51 @@ export class MockServerCore {
   }
 
   /**
-   * 동적 장력 계산 및 적용
-   * 거리가 멀수록(팽팽할수록) 서로를 당기는 힘이 강해집니다.
+   * 밧줄 최대 길이 강제 (고무줄처럼 늘어나지 않도록)
+   * 최대 길이를 넘는 순간에만 위치/속도를 보정합니다.
    */
-  private applyDynamicTension() {
-    for (let i = 0; i < this.birds.length - 1; i++) {
-      const birdA = this.birds[i];
-      const birdB = this.birds[i + 1];
+  private enforceRopeConstraint() {
+    for (const [indexA, indexB] of this.ropeConnections) {
+      const birdA = this.birds[indexA];
+      const birdB = this.birds[indexB];
+      if (!birdA || !birdB) continue;
 
       const dx = birdB.position.x - birdA.position.x;
       const dy = birdB.position.y - birdA.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance === 0) continue;
 
-      // 1. 인장력(Tension) 계산: 유리 함수(Rational Function)를 사용하여 로그 함수와 유사한 곡선 구현
-      // 연산 비용이 높은 Math.log 대신 (x * a) / (x + b) 형태의 산술 연산으로 대체
-      if (distance > this.IDEAL_LENGTH) {
-        const stretch = distance - this.IDEAL_LENGTH;
+      if (distance > this.ropeLength) {
+        const nx = dx / distance;
+        const ny = dy / distance;
+        const excess = distance - this.ropeLength;
+        const correction = excess / 2;
 
-        // (stretch * 0.3) / (stretch + 50) 은 0.05 * log(1+stretch)와 매우 유사한 감쇠 곡선을 가짐
-        const forceMagnitude =
-          (stretch * this.ROPE_STIFFNESS) / (stretch + this.ROPE_SOFTNESS);
-
-        const ux = dx / distance;
-        const uy = dy / distance;
-
-        // Bird A를 Bird B 쪽으로 당김
-        Matter.Body.applyForce(birdA, birdA.position, {
-          x: ux * forceMagnitude,
-          y: uy * forceMagnitude,
+        // 위치 보정: 최대 길이를 넘지 않도록 즉시 조정
+        Matter.Body.setPosition(birdA, {
+          x: birdA.position.x + nx * correction,
+          y: birdA.position.y + ny * correction,
+        });
+        Matter.Body.setPosition(birdB, {
+          x: birdB.position.x - nx * correction,
+          y: birdB.position.y - ny * correction,
         });
 
-        // Bird B를 Bird A 쪽으로 당김
-        Matter.Body.applyForce(birdB, birdB.position, {
-          x: -ux * forceMagnitude,
-          y: -uy * forceMagnitude,
-        });
+        // 속도 보정: 줄 방향으로 멀어지는 성분 제거
+        const relVx = birdB.velocity.x - birdA.velocity.x;
+        const relVy = birdB.velocity.y - birdA.velocity.y;
+        const separatingSpeed = relVx * nx + relVy * ny;
+        if (separatingSpeed > 0) {
+          const adjust = separatingSpeed / 2;
+          Matter.Body.setVelocity(birdA, {
+            x: birdA.velocity.x + nx * adjust,
+            y: birdA.velocity.y + ny * adjust,
+          });
+          Matter.Body.setVelocity(birdB, {
+            x: birdB.velocity.x - nx * adjust,
+            y: birdB.velocity.y - ny * adjust,
+          });
+        }
       }
     }
   }
@@ -324,9 +443,11 @@ export class MockServerCore {
     const ropes: RopeData[] = [];
     const segments = 10;
 
-    for (let i = 0; i < this.birds.length - 1; i++) {
-      const birdA = this.birds[i];
-      const birdB = this.birds[i + 1];
+    for (const [indexA, indexB] of this.ropeConnections) {
+      const birdA = this.birds[indexA];
+      const birdB = this.birds[indexB];
+      if (!birdA || !birdB) continue;
+
       const points: { x: number; y: number }[] = [];
 
       for (let j = 0; j <= segments; j++) {
@@ -351,8 +472,10 @@ export class MockServerCore {
       const bird = this.birds[i];
       if (bird.isStatic) continue;
 
-      // 1. 바닥과의 충돌 (상단 표면 FLAPPY_GROUND_Y 기준)
-      if (bird.position.y + this.BIRD_HEIGHT / 2 >= FLAPPY_GROUND_Y) {
+      // 1. 바닥과의 충돌 (상단 표면 FLAPPY_GROUND_Y 기준, 물리 엔진 여유분 5px 포함)
+      const birdBottom = bird.position.y + this.BIRD_HEIGHT / 2;
+      const groundThreshold = FLAPPY_GROUND_Y;
+      if (birdBottom >= groundThreshold) {
         Matter.Body.setPosition(bird, {
           x: bird.position.x,
           y: FLAPPY_GROUND_Y - this.BIRD_HEIGHT / 2,
@@ -388,48 +511,39 @@ export class MockServerCore {
           Matter.Body.setVelocity(bird, { x: 0, y: bird.velocity.y });
         }
       }
-      // 오른쪽 벽 (1440 기준)
-      if (bird.position.x + this.BIRD_WIDTH / 2 >= this.screenWidth) {
-        Matter.Body.setPosition(bird, {
-          x: this.screenWidth - this.BIRD_WIDTH / 2,
-          y: bird.position.y,
-        });
-        if (bird.velocity.x > 0) {
-          Matter.Body.setVelocity(bird, { x: 0, y: bird.velocity.y });
-        }
-      }
+      // 오른쪽 벽 제거됨 - 카메라가 새를 따라가므로 무한히 앞으로 이동 가능
 
-      // 2. 파이프와의 충돌
+      // 2. 파이프와의 충돌 (단순한 정사각형 히트박스, 회전 무시)
       const birdX = bird.position.x;
       const birdY = bird.position.y;
-      const halfBirdW = (this.BIRD_WIDTH * 0.8) / 2;
-      const halfBirdH = (this.BIRD_HEIGHT * 0.8) / 2;
+      const hitboxSize = 36; // 작은 정사각형 히트박스
+      const halfHitbox = hitboxSize / 2;
 
       for (const pipe of this.pipes) {
-        const halfPipeW = pipe.width / 2;
+        const pipeWidth = pipe.width;
+        const halfPipeW = pipeWidth / 2;
+        const pipeLeft = pipe.x - halfPipeW;
+        const pipeRight = pipe.x + halfPipeW;
 
-        // X축 겹침 확인
-        if (
-          birdX + halfBirdW > pipe.x - halfPipeW &&
-          birdX - halfBirdW < pipe.x + halfPipeW
-        ) {
-          const gapTop = pipe.gapY - pipe.gap / 2;
-          const gapBottom = pipe.gapY + pipe.gap / 2;
+        // X축 충돌 체크
+        if (birdX + halfHitbox < pipeLeft || birdX - halfHitbox > pipeRight) {
+          continue;
+        }
 
-          // Y축 충돌 확인 (갭 밖에 있으면 충돌)
-          if (birdY - halfBirdH < gapTop || birdY + halfBirdH > gapBottom) {
-            // 파이프 충돌 시 멈추지 않고 그대로 아래로 미끄러지도록(추락) 수정
-            // setStatic(true)를 하지 않으면 중력에 의해 자연스럽게 떨어짐
-            this.handleGameOver('pipe_collision', String(i) as PlayerId);
-            return;
-          }
+        const gapTop = pipe.gapY - pipe.gap / 2;
+        const gapBottom = pipe.gapY + pipe.gap / 2;
+
+        // Y축 충돌: 새가 갭 밖에 있으면 충돌
+        if (birdY - halfHitbox < gapTop || birdY + halfHitbox > gapBottom) {
+          this.handleGameOver('pipe_collision', String(i) as PlayerId);
+          return;
         }
 
         // 통과 판정 (새의 X 좌표가 파이프의 오른쪽 끝을 지났을 때)
         const playerId = String(i) as PlayerId;
         if (
           !pipe.passedPlayers.includes(playerId) &&
-          birdX - halfBirdW > pipe.x
+          birdX - halfHitbox > pipe.x
         ) {
           pipe.passedPlayers.push(playerId);
 
@@ -449,6 +563,109 @@ export class MockServerCore {
         }
       }
     }
+  }
+
+  private getRotatedRectPoints(
+    cx: number,
+    cy: number,
+    halfW: number,
+    halfH: number,
+    angle: number,
+  ): { x: number; y: number }[] {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const corners = [
+      { x: -halfW, y: -halfH },
+      { x: halfW, y: -halfH },
+      { x: halfW, y: halfH },
+      { x: -halfW, y: halfH },
+    ];
+
+    return corners.map((c) => ({
+      x: cx + c.x * cos - c.y * sin,
+      y: cy + c.x * sin + c.y * cos,
+    }));
+  }
+
+  private getRectPoints(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): { x: number; y: number }[] {
+    return [
+      { x, y },
+      { x: x + width, y },
+      { x: x + width, y: y + height },
+      { x, y: y + height },
+    ];
+  }
+
+  private getAabbFromPoints(points: { x: number; y: number }[]) {
+    let minX = points[0].x;
+    let maxX = points[0].x;
+    let minY = points[0].y;
+    let maxY = points[0].y;
+
+    for (let i = 1; i < points.length; i++) {
+      const p = points[i];
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+
+    return { minX, maxX, minY, maxY };
+  }
+
+  private polygonsIntersect(
+    a: { x: number; y: number }[],
+    b: { x: number; y: number }[],
+  ): boolean {
+    const axes = [...this.getAxes(a), ...this.getAxes(b)];
+
+    for (const axis of axes) {
+      const projA = this.projectOntoAxis(a, axis);
+      const projB = this.projectOntoAxis(b, axis);
+      if (projA.max < projB.min || projB.max < projA.min) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private getAxes(points: { x: number; y: number }[]) {
+    const axes: { x: number; y: number }[] = [];
+    for (let i = 0; i < points.length; i++) {
+      const p1 = points[i];
+      const p2 = points[(i + 1) % points.length];
+      const edgeX = p2.x - p1.x;
+      const edgeY = p2.y - p1.y;
+      const len = Math.hypot(edgeX, edgeY);
+      if (len === 0) continue;
+      const nx = -edgeY / len;
+      const ny = edgeX / len;
+      axes.push({ x: nx, y: ny });
+    }
+
+    return axes;
+  }
+
+  private projectOntoAxis(
+    points: { x: number; y: number }[],
+    axis: { x: number; y: number },
+  ) {
+    let min = points[0].x * axis.x + points[0].y * axis.y;
+    let max = min;
+    for (let i = 1; i < points.length; i++) {
+      const p = points[i];
+      const value = p.x * axis.x + p.y * axis.y;
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+
+    return { min, max };
   }
 
   /**
@@ -505,13 +722,21 @@ export class MockServerCore {
     if (birdIndex >= 0 && birdIndex < this.birds.length) {
       const bird = this.birds[birdIndex];
 
+      // 점프 시간 기록
+      this.lastFlapTime.set(birdIndex, this.frameCount);
+
+      // 플랩 시 약간의 추가 전진력 (새들 간 위치 변화용)
+      // 0.3 + 0~0.7 랜덤 (pipeSpeed에 비례)
+      const extraBoost = this.flapBoostBase + Math.random() * this.flapBoostRandom;
+      // 규칙적인 플랩이 반복될 때 새들이 일직선으로 정렬되는 현상 완화
+      const verticalJitter =
+        (Math.random() - 0.5) * Math.abs(this.FLAP_VELOCITY) * this.FLAP_VERTICAL_JITTER_RATIO;
       Matter.Body.setVelocity(bird, {
-        x: bird.velocity.x + 1.5, // 전진 파워
-        y: this.FLAP_VELOCITY,
+        x: bird.velocity.x + extraBoost,
+        y: this.FLAP_VELOCITY + verticalJitter,
       });
 
-      // 플랩 시 즉시 앞을 보게 함 (0도 유지) 및 회전 속도 초기화
-      Matter.Body.setAngle(bird, 0);
+      // 회전 속도 초기화 (각도는 update()에서 velocityY 기반으로 자동 설정됨)
       Matter.Body.setAngularVelocity(bird, 0);
 
       console.log(`[MockServerCore] Player ${playerId} Flap!`);
@@ -527,8 +752,8 @@ export class MockServerCore {
       id: `pipe_${this.nextPipeId++}`,
       x,
       gapY,
-      width: this.PIPE_WIDTH,
-      gap: this.PIPE_GAP,
+      width: this.pipeWidth,
+      gap: this.pipeGap,
       passed: false,
       passedPlayers: [],
     };
@@ -539,23 +764,37 @@ export class MockServerCore {
   private updatePipes() {
     if (this.isGameOverState) return; // 게임 오버 시 파이프 정지
 
-    // 파이프 이동 (일정한 속도 유지)
-    for (const pipe of this.pipes) {
-      pipe.x -= this.pipeSpeed;
+    // 새들의 평균 X 위치 계산 (카메라 기준점)
+    let avgBirdX = 250; // 기본값
+    if (this.birds.length > 0) {
+      let totalX = 0;
+      for (const bird of this.birds) {
+        totalX += bird.position.x;
+      }
+      avgBirdX = totalX / this.birds.length;
     }
 
     // 화면 밖으로 나간 파이프 제거
-    this.pipes = this.pipes.filter((pipe) => pipe.x > -this.PIPE_WIDTH);
+    this.pipes = this.pipes.filter((pipe) => pipe.x > -this.pipeWidth);
+    // 카메라 뷰 범위 계산 (새들 기준)
+    const viewLeft = avgBirdX - this.screenWidth / 4;
+    const viewRight = avgBirdX + (this.screenWidth * 3) / 4;
 
-    // 거리 기반 파이프 생성 (일정한 간격 유지)
-    // 마지막 파이프가 없거나, 마지막 파이프가 충분히 왼쪽으로 이동했을 때 새 파이프 생성
-    const shouldSpawnPipe =
-      this.pipes.length === 0 ||
-      this.pipes[this.pipes.length - 1].x <=
-        this.screenWidth - this.pipeSpacing;
+    // 새들 앞에 파이프 미리 생성 (화면 오른쪽 + 여유 공간)
+    const spawnAhead = this.screenWidth; // 화면 너비만큼 앞에 미리 생성
+    const targetX = viewRight + spawnAhead;
 
-    if (shouldSpawnPipe) {
-      this.createPipe(this.screenWidth + this.PIPE_WIDTH);
+    // 뷰 오른쪽 + spawnAhead까지 파이프 생성
+    let maxPipeX = this.pipes.length > 0
+      ? Math.max(...this.pipes.map(p => p.x))
+      : viewLeft;
+
+    while (maxPipeX < targetX) {
+      const newPipeX = this.pipes.length === 0
+        ? viewRight + this.pipeSpacing
+        : maxPipeX + this.pipeSpacing;
+      this.createPipe(newPipeX);
+      maxPipeX = newPipeX;
     }
   }
 
@@ -566,6 +805,12 @@ export class MockServerCore {
     return {
       pipeSpeed: this.pipeSpeed,
       pipeSpacing: this.pipeSpacing,
+      pipeGap: this.pipeGap,
+      pipeWidth: this.pipeWidth,
+      ropeLength: this.ropeLength,
+      flapBoostBase: this.flapBoostBase,
+      flapBoostRandom: this.flapBoostRandom,
+      connectAll: this.connectAll,
     };
   }
 

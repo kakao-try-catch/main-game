@@ -477,6 +477,13 @@ export class MineSweeperMockCore {
       remainingMines: this.remainingMines,
       timestamp: Date.now(),
     });
+
+    // 깃발 카운트 업데이트 이벤트 전송 (React UI용)
+    const flagCounts: Record<string, number> = {};
+    for (const [id, playerData] of this.players.entries()) {
+      flagCounts[id] = playerData.flagsPlaced;
+    }
+    this.socket.triggerEvent('flagCountUpdate', flagCounts);
   }
 
   /**

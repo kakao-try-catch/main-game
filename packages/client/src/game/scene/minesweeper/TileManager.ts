@@ -245,6 +245,7 @@ export default class TileManager {
       state: TileState;
       adjacentMines?: number;
       isMine?: boolean;
+      revealedBy?: string | null;
       flaggedBy?: string | null;
       distance: number;
     }>,
@@ -276,6 +277,7 @@ export default class TileManager {
             tile.state,
             tile.adjacentMines,
             tile.isMine,
+            tile.revealedBy,
             tile.flaggedBy,
           );
 

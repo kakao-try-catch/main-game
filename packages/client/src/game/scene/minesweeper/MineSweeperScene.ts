@@ -225,7 +225,7 @@ export default class MineSweeperScene extends Phaser.Scene {
 
       // 점수 업데이트 이벤트가 처리될 시간을 주기 위해 약간의 딜레이 후 게임 종료
       setTimeout(() => {
-        this.emitGameEnd();
+        this.emitGameEnd(scoreUpdates);
       }, 100);
     } else {
       // 실제 서버 모드: 서버에 타임업 알림
@@ -240,13 +240,24 @@ export default class MineSweeperScene extends Phaser.Scene {
 
   /**
    * 게임 종료 이벤트 발생
+   * @param flagStats 플레이어별 깃발 통계 (correctFlags, totalFlags)
    */
-  private emitGameEnd(): void {
-    // 플레이어 데이터에 playerIndex 추가
-    const playersWithIndex = this.players.map((player, index) => ({
-      ...player,
-      playerIndex: index,
-    }));
+  private emitGameEnd(
+    flagStats?: Map<
+      string,
+      { correctFlags: number; incorrectFlags: number }
+    >,
+  ): void {
+    // 플레이어 데이터에 playerIndex와 깃발 통계 추가
+    const playersWithIndex = this.players.map((player, index) => {
+      const stats = flagStats?.get(player.id);
+      return {
+        ...player,
+        playerIndex: index,
+        correctFlags: stats?.correctFlags ?? 0,
+        totalFlags: (stats?.correctFlags ?? 0) + (stats?.incorrectFlags ?? 0),
+      };
+    });
 
     // React로 게임 종료 이벤트 전달
     this.events.emit('gameEnd', { players: playersWithIndex });
@@ -439,6 +450,7 @@ export default class MineSweeperScene extends Phaser.Scene {
               state: any;
               adjacentMines?: number;
               isMine?: boolean;
+              revealedBy?: string | null;
               flaggedBy?: string | null;
               distance: number;
             }>,
@@ -455,6 +467,7 @@ export default class MineSweeperScene extends Phaser.Scene {
               tileUpdate.state,
               tileUpdate.adjacentMines,
               tileUpdate.isMine,
+              tileUpdate.revealedBy,
               tileUpdate.flaggedBy,
             );
 
@@ -504,6 +517,13 @@ export default class MineSweeperScene extends Phaser.Scene {
       }
     });
 
+    // 깃발 카운트 업데이트 이벤트
+    this.socket.on('flagCountUpdate', (data: Record<string, number>) => {
+      console.log('[MineSweeperScene] flagCountUpdate 수신:', data);
+      // React UI로 전달
+      this.events.emit('flagCountUpdate', data);
+    });
+
     // 게임 종료 이벤트 (서버에서 전송)
     this.socket.on('game_end', (data: any) => {
       console.log('[MineSweeperScene] 서버로부터 game_end 수신:', data);
@@ -520,21 +540,37 @@ export default class MineSweeperScene extends Phaser.Scene {
         );
       }
 
-      // 서버에서 받은 최종 플레이어 데이터로 업데이트 (있는 경우)
+      // 서버에서 받은 최종 플레이어 데이터로 업데이트 및 깃발 통계 추출
+      const flagStats = new Map<
+        string,
+        { correctFlags: number; incorrectFlags: number }
+      >();
+
       if (data.players) {
         // 서버에서 받은 플레이어 데이터를 로컬 플레이어 배열과 병합
         data.players.forEach((serverPlayer: any) => {
           const localPlayer = this.players.find(
-            (p) => p.id === serverPlayer.id,
+            (p) => p.id === serverPlayer.id || p.id === serverPlayer.playerId,
           );
           if (localPlayer) {
             localPlayer.score = serverPlayer.score;
           }
+
+          // 깃발 통계 추출
+          const playerId = serverPlayer.id || serverPlayer.playerId;
+          if (playerId) {
+            flagStats.set(playerId, {
+              correctFlags: serverPlayer.correctFlags ?? 0,
+              incorrectFlags:
+                (serverPlayer.totalFlags ?? 0) -
+                (serverPlayer.correctFlags ?? 0),
+            });
+          }
         });
       }
 
-      // 게임 종료 처리
-      this.emitGameEnd();
+      // 게임 종료 처리 (깃발 통계 포함)
+      this.emitGameEnd(flagStats);
     });
   }
 
@@ -707,6 +743,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     this.socket.off('game_init');
     this.socket.off('tile_update');
     this.socket.off('score_update');
+    this.socket.off('flagCountUpdate');
     this.socket.off('game_end');
     this.events.off('updatePlayers');
 

@@ -11,9 +11,9 @@
 // ============= BGM Imports =============
 import appleGameBGM from '../assets/sounds/BGM/applegamebgm.mp3';
 import flappyBirdBGM from '../assets/sounds/BGM/flappybirdbgm.mp3';
+import minesweeperBGM from '../assets/sounds/BGM/minesweeperbgm.mp3';
 // TODO: 나중에 추가
 // import lobbyBGM from '../assets/sounds/lobby.mp3';
-// import minesweeperBGM from '../assets/sounds/minesweeper.mp3';
 
 // ============= SFX Imports =============
 // 사과 게임 SFX
@@ -95,7 +95,7 @@ export const BGM_CONFIG: Record<BGMName, SoundConfig> = {
     volume: 0.8,
   },
   minesweeper: {
-    file: appleGameBGM, // TODO: 지뢰찾기 BGM 추가 필요
+    file: minesweeperBGM,
     volume: 0.8,
   },
 };

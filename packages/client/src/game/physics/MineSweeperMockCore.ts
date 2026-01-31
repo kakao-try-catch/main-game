@@ -265,8 +265,10 @@ export class MineSweeperMockCore {
     playerId: PlayerId,
   ): void {
     // BFS로 열릴 타일을 거리별로 그룹화
-    const tilesByDistance: Map<number, Array<{ row: number; col: number }>> =
-      new Map();
+    const tilesByDistance: Map<
+      number,
+      Array<{ row: number; col: number }>
+    > = new Map();
     const visited = new Set<string>();
     const queue: Array<{ row: number; col: number; distance: number }> = [
       { row, col, distance: 0 },
@@ -514,6 +516,13 @@ export class MineSweeperMockCore {
         const flaggerPlayer = this.players.get(originalFlagger);
         if (flaggerPlayer) {
           flaggerPlayer.flagsPlaced--;
+
+          // 깃발 카운트 업데이트 이벤트 전송 (React UI용)
+          const flagCounts: Record<string, number> = {};
+          for (const [id, playerData] of this.players.entries()) {
+            flagCounts[id] = playerData.flagsPlaced;
+          }
+          this.socket.triggerEvent('flagCountUpdate', flagCounts);
         }
       }
 

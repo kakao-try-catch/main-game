@@ -59,6 +59,11 @@ export default class MineSweeperScene extends Phaser.Scene {
   // 남은 지뢰 수
   private remainingMines: number = 0;
 
+  // 클릭 불가 상태 (지뢰 클릭 시 페널티)
+  private isClickDisabled: boolean = false;
+  private clickDisabledTimer?: Phaser.Time.TimerEvent;
+  private readonly CLICK_DISABLE_DURATION: number = 3000; // 3초
+
   // UI 컨테이너
   private gameContainer!: Phaser.GameObjects.Container;
 
@@ -243,10 +248,7 @@ export default class MineSweeperScene extends Phaser.Scene {
    * @param flagStats 플레이어별 깃발 통계 (correctFlags, totalFlags)
    */
   private emitGameEnd(
-    flagStats?: Map<
-      string,
-      { correctFlags: number; incorrectFlags: number }
-    >,
+    flagStats?: Map<string, { correctFlags: number; incorrectFlags: number }>,
   ): void {
     // 플레이어 데이터에 playerIndex와 깃발 통계 추가
     const playersWithIndex = this.players.map((player, index) => {
@@ -363,6 +365,12 @@ export default class MineSweeperScene extends Phaser.Scene {
     col: number,
     isRightClick: boolean,
   ): void {
+    // 클릭 불가 상태면 무시
+    if (this.isClickDisabled) {
+      console.log('[MineSweeperScene] 클릭 불가 상태 - 클릭 무시');
+      return;
+    }
+
     if (isRightClick) {
       // 우클릭: 깃발 토글
       this.socket.emit('toggle_flag', {
@@ -380,6 +388,34 @@ export default class MineSweeperScene extends Phaser.Scene {
       });
       console.log(`[MineSweeperScene] 타일 열기 요청: (${row}, ${col})`);
     }
+  }
+
+  /**
+   * 클릭 불가 상태 활성화 (지뢰 클릭 페널티)
+   */
+  private activateClickDisable(): void {
+    // 이미 비활성화 상태면 타이머만 리셋
+    if (this.clickDisabledTimer) {
+      this.clickDisabledTimer.destroy();
+    }
+
+    this.isClickDisabled = true;
+
+    // 커서를 not-allowed로 변경
+    this.input.setDefaultCursor('not-allowed');
+
+    // 3초 후 클릭 가능 상태로 복귀
+    this.clickDisabledTimer = this.time.delayedCall(
+      this.CLICK_DISABLE_DURATION,
+      () => {
+        this.isClickDisabled = false;
+
+        // 커서를 기본으로 복원 (CSS 기본 커서 적용)
+        this.input.setDefaultCursor('');
+
+        console.log('[MineSweeperScene] 클릭 가능 상태로 복귀');
+      },
+    );
   }
 
   /**
@@ -459,6 +495,7 @@ export default class MineSweeperScene extends Phaser.Scene {
         } else {
           // 일반 업데이트 (즉시 반영)
           let hasNonMineTile = false;
+          let hasMineTile = false;
 
           for (const tileUpdate of data.tiles) {
             const isMine = this.tileManager.updateTileState(
@@ -475,11 +512,25 @@ export default class MineSweeperScene extends Phaser.Scene {
             if (!isMine && tileUpdate.state === TileState.REVEALED) {
               hasNonMineTile = true;
             }
+
+            // 지뢰 타일이 열렸는지 확인 (내가 연 타일만)
+            if (
+              tileUpdate.isMine &&
+              tileUpdate.state === TileState.REVEALED &&
+              tileUpdate.revealedBy === this.myPlayerId
+            ) {
+              hasMineTile = true;
+            }
           }
 
           // 지뢰가 아닌 타일이 열렸을 때만 타일 열기 사운드 이벤트 발생
           if (hasNonMineTile) {
             this.events.emit('minesweeperTileReveal');
+          }
+
+          // 내가 지뢰를 열었으면 클릭 불가 상태 활성화
+          if (hasMineTile) {
+            this.activateClickDisable();
           }
         }
 
@@ -718,6 +769,12 @@ export default class MineSweeperScene extends Phaser.Scene {
   shutdown() {
     console.log('[MineSweeperScene] shutdown 호출됨');
 
+    // 클릭 불가 타이머 정리
+    if (this.clickDisabledTimer) {
+      this.clickDisabledTimer.destroy();
+      this.clickDisabledTimer = undefined;
+    }
+
     // Mock 서버 코어 정리
     if (this.mockServerCore) {
       this.mockServerCore.destroy();
@@ -756,7 +813,6 @@ export default class MineSweeperScene extends Phaser.Scene {
 
     // 마우스 이벤트 리스너 제거
     this.input.off('pointerdown');
-
     console.log('[MineSweeperScene] shutdown 완료');
   }
 

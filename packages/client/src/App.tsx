@@ -5,6 +5,7 @@ import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
 
 import PlayerCard from './components/PlayerCard';
+import TintedFlagIcon from './components/TintedFlagIcon';
 import GameResult from './game/utils/game-result/GameResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
@@ -28,7 +29,6 @@ import flappyBird1 from './assets/images/flappybird_1.png';
 import flappyBird2 from './assets/images/flappybird_2.png';
 import flappyBird3 from './assets/images/flappybird_3.png';
 import flappyBird4 from './assets/images/flappybird_4.png';
-import flagPng from './assets/images/flag_other.png';
 
 import './App.css';
 import { socketManager } from './network/socket';
@@ -469,8 +469,13 @@ function AppContent() {
                   name={player.name}
                   score={player.score}
                   color={player.color}
-                  spriteFlag={flagPng}
-                  flagCount={flagCounts[player.id] || 0}
+                  extraContent={
+                    <TintedFlagIcon color={player.color}>
+                      <span style={{ color: '#212529', fontSize: '20px' }}>
+                        {flagCounts[player.id] || 0}
+                      </span>
+                    </TintedFlagIcon>
+                  }
                 />
               ))}
 

@@ -8,8 +8,7 @@ interface PlayerCardProps {
   spriteSrc?: string;
   spriteAlt?: string;
   showScore?: boolean;
-  flagCount?: number;
-  spriteFlag?: string;
+  extraContent?: React.ReactNode;
 }
 
 export const getNameFontSize = (nameLength: number): string => {
@@ -25,27 +24,11 @@ export default function PlayerCard({
   spriteSrc,
   spriteAlt,
   showScore = true,
-  flagCount = 0,
-  spriteFlag,
+  extraContent,
 }: PlayerCardProps) {
-  const cardHeight = spriteSrc || spriteFlag ? 110 : 80;
+  const cardHeight = spriteSrc || extraContent ? 110 : 80;
   const displayScore = showScore;
   const safeScore = typeof score === 'number' ? score : 0;
-  const safeFlagCount = typeof flagCount === 'number' ? flagCount : 0;
-  const flagStyle: React.CSSProperties = {
-    width: 24,
-    height: 24,
-    display: 'inline-block',
-    backgroundColor: color,
-    WebkitMaskImage: spriteFlag ? `url(${spriteFlag})` : undefined,
-    WebkitMaskRepeat: 'no-repeat',
-    WebkitMaskSize: 'contain',
-    WebkitMaskPosition: 'center',
-    maskImage: spriteFlag ? `url(${spriteFlag})` : undefined,
-    maskRepeat: 'no-repeat',
-    maskSize: 'contain',
-    maskPosition: 'center',
-  };
 
   return (
     <div style={cardWrapperStyle}>
@@ -77,16 +60,7 @@ export default function PlayerCard({
             {name}
           </span>
         </div>
-        {spriteFlag && (
-          <div style={flagContainerStyle}>
-            <span role="img" aria-label="flag" style={flagStyle} />
-            <span
-              style={{ color: '#212529', fontSize: '20px', marginLeft: '4px' }}
-            >
-              {safeFlagCount}
-            </span>
-          </div>
-        )}
+        {extraContent}
         {displayScore && (
           <span style={{ color: '#212529', fontSize: '28px' }}>
             {safeScore.toLocaleString()}
@@ -131,9 +105,3 @@ const spriteStyle: React.CSSProperties = {
   imageRendering: 'pixelated',
 };
 
-const flagContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '32px',
-};

@@ -80,6 +80,8 @@ export function handleClientPacket(
       '[Server] handleClientPacket received packet type:',
       packet.type,
     );
+
+    // JOIN_ROOM 처리
     if (packet.type === SystemPacketType.JOIN_ROOM) {
       joinPlayerToGame(io, socket, packet.roomId, packet.playerName);
       return;
@@ -91,6 +93,7 @@ export function handleClientPacket(
     const session = sessions.get(roomId);
     if (!session) return;
 
+    // System 패킷 처리
     switch (packet.type) {
       case SystemPacketType.GAME_START_REQ: {
         console.log(`[Server] GAME_START_REQ received from ${socket.id}`);
@@ -117,66 +120,6 @@ export function handleClientPacket(
         break;
       }
 
-      case AppleGamePacketType.DRAWING_DRAG_AREA: {
-        // 브로드캐스트 (나 제외)
-        // 검증 로직 필요함. 게임 안쪽 영역이 맞는지, 그리고 정규화된 건지
-        // 드래그 영역은 정규화가 필요함.
-        // 추가: 이전에 보냈던 것과 동일한지 비교해 동일한 패킷이 3번까지만 브로드캐스트,
-        // 4번째부터는 무시하도록 함.
-        const playerIndex = session.getIndex(socket.id);
-        const sx = packet.startX;
-        const sy = packet.startY;
-        const ex = packet.endX;
-        const ey = packet.endY;
-
-        const prev = playerDragState.get(playerIndex);
-        const isSame =
-          !!prev &&
-          prev.startX === sx &&
-          prev.startY === sy &&
-          prev.endX === ex &&
-          prev.endY === ey;
-
-        if (isSame) {
-          prev.repeatCount = (prev.repeatCount || 0) + 1;
-          if (prev.repeatCount <= 3 || true) {
-            socket.to(roomId).emit(AppleGamePacketType.UPDATE_DRAG_AREA, {
-              type: AppleGamePacketType.UPDATE_DRAG_AREA,
-              playerIndex: playerIndex,
-              startX: sx,
-              startY: sy,
-              endX: ex,
-              endY: ey,
-            });
-          } else {
-            // 4번째 이상 동일한 패킷은 무시
-            // 필요하면 로깅 추가
-          }
-        } else {
-          playerDragState.set(playerIndex, {
-            startX: sx,
-            startY: sy,
-            endX: ex,
-            endY: ey,
-            repeatCount: 1,
-          });
-          socket.to(roomId).emit(AppleGamePacketType.UPDATE_DRAG_AREA, {
-            type: AppleGamePacketType.UPDATE_DRAG_AREA,
-            playerIndex: playerIndex,
-            startX: sx,
-            startY: sy,
-            endX: ex,
-            endY: ey,
-          });
-        }
-
-        break;
-      }
-
-      case AppleGamePacketType.CONFIRM_DRAG_AREA:
-        session.handleDragConfirm(socket.id, packet.indices);
-        break;
-
       case SystemPacketType.GAME_CONFIG_UPDATE_REQ:
         // Only host may update game config
         if (!session.isHost(socket.id)) {
@@ -195,8 +138,77 @@ export function handleClientPacket(
       case SystemPacketType.REPLAY_REQ:
         session.handleReplayRequest(socket.id);
         break;
+    }
 
-      // TODO: 게임 시작 요청 등이 있다면 추가
+    //     case AppleGamePacketType.DRAWING_DRAG_AREA: {
+    //   // 브로드캐스트 (나 제외)
+    //   // 검증 로직 필요함. 게임 안쪽 영역이 맞는지, 그리고 정규화된 건지
+    //   // 드래그 영역은 정규화가 필요함.
+    //   // 추가: 이전에 보냈던 것과 동일한지 비교해 동일한 패킷이 3번까지만 브로드캐스트,
+    //   // 4번째부터는 무시하도록 함.
+    //   const playerIndex = session.getIndex(socket.id);
+    //   const sx = packet.startX;
+    //   const sy = packet.startY;
+    //   const ex = packet.endX;
+    //   const ey = packet.endY;
+
+    //   const prev = playerDragState.get(playerIndex);
+    //   const isSame =
+    //     !!prev &&
+    //     prev.startX === sx &&
+    //     prev.startY === sy &&
+    //     prev.endX === ex &&
+    //     prev.endY === ey;
+
+    //   if (isSame) {
+    //     prev.repeatCount = (prev.repeatCount || 0) + 1;
+    //     if (prev.repeatCount <= 3 || true) {
+    //       socket.to(roomId).emit(AppleGamePacketType.UPDATE_DRAG_AREA, {
+    //         type: AppleGamePacketType.UPDATE_DRAG_AREA,
+    //         playerIndex: playerIndex,
+    //         startX: sx,
+    //         startY: sy,
+    //         endX: ex,
+    //         endY: ey,
+    //       });
+    //     } else {
+    //       // 4번째 이상 동일한 패킷은 무시
+    //       // 필요하면 로깅 추가
+    //     }
+    //   } else {
+    //     playerDragState.set(playerIndex, {
+    //       startX: sx,
+    //       startY: sy,
+    //       endX: ex,
+    //       endY: ey,
+    //       repeatCount: 1,
+    //     });
+    //     socket.to(roomId).emit(AppleGamePacketType.UPDATE_DRAG_AREA, {
+    //       type: AppleGamePacketType.UPDATE_DRAG_AREA,
+    //       playerIndex: playerIndex,
+    //       startX: sx,
+    //       startY: sy,
+    //       endX: ex,
+    //       endY: ey,
+    //     });
+    //   }
+
+    //   break;
+    // }
+
+    // case AppleGamePacketType.CONFIRM_DRAG_AREA:
+    //   session.handleDragConfirm(socket.id, packet.indices);
+    //   break;
+
+    // 게임별 패킷 라우팅
+    if (packet.type.startsWith('APPLE_')) {
+      session.handleGamePacket(socket.id, packet);
+      return;
+    }
+
+    if (packet.type.startsWith('FLAPPY_')) {
+      session.handleGamePacket(socket.id, packet);
+      return;
     }
   } catch (error) {
     console.error(`[Server] Error handling packet ${packet.type}:`, error);

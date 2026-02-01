@@ -4,7 +4,7 @@ import AppleGameScene from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
-import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
+import type { FlappyBirdGamePreset } from '../../../common/src/config.ts';
 import type { MineSweeperGamePreset } from './types/minesweeper.types';
 import type { PlayerData, PlayerResultData } from './types/common';
 import type { PlayerId } from './types/flappybird.types';
@@ -50,13 +50,6 @@ const GAME_CONFIGS: Record<GameType, ConfigDetails> = {
 interface GameContainerProps {
   gameType: GameType;
   onGameReady?: (game: Phaser.Game) => void;
-  // onAppleScored?: (points: number) => void;
-  // onGameEnd?: (data: GameEndEvent) => void;
-  onGameOver?: (data: { reason: string; finalScore: number }) => void;
-  onScoreUpdate?: (score: number) => void; // 플래피버드 점수 업데이트
-  onFlappyJump?: () => void; // 플래피버드 점프 사운드
-  onFlappyStrike?: () => void; // 플래피버드 충돌 사운드
-  onFlappyScore?: () => void; // 플래피버드 점수 획득 사운드
   onMinesweeperScoreUpdate?: (data: {
     playerIndex: number;
     scoreChange: number;
@@ -85,11 +78,6 @@ export type GameEndEvent =
 export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
-  onGameOver,
-  onScoreUpdate,
-  onFlappyJump,
-  onFlappyStrike,
-  onFlappyScore,
   onMinesweeperScoreUpdate,
   playerCount = 4,
   players = [],
@@ -212,40 +200,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       if (gameType === GameType.APPLE_GAME) {
         // todo
       } else if (gameType === GameType.FLAPPY_BIRD) {
-        // 플래피버드 점프 사운드 이벤트
-        if (onFlappyJump) {
-          targetScene.events.on('flappyJump', () => {
-            console.log('🦅 flappyJump event received');
-            onFlappyJump();
-          });
-        }
-
-        // 플래피버드 충돌 사운드 이벤트
-        if (onFlappyStrike) {
-          targetScene.events.on('flappyStrike', () => {
-            console.log('💥 flappyStrike event received');
-            onFlappyStrike();
-          });
-        }
-
-        // 플래피버드 점수 획득 사운드 이벤트
-        if (onFlappyScore) {
-          targetScene.events.on('flappyScore', () => {
-            console.log('🎵 flappyScore event received');
-            onFlappyScore();
-          });
-        }
-        // 플래피버드 점수 업데이트 이벤트
-        if (onScoreUpdate) {
-          targetScene.events.on(
-            'scoreUpdate',
-            (data: { score: number; timestamp: number }) => {
-              console.log('📊 scoreUpdate event received:', data);
-              onScoreUpdate(data.score);
-            },
-          );
-        }
-
         // 플래피버드 게임 종료 이벤트
         // todo 해결해야 함. 다 클라쪽으로 그거 됨.
         // if (onGameEnd) {
@@ -268,17 +222,16 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         //     },
         //   );
         // }
-
         // 기존 game_over 이벤트 (호환성 유지)
-        if (onGameOver) {
-          targetScene.events.on(
-            'game_over',
-            (data: { reason: string; finalScore: number }) => {
-              console.log('💀 game_over event received:', data);
-              onGameOver(data);
-            },
-          );
-        }
+        // if (onGameOver) {
+        //   targetScene.events.on(
+        //     'game_over',
+        //     (data: { reason: string; finalScore: number }) => {
+        //       console.log('💀 game_over event received:', data);
+        //       onGameOver(data);
+        //     },
+        //   );
+        // }
       } else if (gameType === GameType.MINESWEEPER) {
         // 지뢰찾기 점수 업데이트 이벤트
         if (onMinesweeperScoreUpdate) {

@@ -89,6 +89,7 @@ function AppContent() {
   }, []);
 
   // todo 제거 대상
+  // todo 얘도 제거 대상
   const handleGameEnd = useCallback(
     (data: GameEndEvent) => {
       if (data.gameType === 'flappy') {
@@ -112,24 +113,10 @@ function AppContent() {
   );
 
   // 플래피버드 점수 업데이트 핸들러
+  // todo 이거 setFlappyScore 제거 해줘야 함. 통합 대상.
   const handleFlappyScoreUpdate = useCallback((score: number) => {
     setFlappyScore(score);
   }, []);
-
-  // 플래피버드 점프 사운드 핸들러
-  const handleFlappyJump = useCallback(() => {
-    playSFX('flappyJump');
-  }, [playSFX]);
-
-  // 플래피버드 충돌 사운드 핸들러
-  const handleFlappyStrike = useCallback(() => {
-    playSFX('flappyStrike');
-  }, [playSFX]);
-
-  // 플래피버드 점수 획득 사운드 핸들러
-  const handleFlappyScore = useCallback(() => {
-    playSFX('flappyScore');
-  }, [playSFX]);
 
   // 지뢰찾기 점수 업데이트 핸들러
   const handleMinesweeperScoreUpdate = useCallback(
@@ -406,12 +393,7 @@ function AppContent() {
             players={players}
             flappyPreset={flappyPreset}
             minesweeperPreset={minesweeperPreset}
-            // onAppleScored={handleAppleScored}
-            // onGameEnd={handleGameEnd}
             onScoreUpdate={handleFlappyScoreUpdate}
-            onFlappyJump={handleFlappyJump}
-            onFlappyStrike={handleFlappyStrike}
-            onFlappyScore={handleFlappyScore}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
             onGameReady={handleGameReady}
           />

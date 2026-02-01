@@ -62,6 +62,7 @@ interface GameContainerProps {
   minesweeperPreset?: MineSweeperGamePreset;
 }
 
+// todo gametype GameType으로 처리하기
 export type GameEndEvent =
   | {
       gameType: 'apple' | 'minesweeper';

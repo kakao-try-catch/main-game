@@ -91,6 +91,9 @@ importers:
       '@main-game/common':
         specifier: workspace:*
         version: link:../common
+      matter-js:
+        specifier: ^0.20.0
+        version: 0.20.0
       nanoid:
         specifier: ^5.1.6
         version: 5.1.6
@@ -98,6 +101,9 @@ importers:
         specifier: ^4.8.3
         version: 4.8.3
     devDependencies:
+      '@types/matter-js':
+        specifier: ^0.20.2
+        version: 0.20.2
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.4

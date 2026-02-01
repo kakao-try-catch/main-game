@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { PlayerData } from '../../../common/src/packets';
+import type {
+  FlappyBirdData,
+  FlappyPipeData,
+  PlayerData,
+} from '../../../common/src/common-type';
 import { type GameType, type GameConfig } from '../../../common/src/config';
 
 // 드래그 영역 데이터 타입
@@ -87,6 +91,13 @@ interface GameState {
   // 접속 에러 메시지 (게임 진행 중 접속 시도 등)
   connectionError: { message: string } | null;
   setConnectionError: (err: { message: string } | null) => void;
+
+  // FlappyBird 상태
+  flappyBirds: FlappyBirdData[];
+  flappyPipes: FlappyPipeData[];
+  flappyServerTick: number;
+  flappyScore: number;
+  isFlappyGameOver: boolean;
 }
 
 export const useGameStore = create<GameState>()(

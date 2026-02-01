@@ -208,7 +208,7 @@ export function resolveAppleGameConfig(
   };
 }
 
-function sanitizeTime(rawTime: any): number {
+export function sanitizeTime(rawTime: any): number {
   const timeNum =
     typeof rawTime === 'number' && isFinite(rawTime)
       ? rawTime

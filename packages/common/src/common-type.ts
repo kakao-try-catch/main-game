@@ -24,3 +24,18 @@ export const PLAYER_COLORS = ['#209cee', '#e76e55', '#92cc41', '#f2d024'];
 export interface PlayerState extends PlayerData {
   id: string; // Socket ID
 }
+export interface FlappyBirdData {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  angle: number;
+}
+
+export interface FlappyPipeData {
+  id: number;
+  x: number;
+  gapY: number;
+  width: number;
+  gap: number;
+}

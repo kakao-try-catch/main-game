@@ -1,5 +1,10 @@
 import { type GameConfig, GameType } from './config';
-import { PlayerData, ReportCard } from './common-type';
+import {
+  FlappyBirdData,
+  FlappyPipeData,
+  PlayerData,
+  ReportCard,
+} from './common-type';
 
 // ========== SYSTEM PACKETS (공용) ==========
 export enum SystemPacketType {
@@ -166,22 +171,6 @@ export enum FlappyBirdPacketType {
   FLAPPY_WORLD_STATE = 'FLAPPY_WORLD_STATE',
   FLAPPY_SCORE_UPDATE = 'FLAPPY_SCORE_UPDATE',
   FLAPPY_GAME_OVER = 'FLAPPY_GAME_OVER',
-}
-
-export interface FlappyBirdData {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  angle: number;
-}
-
-export interface FlappyPipeData {
-  id: number;
-  x: number;
-  gapY: number;
-  width: number;
-  gap: number;
 }
 
 export interface FlappyJumpPacket {

@@ -45,8 +45,8 @@ export interface GameSettings {
   // 플래피버드 설정
   pipeGap?: 'narrow' | 'normal' | 'wide'; // 상하 파이프 간격
   pipeWidth?: 'narrow' | 'normal' | 'wide'; // 파이프 넓이
-  pipeSpacing?: 'narrow' | 'normal' | 'wide'; // 좌우 파이프 간격
-  pipeSpeed?: 'slow' | 'normal' | 'fast'; // 이동 속도
+  pipeSpacing?: 'narrow' | 'normal' | 'wide' | 'manual'; // 좌우 파이프 간격
+  pipeSpeed?: 'slow' | 'normal' | 'fast' | 'manual'; // 이동 속도
   ropeLength?: 'short' | 'normal' | 'long'; // 밧줄 길이
   connectAll?: boolean; // 모두 묶기 (3인 이상일 때 폐쇄형 도형)
   // 지뢰찾기 설정

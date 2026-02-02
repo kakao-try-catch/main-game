@@ -561,10 +561,12 @@ const playerListStyle: React.CSSProperties = {
 };
 
 const GAME_DESCRIPTIONS: Record<string, string> = {
-  apple: '드래그로 숫자를 더해서 10을 만들어보세요!',
-  flappy: '스페이스바로 점프해서 장애물을 피하세요! 팀원과 연결되어 있어요.',
+  apple:
+    '드래그로 인접한 숫자 타일을 연결해서 합이 10이 되도록 만들어 점수를 획득하세요!',
+  flappy:
+    '스페이스바로 새를 점프시켜 파이프 장애물을 피하세요! 모든 팀원이 연결되어 함께 움직입니다.',
   minesweeper:
-    '좌클릭으로 타일을 열고, 우클릭으로 깃발을 꽂아 지뢰를 피하세요!',
+    '좌클릭으로 타일을 열어 숫자 힌트를 확인하고, 우클릭으로 지뢰 위치에 깃발을 꽂아 점수를 획득하세요!',
 };
 
 export default function App() {

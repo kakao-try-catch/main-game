@@ -37,6 +37,9 @@ interface GameState {
   myselfIndex: number;
   // 현재 플레이어 인덱스 설정
   setMyselfIndex: (index: number) => void;
+  // 현재 방 ID
+  roomId: string | null;
+  setRoomId: (roomId: string) => void;
   // players from server (room snapshot)
   players: PlayerData[];
   setPlayers: (
@@ -106,6 +109,7 @@ export const useGameStore = create<GameState>()(
   subscribeWithSelector((set) => ({
     count: 0,
     myselfIndex: -1,
+    roomId: null,
     players: [] as PlayerData[],
     selectedGameType: null,
     gameConfig: null,
@@ -126,6 +130,7 @@ export const useGameStore = create<GameState>()(
     // 기존 액션
     setCount: (newCount: number) => set({ count: newCount }),
     setMyselfIndex: (index: number) => set({ myselfIndex: index }),
+    setRoomId: (roomId: string) => set({ roomId }),
     setPlayers: (playersOrUpdater) => {
       if (typeof playersOrUpdater === 'function') {
         set((state) => ({ players: playersOrUpdater(state.players) }));

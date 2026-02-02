@@ -215,10 +215,21 @@ function AppContent() {
     //       : player,
     //   ),
     // );
+    // URL에서 roomId 추출
+    let roomId = '';
+    const path = window.location.pathname;
+
+    if (path.includes('/invite/')) {
+      // /invite/{roomId} 형식에서 roomId 추출
+      const parts = path.split('/invite/');
+      if (parts.length > 1) {
+        roomId = parts[1].split('/')[0]; // /invite/ 다음의 첫 번째 세그먼트 가져오기
+      }
+    }
 
     const joinRoomPacket: JoinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,
-      roomId: 'HARDCODED_ROOM_1',
+      roomId: roomId, // URL에서 추출한 roomId 또는 빈 문자열
       playerName: inputNickname,
     };
     socketManager.send(joinRoomPacket);

@@ -41,8 +41,12 @@ import { socketManager } from '../../../network/socket';
 import type {
   FlappyBirdData,
   FlappyPipeData,
+  PlayerData,
+  FlappyPlayerStats,
 } from '../../../../../common/src/common-type';
 import { RopeRenderer } from './RopeRenderer';
+import FlappyEffects from './FlappyEffects';
+import FlappySoundManager from './FlappySoundManager';
 
 interface InputRecord {
   timestamp: number;
@@ -59,7 +63,10 @@ interface FlappyStateSelection {
   gameOverData: {
     reason: 'pipe_collision' | 'ground_collision';
     collidedPlayerIndex: number;
+    collidedPlayerName: string;
     finalScore: number;
+    gameDuration: number;
+    playerStats: FlappyPlayerStats[];
   } | null;
   serverTick: number;
 }
@@ -116,6 +123,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(
     DEFAULT_FLAPPYBIRD_PRESET,
   );
+  private effects!: FlappyEffects;
+  private soundManager!: FlappySoundManager;
   private storeUnsubscribe?: () => void; // Zustand store 구독 해제 함수
 
   // Input history for CSP
@@ -131,7 +140,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   private getRatio(): number {
-    return (window as unknown as { __GAME_RATIO?: number }).__GAME_RATIO || 1;
+    return (window as any).__GAME_RATIO || 1;
   }
 
   editorCreate(): void {
@@ -188,6 +197,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     // 파이프 매니저 생성
     this.pipeManager = new PipeManager(this);
 
+    // 이펙트 및 사운드 매니저 초기화
+    this.effects = new FlappyEffects(this);
+    this.soundManager = new FlappySoundManager(this);
+
     // 소켓 이벤트 리스너 (updatePlayers를 먼저 받기 위해 setupSocketListeners 호출)
     this.setupSocketListeners();
 
@@ -234,7 +247,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       this.myPlayerId = String(store.myselfIndex) as PlayerId;
       this.playerCount = store.players.length || 4;
       this.playerNames = store.players.map(
-        (p: any, i: number) => p.playerName || `Player ${i + 1}`,
+        (p: PlayerData, i: number) => p.playerName || `Player ${i + 1}`,
       );
 
       // 게임 시작
@@ -307,7 +320,15 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         // 점수 변경 시 사운드
         if (current.score !== previous.score) {
           this.currentScore = current.score;
-          this.events.emit('flappyScore');
+          this.soundManager.playScore();
+
+          // 점수 팝업 이펙트 (마지막 파이프 위치 근처 또는 중앙)
+          const ratio = this.getRatio();
+          this.effects.createScorePopup(
+            (GAME_WIDTH * ratio) / 2,
+            (GAME_HEIGHT * ratio) / 2,
+          );
+
           this.events.emit('scoreUpdate', {
             score: current.score,
             timestamp: Date.now(),
@@ -323,7 +344,14 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         ) {
           this.gameStarted = false;
           this.isGameOver = true;
-          this.events.emit('flappyStrike');
+
+          // 충돌 사운드 및 이펙트
+          this.soundManager.playCrash();
+          if (current.gameOverData) {
+            const bird =
+              this.birdSprites[current.gameOverData.collidedPlayerIndex];
+            if (bird) this.effects.createCrashEffect(bird);
+          }
 
           const gameOverData = current.gameOverData;
           if (!gameOverData) return;
@@ -805,8 +833,14 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       }
     }
 
-    // React로 점프 사운드 재생 이벤트 전달
-    this.events.emit('flappyJump');
+    // React 및 사운드 매니저 이벤트 전달
+    this.soundManager.playJump();
+
+    // 점프 파티클 효과
+    const bird = this.birdSprites[Number(playerId)];
+    if (bird) {
+      this.effects.createJumpParticles(bird);
+    }
 
     console.log(`[FlappyBirdsScene] Bird ${playerId} Flap!`);
   }
@@ -1238,6 +1272,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         const tensionChange = visualState.tension - lastTension;
         this.addTensionVibration(points, tensionChange);
         this.lastRopeTensions[i] = visualState.tension;
+
+        // 장력이 매우 높을 때 (95% 이상) 카메라 진동 효과
+        if (visualState.tension > 0.95 && lastTension <= 0.95) {
+          this.effects.showRopeSnapEffect();
+        }
 
         rope.clear();
 

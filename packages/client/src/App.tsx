@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { GameContainer, type GameEndEvent } from './game/GameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
-import { UserProvider, useUser } from './contexts/UserContext';
+import { UserProvider } from './contexts/UserContext';
 import { useGameStore } from './store/gameStore';
 
 import PlayerCard from './components/PlayerCard';
@@ -11,15 +11,13 @@ import GameResult from './game/utils/game-result/GameResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
-import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import type { PlayerId } from './game/types/flappybird.types';
+import { type FlappyBirdGamePreset, GameType } from '../../common/src/config';
 import FlappyBirdGameUI from './components/game/FlappyBirdGameUI';
 import {
   type MineSweeperGamePreset,
   DEFAULT_MINESWEEPER_PRESET,
 } from './game/types/minesweeper.types';
-import { GameType } from '../../common/src/config';
-import type { PlayerId, GameOverEvent } from './game/types/flappybird.types';
-import { CONSTANTS } from './game/types/common';
 import {
   SystemPacketType,
   type JoinRoomPacket,
@@ -60,7 +58,7 @@ function AppContent() {
   const gameRef = useRef<Phaser.Game | null>(null);
 
   // 플래피버드 관련 상태 - store에서 직접 구독
-  const [flappyScore, setFlappyScore] = useState(0); // 팀 점수 (UI 표시용)
+  const flappyScore = useGameStore((s) => s.flappyScore);
   const isFlappyGameOver = useGameStore((s) => s.isFlappyGameOver);
   const flappyGameOverData = useGameStore((s) => s.flappyGameOverData);
 
@@ -109,33 +107,20 @@ function AppContent() {
   }, []);
 
   // 게임 종료 시 BGM/SFX 처리 (store에서 isFlappyGameOver 변경 감지)
-  const resetFlappyState = useGameStore((s) => s.resetFlappyState);
   const handleGameEnd = useCallback(
     (data: GameEndEvent) => {
-      if (data.gameType === 'flappy') {
-        // isFlappyGameOver
-        setFlappyFinalData({
-          finalScore: data.finalScore,
-          reason: data.reason,
-          collidedPlayerId: data.collidedPlayerId,
-          players: data.players,
-        });
-        setFlappyGameEnded(true);
-      } else {
-        setFinalPlayers(data.players);
-        setGameEnded(true);
+      // 플래피버드는 이미 store에서 상태가 관리되므로 사운드만 처리
+      if (data.gameType !== 'flappy') {
+        // TODO: 다른 게임들의 경우 결과 상태 처리가 필요하다면 여기서 수행
+        setGameStarted(false);
       }
+
       playSFX('appleGameEnd');
       pause(); // 게임 종료 시 BGM 중지
       reset(); // 게임 종료 시 BGM을 처음으로 되감기
     },
-    [isFlappyGameOver, playSFX, pause, reset],
+    [setGameStarted, playSFX, pause, reset],
   );
-
-  // 플래피버드 점수 업데이트 핸들러
-  const handleFlappyScoreUpdate = useCallback((score: number) => {
-    setFlappyScore(score);
-  }, []);
 
   // 플래피버드 점프 사운드 핸들러
   const handleFlappyJump = useCallback(() => {
@@ -175,7 +160,7 @@ function AppContent() {
         console.error('Minesweeper score update handler error:', error);
       }
     },
-    [],
+    [currentGameType, setPlayers],
   );
 
   // 게임 세션이 새로 시작될 때(리플레이 포함) 관련 상태 초기화
@@ -464,7 +449,7 @@ function AppContent() {
                 extraContent={
                   <TintedFlagIcon color={player.color}>
                     <span style={{ color: '#212529', fontSize: '20px' }}>
-                      {flagCounts[player.id] || 0}
+                      {flagCounts[index] || 0}
                     </span>
                   </TintedFlagIcon>
                 }
@@ -504,6 +489,10 @@ function AppContent() {
             onMinesweeperTileReveal={handleMinesweeperTileReveal}
             onMinesweeperMineExplode={handleMinesweeperMineExplode}
             onMinesweeperFlagPlaced={handleMinesweeperFlagPlaced}
+            onGameEnd={handleGameEnd}
+            onFlappyJump={handleFlappyJump}
+            onFlappyStrike={handleFlappyStrike}
+            onFlappyScore={handleFlappyScore}
             onGameReady={handleGameReady}
           />
         )}

@@ -75,6 +75,11 @@ export class FlappyBirdInstance implements GameInstance {
   private ropeLength: number = 100;
   private connectAll: boolean = false;
 
+  // 밧줄 스프링-댐퍼 물리 (클라이언트 렌더링과 일치)
+  private ropeStiffness: number = 0.0003; // 스프링 강성
+  private ropeDamping: number = 0.1; // 감쇠 계수
+  private ropeRestLength: number = 70; // 자연 길이 (ropeLength의 70%)
+
   // 루프 관리
   private updateInterval: NodeJS.Timeout | null = null;
   private readonly PHYSICS_FPS = 60;
@@ -120,6 +125,11 @@ export class FlappyBirdInstance implements GameInstance {
     this.flapBoostRandom = resolved.flapBoostRandom;
     this.ropeLength = resolved.ropeLength;
     this.connectAll = resolved.connectAll;
+
+    // 밧줄 스프링-댐퍼 물리 설정 (클라이언트 렌더링과 일치)
+    this.ropeRestLength = this.ropeLength * 0.7; // 자연 길이 70%
+    this.ropeStiffness = 0.0003; // normal 프리셋 기본값
+    this.ropeDamping = 0.1; // normal 프리셋 기본값
 
     console.log(
       `[FlappyBirdInstance] 설정 적용: speed=${resolved.pipeSpeed}, spacing=${resolved.pipeSpacing}, gap=${resolved.pipeGap}, width=${resolved.pipeWidth}, ropeLength=${resolved.ropeLength}, connectAll=${resolved.connectAll}`,
@@ -354,10 +364,13 @@ export class FlappyBirdInstance implements GameInstance {
       });
     }
 
-    // 3. 밧줄 최대 길이 제한
+    // 3. 밧줄 스프링-댐퍼 힘 적용 (클라이언트 렌더링과 일치)
+    this.applyRopeSpringForce();
+
+    // 4. 밧줄 최대 길이 제한 (하드 제약, 안전장치)
     this.enforceRopeConstraint();
 
-    // 4. velocityY 기반 새 각도 업데이트
+    // 5. velocityY 기반 새 각도 업데이트
     for (const bird of this.birds) {
       if (!bird.isStatic) {
         const angleDeg = Math.max(-30, Math.min(90, bird.velocity.y * 10));
@@ -365,7 +378,7 @@ export class FlappyBirdInstance implements GameInstance {
       }
     }
 
-    // 5. 물리 서브스테핑 (바닥 뚫림 방지)
+    // 6. 물리 서브스테핑 (바닥 뚫림 방지)
     const subSteps = 5;
     const stepTime = 1000 / 60 / subSteps;
     for (let s = 0; s < subSteps; s++) {
@@ -373,7 +386,7 @@ export class FlappyBirdInstance implements GameInstance {
       this.checkCollisions();
     }
 
-    // 6. 네트워크 브로드캐스트 (40Hz)
+    // 7. 네트워크 브로드캐스트 (40Hz)
     this.timeSinceLastBroadcast += 1000 / this.PHYSICS_FPS;
     const networkInterval = 1000 / this.NETWORK_TICK_RATE;
     if (this.timeSinceLastBroadcast >= networkInterval) {
@@ -580,6 +593,54 @@ export class FlappyBirdInstance implements GameInstance {
   }
 
   // ========== 밧줄 물리 ==========
+
+  /**
+   * 스프링-댐퍼 힘 적용 (클라이언트 렌더링과 일치)
+   * Hooke's Law + Damping Force
+   */
+  private applyRopeSpringForce(): void {
+    for (const [indexA, indexB] of this.ropeConnections) {
+      const birdA = this.birds[indexA];
+      const birdB = this.birds[indexB];
+      if (!birdA || !birdB) continue;
+
+      const dx = birdB.position.x - birdA.position.x;
+      const dy = birdB.position.y - birdA.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance === 0) continue;
+
+      // 단위 벡터
+      const nx = dx / distance;
+      const ny = dy / distance;
+
+      // 스프링 힘 (자연 길이에서 벗어난 정도에 비례)
+      const displacement = distance - this.ropeRestLength;
+      const springForce = this.ropeStiffness * displacement;
+
+      // 감쇠 힘 (상대 속도의 밧줄 방향 성분)
+      const relVx = birdB.velocity.x - birdA.velocity.x;
+      const relVy = birdB.velocity.y - birdA.velocity.y;
+      const relVelAlongRope = relVx * nx + relVy * ny;
+      const dampingForce = this.ropeDamping * relVelAlongRope;
+
+      // 총 힘
+      const totalForce = springForce + dampingForce;
+
+      // 각 새에 힘 적용 (반대 방향)
+      const forceX = totalForce * nx;
+      const forceY = totalForce * ny;
+
+      Matter.Body.applyForce(birdA, birdA.position, {
+        x: forceX * 0.5,
+        y: forceY * 0.5,
+      });
+      Matter.Body.applyForce(birdB, birdB.position, {
+        x: -forceX * 0.5,
+        y: -forceY * 0.5,
+      });
+    }
+  }
 
   private enforceRopeConstraint(): void {
     for (const [indexA, indexB] of this.ropeConnections) {

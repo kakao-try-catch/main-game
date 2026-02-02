@@ -127,7 +127,7 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady = false }) => {
     <div className="sound-setting-container">
       {/* BGM 컨트롤 */}
       <div className="sound-control-row">
-        <div className="sound-icon-wrapper" onClick={toggleBGM}>
+        <div className="sound-icon-wrapper nes-pointer" onClick={toggleBGM}>
           <img
             src={localBGMVolume > 0 ? onIcon : offIcon}
             className="sound-icon"
@@ -137,7 +137,7 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady = false }) => {
         <div className="sound-label">BGM</div>
         <div className="slider-wrapper">
           <input
-            className="pixel-slider"
+            className="pixel-slider nes-pointer"
             type="range"
             min="0"
             max="1"
@@ -150,7 +150,7 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady = false }) => {
 
       {/* SFX 컨트롤 */}
       <div className="sound-control-row">
-        <div className="sound-icon-wrapper" onClick={toggleSFX}>
+        <div className="sound-icon-wrapper nes-pointer" onClick={toggleSFX}>
           <img
             src={localSFXVolume > 0 ? onIcon : offIcon}
             className="sound-icon"
@@ -160,7 +160,7 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady = false }) => {
         <div className="sound-label">SFX</div>
         <div className="slider-wrapper">
           <input
-            className="pixel-slider"
+            className="pixel-slider nes-pointer"
             type="range"
             min="0"
             max="1"

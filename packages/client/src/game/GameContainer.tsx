@@ -257,7 +257,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         //     },
         //   );
         // }
-      } else if (gameType === 'minesweeper') {
         // 지뢰찾기 타일 열기 사운드 이벤트
         if (onMinesweeperTileReveal) {
           targetScene.events.on('minesweeperTileReveal', () => {

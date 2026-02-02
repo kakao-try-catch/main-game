@@ -1,5 +1,5 @@
 import { type GameConfig, GameType } from './config';
-import {
+import type {
   FlappyBirdData,
   FlappyPipeData,
   PlayerData,
@@ -203,6 +203,30 @@ export type FlappyBirdPacket =
   | FlappyWorldStatePacket
   | FlappyScoreUpdatePacket
   | FlappyGameOverPacket;
+
+// ========== MINESWEEPER PACKETS ==========
+export enum MineSweeperPacketType {
+  // 클라이언트 → 서버
+  /** 타일 열기 요청 (좌클릭) */
+  MS_REVEAL_TILE = 'MS_REVEAL_TILE',
+  /** 깃발 토글 요청 (우클릭) */
+  MS_TOGGLE_FLAG = 'MS_TOGGLE_FLAG',
+
+  // 서버 → 클라이언트
+  /** 게임 초기화 (필드 + 초기 상태 전송) */
+  MS_GAME_INIT = 'MS_GAME_INIT',
+  /** 타일 상태 업데이트 (열기/깃발 결과) */
+  MS_TILE_UPDATE = 'MS_TILE_UPDATE',
+  /** 점수 변경 알림 */
+  MS_SCORE_UPDATE = 'MS_SCORE_UPDATE',
+  /** 남은 지뢰 수 업데이트 */
+  MS_REMAINING_MINES = 'MS_REMAINING_MINES',
+  /** 게임 종료 결과 */
+  MS_GAME_END = 'MS_GAME_END',
+}
+
+// 지뢰찾기 패킷 인터페이스는 minesweeperPackets.ts에서 정의
+export type { MineSweeperPacket } from './minesweeperPackets';
 
 // ========== UNIFIED PACKET TYPE ==========
 export type ServerPacket = SystemPacket | AppleGamePacket | FlappyBirdPacket;

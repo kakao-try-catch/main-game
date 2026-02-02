@@ -210,8 +210,30 @@ export function resolveFlappyBirdPreset(
   };
 }
 
+// ========== MINESWEEPER CONFIG (re-export from minesweeperPackets) ==========
+export type {
+  MineSweeperGamePreset,
+  MineSweeperConfig,
+  ResolvedMineSweeperConfig,
+  MapSizePreset,
+  DifficultyPreset,
+  TimeLimit,
+} from './minesweeperPackets';
+export {
+  DEFAULT_MINESWEEPER_PRESET,
+  DEFAULT_MINESWEEPER_CONFIG,
+  DEFAULT_RESOLVED_CONFIG as DEFAULT_RESOLVED_MINESWEEPER_CONFIG,
+  resolveMineSweeperPreset,
+} from './minesweeperPackets';
+
+import type { MineSweeperGamePreset } from './minesweeperPackets';
+import { DEFAULT_MINESWEEPER_PRESET } from './minesweeperPackets';
+
 // ========== UNION TYPE ==========
-export type GameConfig = AppleGameRenderConfig | FlappyBirdGamePreset; // 통일된 그리드 크기 매핑 (클라이언트 기준)
+export type GameConfig =
+  | AppleGameRenderConfig
+  | FlappyBirdGamePreset
+  | MineSweeperGamePreset; // 통일된 그리드 크기 매핑 (클라이언트 기준)
 
 export const MAP_SIZE_TO_GRID = {
   [MapSize.SMALL]: { cols: 16, rows: 8 },
@@ -259,7 +281,7 @@ export function getDefaultConfig(gameType: GameType): GameConfig {
         connectAll: false,
       };
     case GameType.MINESWEEPER:
-      throw new Error('MINESWEEPER config not implemented');
+      return { ...DEFAULT_MINESWEEPER_PRESET };
   }
 }
 

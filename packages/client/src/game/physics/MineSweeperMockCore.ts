@@ -276,13 +276,9 @@ export class MineSweeperMockCore {
       const current = queue.shift()!;
       const key = `${current.row},${current.col}`;
 
-      // 이미 방문한 타일은 건너뛰기
-      if (visited.has(key)) {
-        continue;
-      }
+      if (visited.has(key)) continue;
       visited.add(key);
 
-      // 범위 체크
       if (
         current.row < 0 ||
         current.row >= this.config.gridRows ||
@@ -303,7 +299,6 @@ export class MineSweeperMockCore {
       tilesByDistance
         .get(current.distance)!
         .push({ row: current.row, col: current.col });
-
 
       // 빈 공간(인접 지뢰 0개)이고 지뢰가 아니면 주변 8방향 타일도 큐에 추가
       if (currentTile.adjacentMines === 0 && !currentTile.isMine) {

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './LandingPage.css';
-import { useGameStore } from '../store/gameStore';
 import { useSFXContext } from '../contexts/SFXContext';
 
 const MAX_NICKNAME_LENGTH = 8;
@@ -17,19 +16,6 @@ function LandingPage({ onStart }: LandingPageProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showLengthTooltip, setShowLengthTooltip] = useState(false);
   const { playSFX } = useSFXContext();
-
-  const connectionError = useGameStore((s) => s.connectionError);
-  const setConnectionError = useGameStore((s) => s.setConnectionError);
-
-  // 접속 에러 메시지 자동 숨김 (2초 후)
-  useEffect(() => {
-    if (connectionError) {
-      const timer = setTimeout(() => {
-        setConnectionError(null);
-      }, TOOLTIP_DURATION);
-      return () => clearTimeout(timer);
-    }
-  }, [connectionError, setConnectionError]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,19 +79,6 @@ function LandingPage({ onStart }: LandingPageProps) {
             </button>
             {showTooltip && !nickname.trim() && (
               <div className="tooltip">닉네임을 입력하세요</div>
-            )}
-            {connectionError && (
-              <div
-                className="length-tooltip"
-                style={{
-                  bottom: '100%',
-                  top: 'auto',
-                  marginBottom: '10px',
-                  marginTop: 0,
-                }}
-              >
-                {connectionError.message}
-              </div>
             )}
           </div>
         </form>

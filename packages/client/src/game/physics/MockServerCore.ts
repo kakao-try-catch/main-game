@@ -5,7 +5,7 @@ import type {
   PlayerId,
   PipeData,
 } from '../types/flappybird.types';
-import { type ResolvedFlappyBirdConfig } from '../../../../common/src/config';
+import type { ResolvedFlappyBirdConfig } from '../types/FlappyBirdGamePreset';
 import { MockSocket } from '../network/MockSocket';
 import {
   GAME_WIDTH,
@@ -119,9 +119,7 @@ export class MockServerCore {
       this.flapBoostRandom = config.flapBoostRandom;
       this.ropeLength = config.ropeLength;
       this.connectAll = config.connectAll;
-      console.log(
-        `[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}, ropeLength=${config.ropeLength}, flapBoost=${config.flapBoostBase}+${config.flapBoostRandom}, connectAll=${config.connectAll}`,
-      );
+      console.log(`[MockServerCore] 설정 적용: speed=${config.pipeSpeed}, spacing=${config.pipeSpacing}, gap=${config.pipeGap}, width=${config.pipeWidth}, ropeLength=${config.ropeLength}, flapBoost=${config.flapBoostBase}+${config.flapBoostRandom}, connectAll=${config.connectAll}`);
     }
 
     // 바닥 생성
@@ -133,9 +131,7 @@ export class MockServerCore {
     // 밧줄 연결 쌍 계산 (2인: 선형, 3인+: 폐쇄형 도형)
     this.ropeConnections = this.calculateRopeConnections(this.playerCount);
 
-    console.log(
-      `[MockServerCore] 게임 초기화 완료 (밧줄 연결: ${this.ropeConnections.map((c) => `${c[0]}-${c[1]}`).join(', ')})`,
-    );
+    console.log(`[MockServerCore] 게임 초기화 완료 (밧줄 연결: ${this.ropeConnections.map(c => `${c[0]}-${c[1]}`).join(', ')})`);
   }
 
   /**
@@ -218,9 +214,7 @@ export class MockServerCore {
       Matter.World.add(this.world, bird);
     }
 
-    console.log(
-      `[MockServerCore] ${count}개의 새 생성 완료 (connectAll=${this.connectAll})`,
-    );
+    console.log(`[MockServerCore] ${count}개의 새 생성 완료 (connectAll=${this.connectAll})`);
   }
 
   /**
@@ -733,13 +727,10 @@ export class MockServerCore {
 
       // 플랩 시 약간의 추가 전진력 (새들 간 위치 변화용)
       // 0.3 + 0~0.7 랜덤 (pipeSpeed에 비례)
-      const extraBoost =
-        this.flapBoostBase + Math.random() * this.flapBoostRandom;
+      const extraBoost = this.flapBoostBase + Math.random() * this.flapBoostRandom;
       // 규칙적인 플랩이 반복될 때 새들이 일직선으로 정렬되는 현상 완화
       const verticalJitter =
-        (Math.random() - 0.5) *
-        Math.abs(this.FLAP_VELOCITY) *
-        this.FLAP_VERTICAL_JITTER_RATIO;
+        (Math.random() - 0.5) * Math.abs(this.FLAP_VELOCITY) * this.FLAP_VERTICAL_JITTER_RATIO;
       Matter.Body.setVelocity(bird, {
         x: bird.velocity.x + extraBoost,
         y: this.FLAP_VELOCITY + verticalJitter,
@@ -794,16 +785,14 @@ export class MockServerCore {
     const targetX = viewRight + spawnAhead;
 
     // 뷰 오른쪽 + spawnAhead까지 파이프 생성
-    let maxPipeX =
-      this.pipes.length > 0
-        ? Math.max(...this.pipes.map((p) => p.x))
-        : viewLeft;
+    let maxPipeX = this.pipes.length > 0
+      ? Math.max(...this.pipes.map(p => p.x))
+      : viewLeft;
 
     while (maxPipeX < targetX) {
-      const newPipeX =
-        this.pipes.length === 0
-          ? viewRight + this.pipeSpacing
-          : maxPipeX + this.pipeSpacing;
+      const newPipeX = this.pipes.length === 0
+        ? viewRight + this.pipeSpacing
+        : maxPipeX + this.pipeSpacing;
       this.createPipe(newPipeX);
       maxPipeX = newPipeX;
     }

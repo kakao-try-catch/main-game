@@ -62,30 +62,21 @@ export class BootScene extends Phaser.Scene {
     const nextScene = this.scene.get(this.nextSceneName);
     if (nextScene) {
       nextScene.events.once('scene-ready', () => {
-        this.transitionToNextScene();
+        // 로딩 화면 페이드 아웃
+        this.tweens.add({
+          targets: [this.loadingBg, this.loadingText],
+          alpha: 0,
+          duration: 200,
+          onComplete: () => {
+            if (this.loadingText) this.loadingText.destroy();
+            if (this.loadingBg) this.loadingBg.destroy();
+
+            // 다음 씬 깨우기 및 BootScene 중지
+            this.scene.wake(this.nextSceneName);
+            this.scene.stop('BootScene');
+          },
+        });
       });
     }
-  }
-
-  private transitionToNextScene(): void {
-    // 씬이 이미 파괴되었는지 확인
-    if (!this.scene || !this.scene.isActive('BootScene')) {
-      return;
-    }
-
-    // 로딩 UI 정리
-    if (this.loadingText) {
-      this.loadingText.destroy();
-      this.loadingText = undefined;
-    }
-    if (this.loadingBg) {
-      this.loadingBg.destroy();
-      this.loadingBg = undefined;
-    }
-
-    // 다음 씬 깨우기 및 BootScene 중지
-    // 비활성 창에서도 안정적으로 동작하도록 즉시 전환 (페이드 없음)
-    this.scene.wake(this.nextSceneName);
-    this.scene.stop('BootScene');
   }
 }

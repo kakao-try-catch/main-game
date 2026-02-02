@@ -4,13 +4,10 @@ import TimerPrefab from '../../utils/TimerPrefab';
 import TimerSystem from '../../utils/TimerSystem';
 import { attachDragSelection } from '../../utils/dragSelection';
 import { socketManager } from '../../../network/socket';
-import { AppleGamePacketType } from '../../../../../common/src/packets';
+import { GamePacketType } from '../../../../../common/src/packets';
 import type { PlayerData } from '../../types/common';
 import { hexStringToNumber, adjustBrightness } from '../../utils/colorUtils';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
-import { getMyPlayerData, useGameStore } from '../../../store/gameStore';
-import { DragAreaSender } from '../../utils/DragAreaSender';
-import { OtherPlayerDragRenderer } from '../../utils/OtherPlayerDragRenderer';
 
 // Declare the global property for TypeScript
 declare global {
@@ -20,31 +17,29 @@ declare global {
 }
 
 /** 사과 게임 설정 */
-interface AppleGameRenderConfig {
+interface AppleGameConfig {
+  gridCols: number; // 가로 사과 개수 (17)
+  gridRows: number; // 세로 사과 개수 (10)
   baseX: number; // 시작 X 좌표 (91)
   baseY: number; // 시작 Y 좌표 (91)
   spacingX: number; // X 간격 (73px)
   spacingY: number; // Y 간격 (74px)
-
-  gridCols: number; // 가로 사과 개수 (17)
-  gridRows: number; // 세로 사과 개수 (10)
+  minNumber: number; // 최소 숫자 (1)
+  maxNumber: number; // 최대 숫자 (9)
+  totalTime: number; // 전체 게임 시간 (110초)
+  playerCount: number; // 플레이어 수 (1~4)
   ratio: number; // 스케일 비율
-
-  // minNumber: number; // 최소 숫자 (1)
-  // maxNumber: number; // 최대 숫자 (9)
-  totalTime: number; // 전체 게임 시간 (110초) // todo 얘도 필요없음
-  playerCount: number; // 플레이어 수 (1~4) // todo 얘도
 }
 
-const DEFAULT_CONFIG: AppleGameRenderConfig = {
+const DEFAULT_CONFIG: AppleGameConfig = {
   gridCols: 17,
   gridRows: 10,
   baseX: 91,
   baseY: 91,
   spacingX: 73,
   spacingY: 74,
-  // minNumber: 1,
-  // maxNumber: 9,
+  minNumber: 1,
+  maxNumber: 9,
   totalTime: 110,
   playerCount: 4,
   ratio: 1,
@@ -53,7 +48,7 @@ const DEFAULT_CONFIG: AppleGameRenderConfig = {
 export default class AppleGameManager {
   private container: Phaser.GameObjects.Container | null = null;
   private readonly scene: Phaser.Scene;
-  private readonly config: AppleGameRenderConfig;
+  private readonly config: AppleGameConfig;
 
   // 현재 유저의 플레이어 인덱스
   private currentPlayerIndex: number = 0;
@@ -73,12 +68,6 @@ export default class AppleGameManager {
 
   // 드래그 선택 해제용
   private detachDrag?: () => void;
-
-  // 드래그 영역 서버 전송용 (멀티플레이)
-  private dragAreaSender?: DragAreaSender;
-
-  // 타 플레이어 드래그 영역 렌더링용 (멀티플레이)
-  private otherPlayerDragRenderer?: OtherPlayerDragRenderer;
 
   // 플레이어 데이터
   private players: PlayerData[] = [];
@@ -105,7 +94,7 @@ export default class AppleGameManager {
     scene: Phaser.Scene,
     timer: TimerPrefab | undefined,
     container?: Phaser.GameObjects.Container,
-    config: Partial<AppleGameRenderConfig> = {},
+    config: Partial<AppleGameConfig> = {},
   ) {
     this.scene = scene;
     this.container = container ?? null;
@@ -161,19 +150,35 @@ export default class AppleGameManager {
   }
 
   /** 게임 설정 업데이트 (프리셋 적용) */
-  updateGameConfig(config: Partial<AppleGameRenderConfig>): void {
+  updateGameConfig(config: Partial<AppleGameConfig>): void {
     // 설정 업데이트
     Object.assign(this.config, config);
     console.log('🎮 게임 설정 업데이트:', config);
   }
 
-  /** 사과 그리드 생성 (서버 데이터 또는 랜덤 생성) */
-  private createApples(appleNumbers?: number[]): void {
-    const { gridCols, gridRows, baseX, baseY, spacingX, spacingY, ratio } =
-      this.config;
+  /** 게임 초기화 및 시작 */
+  init(currentPlayerIndex: number = 0): void {
+    this.createApples();
+    this.setCurrentPlayerIndex(currentPlayerIndex); // 외부에서 받은 값 사용
+    this.setupDragSelection();
+    this.startTimer();
+  }
+
+  /** 사과 그리드 생성 */
+  private createApples(): void {
+    const {
+      gridCols,
+      gridRows,
+      baseX,
+      baseY,
+      spacingX,
+      spacingY,
+      minNumber,
+      maxNumber,
+      ratio,
+    } = this.config;
 
     // 그리드 크기에 따라 사과 스케일 조정
-    // todo 여기서 계산할 필요가 없는 것. 상수라서 그냥 따로 빼면 됨. ratio 결정될 때 만들면 됨.
     let appleScale = ratio;
     if (gridCols >= 30 || gridRows >= 15) {
       appleScale = ratio * 0.7; // L 크기(30x15): 70% 크기
@@ -183,145 +188,27 @@ export default class AppleGameManager {
       appleScale = ratio * 1.1; // S 크기(16x8): 110% 크기
     }
 
-    // 기존 사과 정리
-    this.apples.forEach((apple) => apple.destroy());
     this.apples = [];
     this.appleIndexMap.clear();
-
     let index = 0;
     for (let col = 0; col < gridCols; col++) {
       for (let row = 0; row < gridRows; row++) {
         const x = baseX + col * spacingX;
         const y = baseY + row * spacingY;
         const apple = new applePrefab(this.scene, x, y, appleScale);
-        // todo ?? 왜 이렇게 함
         if (this.container) {
           this.container.add(apple);
         } else {
           this.scene.add.existing(apple);
         }
-        // 서버에서 받은 숫자 사용, 없으면 -1
-        // todo 애초에 appleNumbers 못 받으면 시작 못 하게 하기
-        const num = appleNumbers?.[index] ?? -1;
-        apple.setNumber(num);
+        // 랜덤 숫자 설정 (minNumber ~ maxNumber)
+        const randomNum = Phaser.Math.Between(minNumber, maxNumber);
+        apple.setNumber(randomNum);
         this.apples.push(apple);
         this.appleIndexMap.set(apple, index);
         index++;
       }
     }
-
-    console.log(`🍎 사과 ${this.apples.length}개 생성 완료`);
-  }
-
-  /** 서버 데이터로 게임 초기화 (멀티플레이용) */
-  public initWithServerData(
-    apples: number[],
-    currentPlayerIndex: number,
-  ): void {
-    this.createApples(apples);
-    this.setCurrentPlayerIndex(currentPlayerIndex);
-    this.setupDragSelection();
-    this.subscribeToDropCellEvents();
-
-    // 멀티플레이용 드래그 영역 전송 활성화
-    this.dragAreaSender = new DragAreaSender();
-
-    // 멀티플레이용 타 플레이어 드래그 영역 렌더링 활성화
-    this.otherPlayerDragRenderer = new OtherPlayerDragRenderer(
-      this.scene,
-      this.container ?? undefined,
-    );
-
-    console.log('🎮 서버 데이터로 게임 초기화 완료');
-  }
-
-  /** 지정된 시간으로 타이머 시작 (멀티플레이용) */
-  public startTimerWithDuration(seconds: number): void {
-    this.timerSystem = new TimerSystem(this.scene, this.timerPrefab, this);
-
-    // 서버 시작 시간 가져오기
-    const serverStartTime = useGameStore.getState().serverStartTime;
-    this.timerSystem.start(seconds, serverStartTime || undefined);
-    console.log(`⏱️ 타이머 시작: ${seconds}초`);
-  }
-
-  /** DROP_CELL_INDEX 이벤트 구독 */
-  private unsubscribeDropCell?: () => void;
-  private lastProcessedQueueLength: number = 0;
-
-  private subscribeToDropCellEvents(): void {
-    // 이전 구독 해제
-    this.unsubscribeDropCell?.();
-
-    // 새 게임 시작 시 카운터 초기화
-    this.lastProcessedQueueLength = 0;
-
-    // 먼저 로딩 중에 누적된 이벤트들 처리
-    this.processPendingDropCellEvents();
-
-    // 새로운 이벤트 구독 (큐 길이 변화 감지)
-    this.unsubscribeDropCell = useGameStore.subscribe(
-      (state) => state.dropCellEventQueue,
-      (queue) => {
-        // 새로 추가된 이벤트만 처리
-        if (queue.length > this.lastProcessedQueueLength) {
-          const newEvents = queue.slice(this.lastProcessedQueueLength);
-          newEvents.forEach((event) => {
-            const myselfIndex = useGameStore.getState().myselfIndex;
-            const isMe = event.winnerIndex === myselfIndex;
-            this.handleDropCell(event.indices, isMe);
-          });
-          this.lastProcessedQueueLength = queue.length;
-        }
-      },
-    );
-  }
-
-  /** 로딩 중 누적된 DROP_CELL_INDEX 이벤트 처리 */
-  private processPendingDropCellEvents(): void {
-    const queue = useGameStore.getState().dropCellEventQueue;
-    if (queue.length === 0) return;
-
-    console.log(
-      `🍎 로딩 중 누적된 ${queue.length}개의 DROP_CELL_INDEX 이벤트 처리`,
-    );
-
-    queue.forEach((event) => {
-      const myselfIndex = useGameStore.getState().myselfIndex;
-      const isMe = event.winnerIndex === myselfIndex;
-      this.handleDropCell(event.indices, isMe);
-    });
-
-    // 처리된 이벤트 수 기록 (새 이벤트와 구분하기 위함)
-    this.lastProcessedQueueLength = queue.length;
-  }
-
-  /** 사과 제거 처리 */
-  private handleDropCell(indices: number[], isMe: boolean): void {
-    indices.forEach((index) => {
-      const apple = this.getAppleByIndex(index);
-      if (apple && apple.active) {
-        if (isMe) {
-          // 내가 딴 사과 - 이미 선택 상태이므로 애니메이션만 (이미 처리됨)
-          // 서버 확인 후 추가 처리가 필요하면 여기서
-        } else {
-          // 다른 플레이어가 딴 사과 - 블랙홀 효과
-          apple.playBlackholeDestroy();
-        }
-      }
-    });
-
-    // 사과 리스트 정리
-    this.apples = this.apples.filter((apple) => apple.active);
-    console.log(`🍎 사과 제거 완료. 남은 사과: ${this.apples.length}개`);
-  }
-
-  /** 인덱스로 사과 찾기 */
-  public getAppleByIndex(index: number): applePrefab | undefined {
-    for (const [apple, idx] of this.appleIndexMap.entries()) {
-      if (idx === index) return apple;
-    }
-    return undefined;
   }
 
   /**
@@ -351,12 +238,9 @@ export default class AppleGameManager {
   private setupDragSelection(): void {
     this.detachDrag?.();
 
-    const color = getMyPlayerData()?.color;
-    const colorHex = hexStringToNumber(color ?? '#209cee');
-
     this.detachDrag = attachDragSelection(this.scene, {
-      fillColor: colorHex,
-      lineColor: colorHex,
+      fillColor: this.currentPlayerColor,
+      lineColor: this.currentPlayerColor,
       onDrag: (rect) => this.onDragUpdate(rect),
       onDragEnd: (rect) => this.onDragEnd(rect),
     });
@@ -368,23 +252,14 @@ export default class AppleGameManager {
     this.selectedApples.forEach((apple) => apple.setFrameVisible(false));
     this.selectedApples.clear();
 
-    const color = getMyPlayerData()?.color;
-    const frameColor = adjustBrightness(
-      color ?? '#209cee',
-      AppleGameManager.FRAME_BRIGHTNESS_ADJUSTMENT,
-    );
-
     // 새로운 선택 영역 내 사과들 프레임 표시
     for (const apple of this.apples) {
       if (apple.isInRect(rect)) {
-        apple.setFrameColor(frameColor);
+        apple.setFrameColor(this.currentFrameColor);
         apple.setFrameVisible(true);
         this.selectedApples.add(apple);
       }
     }
-
-    // 멀티플레이: 드래그 영역 서버로 전송
-    this.dragAreaSender?.updateDragArea(rect);
   }
 
   /** 드래그 종료 시 호출 */
@@ -411,7 +286,7 @@ export default class AppleGameManager {
 
       // 패킷 전송
       socketManager.send({
-        type: AppleGamePacketType.CONFIRM_DRAG_AREA,
+        type: GamePacketType.CONFIRM_DRAG_AREA,
         indices,
       });
 
@@ -433,9 +308,6 @@ export default class AppleGameManager {
     }
 
     this.selectedApples.clear();
-
-    // 멀티플레이: 드래그 영역 클리어
-    this.dragAreaSender?.clearDragArea();
   }
 
   /** 타이머 시작 */
@@ -447,30 +319,31 @@ export default class AppleGameManager {
   public gameEnd(): void {
     // 드래그 선택 비활성화
     this.detachDrag?.();
+    // 플레이어 데이터에 playerIndex 추가
+    const playersWithIndex = this.players.map((player, index) => ({
+      ...player,
+      playerIndex: index,
+    }));
     // React로 게임 종료 이벤트 전달
-    // const { players } = useGameStore.getState();
-    // this.scene.events.emit('gameEnd', { players: players });
-    // console.log('🎮 게임 종료! React로 이벤트 전달', players);
+    this.scene.events.emit('gameEnd', { players: playersWithIndex });
+    console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
   }
 
   /** 현재 플레이어 인덱스 업데이트 */
   setCurrentPlayerIndex(index: number): void {
-    // this.currentPlayerIndex = index;
-    // this.updatePlayerColors();
+    this.currentPlayerIndex = index;
+    this.updatePlayerColors();
     // 드래그 선택 색상 업데이트를 위해 재설정
     this.setupDragSelection();
-    console.log(`🎮 현재 플레이어: ${index ?? -1}번`);
+    console.log(`🎮 현재 플레이어: ${index}번`);
   }
 
   /** 플레이어 색상 업데이트 */
   private static readonly FRAME_BRIGHTNESS_OFFSET = 15;
 
-  // todo 애초에 이거 색상 그리는 거 자체가 여기서 처리가 안 될 걸???
   private updatePlayerColors(): void {
-    // todo 플레이어를 여기서 뽑아올 거 아님
     const player = this.players[this.currentPlayerIndex];
     // 플레이어 데이터가 없으면 기본 색상 사용
-    // todo color 여기서 관리할 거 아님
     const colorHex =
       player?.color ??
       AppleGameManager.DEFAULT_COLORS[this.currentPlayerIndex] ??
@@ -484,6 +357,11 @@ export default class AppleGameManager {
     console.log(
       `🎨 플레이어 색상: ${colorHex}, 프레임: 0x${this.currentFrameColor.toString(16)}`,
     );
+  }
+
+  /** 현재 플레이어 인덱스 반환 */
+  getCurrentPlayerIndex(): number {
+    return this.currentPlayerIndex;
   }
 
   /** 플레이어 수 반환 */
@@ -500,7 +378,7 @@ export default class AppleGameManager {
   updatePlayerData(playerCount: number, players: PlayerData[]): void {
     this.config.playerCount = playerCount;
     this.players = players;
-    // this.updatePlayerColors();
+    this.updatePlayerColors();
     // 드래그 선택 색상 업데이트
     this.setupDragSelection();
     console.log(`👥 플레이어 데이터 업데이트: ${playerCount}명`, players);
@@ -529,9 +407,6 @@ export default class AppleGameManager {
   /** 정리 */
   destroy(): void {
     this.detachDrag?.();
-    this.unsubscribeDropCell?.();
-    this.dragAreaSender?.destroy();
-    this.otherPlayerDragRenderer?.destroy();
     this.timerSystem?.destroy();
     this.apples.forEach((apple) => apple.destroy());
     this.apples = [];

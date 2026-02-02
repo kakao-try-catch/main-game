@@ -26,24 +26,12 @@ import { CONSTANTS } from '../../types/common';
 import type {
   FlappyBirdGamePreset,
   ResolvedFlappyBirdConfig,
-} from '../../../../../common/src/config';
-import { resolveFlappyBirdPreset } from '../../../../../common/src/config';
+} from '../../types/FlappyBirdGamePreset';
 import {
-  FlappyBirdPacketType,
-  type FlappyJumpPacket,
-} from '../../../../../common/src/packets';
+  resolveFlappyBirdPreset,
+  DEFAULT_FLAPPYBIRD_PRESET,
+} from '../../types/FlappyBirdGamePreset';
 import PipeManager from './PipeManager';
-import { useGameStore } from '../../../store/gameStore';
-import { socketManager } from '../../../network/socket';
-
-export const DEFAULT_FLAPPYBIRD_PRESET: FlappyBirdGamePreset = {
-  pipeSpeed: 'normal',
-  pipeSpacing: 'normal',
-  pipeGap: 'normal',
-  pipeWidth: 'normal',
-  ropeLength: 'normal',
-  connectAll: false,
-};
 
 export default class FlappyBirdsScene extends Phaser.Scene {
   private socket!: Socket | MockSocket;
@@ -81,7 +69,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(
     DEFAULT_FLAPPYBIRD_PRESET,
   );
-  private storeUnsubscribe?: () => void; // Zustand store 구독 해제 함수
 
   constructor() {
     super('FlappyBirdsScene');
@@ -175,24 +162,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         `[FlappyBirdsScene] Mock 모드로 실행 중 (플레이어: ${this.playerCount}명)`,
       );
     } else {
-      // 실제 서버 모드: Store 구독 설정
-      this.setupStoreSubscription();
-
-      // 서버에서 플레이어 인덱스 가져오기
-      const store = useGameStore.getState();
-      this.myPlayerId = String(store.myselfIndex) as PlayerId;
-      this.playerCount = store.players.length || 4;
-      this.playerNames = store.players.map(
-        (p, i) => p.playerName || `Player ${i + 1}`,
-      );
-
-      // 게임 시작
+      // Mock 모드가 아닐 경우 즉시 시작 (또는 서버 신호 대기)
       this.gameStarted = true;
       // BootScene에 준비 완료 신호 보내기
       this.events.emit('scene-ready');
-      console.log(
-        `[FlappyBirdsScene] 실제 서버 모드로 실행 중 (플레이어: ${this.playerCount}명, 내 인덱스: ${this.myPlayerId})`,
-      );
     }
 
     // 초기 게임 객체 생성
@@ -206,86 +179,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.debugGraphics.setDepth(1000); // 최상단
 
     console.log('[FlappyBirdsScene] 씬 생성 완료');
-  }
-
-  private setupStoreSubscription(): void {
-    // Zustand store 구독 (실제 서버 모드에서만 사용)
-    this.storeUnsubscribe = useGameStore.subscribe(
-      (state) => ({
-        birds: state.flappyBirds,
-        pipes: state.flappyPipes,
-        score: state.flappyScore,
-        cameraX: state.flappyCameraX,
-        isGameOver: state.isFlappyGameOver,
-        gameOverData: state.flappyGameOverData,
-      }),
-      (current, previous) => {
-        // 새 위치 데이터 업데이트
-        if (current.birds.length > 0 && !this.isGameOver) {
-          this.targetPositions = current.birds.map((bird, index) => ({
-            playerId: String(index) as PlayerId,
-            x: bird.x,
-            y: bird.y,
-            velocityX: bird.vx,
-            velocityY: bird.vy,
-            angle: bird.angle,
-          }));
-        }
-
-        // 파이프 데이터 업데이트
-        if (current.pipes.length > 0 && !this.isGameOver) {
-          this.targetPipes = current.pipes.map((pipe) => ({
-            id: String(pipe.id),
-            x: pipe.x,
-            gapY: pipe.gapY,
-            width: pipe.width,
-            gap: pipe.gap,
-            passed: false,
-            passedPlayers: [],
-          }));
-        }
-
-        // 점수 변경 시 사운드
-        if (current.score !== previous.score) {
-          this.currentScore = current.score;
-          this.events.emit('flappyScore');
-          this.events.emit('scoreUpdate', {
-            score: current.score,
-            timestamp: Date.now(),
-          });
-          console.log(`[FlappyBirdsScene] 점수 업데이트: ${current.score}`);
-        }
-
-        // 게임 오버 시 처리
-        if (
-          current.isGameOver &&
-          !previous.isGameOver &&
-          current.gameOverData
-        ) {
-          this.gameStarted = false;
-          this.isGameOver = true;
-          this.events.emit('flappyStrike');
-
-          const gameEndData: FlappyBirdGameEndData = {
-            finalScore: current.gameOverData.finalScore,
-            reason: current.gameOverData.reason,
-            collidedPlayerId: String(
-              current.gameOverData.collidedPlayerIndex,
-            ) as PlayerId,
-            timestamp: Date.now(),
-          };
-
-          this.events.emit('gameEnd', {
-            ...gameEndData,
-            players: this.getPlayersData(),
-          });
-
-          console.log(
-            `[FlappyBirdsScene] 게임 오버: ${current.gameOverData.reason}, 점수: ${current.gameOverData.finalScore}`,
-          );
-        }
-      },
-    );
   }
 
   /**
@@ -654,25 +547,25 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       this.handleFlap(this.myPlayerId);
     });
 
-    // // Q키 - Bird 0
-    // this.input.keyboard?.on('keydown-Q', (e: KeyboardEvent) => {
-    //   onKeydown(e, '0');
-    // });
-    //
-    // // W키 - Bird 1
-    // this.input.keyboard?.on('keydown-W', (e: KeyboardEvent) => {
-    //   onKeydown(e, '1');
-    // });
-    //
-    // // E키 - Bird 2
-    // this.input.keyboard?.on('keydown-E', (e: KeyboardEvent) => {
-    //   onKeydown(e, '2');
-    // });
-    //
-    // // R키 - Bird 3
-    // this.input.keyboard?.on('keydown-R', (e: KeyboardEvent) => {
-    //   onKeydown(e, '3');
-    // });
+    // Q키 - Bird 0
+    this.input.keyboard?.on('keydown-Q', (e: KeyboardEvent) => {
+      onKeydown(e, '0');
+    });
+
+    // W키 - Bird 1
+    this.input.keyboard?.on('keydown-W', (e: KeyboardEvent) => {
+      onKeydown(e, '1');
+    });
+
+    // E키 - Bird 2
+    this.input.keyboard?.on('keydown-E', (e: KeyboardEvent) => {
+      onKeydown(e, '2');
+    });
+
+    // R키 - Bird 3
+    this.input.keyboard?.on('keydown-R', (e: KeyboardEvent) => {
+      onKeydown(e, '3');
+    });
 
     // D키 - 디버그 토글
     this.input.keyboard?.on('keydown-D', () => {
@@ -694,22 +587,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     if (this.isGameOver) {
       return;
     }
-
-    if (isMockMode()) {
-      // Mock 모드: 기존 형식 유지
-      this.socket.emit('flap', {
-        playerId: playerId,
-        timestamp: Date.now(),
-      });
-    } else {
-      // 실제 서버 모드: FLAPPY_JUMP 패킷 전송
-      // 서버는 socket.id로 playerIndex를 결정하므로 playerId 전송 불필요
-      const jumpPacket: FlappyJumpPacket = {
-        type: FlappyBirdPacketType.FLAPPY_JUMP,
-        timestamp: Date.now(),
-      };
-      socketManager.send(jumpPacket);
-    }
+    this.socket.emit('flap', {
+      playerId: playerId,
+      timestamp: Date.now(),
+    });
 
     // React로 점프 사운드 재생 이벤트 전달
     this.events.emit('flappyJump');
@@ -956,8 +837,8 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private getPlayersData(): PlayerResultData[] {
     return Array.from({ length: this.playerCount }, (_, i) => ({
       id: `player_${i}`,
-      playerName: this.playerNames[i] || `Player ${i + 1}`,
-      reportCard: { score: this.currentScore }, // 팀 점수이므로 모든 플레이어가 같은 점수
+      name: this.playerNames[i] || `Player ${i + 1}`,
+      score: this.currentScore, // 팀 점수이므로 모든 플레이어가 같은 점수
       color: CONSTANTS.PLAYER_COLORS[i] || '#000000',
       playerIndex: i,
     }));
@@ -968,16 +849,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    */
   shutdown() {
     console.log('[FlappyBirdsScene] shutdown 호출됨');
-
-    // Store 구독 해제
-    if (this.storeUnsubscribe) {
-      this.storeUnsubscribe();
-      this.storeUnsubscribe = undefined;
-      console.log('[FlappyBirdsScene] Store 구독 해제 완료');
-    }
-
-    // FlappyBird 상태 초기화
-    useGameStore.getState().resetFlappyState();
 
     // Mock 서버 코어 정리
     if (this.mockServerCore) {

@@ -42,15 +42,22 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
 
   // 충돌한 플레이어 정보 가져오기
   const collidedPlayer = players?.find(
-    (p) => p.playerIndex === Number(collidedPlayerId)
+    (p) => p.playerIndex === Number(collidedPlayerId),
   );
   const playerName = collidedPlayer?.name || '';
   const playerColor = collidedPlayer?.color || '#333';
 
-  const collisionType = reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!';
+  const collisionType =
+    reason === 'pipe_collision' ? '파이프 충돌!' : '바닥 충돌!';
 
   return (
-    <div style={{ ...getOverlayStyle(), opacity, transition: 'opacity 1.5s ease-in' }}>
+    <div
+      style={{
+        ...getOverlayStyle(),
+        opacity,
+        transition: 'opacity 1.5s ease-in',
+      }}
+    >
       <div
         className="nes-container is-rounded"
         style={{

@@ -1,29 +1,22 @@
-// --- ENUMS ---
-export enum SystemPacketType {
+export declare enum SystemPacketType {
   UPDATE_NUMBER = 'UPDATE_NUMBER',
   JOIN_ROOM = 'JOIN_ROOM',
   ROOM_UPDATE = 'ROOM_UPDATE',
   SYSTEM_MESSAGE = 'SYSTEM_MESSAGE',
   GAME_CONFIG_UPDATE_REQ = 'GAME_CONFIG_UPDATE_REQ',
   GAME_CONFIG_UPDATE = 'GAME_CONFIG_UPDATE',
-  GAME_START_REQ = 'GAME_START_REQ',
-  READY_SCENE = 'READY_SCENE',
-  UPDATE_SCORE = 'UPDATE_SCORE',
 }
-
-export enum GameType {
+export declare enum GameType {
   APPLE_GAME = 'APPLE_GAME',
   FLAPPY_BIRD = 'FLAPPY_BIRD',
   MINESWEEPER = 'MINESWEEPER',
 }
-
-export enum MapSize {
+export declare enum MapSize {
   SMALL = 'SMALL',
   MEDIUM = 'MEDIUM',
   LARGE = 'LARGE',
 }
-
-export enum GamePacketType {
+export declare enum GamePacketType {
   SET_FIELD = 'SET_FIELD',
   SET_TIME = 'SET_TIME',
   UPDATE_DRAG_AREA = 'UPDATE_DRAG_AREA',
@@ -32,29 +25,14 @@ export enum GamePacketType {
   CONFIRM_DRAG_AREA = 'CONFIRM_DRAG_AREA',
   DRAWING_DRAG_AREA = 'DRAWING_DRAG_AREA',
 }
-
-// --- COMMON TYPES ---
 type PlayerId = string;
 type AppleIndex = number;
-
 export interface PlayerData {
   order: number;
   playerName: string;
   color: string;
-  score: number; // User requested score to be in PlayerData
-}
-
-export interface ReportCard {
   score: number;
 }
-
-export interface AppleGameReportCard extends ReportCard { }
-
-export interface MineSweeperReportCard extends ReportCard {
-  flags: number;
-}
-
-// --- SYSTEM PACKETS ---
 export interface UpdateNumberPacket {
   type: SystemPacketType.UPDATE_NUMBER;
   number: number;
@@ -65,75 +43,43 @@ export interface JoinRoomPacket {
   roomId: string;
   playerName: string;
 }
-
-export enum RoomUpdateType {
+export declare enum RoomUpdateType {
   INIT = 0,
   JOIN = 1,
 }
-
 export interface RoomUpdatePacket {
   type: SystemPacketType.ROOM_UPDATE;
   players: PlayerData[];
   updateType: RoomUpdateType;
 }
-
 export interface SystemMessagePacket {
   type: SystemPacketType.SYSTEM_MESSAGE;
   message: string;
 }
-
 export interface AppleGameConfig {
   mapSize: MapSize;
   time: number;
   generation: number;
   zero: boolean;
 }
-
 export type GameConfig = AppleGameConfig;
-
 export interface GameConfigUpdateReqPacket {
   type: SystemPacketType.GAME_CONFIG_UPDATE_REQ;
   selectedGameType: GameType;
   gameConfig: GameConfig;
 }
-
 export interface GameConfigUpdatePacket {
   type: SystemPacketType.GAME_CONFIG_UPDATE;
   selectedGameType: GameType;
   gameConfig: GameConfig;
 }
-
-export interface GameStartReqPacket {
-  type: SystemPacketType.GAME_START_REQ;
-}
-
-export interface ReadyScenePacket {
-  type: SystemPacketType.READY_SCENE;
-  selectedGameType: GameType;
-}
-
-export type PlayerSummary = {
-  playerOrder: number;
-  reportCard: ReportCard[];
-};
-
-export interface UpdateScorePacket {
-  type: SystemPacketType.UPDATE_SCORE;
-  scoreboard: PlayerSummary[];
-}
-
 export type SystemPacket =
   | UpdateNumberPacket
   | JoinRoomPacket
   | RoomUpdatePacket
   | SystemMessagePacket
   | GameConfigUpdateReqPacket
-  | GameConfigUpdatePacket
-  | GameStartReqPacket
-  | ReadyScenePacket
-  | UpdateScorePacket;
-
-// --- GAME PACKETS ---
+  | GameConfigUpdatePacket;
 export interface SetFieldPacket {
   type: GamePacketType.SET_FIELD;
   apples: number[];
@@ -158,7 +104,11 @@ export interface DropCellIndexPacket {
 }
 export interface TimeEndPacket {
   type: GamePacketType.TIME_END;
-  results: { rank: number; playerId: PlayerId; score: number }[];
+  results: {
+    rank: number;
+    playerId: PlayerId;
+    score: number;
+  }[];
 }
 export interface ConfirmDragAreaPacket {
   type: GamePacketType.CONFIRM_DRAG_AREA;
@@ -171,7 +121,6 @@ export interface DrawingDragAreaPacket {
   endX: number;
   endY: number;
 }
-
 export type GamePacket =
   | SetFieldPacket
   | SetTimePacket
@@ -180,7 +129,6 @@ export type GamePacket =
   | TimeEndPacket
   | ConfirmDragAreaPacket
   | DrawingDragAreaPacket;
-
-// --- UNIFIED PACKET TYPE ---
-// 서버에서 클라이언트로 올 수 있는 모든 가능성을 합칩니다.
 export type ServerPacket = SystemPacket | GamePacket;
+export {};
+//# sourceMappingURL=packets.d.ts.map

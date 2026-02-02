@@ -6,7 +6,7 @@ import { MockSocket } from './MockSocket';
  * Mock 모드와 실제 서버 모드를 자동으로 전환합니다.
  */
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SERVER === 'false'; // todo 원래 true
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SERVER === 'true';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
 
 let socketInstance: Socket | MockSocket | null = null;

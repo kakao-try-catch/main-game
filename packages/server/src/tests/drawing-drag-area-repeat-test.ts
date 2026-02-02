@@ -4,7 +4,7 @@ import {
   joinPlayerToGame,
   handleClientPacket,
   getSession,
-} from '../network/serverHandler';
+} from '../applegame/serverHandler';
 import { GamePacketType } from '../../../common/src/packets';
 
 // Mock Socket + Server with minimal adapter.rooms tracking
@@ -35,7 +35,7 @@ const createMockSocket = (id: string): Socket => {
     to: (roomId: string) => ({
       emit: (event: string, data: any) => {
         // count only UPDATE_DRAG_AREA broadcasts
-        if (event === AppleGamePacketType.UPDATE_DRAG_AREA) broadcastCount++;
+        if (event === GamePacketType.UPDATE_DRAG_AREA) broadcastCount++;
         console.log(
           `[Socket ${id}] Broadcast to '${roomId}' '${event}':`,
           JSON.stringify(data, null, 2),
@@ -70,7 +70,7 @@ async function runTest() {
 
   // Prepare a DRAWING_DRAG_AREA packet
   const pkt = {
-    type: AppleGamePacketType.DRAWING_DRAG_AREA,
+    type: GamePacketType.DRAWING_DRAG_AREA,
     startX: 0,
     startY: 0,
     endX: 10,

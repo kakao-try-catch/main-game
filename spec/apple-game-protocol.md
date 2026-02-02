@@ -25,9 +25,9 @@
 다른 플레이어가 현재 드래그 중인 영역을 실시간으로 공유합니다.
 
 - **Data:**
-- `playerIndex: number` # 드래그 중인 플레이어 식별값. PlayerData[index]로 받아온다.
-- `startX: float, startY: float` # 드래그 시작 좌표
-- `endX: float, endY: float`# 현재 드래그 끝점 좌표
+- `playerId: string`: 드래그 중인 플레이어 식별값
+- `startX: float, startY: float`: 드래그 시작 좌표
+- `endX: float, endY: float`: 현재 드래그 끝점 좌표
 
 - **비고:** 클라이언트는 보간(Interpolation)을 통해 부드러운 사각형 UI를 렌더링합니다.
 
@@ -36,19 +36,20 @@
 사과 획득 성공 시 모든 클라이언트에게 알립니다.
 
 - **Data:**
-- `winnerIndex: number`: 사과를 딴 플레이어 index
+- `winnerId: string`: 사과를 딴 플레이어 ID
 - `indices: int[]`: 제거된 사과들의 index 배열
-- `totalScore: int`: 해당 플레이어의 갱신된 총점 (획득 점수는 indices.length로 계산)
+- `addedScore: int`: 이번 드래그로 획득한 점수
+- `totalScore: int`: 해당 플레이어의 갱신된 총점
 
-- **UX 처리:** \* `winnerIndex == myselfIndex(from gameStore)`: 투명화된 사과 확정 제거 애니메이션.
-- `winnerIndex != myselfIndex`: 해당 index 사과 즉시 소멸(블랙홀 효과 등) 및 상대 점수 갱신.
+- **UX 처리:** \* `winnerId == Me`: 투명화된 사과 확정 제거 애니메이션.
+- `winnerId != Me`: 해당 index 사과 즉시 소멸(블랙홀 효과 등) 및 상대 점수 갱신.
 
 ### 1.5 TIME_END
 
 제한 시간이 종료되었음을 알리고 최종 결과를 전달합니다.
 
 - **Data:**
-- `results: PlayerData[]`: 순위 순으로 정렬된 결과 PlayerData 배열
+- `results: Array<{rank: int, playerId: string, score: int}>`: 순위 순으로 정렬된 결과 객체 배열
 
 - **비고:** 서버 권위 데이터로 결과창을 구성하여 클라이언트 간 데이터 불일치를 방지합니다.
 

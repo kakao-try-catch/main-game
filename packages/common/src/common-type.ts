@@ -46,3 +46,11 @@ export interface FlappyRopeData {
     y: number;
   }[];
 }
+
+export interface FlappyPlayerStats {
+  playerIndex: number;
+  playerName: string;
+  playerColor: string;
+  jumpCount: number;
+  avgJumpInterval: number;
+}

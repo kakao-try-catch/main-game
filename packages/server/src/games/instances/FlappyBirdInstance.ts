@@ -15,6 +15,7 @@ import {
   FlappyPipeData,
   FlappyBirdData,
   FlappyRopeData,
+  FlappyPlayerStats,
 } from '../../../../common/src/common-type';
 import { GameSession } from '../gameSession';
 import { Socket } from 'socket.io';
@@ -61,6 +62,12 @@ export class FlappyBirdInstance implements GameInstance {
   // 플레이어 추적
   private lastFlapTime: Map<number, number> = new Map();
   private timeSinceLastBroadcast: number = 0;
+  private startTime: number = 0;
+
+  // 통계 추적
+  private jumpCounts: Map<number, number> = new Map();
+  private totalJumpIntervals: Map<number, number> = new Map();
+  private lastJumpTime: Map<number, number> = new Map();
 
   // 밧줄 물리
   private ropeConnections: [number, number][] = [];
@@ -118,6 +125,12 @@ export class FlappyBirdInstance implements GameInstance {
     this.lastFlapTime.clear();
     this.physicsTick = 0;
     this.timeSinceLastBroadcast = 0;
+    this.startTime = Date.now();
+
+    // 통계 초기화
+    this.jumpCounts.clear();
+    this.totalJumpIntervals.clear();
+    this.lastJumpTime.clear();
 
     // 설정 적용
     this.pipeSpeed = resolved.pipeSpeed;
@@ -554,16 +567,41 @@ export class FlappyBirdInstance implements GameInstance {
     this.isGameOverState = true;
     this.session.stopGame();
 
+    const gameDuration = Date.now() - this.startTime;
+    const players = Array.from(this.session.players.values());
+    const collidedPlayer = players[playerIndex];
+    const collidedPlayerName =
+      collidedPlayer?.playerName || `Player ${playerIndex + 1}`;
+
+    // 통계 빌드
+    const playerStats: FlappyPlayerStats[] = players.map((p, idx) => {
+      const jumpCount = this.jumpCounts.get(idx) || 0;
+      const totalInterval = this.totalJumpIntervals.get(idx) || 0;
+      const avgJumpInterval =
+        jumpCount > 1 ? totalInterval / (jumpCount - 1) : 0;
+
+      return {
+        playerIndex: idx,
+        playerName: p.playerName,
+        playerColor: p.color,
+        jumpCount,
+        avgJumpInterval,
+      };
+    });
+
     const gameOverPacket: FlappyGameOverPacket = {
       type: FlappyBirdPacketType.FLAPPY_GAME_OVER,
       reason,
       finalScore: this.score,
       collidedPlayerIndex: playerIndex,
+      collidedPlayerName,
+      gameDuration,
+      playerStats,
     };
     this.session.broadcastPacket(gameOverPacket);
 
     console.log(
-      `[FlappyBirdInstance] 게임 오버: ${reason} (Player ${playerIndex})`,
+      `[FlappyBirdInstance] 게임 오버: ${reason} (Player ${playerIndex}), Duration: ${gameDuration}ms`,
     );
   }
 
@@ -577,6 +615,20 @@ export class FlappyBirdInstance implements GameInstance {
 
       // 점프 시간 기록
       this.lastFlapTime.set(playerIndex, this.physicsTick);
+
+      // 통계 기록
+      const now = Date.now();
+      const count = (this.jumpCounts.get(playerIndex) || 0) + 1;
+      this.jumpCounts.set(playerIndex, count);
+
+      const lastTime = this.lastJumpTime.get(playerIndex);
+      if (lastTime) {
+        const interval = now - lastTime;
+        const totalInterval =
+          (this.totalJumpIntervals.get(playerIndex) || 0) + interval;
+        this.totalJumpIntervals.set(playerIndex, totalInterval);
+      }
+      this.lastJumpTime.set(playerIndex, now);
 
       // 1. 점프하는 새에 기본 힘 적용
       const extraBoost =

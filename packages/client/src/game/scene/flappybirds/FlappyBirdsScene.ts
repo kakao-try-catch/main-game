@@ -325,12 +325,18 @@ export default class FlappyBirdsScene extends Phaser.Scene {
           this.isGameOver = true;
           this.events.emit('flappyStrike');
 
+          const gameOverData = current.gameOverData;
+          if (!gameOverData) return;
+
           const gameEndData: FlappyBirdGameEndData = {
-            finalScore: current.gameOverData.finalScore,
-            reason: current.gameOverData.reason,
+            finalScore: gameOverData.finalScore,
+            reason: gameOverData.reason,
             collidedPlayerId: String(
-              current.gameOverData.collidedPlayerIndex,
+              gameOverData.collidedPlayerIndex,
             ) as PlayerId,
+            collidedPlayerName: gameOverData.collidedPlayerName,
+            gameDuration: gameOverData.gameDuration,
+            playerStats: gameOverData.playerStats,
             timestamp: Date.now(),
           };
 
@@ -340,7 +346,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
           });
 
           console.log(
-            `[FlappyBirdsScene] 게임 오버: ${current.gameOverData.reason}, 점수: ${current.gameOverData.finalScore}`,
+            `[FlappyBirdsScene] 게임 오버: ${gameOverData.reason}, 점수: ${gameOverData.finalScore}`,
           );
         }
       },
@@ -692,6 +698,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         finalScore: data.finalScore,
         reason: data.reason,
         collidedPlayerId: data.collidedPlayerId,
+        collidedPlayerName: data.collidedPlayerName,
+        gameDuration: data.gameDuration,
+        playerStats: data.playerStats,
         timestamp: data.timestamp,
       };
 

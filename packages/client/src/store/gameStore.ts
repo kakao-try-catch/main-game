@@ -4,7 +4,13 @@ import type {
   FlappyBirdData,
   FlappyPipeData,
   PlayerData,
+  FlappyPlayerStats,
 } from '../../../common/src/common-type';
+import {
+  FlappyBirdPacketType,
+  type ServerPacket,
+  type FlappyGameOverPacket,
+} from '../../../common/src/packets';
 import { type GameType, type GameConfig } from '../../../common/src/config';
 
 // 드래그 영역 데이터 타입
@@ -105,7 +111,10 @@ export interface GameState {
   flappyGameOverData: {
     reason: 'pipe_collision' | 'ground_collision';
     collidedPlayerIndex: number;
+    collidedPlayerName: string;
     finalScore: number;
+    gameDuration: number;
+    playerStats: FlappyPlayerStats[];
   } | null;
 
   // FlappyBird 액션
@@ -119,9 +128,15 @@ export interface GameState {
   setFlappyGameOver: (data: {
     reason: 'pipe_collision' | 'ground_collision';
     collidedPlayerIndex: number;
+    collidedPlayerName: string;
     finalScore: number;
+    gameDuration: number;
+    playerStats: FlappyPlayerStats[];
   }) => void;
   resetFlappyState: () => void;
+
+  // Packet Handler from server
+  onServerStateReceived: (packet: ServerPacket) => void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -158,7 +173,7 @@ export const useGameStore = create<GameState>()(
             | ((prev: PlayerData[]) => PlayerData[]),
         ) => {
           if (typeof playersOrUpdater === 'function') {
-            set((state: GameState) => ({
+            set((state: any) => ({
               players: playersOrUpdater(state.players),
             }));
           } else {
@@ -176,18 +191,18 @@ export const useGameStore = create<GameState>()(
         setServerStartTime: (time: number) => set({ serverStartTime: time }),
         setGameStarted: (started: boolean) => set({ isGameStarted: started }),
         addDropCellEvent: (event: DropCellEvent) =>
-          set((state: GameState) => ({
+          set((state: any) => ({
             dropCellEventQueue: [...state.dropCellEventQueue, event],
           })),
         clearDropCellEventQueue: () => set({ dropCellEventQueue: [] }),
         updateOtherPlayerDrag: (data: DragAreaData) =>
-          set((state: GameState) => {
+          set((state: any) => {
             const newMap = new Map(state.otherPlayerDrags);
             newMap.set(data.playerIndex, data);
             return { otherPlayerDrags: newMap };
           }),
         removeOtherPlayerDrag: (playerIndex: number) =>
-          set((state: GameState) => {
+          set((state: any) => {
             const newMap = new Map(state.otherPlayerDrags);
             newMap.delete(playerIndex);
             return { otherPlayerDrags: newMap };
@@ -195,7 +210,7 @@ export const useGameStore = create<GameState>()(
         setGameResults: (results: PlayerData[]) =>
           set({ gameResults: results }),
         incrementGameSession: () =>
-          set((state: GameState) => ({
+          set((state: any) => ({
             gameSessionId: state.gameSessionId + 1,
           })),
         resetGameState: () =>
@@ -237,7 +252,10 @@ export const useGameStore = create<GameState>()(
         setFlappyGameOver: (data: {
           reason: 'pipe_collision' | 'ground_collision';
           collidedPlayerIndex: number;
+          collidedPlayerName: string;
           finalScore: number;
+          gameDuration: number;
+          playerStats: FlappyPlayerStats[];
         }) =>
           set({
             isFlappyGameOver: true,
@@ -254,6 +272,40 @@ export const useGameStore = create<GameState>()(
             isFlappyGameOver: false,
             flappyGameOverData: null,
           }),
+
+        onServerStateReceived: (packet: ServerPacket) => {
+          switch (packet.type) {
+            case FlappyBirdPacketType.FLAPPY_WORLD_STATE:
+              set({
+                flappyBirds: packet.birds,
+                flappyPipes: packet.pipes,
+                flappyServerTick: packet.tick,
+                flappyCameraX: packet.cameraX,
+              });
+              break;
+
+            case FlappyBirdPacketType.FLAPPY_SCORE_UPDATE:
+              set({ flappyScore: packet.score });
+              break;
+
+            case FlappyBirdPacketType.FLAPPY_GAME_OVER:
+              {
+                const gameOver = packet as FlappyGameOverPacket;
+                set({
+                  isFlappyGameOver: true,
+                  flappyGameOverData: {
+                    reason: gameOver.reason,
+                    collidedPlayerIndex: gameOver.collidedPlayerIndex,
+                    collidedPlayerName: gameOver.collidedPlayerName,
+                    finalScore: gameOver.finalScore,
+                    gameDuration: gameOver.gameDuration,
+                    playerStats: gameOver.playerStats,
+                  },
+                });
+              }
+              break;
+          }
+        },
       }) as any,
   ),
 );

@@ -3,11 +3,16 @@ import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
 import type { PlayerResultData } from '../../types/common';
 import type { PlayerId } from '../../types/flappybird.types';
+import { type FlappyPlayerStats } from '../../../../../common/src/common-type';
+import { isPlayerHost } from '../../../store/gameStore';
 
 export interface FlappyBirdResultProps {
   finalScore: number;
   reason: 'pipe_collision' | 'ground_collision';
   collidedPlayerId?: PlayerId;
+  collidedPlayerName?: string;
+  gameDuration?: number;
+  playerStats?: FlappyPlayerStats[];
   players?: PlayerResultData[];
   onReplay: () => void;
   onLobby: () => void;
@@ -18,6 +23,9 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
   finalScore,
   reason,
   collidedPlayerId,
+  collidedPlayerName,
+  gameDuration,
+  playerStats,
   players,
   onReplay,
   onLobby,
@@ -71,10 +79,10 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
         <h1 style={getTitleStyle(ratio)}>GAME OVER</h1>
 
         <div style={getContentStyle(ratio)}>
-          {collidedPlayerId ? (
+          {collidedPlayerId || collidedPlayerName ? (
             <div style={getReasonStyle(ratio)}>
               <span style={{ color: playerColor, fontWeight: 'bold' }}>
-                {playerName}
+                {collidedPlayerName || playerName}
               </span>{' '}
               {collisionType}
             </div>
@@ -82,39 +90,140 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
             <div style={getReasonStyle(ratio)}>{collisionType}</div>
           )}
 
-          <div style={getScoreLabelStyle(ratio)}>최종 점수</div>
-          <div style={getFinalScoreStyle(ratio)}>{finalScore}</div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'baseline',
+              gap: `${20 * ratio}px`,
+              marginBottom: `${20 * ratio}px`,
+            }}
+          >
+            <div>
+              <div style={getScoreLabelStyle(ratio)}>최종 점수</div>
+              <div style={getFinalScoreStyle(ratio)}>{finalScore}</div>
+            </div>
+            {gameDuration && (
+              <div style={{ textAlign: 'left' }}>
+                <div style={getScoreLabelStyle(ratio)}>진행 시간</div>
+                <div
+                  style={{
+                    fontFamily: 'NeoDunggeunmo',
+                    fontSize: `${32 * ratio}px`,
+                    color: '#666',
+                  }}
+                >
+                  {(gameDuration / 1000).toFixed(1)}s
+                </div>
+              </div>
+            )}
+          </div>
+
+          {playerStats && playerStats.length > 0 && (
+            <div
+              className="nes-table-responsive"
+              style={{ marginTop: `${20 * ratio}px` }}
+            >
+              <table
+                className="nes-table is-bordered is-centered"
+                style={{
+                  width: '100%',
+                  fontFamily: 'NeoDunggeunmo',
+                  fontSize: `${18 * ratio}px`,
+                }}
+              >
+                <thead>
+                  <tr>
+                    <th>플레이어</th>
+                    <th>점프 횟수</th>
+                    <th>평균 간격</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {playerStats.map((stat) => (
+                    <tr key={stat.playerIndex}>
+                      <td style={{ color: stat.playerColor }}>
+                        {stat.playerName}
+                      </td>
+                      <td>{stat.jumpCount}</td>
+                      <td>
+                        {stat.avgJumpInterval > 0
+                          ? `${(stat.avgJumpInterval / 1000).toFixed(2)}s`
+                          : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div style={getButtonContainerStyle(ratio)}>
-          <button
-            type="button"
-            className="nes-btn is-primary"
-            style={getButtonStyle(ratio)}
-            onClick={() => {
-              playSFX('buttonClick');
-              onReplay();
-            }}
-            onMouseEnter={() => {
-              playSFX('buttonHover');
-            }}
-          >
-            REPLAY
-          </button>
-          <button
-            type="button"
-            className="nes-btn"
-            style={getButtonStyle(ratio)}
-            onClick={() => {
-              playSFX('buttonClick');
-              onLobby();
-            }}
-            onMouseEnter={() => {
-              playSFX('buttonHover');
-            }}
-          >
-            LOBBY
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className={`nes-btn is-primary ${!isPlayerHost() ? 'is-disabled' : ''}`}
+              style={getButtonStyle(ratio)}
+              disabled={!isPlayerHost()}
+              onClick={() => {
+                playSFX('buttonClick');
+                onReplay();
+              }}
+              onMouseEnter={() => {
+                playSFX('buttonHover');
+              }}
+            >
+              REPLAY
+            </button>
+            {!isPlayerHost() && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-30px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontSize: '10px',
+                  whiteSpace: 'nowrap',
+                  color: '#e76e55',
+                }}
+              >
+                호스트만 가능
+              </span>
+            )}
+          </div>
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className={`nes-btn ${!isPlayerHost() ? 'is-disabled' : ''}`}
+              style={getButtonStyle(ratio)}
+              disabled={!isPlayerHost()}
+              onClick={() => {
+                playSFX('buttonClick');
+                onLobby();
+              }}
+              onMouseEnter={() => {
+                playSFX('buttonHover');
+              }}
+            >
+              LOBBY
+            </button>
+            {!isPlayerHost() && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-30px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontSize: '10px',
+                  whiteSpace: 'nowrap',
+                  color: '#e76e55',
+                }}
+              >
+                호스트만 가능
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

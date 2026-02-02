@@ -5,7 +5,17 @@ import {
   FlappyRopeData,
   PlayerData,
   ReportCard,
+  FlappyPlayerStats,
 } from './common-type';
+
+export type {
+  FlappyBirdData,
+  FlappyPipeData,
+  FlappyRopeData,
+  PlayerData,
+  ReportCard,
+  FlappyPlayerStats,
+};
 
 // ========== SYSTEM PACKETS (공용) ==========
 export enum SystemPacketType {
@@ -196,8 +206,11 @@ export interface FlappyScoreUpdatePacket {
 export interface FlappyGameOverPacket {
   type: FlappyBirdPacketType.FLAPPY_GAME_OVER;
   collidedPlayerIndex: number;
+  collidedPlayerName: string;
   reason: 'pipe_collision' | 'ground_collision';
   finalScore: number;
+  gameDuration: number;
+  playerStats: FlappyPlayerStats[];
 }
 
 export type FlappyBirdPacket =

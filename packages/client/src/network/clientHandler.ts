@@ -210,7 +210,10 @@ export const handleServerPacket = (packet: ServerPacket) => {
       store.setFlappyGameOver({
         reason: packet.reason,
         collidedPlayerIndex: packet.collidedPlayerIndex,
+        collidedPlayerName: packet.collidedPlayerName,
         finalScore: packet.finalScore,
+        gameDuration: packet.gameDuration,
+        playerStats: packet.playerStats,
       });
       store.setGameStarted(false);
       console.log(

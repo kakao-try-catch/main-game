@@ -1,6 +1,4 @@
-/**
- * 플래피버드 게임 타입 정의
- */
+import type { FlappyPlayerStats } from '../../../../common/src/common-type';
 
 // 플레이어 ID (0-3)
 export type PlayerId = '0' | '1' | '2' | '3';
@@ -92,6 +90,9 @@ export interface GameOverEvent {
   reason: 'pipe_collision' | 'ground_collision';
   finalScore: number;
   collidedPlayerId: PlayerId;
+  collidedPlayerName: string;
+  gameDuration: number;
+  playerStats: FlappyPlayerStats[];
   timestamp: number;
 }
 
@@ -108,6 +109,9 @@ export interface FlappyBirdGameEndData {
   finalScore: number; // 팀 최종 점수
   reason: 'pipe_collision' | 'ground_collision'; // 게임 종료 사유
   collidedPlayerId: PlayerId; // 충돌한 플레이어 ID
+  collidedPlayerName: string; // 충돌한 플레이어 이름
+  gameDuration: number; // 게임 진행 시간 (ms)
+  playerStats: FlappyPlayerStats[]; // 플레이어별 통계
   timestamp: number; // 게임 종료 시각
 }
 

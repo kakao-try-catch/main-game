@@ -12,6 +12,7 @@ import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
 import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import FlappyBirdGameUI from './components/game/FlappyBirdGameUI';
 import {
   type MineSweeperGamePreset,
   DEFAULT_MINESWEEPER_PRESET,
@@ -79,6 +80,9 @@ function AppContent() {
       collidedPlayerId: String(
         flappyGameOverData.collidedPlayerIndex,
       ) as PlayerId,
+      collidedPlayerName: flappyGameOverData.collidedPlayerName,
+      gameDuration: flappyGameOverData.gameDuration,
+      playerStats: flappyGameOverData.playerStats,
       players: players.map((p, i) => ({
         ...p,
         playerIndex: i,
@@ -502,6 +506,9 @@ function AppContent() {
             onMinesweeperFlagPlaced={handleMinesweeperFlagPlaced}
             onGameReady={handleGameReady}
           />
+        )}
+        {currentGameType === GameType.FLAPPY_BIRD && isGameStarted && (
+          <FlappyBirdGameUI />
         )}
         <GameResult
           currentGameType={currentGameType}

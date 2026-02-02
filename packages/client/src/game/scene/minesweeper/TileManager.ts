@@ -106,7 +106,7 @@ export default class TileManager {
     const tileHeight = availableHeight / this.gridRows;
 
     // 정사각형 타일 유지 (더 작은 쪽에 맞춤)
-    this.tileSize = Math.floor(Math.min(tileWidth, tileHeight));
+    this.tileSize = Math.min(tileWidth, tileHeight);
 
     // 그리드 시작 위치 계산 (사용 가능한 영역 내에서 중앙 정렬)
     const gridWidth = this.gridCols * this.tileSize;
@@ -216,7 +216,7 @@ export default class TileManager {
   }
 
   /**
-   * 서버에서 받은 타일 데이터로 동기화
+   * 서버에서 받은 타일 데이터로 동기화 (시각적 렌더링 포함)
    */
   public syncTilesFromServer(serverTiles: any[][]): void {
     if (!serverTiles || serverTiles.length === 0) {
@@ -224,19 +224,33 @@ export default class TileManager {
       return;
     }
 
+    let syncedCount = 0;
+
     for (let row = 0; row < this.gridRows; row++) {
       for (let col = 0; col < this.gridCols; col++) {
         if (serverTiles[row] && serverTiles[row][col]) {
           const serverTile = serverTiles[row][col];
-          this.tiles[row][col].isMine = serverTile.isMine;
-          this.tiles[row][col].adjacentMines = serverTile.adjacentMines;
-          this.tiles[row][col].state = serverTile.state;
-          this.tiles[row][col].revealedBy = serverTile.revealedBy;
+
+          // HIDDEN이 아닌 타일만 시각적으로 업데이트 (이미 열린/깃발 설치된 타일)
+          if (serverTile.state !== TileState.HIDDEN) {
+            this.updateTileState(
+              row,
+              col,
+              serverTile.state,
+              serverTile.adjacentMines,
+              serverTile.isMine,
+              serverTile.revealedBy,
+              serverTile.flaggedBy,
+            );
+            syncedCount++;
+          }
         }
       }
     }
 
-    console.log('[TileManager] 서버 타일 데이터 동기화 완료');
+    console.log(
+      `[TileManager] 서버 타일 데이터 동기화 완료: ${syncedCount}개 타일 업데이트`,
+    );
   }
 
   /**

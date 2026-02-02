@@ -6,10 +6,10 @@ import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
 import type { FlappyBirdGamePreset } from '../../../common/src/config';
 import type { MineSweeperGamePreset } from './types/minesweeper.types';
-import type { PlayerData, PlayerResultData } from './types/common';
-import type { PlayerId, GameOverEvent } from './types/flappybird.types';
+import type { PlayerData } from './types/common';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 import { GameType } from '../../../common/src/config.ts';
+import { useGameStore } from '../store/gameStore';
 
 type SceneConstructor = new (...args: any[]) => Phaser.Scene;
 
@@ -66,22 +66,6 @@ interface GameContainerProps {
   minesweeperPreset?: MineSweeperGamePreset;
 }
 
-// todo gametype GameType으로 처리하기
-type FlappyCollisionReason = GameOverEvent['reason'];
-
-export type GameEndEvent =
-  | {
-      gameType: 'apple' | 'minesweeper';
-      players: PlayerResultData[];
-    }
-  | {
-      gameType: 'flappy';
-      finalScore: number;
-      reason: FlappyCollisionReason;
-      collidedPlayerId: PlayerId;
-      players: PlayerResultData[];
-    };
-
 export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
@@ -106,6 +90,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     gameType === GameType.FLAPPY_BIRD ||
     gameType === GameType.MINESWEEPER;
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
+  const serverSelectedGameType = useGameStore((s) => s.selectedGameType);
+  const serverGameConfig = useGameStore((s) => s.gameConfig);
   // todo 얘 활용 안 되는데요?
   // const preset =
   //   gameType === GameType.APPLE_GAME
@@ -325,12 +311,23 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
       // 씬에 플레이어 데이터 전달
       const emitPlayerData = () => {
+        const preset =
+          gameType === GameType.FLAPPY_BIRD
+            ? (flappyPreset ??
+              (serverSelectedGameType === GameType.FLAPPY_BIRD
+                ? (serverGameConfig as FlappyBirdGamePreset)
+                : undefined))
+            : gameType === GameType.MINESWEEPER
+              ? (minesweeperPreset ??
+                (serverSelectedGameType === GameType.MINESWEEPER
+                  ? (serverGameConfig as MineSweeperGamePreset)
+                  : undefined))
+              : undefined;
+
         targetScene.events.emit('updatePlayers', {
           playerCount,
           players,
-          ...(gameType === GameType.FLAPPY_BIRD && flappyPreset
-            ? { preset: flappyPreset }
-            : {}),
+          ...(preset ? { preset } : {}),
         });
       };
 
@@ -362,15 +359,35 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
     const scene = gameRef.current.scene.getScene(config.sceneName);
     if (scene) {
+      const preset =
+        gameType === GameType.FLAPPY_BIRD
+          ? (flappyPreset ??
+            (serverSelectedGameType === GameType.FLAPPY_BIRD
+              ? (serverGameConfig as FlappyBirdGamePreset)
+              : undefined))
+          : gameType === GameType.MINESWEEPER
+            ? (minesweeperPreset ??
+              (serverSelectedGameType === GameType.MINESWEEPER
+                ? (serverGameConfig as MineSweeperGamePreset)
+                : undefined))
+            : undefined;
+
       scene.events.emit('updatePlayers', {
         playerCount,
         players,
-        ...(gameType === GameType.FLAPPY_BIRD && flappyPreset
-          ? { preset: flappyPreset }
-          : {}),
+        ...(preset ? { preset } : {}),
       });
     }
-  }, [playerCount, players, flappyPreset, config, gameType]);
+  }, [
+    playerCount,
+    players,
+    flappyPreset,
+    minesweeperPreset,
+    config,
+    gameType,
+    serverSelectedGameType,
+    serverGameConfig,
+  ]);
 
   // 구현되지 않은 게임 타입
   if (!config) {

@@ -222,6 +222,12 @@ export class AppleGameInstance implements GameInstance {
   }
 
   private finishGame() {
+    // 이미 게임이 종료된 상태면 중복 처리 방지
+    if (this.session.status === 'ended') {
+      console.log('[AppleGameInstance] 게임이 이미 종료됨 - finishGame 무시');
+      return;
+    }
+
     this.session.stopGame();
 
     console.log('게임 끝남. 결과: ');
@@ -285,6 +291,9 @@ export class AppleGameInstance implements GameInstance {
           totalScore: player.reportCard.score,
         };
         this.session.broadcastPacket(dropCellIndexPacket);
+
+        // 점수 변경 시 UPDATE_SCORE 전송 (사운드 재생용)
+        this.broadcastScoreboard();
       }
     }
   }

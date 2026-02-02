@@ -42,7 +42,7 @@ const FLAPPY_BIRD_SPRITES = [
 
 function AppContent() {
   const testPlayerCount = 4;
-  const { pause, reset, loadBGM } = useBGMContext();
+  const { pause, reset } = useBGMContext();
   const { playSFX } = useSFXContext();
 
   // todo 제거 예정
@@ -301,10 +301,10 @@ function AppContent() {
     // todo 이거 음악 clientHandler에서 READY_SCENE 받을 때 수행하기
     if (gameType === 'apple') {
       // setApplePreset(preset as AppleGamePreset);
-      loadBGM('appleGame');
+      //loadBGM('appleGame');
     } else if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
-      loadBGM('flappyBird');
+      //loadBGM('flappyBird');
     } else if (gameType === 'minesweeper') {
       const minesweeperPreset =
         (preset as MineSweeperGamePreset | undefined)?.mapSize &&
@@ -313,7 +313,7 @@ function AppContent() {
           ? (preset as MineSweeperGamePreset)
           : DEFAULT_MINESWEEPER_PRESET;
       setMinesweeperPreset(minesweeperPreset);
-      loadBGM('minesweeper');
+      //loadBGM('minesweeper');
     }
 
     const gameStartReq: ServerPacket = {

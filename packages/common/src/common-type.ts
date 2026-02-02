@@ -1,5 +1,6 @@
 // --- COMMON TYPES ---
 export interface PlayerData {
+  id: string; // Socket ID
   playerName: string;
   color: string;
   reportCard: ReportCard;

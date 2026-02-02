@@ -64,8 +64,8 @@ export function resolveMineSweeperPreset(
       gridRows = 27;
       break;
     case 'large':
-      gridCols = 60;
-      gridRows = 36;
+      gridCols = 50;
+      gridRows = 30;
       break;
     case 'manual':
       gridCols = preset.manualCols ?? 40;

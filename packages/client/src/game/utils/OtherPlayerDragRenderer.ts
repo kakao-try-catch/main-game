@@ -31,6 +31,7 @@ export class OtherPlayerDragRenderer {
   private playerStates: Map<number, PlayerDragState> = new Map();
   private updateEvent?: Phaser.Time.TimerEvent;
   private unsubscribe?: () => void;
+  private isDestroyed = false;
 
   private static readonly INTERPOLATION_SPEED = 0.15; // lerp 계수
   private static readonly FADE_TIMEOUT_MS = 500; // 패킷 미수신 시 페이드 아웃
@@ -44,6 +45,16 @@ export class OtherPlayerDragRenderer {
     this.container = container;
     this.startUpdateLoop();
     this.subscribeToStore();
+  }
+
+  /** scene이 유효한지 확인 */
+  private isSceneValid(): boolean {
+    return (
+      !this.isDestroyed &&
+      this.scene != null &&
+      this.scene.sys != null &&
+      this.scene.sys.game != null
+    );
   }
 
   /** gameStore 구독 */
@@ -60,6 +71,10 @@ export class OtherPlayerDragRenderer {
 
   /** UPDATE_DRAG_AREA 패킷 수신 시 호출 */
   public updatePlayerDrag(data: DragAreaData): void {
+    if (!this.isSceneValid()) {
+      return;
+    }
+
     const ratio = window.__GAME_RATIO || 1;
 
     // 정규화 좌표를 실제 좌표로 변환
@@ -120,6 +135,10 @@ export class OtherPlayerDragRenderer {
   }
 
   private update(): void {
+    if (!this.isSceneValid()) {
+      return;
+    }
+
     const now = Date.now();
 
     this.playerStates.forEach((state, playerIndex) => {
@@ -186,8 +205,9 @@ export class OtherPlayerDragRenderer {
   }
 
   public destroy(): void {
-    this.updateEvent?.destroy();
+    this.isDestroyed = true;
     this.unsubscribe?.();
+    this.updateEvent?.destroy();
     this.playerStates.forEach((state) => state.graphics.destroy());
     this.playerStates.clear();
   }

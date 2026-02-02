@@ -70,7 +70,9 @@ function AppContent() {
     return {
       finalScore: flappyGameOverData.finalScore,
       reason: flappyGameOverData.reason,
-      collidedPlayerId: String(flappyGameOverData.collidedPlayerIndex) as PlayerId,
+      collidedPlayerId: String(
+        flappyGameOverData.collidedPlayerIndex,
+      ) as PlayerId,
       players: players.map((p, i) => ({
         ...p,
         playerIndex: i,
@@ -105,12 +107,6 @@ function AppContent() {
       reset();
     }
   }, [isFlappyGameOver, playSFX, pause, reset]);
-
-  // 플래피버드 점수 업데이트 핸들러
-  // todo 이거 setFlappyScore 제거 해줘야 함. 통합 대상.
-  const handleFlappyScoreUpdate = useCallback((score: number) => {
-    setFlappyScore(score);
-  }, []);
 
   // 지뢰찾기 점수 업데이트 핸들러
   const handleMinesweeperScoreUpdate = useCallback(
@@ -152,6 +148,21 @@ function AppContent() {
       );
     }
   }, [gameSessionId, setPlayers, resetFlappyState]);
+
+  // 게임 세션이 새로 시작될 때(리플레이 포함) 관련 상태 초기화
+  // useEffect(() => {
+  //   if (gameSessionId > 0) {
+  //     console.log(
+  //       `[App] Game Session ${gameSessionId} started - resetting states`,
+  //     );
+  //     setFlappyScore(0); // todo 추후 빼내야 함.
+  //     resetFlappyState(); // store의 FlappyBird 상태 초기화
+  //     // 플레이어 점수 초기화
+  //     setPlayers((prev) =>
+  //       prev.map((p) => ({ ...p, reportCard: { ...p.reportCard, score: 0 } })),
+  //     );
+  //   }
+  // }, [gameSessionId, setPlayers, resetFlappyState]);
 
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
@@ -230,8 +241,20 @@ function AppContent() {
   };
 
   const handleGameStart = (gameType: string, preset: unknown) => {
-    // 플래피버드 프리셋만 로컬에서 관리 (사과게임은 gameStore.gameConfig 사용)
-    if (gameType === 'flappy') {
+    // todo 잘못됨
+    // // 플래피버드 프리셋만 로컬에서 관리 (사과게임은 gameStore.gameConfig 사용)
+    //     if (gameType === 'flappy') {
+    //       setFlappyPreset(preset as FlappyBirdGamePreset);
+    // setCurrentGameType(gameType as GameType);
+
+    // 새 게임 시작 시 key 변경
+    // setGameKey((prev) => prev + 1);
+
+    // todo 이거 음악 clientHandler에서 READY_SCENE 받을 때 수행하기
+    if (gameType === 'apple') {
+      // setApplePreset(preset as AppleGamePreset);
+      // loadBGM('appleGame');
+    } else if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
     } else if (gameType === 'minesweeper') {
       const minesweeperPreset =
@@ -397,7 +420,6 @@ function AppContent() {
             players={players}
             flappyPreset={flappyPreset}
             minesweeperPreset={minesweeperPreset}
-            onScoreUpdate={handleFlappyScoreUpdate}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
             onGameReady={handleGameReady}
           />

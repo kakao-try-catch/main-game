@@ -206,9 +206,15 @@ function Lobby({ players, onGameStart }: LobbyProps) {
   };
 
   const handleCopyLink = () => {
-    // TODO: 서버에서 받은 실제 초대 링크로 교체 필요
-    const link = window.location.href;
-    navigator.clipboard.writeText(link);
+    const roomId = useGameStore.getState().roomId;
+
+    if (!roomId) {
+      showTooltip('방 ID를 가져올 수 없습니다', 'error');
+      return;
+    }
+
+    const inviteLink = `${window.location.origin}/invite/${roomId}`;
+    navigator.clipboard.writeText(inviteLink);
     showTooltip('초대 링크가 복사되었습니다!', 'success');
   };
 

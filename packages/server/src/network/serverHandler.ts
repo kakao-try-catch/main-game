@@ -1,12 +1,11 @@
 import { Server, Socket } from 'socket.io';
 import {
-  AppleGamePacketType,
   SystemPacketType,
   ServerPacket,
   RoomUpdatePacket,
   RoomUpdateType,
 } from '../../../common/src/packets';
-import { GameSession } from '../../../common/src/config';
+import { GameSession } from '../games/gameSession';
 import { customAlphabet } from 'nanoid';
 
 // 커스텀 nanoid 생성기
@@ -18,18 +17,6 @@ const sessions = new Map<string, GameSession>();
 
 // Player ID -> Room ID
 const playerRooms = new Map<string, string>(); // todo 얘가 지금 기본 socket.io room 으로 대체 가능성이 있음.
-
-// Player ID -> last drag area & repeat count
-const playerDragState = new Map<
-  number,
-  {
-    startX: number;
-    startY: number;
-    endX: number;
-    endY: number;
-    repeatCount: number;
-  }
->();
 
 export function getSession(roomId: string): GameSession | undefined {
   return sessions.get(roomId);
@@ -254,13 +241,7 @@ export async function joinPlayerToGame(
   }
 
   if (!session) {
-    session = new GameSession(io, roomId, (packet: ServerPacket) => {
-      // packet에서 type과 나머지 데이터를 분리
-      const { type, ...payload } = packet;
-
-      // Broadcast callback
-      io.to(roomId).emit(packet.type, payload);
-    });
+    session = new GameSession(io, roomId);
     sessions.set(roomId, session); // todo 얘는 생성할 때만 있어도 되는 거 아님?
     console.log(`Created new Game Session for ${roomId}`);
 

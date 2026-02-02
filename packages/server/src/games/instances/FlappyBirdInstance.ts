@@ -5,24 +5,20 @@ import {
   GameType,
   FlappyBirdGamePreset,
   resolveFlappyBirdPreset,
-} from '../../../common/src/config';
+} from '../../../../common/src/config';
+import { FlappyBirdPacketType } from '../../../../common/src/packets';
 import {
-  FlappyBirdPacketType,
-  FlappyBirdData,
   FlappyPipeData,
-} from '../../../common/src/packets';
-import { PlayerState } from '../../../common/src/common-type';
+  PlayerState,
+} from '../../../../common/src/common-type';
+import { GameSession } from '../../../../common/src/config';
 
 export class FlappyBirdInstance implements GameInstance {
-  readonly gameType = GameType.FLAPPY_BIRD;
-
   // Matter.js (MockServerCore에서 이전)
   private engine: Matter.Engine;
   private world: Matter.World;
   private birds: Matter.Body[] = [];
 
-  // Game state
-  private status: 'waiting' | 'playing' | 'ended' = 'waiting';
   private score: number = 0;
   private pipes: FlappyPipeData[] = [];
   private config: ResolvedFlappyBirdConfig;
@@ -33,21 +29,20 @@ export class FlappyBirdInstance implements GameInstance {
   private readonly NETWORK_TICK_RATE = 20;
   private physicsTick: number = 0;
 
-  private broadcastCallback: (packet: any) => void = () => {};
-  private players: Map<string, PlayerState> = new Map();
+  private session: GameSession;
 
-  initialize(
-    config: FlappyBirdGamePreset,
-    players: Map<string, PlayerState>,
-  ): void {
-    this.players = players;
+  constructor(session: GameSession) {
+    this.session = session;
+  }
+
+  initialize(config: FlappyBirdGamePreset): void {
     this.config = resolveFlappyBirdPreset(config);
     this.initializePhysics();
     this.createBirds(players.size);
   }
 
   start(): void {
-    this.status = 'playing';
+    this.session.status = 'playing';
     this.updateInterval = setInterval(
       () => this.physicsUpdate(),
       1000 / this.PHYSICS_FPS,
@@ -55,9 +50,11 @@ export class FlappyBirdInstance implements GameInstance {
   }
 
   stop(): void {
-    this.status = 'ended';
+    this.session.status = 'ended';
     if (this.updateInterval) clearInterval(this.updateInterval);
   }
+
+  destroy(): void {}
 
   handlePacket(socketId: string, playerIndex: number, packet: any): void {
     switch (packet.type) {

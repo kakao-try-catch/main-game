@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 // @ts-ignore
-import { joinPlayerToGame, getSession } from '../applegame/serverHandler';
+import { joinPlayerToGame, getSession } from '../network/serverHandler';
 // Mock Socket + Server with minimal adapter.rooms tracking
 const mockAdapter = { rooms: new Map<string, Set<string>>() };
 

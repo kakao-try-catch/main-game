@@ -4,7 +4,7 @@ import {
   joinPlayerToGame,
   handleClientPacket,
   getSession,
-} from '../applegame/serverHandler';
+} from '../network/serverHandler';
 import { GamePacketType } from '../../../common/src/packets';
 
 // Mock Socket + Server with minimal adapter.rooms tracking

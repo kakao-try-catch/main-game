@@ -5,7 +5,7 @@ import {
   handleClientPacket,
   handleDisconnect,
   handleConnection,
-} from './applegame/serverHandler';
+} from './network/serverHandler';
 import { ServerPacket, SystemPacketType } from '../../common/src/packets';
 
 console.log('Game server starting...');

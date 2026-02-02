@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 // @ts-ignore
-import { joinPlayerToGame, getSession } from '../applegame/serverHandler';
+import { joinPlayerToGame, getSession } from '../network/serverHandler';
 
 // Mock Socket + Server (lobby-req-test.ts 참고)
 const mockAdapter = { rooms: new Map<string, Set<string>>() };

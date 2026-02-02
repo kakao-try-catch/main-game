@@ -13,7 +13,10 @@ interface LandingPageProps {
 }
 
 function LandingPage({ onStart }: LandingPageProps) {
-  const [nickname, setNickname] = useState('');
+  //test 테스트 용이성으로 위해 임시로 1~10 무작위 숫자가 이름 칸에 들어가도록 함. 바로 시작 누르려고
+  const [nickname, setNickname] = useState(() =>
+    Math.floor(Math.random() * 10 + 1).toString(),
+  );
   const [showTooltip, setShowTooltip] = useState(false);
   const [showLengthTooltip, setShowLengthTooltip] = useState(false);
   const { playSFX } = useSFXContext();

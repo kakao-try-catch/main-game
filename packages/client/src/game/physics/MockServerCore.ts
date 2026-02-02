@@ -43,10 +43,10 @@ export class MockServerCore {
   private screenHeight: number = GAME_HEIGHT;
 
   // 물리 파라미터
-  private readonly GRAVITY_Y = 1; // 더 빨리 떨어지도록 상향 (0.8 -> 1.2)
+  private readonly GRAVITY_Y = 0.05; // 테스트를 위해 매우 느리게 설정
   private readonly BIRD_WIDTH = 72; // 80 * 0.9 (10% 축소)
   private readonly BIRD_HEIGHT = 53; // 59 * 0.9 (10% 축소, 정수)
-  private readonly FLAP_VELOCITY = -10; // 플랩 정도
+  private readonly FLAP_VELOCITY = -0.5; // 테스트를 위해 매우 약하게 설정
   private readonly FLAP_VERTICAL_JITTER_RATIO = 0.2; // 규칙적 플랩 정렬 방지용 수직 변동 비율
   private isGameOverState: boolean = false; // 게임 오버 상태 추적
   private lastFlapTime: Map<number, number> = new Map(); // 각 새의 마지막 점프 시간

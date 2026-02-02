@@ -41,6 +41,8 @@ export interface LobbyProps {
   players: PlayerData[];
   onGameStart: (gameType: string, preset: unknown) => void;
 }
+import { useSFXContext } from '../contexts/SFXContext';
+import { GAME_DESCRIPTIONS } from '../constants/gameDescriptions';
 
 const {
   PLAYER_COLORS,
@@ -58,6 +60,7 @@ const DIFFICULTY_COLORS = {
   hard: '#F44336',
 } as const;
 function Lobby({ players, onGameStart }: LobbyProps) {
+  const { playSFX } = useSFXContext();
   // 게임 리스트
   const [games] = useState<Game[]>([
     { id: 'apple', name: '다같이 사과 게임', thumbnail: '🍎' },
@@ -111,6 +114,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
   const isDisabled = !isHost;
 
   const handleSelectGame = (gameId: string) => {
+    playSFX('buttonClick');
     setSelectedGame(gameId);
     // send current settings to server
     const settings = gameSettings[gameId];
@@ -323,8 +327,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
 
       // 입력 중이면 timeLimit은 덮어쓰지 않음
       const isEditingAppleTime =
-        localTimeInput['apple'] !== undefined &&
-        localTimeInput['apple'] !== '';
+        localTimeInput['apple'] !== undefined && localTimeInput['apple'] !== '';
 
       setTimeout(() => {
         setGameSettings((prev) => ({
@@ -332,7 +335,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
           apple: {
             ...prev.apple,
             mapSize,
-            timeLimit: isEditingAppleTime ? prev.apple.timeLimit : cfg.totalTime,
+            timeLimit: isEditingAppleTime
+              ? prev.apple.timeLimit
+              : cfg.totalTime,
             appleRange,
             includeZero: cfg.includeZero,
           },
@@ -421,12 +426,20 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                     )}
                     <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
-                      <h3 className="game-name">{game.name}</h3>
+                      <div className="game-name-row">
+                        <h3 className="game-name">{game.name}</h3>
+                        {GAME_DESCRIPTIONS[game.id] && (
+                          <span className="game-description">
+                            {GAME_DESCRIPTIONS[game.id]}
+                          </span>
+                        )}
+                      </div>
                       {game.id === 'apple' ? (
                         <div
                           className="settings-edit"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -512,7 +525,10 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
-                                    commitTimeLimit(game.id, DEFAULT_TIME_LIMIT);
+                                    commitTimeLimit(
+                                      game.id,
+                                      DEFAULT_TIME_LIMIT,
+                                    );
                                     e.currentTarget.blur();
                                   }
                                 }}
@@ -526,7 +542,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                 }}
                               />
                             ) : (
-                              <div className="nes-select is-small">
+                              <div className="nes-select is-small is-compact">
                                 <select
                                   value={settings.timeLimit}
                                   onChange={(e) => {
@@ -577,7 +593,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                           </div>
                           <div className="setting-item">
                             <label>사과 생성:</label>
-                            <div className="nes-select is-small">
+                            <div className="nes-select is-small is-compact">
                               <select
                                 value={settings.appleRange}
                                 onChange={(e) =>
@@ -591,21 +607,21 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                 style={{
                                   color:
                                     settings.appleRange === '1-9'
-                                      ? DIFFICULTY_COLORS.easy
+                                      ? DIFFICULTY_COLORS.normal
                                       : DIFFICULTY_COLORS.hard,
                                 }}
                               >
                                 <option
                                   value="1-9"
-                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
                                 >
-                                  쉬움(1-9)
+                                  1-9
                                 </option>
                                 <option
                                   value="1-5"
                                   style={{ color: DIFFICULTY_COLORS.hard }}
                                 >
-                                  어려움(1-5)
+                                  1-5
                                 </option>
                               </select>
                             </div>
@@ -659,6 +675,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                           className="settings-edit settings-flappy"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -708,49 +725,6 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                             </div>
                           </div>
                           <div className="setting-item">
-                            <label>파이프 넓이:</label>
-                            <div className="nes-select is-small">
-                              <select
-                                value={settings.pipeWidth}
-                                onChange={(e) =>
-                                  handleSettingChange(
-                                    game.id,
-                                    'pipeWidth',
-                                    e.target.value,
-                                  )
-                                }
-                                onFocus={() => handleSelectGame(game.id)}
-                                style={{
-                                  color:
-                                    settings.pipeWidth === 'narrow'
-                                      ? DIFFICULTY_COLORS.easy
-                                      : settings.pipeWidth === 'normal'
-                                        ? DIFFICULTY_COLORS.normal
-                                        : DIFFICULTY_COLORS.hard,
-                                }}
-                              >
-                                <option
-                                  value="narrow"
-                                  style={{ color: DIFFICULTY_COLORS.easy }}
-                                >
-                                  좁음
-                                </option>
-                                <option
-                                  value="normal"
-                                  style={{ color: DIFFICULTY_COLORS.normal }}
-                                >
-                                  보통
-                                </option>
-                                <option
-                                  value="wide"
-                                  style={{ color: DIFFICULTY_COLORS.hard }}
-                                >
-                                  넓음
-                                </option>
-                              </select>
-                            </div>
-                          </div>
-                          <div className="setting-item">
                             <label>좌우 간격:</label>
                             <div className="nes-select is-small">
                               <select
@@ -789,6 +763,49 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   style={{ color: DIFFICULTY_COLORS.hard }}
                                 >
                                   좁음
+                                </option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="setting-item">
+                            <label>파이프 두께:</label>
+                            <div className="nes-select is-small">
+                              <select
+                                value={settings.pipeWidth}
+                                onChange={(e) =>
+                                  handleSettingChange(
+                                    game.id,
+                                    'pipeWidth',
+                                    e.target.value,
+                                  )
+                                }
+                                onFocus={() => handleSelectGame(game.id)}
+                                style={{
+                                  color:
+                                    settings.pipeWidth === 'narrow'
+                                      ? DIFFICULTY_COLORS.easy
+                                      : settings.pipeWidth === 'normal'
+                                        ? DIFFICULTY_COLORS.normal
+                                        : DIFFICULTY_COLORS.hard,
+                                }}
+                              >
+                                <option
+                                  value="narrow"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  좁음
+                                </option>
+                                <option
+                                  value="normal"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통
+                                </option>
+                                <option
+                                  value="wide"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  넓음
                                 </option>
                               </select>
                             </div>
@@ -930,6 +947,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                           className="settings-edit"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -961,19 +979,19 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   value="large"
                                   style={{ color: DIFFICULTY_COLORS.easy }}
                                 >
-                                  큼 (60x30)
+                                  큼 (50x30)
                                 </option>
                                 <option
                                   value="medium"
                                   style={{ color: DIFFICULTY_COLORS.normal }}
                                 >
-                                  보통 (40x20)
+                                  보통 (45x27)
                                 </option>
                                 <option
                                   value="small"
                                   style={{ color: DIFFICULTY_COLORS.hard }}
                                 >
-                                  작음 (20x10)
+                                  작음 (30x18)
                                 </option>
                               </select>
                             </div>
@@ -1029,7 +1047,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                 }}
                               />
                             ) : (
-                              <div className="nes-select is-small">
+                              <div className="nes-select is-small is-compact">
                                 <select
                                   value={settings.timeLimit}
                                   onChange={(e) => {
@@ -1080,7 +1098,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                           </div>
                           <div className="setting-item">
                             <label>지뢰 비율:</label>
-                            <div className="nes-select is-small">
+                            <div className="nes-select is-small is-compact">
                               <select
                                 value={settings.mineRatio}
                                 onChange={(e) =>
@@ -1165,21 +1183,32 @@ function Lobby({ players, onGameStart }: LobbyProps) {
 
       {/* 하단: 버튼들 */}
       <div className="lobby-footer">
-        <button className="nes-btn" onClick={handleCopyLink}>
+        <button
+          className="nes-btn"
+          onClick={() => {
+            playSFX('buttonClick');
+            handleCopyLink();
+          }}
+          onMouseEnter={() => playSFX('buttonHover')}
+        >
           <i className="nes-icon is-small link"></i>
           초대 링크 복사
         </button>
         <div
           className="button-wrapper"
-          onMouseEnter={() =>
+          onMouseEnter={() => {
+            playSFX('buttonHover');
             (!selectedGame || isDisabled || players.length < 2) &&
-            setShowButtonTooltip(true)
-          }
+              setShowButtonTooltip(true);
+          }}
           onMouseLeave={() => setShowButtonTooltip(false)}
         >
           <button
             className="nes-btn is-primary"
-            onClick={handleStartGame}
+            onClick={() => {
+              playSFX('buttonClick');
+              handleStartGame();
+            }}
             disabled={!selectedGame || isDisabled || players.length < 2}
           >
             게임 시작

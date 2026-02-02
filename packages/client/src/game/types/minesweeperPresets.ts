@@ -56,15 +56,15 @@ export function resolveMineSweeperPreset(
   let gridRows: number;
   switch (preset.mapSize) {
     case 'small':
-      gridCols = 20;
-      gridRows = 10;
+      gridCols = 30;
+      gridRows = 18;
       break;
     case 'medium':
-      gridCols = 40;
-      gridRows = 20;
+      gridCols = 45;
+      gridRows = 27;
       break;
     case 'large':
-      gridCols = 60;
+      gridCols = 50;
       gridRows = 30;
       break;
     case 'manual':

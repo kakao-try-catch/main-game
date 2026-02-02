@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { GameContainer } from './game/GameContainer';
+import { GameContainer, type GameEndEvent } from './game/GameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { useGameStore } from './store/gameStore';
 
 import PlayerCard from './components/PlayerCard';
+import TintedFlagIcon from './components/TintedFlagIcon';
 import GameResult from './game/utils/game-result/GameResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
@@ -16,12 +17,14 @@ import {
   DEFAULT_MINESWEEPER_PRESET,
 } from './game/types/minesweeper.types';
 import { GameType } from '../../common/src/config';
-import type { PlayerId } from './game/types/flappybird.types';
+import type { PlayerId, GameOverEvent } from './game/types/flappybird.types';
+import { CONSTANTS } from './game/types/common';
 import {
   SystemPacketType,
   type JoinRoomPacket,
   type ServerPacket,
 } from '../../common/src/packets';
+import { GAME_DESCRIPTIONS } from './constants/gameDescriptions';
 import flappyBird1 from './assets/images/flappybird_1.png';
 import flappyBird2 from './assets/images/flappybird_2.png';
 import flappyBird3 from './assets/images/flappybird_3.png';
@@ -39,7 +42,7 @@ const FLAPPY_BIRD_SPRITES = [
 
 function AppContent() {
   const testPlayerCount = 4;
-  const { pause, reset } = useBGMContext();
+  const { pause, reset, loadBGM } = useBGMContext();
   const { playSFX } = useSFXContext();
 
   // todo 제거 예정
@@ -63,6 +66,9 @@ function AppContent() {
   // players: prefer server-provided players (from zustand store), fallback to currentPlayer
   const players = useGameStore((s) => s.players);
   const setPlayers = useGameStore((s) => s.setPlayers);
+
+  // 지뢰찾기 깃발 카운트 (플레이어별)
+  const [flagCounts, setFlagCounts] = useState<Record<string, number>>({});
 
   // FlappyBird 게임 오버 데이터를 GameResult가 기대하는 형식으로 변환
   const flappyFinalData = useMemo(() => {
@@ -100,13 +106,47 @@ function AppContent() {
 
   // 게임 종료 시 BGM/SFX 처리 (store에서 isFlappyGameOver 변경 감지)
   const resetFlappyState = useGameStore((s) => s.resetFlappyState);
-  useEffect(() => {
-    if (isFlappyGameOver) {
+  const handleGameEnd = useCallback(
+    (data: GameEndEvent) => {
+      if (data.gameType === 'flappy') {
+        // isFlappyGameOver
+        setFlappyFinalData({
+          finalScore: data.finalScore,
+          reason: data.reason,
+          collidedPlayerId: data.collidedPlayerId,
+          players: data.players,
+        });
+        setFlappyGameEnded(true);
+      } else {
+        setFinalPlayers(data.players);
+        setGameEnded(true);
+      }
       playSFX('appleGameEnd');
-      pause();
-      reset();
-    }
-  }, [isFlappyGameOver, playSFX, pause, reset]);
+      pause(); // 게임 종료 시 BGM 중지
+      reset(); // 게임 종료 시 BGM을 처음으로 되감기
+    },
+    [isFlappyGameOver, playSFX, pause, reset],
+  );
+
+  // 플래피버드 점수 업데이트 핸들러
+  const handleFlappyScoreUpdate = useCallback((score: number) => {
+    setFlappyScore(score);
+  }, []);
+
+  // 플래피버드 점프 사운드 핸들러
+  const handleFlappyJump = useCallback(() => {
+    playSFX('flappyJump');
+  }, [playSFX]);
+
+  // 플래피버드 충돌 사운드 핸들러
+  const handleFlappyStrike = useCallback(() => {
+    playSFX('flappyStrike');
+  }, [playSFX]);
+
+  // 플래피버드 점수 획득 사운드 핸들러
+  const handleFlappyScore = useCallback(() => {
+    playSFX('flappyScore');
+  }, [playSFX]);
 
   // 지뢰찾기 점수 업데이트 핸들러
   const handleMinesweeperScoreUpdate = useCallback(
@@ -135,21 +175,6 @@ function AppContent() {
   );
 
   // 게임 세션이 새로 시작될 때(리플레이 포함) 관련 상태 초기화
-  useEffect(() => {
-    if (gameSessionId > 0) {
-      console.log(
-        `[App] Game Session ${gameSessionId} started - resetting states`,
-      );
-      setFlappyScore(0);
-      resetFlappyState(); // store의 FlappyBird 상태 초기화
-      // 플레이어 점수 초기화
-      setPlayers((prev) =>
-        prev.map((p) => ({ ...p, reportCard: { ...p.reportCard, score: 0 } })),
-      );
-    }
-  }, [gameSessionId, setPlayers, resetFlappyState]);
-
-  // 게임 세션이 새로 시작될 때(리플레이 포함) 관련 상태 초기화
   // useEffect(() => {
   //   if (gameSessionId > 0) {
   //     console.log(
@@ -163,6 +188,34 @@ function AppContent() {
   //     );
   //   }
   // }, [gameSessionId, setPlayers, resetFlappyState]);
+  // 지뢰찾기 깃발 카운트 업데이트 핸들러
+  const handleFlagCountUpdate = useCallback(
+    (newFlagCounts: Record<string, number>) => {
+      try {
+        setFlagCounts(newFlagCounts);
+      } catch (error) {
+        console.error('Flag count update handler error:', error);
+      }
+    },
+    [],
+  );
+  // 지뢰찾기 타일 열기 사운드 핸들러
+  const handleMinesweeperTileReveal = useCallback(() => {
+    console.log('[App] 지뢰찾기 타일 열기 사운드 재생');
+    playSFX('appleDrop'); // 테스트용 appleDrop 사운드
+  }, [playSFX]);
+
+  // 지뢰찾기 지뢰 폭발 사운드 핸들러
+  const handleMinesweeperMineExplode = useCallback(() => {
+    console.log('[App] 지뢰 폭발 사운드 재생');
+    playSFX('mineExplode');
+  }, [playSFX]);
+
+  // 지뢰찾기 깃발 설치 사운드 핸들러
+  const handleMinesweeperFlagPlaced = useCallback(() => {
+    console.log('[App] 깃발 설치 사운드 재생');
+    playSFX('mineFlag');
+  }, [playSFX]);
 
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
@@ -180,6 +233,7 @@ function AppContent() {
     // setFlappyScore(0);
     // setFlappyFinalData(null);
     // setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+    // setFlagCounts({});
 
     // 나머지 처리는 서버의 READY_SCENE 패킷을 받았을 때 처리됨
   }, []);
@@ -191,6 +245,7 @@ function AppContent() {
     };
     socketManager.send(lobbyReq);
     console.log('[App] RETURN_TO_THE_LOBBY_REQ sent');
+    // setFlagCounts({});
     //     setGameReady(false); // 로비로 복귀 시 BGM 재생 트리거를 초기화
     // setGameEnded(false);
     // setFlappyGameEnded(false);
@@ -253,9 +308,10 @@ function AppContent() {
     // todo 이거 음악 clientHandler에서 READY_SCENE 받을 때 수행하기
     if (gameType === 'apple') {
       // setApplePreset(preset as AppleGamePreset);
-      // loadBGM('appleGame');
+      loadBGM('appleGame');
     } else if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
+      loadBGM('flappyBird');
     } else if (gameType === 'minesweeper') {
       const minesweeperPreset =
         (preset as MineSweeperGamePreset | undefined)?.mapSize &&
@@ -264,6 +320,7 @@ function AppContent() {
           ? (preset as MineSweeperGamePreset)
           : DEFAULT_MINESWEEPER_PRESET;
       setMinesweeperPreset(minesweeperPreset);
+      loadBGM('minesweeper');
     }
 
     const gameStartReq: ServerPacket = {
@@ -324,15 +381,29 @@ function AppContent() {
       <div
         style={{
           width: '100%',
-          flex: 1,
           display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           justifyContent: 'center',
-          alignItems: 'flex-start',
-          marginTop: '4px',
-          overflow: 'auto',
+          flex: 1,
           minHeight: 0,
         }}
       >
+        {/* 게임 설명 */}
+        {currentGameType && GAME_DESCRIPTIONS[currentGameType] && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '4px 0',
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '14px',
+              fontWeight: 500,
+            }}
+          >
+            {GAME_DESCRIPTIONS[currentGameType]}
+          </div>
+        )}
+
         <div
           style={{
             ...playerListStyle,
@@ -380,33 +451,37 @@ function AppContent() {
 
           {/* 지뢰찾기: 4개 플레이어카드 */}
           {currentGameType === GameType.MINESWEEPER &&
-            players
-              .slice(0, testPlayerCount)
-              .map((player, index) => (
-                <PlayerCard
-                  key={index}
-                  name={player.playerName}
-                  score={player.reportCard.score}
-                  color={player.color}
-                />
-              ))}
+            players.slice(0, testPlayerCount).map((player, index) => (
+              <PlayerCard
+                key={index}
+                name={player.playerName}
+                score={player.reportCard.score}
+                color={player.color}
+                extraContent={
+                  <TintedFlagIcon color={player.color}>
+                    <span style={{ color: '#212529', fontSize: '20px' }}>
+                      {flagCounts[player.id] || 0}
+                    </span>
+                  </TintedFlagIcon>
+                }
+              />
+            ))}
 
           <SoundSetting gameReady={gameReady} />
         </div>
       </div>
 
-      {/* 하단 영역 */}
+      {/* 하단 영역 - 화면 하단에 고정 */}
       <main
         className="game-container"
         style={{
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           width: '100%',
-          flex: 4,
+          flexShrink: 0,
           margin: 0,
           padding: 0,
-          minHeight: 0,
           maxHeight: '80vh',
           overflow: 'hidden',
         }}
@@ -421,6 +496,10 @@ function AppContent() {
             flappyPreset={flappyPreset}
             minesweeperPreset={minesweeperPreset}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
+            onFlagCountUpdate={handleFlagCountUpdate}
+            onMinesweeperTileReveal={handleMinesweeperTileReveal}
+            onMinesweeperMineExplode={handleMinesweeperMineExplode}
+            onMinesweeperFlagPlaced={handleMinesweeperFlagPlaced}
             onGameReady={handleGameReady}
           />
         )}

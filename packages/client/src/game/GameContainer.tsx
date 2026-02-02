@@ -4,10 +4,10 @@ import AppleGameScene from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
-import type { FlappyBirdGamePreset } from '../../../common/src/config.ts';
+import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
 import type { MineSweeperGamePreset } from './types/minesweeper.types';
 import type { PlayerData, PlayerResultData } from './types/common';
-import type { PlayerId } from './types/flappybird.types';
+import type { PlayerId, GameOverEvent } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 import { GameType } from '../../../common/src/config.ts';
 
@@ -56,6 +56,10 @@ interface GameContainerProps {
     newScore: number;
     reason: string;
   }) => void; // 지뢰찾기 점수 업데이트
+  onFlagCountUpdate?: (flagCounts: Record<string, number>) => void; // 지뢰찾기 깃발 카운트 업데이트
+  onMinesweeperTileReveal?: () => void; // 지뢰찾기 타일 열기 사운드
+  onMinesweeperMineExplode?: () => void; // 지뢰찾기 지뢰 폭발 사운드
+  onMinesweeperFlagPlaced?: () => void; // 지뢰찾기 깃발 설치 사운드
   playerCount?: number;
   players?: PlayerData[];
   flappyPreset?: FlappyBirdGamePreset;
@@ -63,6 +67,8 @@ interface GameContainerProps {
 }
 
 // todo gametype GameType으로 처리하기
+type FlappyCollisionReason = GameOverEvent['reason'];
+
 export type GameEndEvent =
   | {
       gameType: 'apple' | 'minesweeper';
@@ -71,7 +77,7 @@ export type GameEndEvent =
   | {
       gameType: 'flappy';
       finalScore: number;
-      reason: string;
+      reason: FlappyCollisionReason;
       collidedPlayerId: PlayerId;
       players: PlayerResultData[];
     };
@@ -80,10 +86,15 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
   onMinesweeperScoreUpdate,
+  onFlagCountUpdate,
+  onMinesweeperTileReveal,
+  onMinesweeperMineExplode,
+  onMinesweeperFlagPlaced,
   playerCount = 4,
   players = [],
   flappyPreset,
   // minesweeperPreset, todo preset 통일
+  minesweeperPreset,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -250,19 +261,83 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           );
         }
 
+        // 기존 game_over 이벤트 (호환성 유지)
+        if (onGameOver) {
+          targetScene.events.on(
+            'game_over',
+            (data: { reason: FlappyCollisionReason; finalScore: number }) => {
+              console.log('💀 game_over event received:', data);
+              onGameOver(data);
+            },
+          );
+        }
+      } else if (gameType === 'minesweeper') {
+        // 지뢰찾기 타일 열기 사운드 이벤트
+        if (onMinesweeperTileReveal) {
+          targetScene.events.on('minesweeperTileReveal', () => {
+            onMinesweeperTileReveal();
+          });
+        }
+
+        // 지뢰찾기 지뢰 폭발 사운드 이벤트
+        if (onMinesweeperMineExplode) {
+          targetScene.events.on('minesweeperMineExplode', () => {
+            console.log('💣 minesweeperMineExplode event received');
+            onMinesweeperMineExplode();
+          });
+        }
+
+        // 지뢰찾기 깃발 설치 사운드 이벤트
+        if (onMinesweeperFlagPlaced) {
+          targetScene.events.on('minesweeperFlagPlaced', () => {
+            console.log('🚩 minesweeperFlagPlaced event received');
+            onMinesweeperFlagPlaced();
+          });
+        }
+
+        // 지뢰찾기 점수 업데이트 이벤트
+        if (onMinesweeperScoreUpdate) {
+          targetScene.events.on(
+            'scoreUpdate',
+            (data: {
+              playerId: string;
+              scoreChange: number;
+              newScore: number;
+              reason: string;
+            }) => {
+              console.log('💣 minesweeper scoreUpdate event received:', data);
+              onMinesweeperScoreUpdate(data);
+            },
+          );
+        }
+
         // 지뢰찾기 게임 종료 이벤트 (타이머 완료)
-        // if (onGameEnd) {
-        //   targetScene.events.on(
-        //     'gameEnd',
-        //     (data: { players: PlayerResultData[] }) => {
-        //       console.log('🏁 minesweeper gameEnd event received:', data);
-        //       onGameEnd({
-        //         gameType: 'minesweeper',
-        //         players: data.players,
-        //       });
-        //     },
-        //   );
-        // }
+        if (onGameEnd) {
+          targetScene.events.on(
+            'gameEnd',
+            (data: { players: PlayerResultData[] }) => {
+              console.log('🏁 minesweeper gameEnd event received:', data);
+              onGameEnd({
+                gameType: 'minesweeper',
+                players: data.players,
+              });
+            },
+          );
+        }
+
+        // 지뢰찾기 깃발 카운트 업데이트 이벤트
+        if (onFlagCountUpdate) {
+          targetScene.events.on(
+            'flagCountUpdate',
+            (data: Record<string, number>) => {
+              console.log(
+                '🚩 minesweeper flagCountUpdate event received:',
+                data,
+              );
+              onFlagCountUpdate(data);
+            },
+          );
+        }
       }
 
       // 씬에 플레이어 데이터 전달

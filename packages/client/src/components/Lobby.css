@@ -200,9 +200,24 @@
   flex: 1;
 }
 
+.game-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 .game-name {
   font-size: 20px;
-  margin: 0 0 12px 0;
+  margin: 0;
+}
+
+.game-description {
+  font-size: 12px;
+  font-weight: normal;
+  color: #aaa;
+  line-height: 1.4;
+  --description-highlight-color: #4CAF50;
 }
 
 .settings-edit {
@@ -241,6 +256,10 @@
 }
 
 .settings-flappy .setting-item .nes-select select {
+  min-width: 80px;
+}
+
+.setting-item .nes-select.is-compact select {
   min-width: 80px;
 }
 

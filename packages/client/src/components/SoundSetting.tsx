@@ -16,7 +16,11 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady = false }) => {
     setVolume: setBGMVolume,
     volume: bgmVolume,
   } = useBGMContext();
-  const { setVolume: setSFXVolume, volume: sfxVolume } = useSFXContext();
+  const {
+    setVolume: setSFXVolume,
+    volume: sfxVolume,
+    playSFX,
+  } = useSFXContext();
 
   // localStorage에서 저장된 볼륨 불러오기
   const getStoredVolume = (key: string, defaultValue: number) => {
@@ -86,6 +90,7 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady = false }) => {
   };
 
   const toggleBGM = () => {
+    playSFX('buttonClick');
     if (localBGMVolume > 0) {
       // 음소거: 현재 볼륨을 저장하고 0으로 설정
       setPreviousBGMVolume(localBGMVolume);
@@ -115,6 +120,7 @@ const SoundSetting: React.FC<SoundSettingProps> = ({ gameReady = false }) => {
       setSFXVolume(previousSFXVolume);
       localStorage.setItem('sfxVolume', previousSFXVolume.toString());
     }
+    playSFX('buttonClick');
   };
 
   return (

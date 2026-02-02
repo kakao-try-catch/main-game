@@ -251,63 +251,36 @@ export class MineSweeperMockCore {
       return;
     }
 
-    // 타일 열기 (빈 공간이면 주변도 함께 열기)
-    const tileUpdates = this.revealTileWithFloodFill(row, col, playerId);
-
-    // 발견된 지뢰 수 계산 (열린 타일 중 지뢰인 것)
-    const revealedMines = tileUpdates.filter((t) => t.isMine).length;
-    if (revealedMines > 0) {
-      this.remainingMines -= revealedMines;
-      console.log(
-        `[MineSweeperMockCore] 지뢰 ${revealedMines}개 발견, 남은 지뢰: ${this.remainingMines}`,
-      );
-    }
-
-    // 타일 업데이트 이벤트 전송
-    this.socket.triggerEvent('tile_update', {
-      tiles: tileUpdates,
-      remainingMines: this.remainingMines,
-      timestamp: Date.now(),
-    });
-
-    console.log(
-      `[MineSweeperMockCore] 타일 열림: (${row}, ${col}) by ${playerId}, 총 ${tileUpdates.length}개 열림`,
-    );
-
-    // 모든 안전한 타일이 열렸는지 확인
-    this.checkWinCondition();
+    // 타일 열기 (빈 공간이면 주변도 함께 열기 - 순차적으로)
+    this.revealTileWithFloodFillSequential(row, col, playerId);
   }
 
   /**
-   * 빈 공간 클릭 시 주변 타일 자동 열기 (Flood Fill)
+   * 순차적 Flood Fill - 서버는 한 번에 처리하고, 클라이언트가 파동 애니메이션 담당
+   * 거리 정보를 포함한 타일 목록을 한 번에 전송
    */
-  private revealTileWithFloodFill(
+  private revealTileWithFloodFillSequential(
     row: number,
     col: number,
     playerId: PlayerId,
-  ): ClientTileData[] {
-    const updates: ClientTileData[] = [];
-
-    // BFS를 위한 큐
-    const queue: Array<{ row: number; col: number }> = [{ row, col }];
+  ): void {
+    // BFS로 열릴 타일을 거리별로 그룹화
+    const tilesByDistance: Map<
+      number,
+      Array<{ row: number; col: number }>
+    > = new Map();
     const visited = new Set<string>();
-
-    // 점수 계산을 위한 변수
-    let totalScoreChange = 0;
-    let mineCount = 0;
-    let safeCount = 0;
+    const queue: Array<{ row: number; col: number; distance: number }> = [
+      { row, col, distance: 0 },
+    ];
 
     while (queue.length > 0) {
       const current = queue.shift()!;
       const key = `${current.row},${current.col}`;
 
-      // 이미 방문한 타일은 건너뛰기
-      if (visited.has(key)) {
-        continue;
-      }
+      if (visited.has(key)) continue;
       visited.add(key);
 
-      // 범위 체크
       if (
         current.row < 0 ||
         current.row >= this.config.gridRows ||
@@ -319,74 +292,107 @@ export class MineSweeperMockCore {
 
       const currentTile = this.tiles[current.row][current.col];
 
-      // 이미 열린 타일은 건너뛰기 (상대방 깃발은 열 수 있음)
-      if (currentTile.state === TileState.REVEALED) {
-        continue;
-      }
+      if (currentTile.state === TileState.REVEALED) continue;
 
-      // 타일 열기 (점수 계산은 여기서 하지 않음)
-      const update = this.revealTileInternal(
-        current.row,
-        current.col,
-        playerId,
-      );
-      updates.push(update);
-
-      // 점수 계산
-      if (currentTile.isMine) {
-        mineCount++;
-        totalScoreChange += this.config.minePenalty;
-      } else {
-        safeCount++;
-        totalScoreChange += this.config.tileRevealScore;
+      // 거리별로 그룹화
+      if (!tilesByDistance.has(current.distance)) {
+        tilesByDistance.set(current.distance, []);
       }
+      tilesByDistance
+        .get(current.distance)!
+        .push({ row: current.row, col: current.col });
 
       // 빈 공간(인접 지뢰 0개)이고 지뢰가 아니면 주변 8방향 타일도 큐에 추가
       if (currentTile.adjacentMines === 0 && !currentTile.isMine) {
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
             if (dr === 0 && dc === 0) continue;
-
             const newRow = current.row + dr;
             const newCol = current.col + dc;
             const newKey = `${newRow},${newCol}`;
-
             if (!visited.has(newKey)) {
-              queue.push({ row: newRow, col: newCol });
+              queue.push({
+                row: newRow,
+                col: newCol,
+                distance: current.distance + 1,
+              });
             }
           }
         }
       }
     }
 
-    // 플레이어 점수 업데이트
+    // 거리 순서대로 정렬
+    const distances = Array.from(tilesByDistance.keys()).sort((a, b) => a - b);
+
+    // 모든 타일을 한 번에 처리 (서버 상태 즉시 업데이트)
+    let totalScoreChange = 0;
+    const allUpdates: (ClientTileData & { distance: number })[] = [];
+
+    // 연쇄 타일 열기 최대 점수 (지뢰 페널티 제외)
+    const MAX_CHAIN_SCORE = 10;
+
+    for (const distance of distances) {
+      const tilesAtDistance = tilesByDistance.get(distance)!;
+
+      for (const pos of tilesAtDistance) {
+        const tile = this.tiles[pos.row][pos.col];
+
+        // 이미 열린 타일이면 건너뛰기
+        if (tile.state === TileState.REVEALED) continue;
+
+        // 타일 열기 (서버 상태 즉시 변경)
+        const update = this.revealTileInternal(pos.row, pos.col, playerId);
+
+        // 거리 정보 추가
+        allUpdates.push({ ...update, distance });
+
+        // 점수 계산
+        if (tile.isMine) {
+          totalScoreChange += this.config.minePenalty;
+          this.remainingMines--;
+        } else {
+          // 최대 점수 제한 적용
+          if (totalScoreChange < MAX_CHAIN_SCORE) {
+            totalScoreChange += this.config.tileRevealScore;
+            // 최대 점수 초과 시 상한 적용
+            if (totalScoreChange > MAX_CHAIN_SCORE) {
+              totalScoreChange = MAX_CHAIN_SCORE;
+            }
+          }
+        }
+      }
+    }
+
+    // 한 번에 모든 타일 업데이트 전송 (거리 정보 포함)
+    if (allUpdates.length > 0) {
+      this.socket.triggerEvent('tile_update', {
+        tiles: allUpdates,
+        remainingMines: this.remainingMines,
+        timestamp: Date.now(),
+        isSequentialReveal: true, // 클라이언트에서 순차 애니메이션 처리하도록 플래그
+      });
+    }
+
+    // 점수 업데이트
     const player = this.players.get(playerId);
-    if (player && updates.length > 0) {
+    if (player && totalScoreChange !== 0) {
       player.score += totalScoreChange;
-
-      // 점수 업데이트 이벤트 전송
-      const reason =
-        updates.length > 1
-          ? 'flood_fill'
-          : mineCount > 0
-            ? 'mine_hit'
-            : 'safe_tile';
-
       this.socket.triggerEvent('score_update', {
         playerId,
         scoreChange: totalScoreChange,
         newScore: player.score,
         position: { row, col },
-        reason,
+        reason: 'flood_fill',
         timestamp: Date.now(),
       });
-
-      console.log(
-        `[MineSweeperMockCore] 점수 업데이트: ${playerId} ${totalScoreChange > 0 ? '+' : ''}${totalScoreChange} (총: ${player.score}) - ${reason}`,
-      );
     }
 
-    return updates;
+    console.log(
+      `[MineSweeperMockCore] Flood Fill 완료: ${allUpdates.length}개 타일, ${distances.length}단계 (클라이언트에서 애니메이션 처리)`,
+    );
+
+    this.checkWinCondition();
   }
 
   /**
@@ -483,6 +489,13 @@ export class MineSweeperMockCore {
       remainingMines: this.remainingMines,
       timestamp: Date.now(),
     });
+
+    // 깃발 카운트 업데이트 이벤트 전송 (React UI용)
+    const flagCounts: Record<string, number> = {};
+    for (const [id, playerData] of this.players.entries()) {
+      flagCounts[id] = playerData.flagsPlaced;
+    }
+    this.socket.triggerEvent('flagCountUpdate', flagCounts);
   }
 
   /**
@@ -513,6 +526,13 @@ export class MineSweeperMockCore {
         const flaggerPlayer = this.players.get(originalFlagger);
         if (flaggerPlayer) {
           flaggerPlayer.flagsPlaced--;
+
+          // 깃발 카운트 업데이트 이벤트 전송 (React UI용)
+          const flagCounts: Record<string, number> = {};
+          for (const [id, playerData] of this.players.entries()) {
+            flagCounts[id] = playerData.flagsPlaced;
+          }
+          this.socket.triggerEvent('flagCountUpdate', flagCounts);
         }
       }
 
@@ -599,10 +619,23 @@ export class MineSweeperMockCore {
       );
     }
 
+    // 플레이어 데이터에 깃발 통계 추가
+    const playersWithFlagStats = Array.from(this.players.values()).map(
+      (player) => {
+        const update = scoreUpdates.get(player.playerId);
+        return {
+          ...player,
+          correctFlags: update?.correctFlags ?? 0,
+          totalFlags:
+            (update?.correctFlags ?? 0) + (update?.incorrectFlags ?? 0),
+        };
+      },
+    );
+
     // 게임 종료 이벤트 전송
     this.socket.triggerEvent('game_end', {
       reason: 'win',
-      players: Array.from(this.players.values()),
+      players: playersWithFlagStats,
       timestamp: Date.now(),
     });
   }

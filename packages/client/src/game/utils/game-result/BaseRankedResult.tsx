@@ -3,6 +3,7 @@ import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
 import type { PlayerResultData } from '../../types/common';
 import { useGameStore, isPlayerHost } from '../../../store/gameStore';
+import type { PlayerData } from '../../../../../common/src/common-type';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
 type CrownSvgProps = { fill: string; style?: React.CSSProperties };
@@ -23,10 +24,6 @@ const CrownSvg: React.FC<CrownSvgProps> = ({ fill, style }) => (
   </svg>
 );
 
-interface RankedPlayer extends PlayerResultData {
-  rank: number;
-}
-
 type CrownProps = { visible: boolean; fill: string };
 
 export interface BaseRankedResultProps {
@@ -35,6 +32,7 @@ export interface BaseRankedResultProps {
   onLobby: () => void;
   ratio?: number;
   title: string;
+  renderPlayerSubline?: (player: PlayerData) => React.ReactNode;
 }
 
 const rankHeights: Record<number, number> = {
@@ -59,6 +57,25 @@ function getNameFontSize(nameLength: number): string {
   if (nameLength <= 5) return '40px';
   if (nameLength <= 7) return '34px';
   return '28px';
+
+  // todo 랭크 계산 필요함. 등수 2개 같은 경우 같은 높이 줘야 해서
+  // private calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
+  //   if (players.length === 0) return [];
+  //   const sortedPlayers = [...players].sort((a, b) => {
+  //     if (b.score !== a.score) return b.score - a.score;
+  //     return a.playerIndex - b.playerIndex;
+  //   });
+  //   const rankedPlayers: RankedPlayer[] = [];
+  //   let currentRank = 1;
+  //   for (let i = 0; i < sortedPlayers.length; i++) {
+  //     const player = sortedPlayers[i];
+  //     if (i > 0 && sortedPlayers[i - 1].score !== player.score) {
+  //       currentRank = i + 1;
+  //     }
+  //     rankedPlayers.push({ ...player, rank: currentRank });
+  //   }
+  //   return rankedPlayers;
+  // }
 }
 
 class ResultStyleBuilder {
@@ -172,6 +189,31 @@ class ResultStyleBuilder {
     };
   }
 
+  public sublineRow(): React.CSSProperties {
+    return {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: this.px(1),
+      width: '100%',
+      marginBottom: this.px(20),
+    };
+  }
+
+  public sublineItem(): React.CSSProperties {
+    return {
+      width: this.px(220),
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      fontFamily: 'NeoDunggeunmo',
+      fontSize: this.px(32),
+      color: '#212529',
+      textAlign: 'center',
+      lineHeight: this.px(28),
+    };
+  }
+
   public buttonContainer(): React.CSSProperties {
     return {
       display: 'flex',
@@ -228,6 +270,7 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
   onLobby,
   ratio: propRatio,
   title,
+  renderPlayerSubline,
 }) => {
   const { playSFX } = useSFXContext();
   const ratio =
@@ -239,6 +282,14 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
   const isHost = isPlayerHost();
   const [showReplayTooltip, setShowReplayTooltip] = useState(false);
   const [showLobbyTooltip, setShowLobbyTooltip] = useState(false);
+
+  const playerSublines = renderPlayerSubline
+    ? result.map((player) => renderPlayerSubline(player))
+    : null;
+  const hasSubline =
+    playerSublines?.some(
+      (subline) => subline !== null && subline !== undefined && subline !== '',
+    ) ?? false;
 
   return (
     <>
@@ -314,6 +365,21 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
               );
             })}
           </div>
+          {hasSubline && playerSublines && (
+            <div style={styles.sublineRow()}>
+              {playerSublines.map((subline, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    ...styles.sublineItem(),
+                    marginLeft: idx === 0 ? 0 : -5 * ratio,
+                  }}
+                >
+                  {subline ?? ''}
+                </div>
+              ))}
+            </div>
+          )}
           <div style={styles.buttonContainer()}>
             {/* REPLAY 버튼 */}
             <div

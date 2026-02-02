@@ -1,8 +1,12 @@
 import React from 'react';
-import BaseRankedResult, { type BaseRankedResultProps } from './BaseRankedResult';
+import BaseRankedResult, {
+  type BaseRankedResultProps,
+} from './BaseRankedResult';
 
-export interface MineSweeperResultProps
-  extends Omit<BaseRankedResultProps, 'title'> {
+export interface MineSweeperResultProps extends Omit<
+  BaseRankedResultProps,
+  'MINESWEEPER TOGETHER'
+> {
   stats?: {
     remainingMines?: number;
     minesHit?: number;

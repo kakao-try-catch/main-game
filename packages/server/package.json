@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@main-game/common": "workspace:*",
+    "matter-js": "^0.20.0",
+    "nanoid": "^5.1.6",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
+    "@types/matter-js": "^0.20.2",
     "@types/node": "^24.10.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",

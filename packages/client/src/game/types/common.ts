@@ -3,21 +3,15 @@
  * 플레이어 정보, 게임 결과 등 여러 게임에서 공유하는 타입들
  */
 
-/** 플레이어 기본 정보 */
-export interface PlayerData {
-  id: string;
-  name: string;
-  score: number;
-  color: string;
-}
+// PlayerData는 packets.ts의 공통 규격을 사용
+// todo 이거 왜 export 임?
+export type { PlayerData } from '../../../../common/src/packets';
+import type { PlayerData } from '../../../../common/src/packets';
 
 /** 게임 결과를 위한 플레이어 정보 (playerIndex 포함) */
 export interface PlayerResultData extends PlayerData {
   playerIndex: number;
 }
-
-/** 게임 타입 */
-export type GameType = 'apple' | 'flappy' | 'minesweeper';
 
 /** 현재 사용자 정보 */
 export interface CurrentUser {
@@ -60,12 +54,6 @@ export interface GameSettings {
   mineRatio?: 'easy' | 'normal' | 'hard'; // 지뢰 비율 (10%, 20%, 30%)
 }
 
-/** 로비 Props */
-export interface LobbyProps {
-  currentPlayer: LobbyPlayer;
-  onGameStart: (gameType: string, preset: unknown) => void;
-}
-
 /** 공통 상수 */
 export const CONSTANTS = {
   /** 플레이어 색상 (들어온 순서대로) */
@@ -90,7 +78,6 @@ export interface GameEventData {
   updatePlayers?: {
     playerCount?: number;
     players?: PlayerData[];
-    currentPlayerIndex?: number;
     preset?: unknown;
   };
 }

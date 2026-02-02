@@ -411,9 +411,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="large" style={{ color: DIFFICULTY_COLORS.easy }}>큼 (30x15)</option>
-                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통 (20x10)</option>
-                                <option value="small" style={{ color: DIFFICULTY_COLORS.hard }}>작음 (16x8)</option>
+                                <option
+                                  value="large"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  큼 (30x15)
+                                </option>
+                                <option
+                                  value="normal"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통 (20x10)
+                                </option>
+                                <option
+                                  value="small"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  작음 (16x8)
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -497,9 +512,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                           : DIFFICULTY_COLORS.hard,
                                   }}
                                 >
-                                  <option value={180} style={{ color: DIFFICULTY_COLORS.easy }}>180초</option>
-                                  <option value={120} style={{ color: DIFFICULTY_COLORS.normal }}>120초</option>
-                                  <option value={90} style={{ color: DIFFICULTY_COLORS.hard }}>90초</option>
+                                  <option
+                                    value={180}
+                                    style={{ color: DIFFICULTY_COLORS.easy }}
+                                  >
+                                    180초
+                                  </option>
+                                  <option
+                                    value={120}
+                                    style={{ color: DIFFICULTY_COLORS.normal }}
+                                  >
+                                    120초
+                                  </option>
+                                  <option
+                                    value={90}
+                                    style={{ color: DIFFICULTY_COLORS.hard }}
+                                  >
+                                    90초
+                                  </option>
                                   <option value={-1}>직접 입력</option>
                                 </select>
                               </div>
@@ -530,8 +560,18 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                       : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="1-9" style={{ color: DIFFICULTY_COLORS.easy }}>쉬움(1-9)</option>
-                                <option value="1-5" style={{ color: DIFFICULTY_COLORS.hard }}>어려움(1-5)</option>
+                                <option
+                                  value="1-9"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  쉬움(1-9)
+                                </option>
+                                <option
+                                  value="1-5"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  어려움(1-5)
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -553,7 +593,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   }
                                   onFocus={() => handleSelectGame(game.id)}
                                 />
-                                <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
+                                <span style={{ color: DIFFICULTY_COLORS.easy }}>
+                                  X
+                                </span>
                               </label>
                               <label>
                                 <input
@@ -570,7 +612,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   }
                                   onFocus={() => handleSelectGame(game.id)}
                                 />
-                                <span style={{ color: DIFFICULTY_COLORS.hard }}>O</span>
+                                <span style={{ color: DIFFICULTY_COLORS.hard }}>
+                                  O
+                                </span>
                               </label>
                             </div>
                           </div>
@@ -607,9 +651,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
-                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
-                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
+                                <option
+                                  value="wide"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  넓음
+                                </option>
+                                <option
+                                  value="normal"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통
+                                </option>
+                                <option
+                                  value="narrow"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  좁음
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -635,9 +694,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.easy }}>좁음</option>
-                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
-                                <option value="wide" style={{ color: DIFFICULTY_COLORS.hard }}>넓음</option>
+                                <option
+                                  value="narrow"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  좁음
+                                </option>
+                                <option
+                                  value="normal"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통
+                                </option>
+                                <option
+                                  value="wide"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  넓음
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -663,9 +737,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="wide" style={{ color: DIFFICULTY_COLORS.easy }}>넓음</option>
-                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
-                                <option value="narrow" style={{ color: DIFFICULTY_COLORS.hard }}>좁음</option>
+                                <option
+                                  value="wide"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  넓음
+                                </option>
+                                <option
+                                  value="normal"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통
+                                </option>
+                                <option
+                                  value="narrow"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  좁음
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -691,9 +780,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="slow" style={{ color: DIFFICULTY_COLORS.easy }}>느림</option>
-                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
-                                <option value="fast" style={{ color: DIFFICULTY_COLORS.hard }}>빠름</option>
+                                <option
+                                  value="slow"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  느림
+                                </option>
+                                <option
+                                  value="normal"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통
+                                </option>
+                                <option
+                                  value="fast"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  빠름
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -719,9 +823,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="long" style={{ color: DIFFICULTY_COLORS.easy }}>길음</option>
-                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>보통</option>
-                                <option value="short" style={{ color: DIFFICULTY_COLORS.hard }}>짧음</option>
+                                <option
+                                  value="long"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  길음
+                                </option>
+                                <option
+                                  value="normal"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통
+                                </option>
+                                <option
+                                  value="short"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  짧음
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -745,7 +864,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   }
                                   onFocus={() => handleSelectGame(game.id)}
                                 />
-                                <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
+                                <span style={{ color: DIFFICULTY_COLORS.easy }}>
+                                  X
+                                </span>
                               </label>
                               <label>
                                 <input
@@ -762,7 +883,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   }
                                   onFocus={() => handleSelectGame(game.id)}
                                 />
-                                <span style={{ color: DIFFICULTY_COLORS.hard }}>O</span>
+                                <span style={{ color: DIFFICULTY_COLORS.hard }}>
+                                  O
+                                </span>
                               </label>
                             </div>
                           </div>
@@ -799,9 +922,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="large" style={{ color: DIFFICULTY_COLORS.easy }}>큼 (60x30)</option>
-                                <option value="medium" style={{ color: DIFFICULTY_COLORS.normal }}>보통 (40x20)</option>
-                                <option value="small" style={{ color: DIFFICULTY_COLORS.hard }}>작음 (20x10)</option>
+                                <option
+                                  value="large"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  큼 (60x30)
+                                </option>
+                                <option
+                                  value="medium"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통 (40x20)
+                                </option>
+                                <option
+                                  value="small"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  작음 (20x10)
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -884,9 +1022,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                           : DIFFICULTY_COLORS.hard,
                                   }}
                                 >
-                                  <option value={240} style={{ color: DIFFICULTY_COLORS.easy }}>240초</option>
-                                  <option value={180} style={{ color: DIFFICULTY_COLORS.normal }}>180초</option>
-                                  <option value={120} style={{ color: DIFFICULTY_COLORS.hard }}>120초</option>
+                                  <option
+                                    value={240}
+                                    style={{ color: DIFFICULTY_COLORS.easy }}
+                                  >
+                                    240초
+                                  </option>
+                                  <option
+                                    value={180}
+                                    style={{ color: DIFFICULTY_COLORS.normal }}
+                                  >
+                                    180초
+                                  </option>
+                                  <option
+                                    value={120}
+                                    style={{ color: DIFFICULTY_COLORS.hard }}
+                                  >
+                                    120초
+                                  </option>
                                   <option value={-1}>직접 입력</option>
                                 </select>
                               </div>
@@ -919,9 +1072,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="easy" style={{ color: DIFFICULTY_COLORS.easy }}>10%</option>
-                                <option value="normal" style={{ color: DIFFICULTY_COLORS.normal }}>20%</option>
-                                <option value="hard" style={{ color: DIFFICULTY_COLORS.hard }}>30%</option>
+                                <option
+                                  value="easy"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  10%
+                                </option>
+                                <option
+                                  value="normal"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  20%
+                                </option>
+                                <option
+                                  value="hard"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  30%
+                                </option>
                               </select>
                             </div>
                           </div>
@@ -976,7 +1144,8 @@ function Lobby({ players, onGameStart }: LobbyProps) {
         <div
           className="button-wrapper"
           onMouseEnter={() =>
-            (!selectedGame || isDisabled || players.length < 2) && setShowButtonTooltip(true)
+            (!selectedGame || isDisabled || players.length < 2) &&
+            setShowButtonTooltip(true)
           }
           onMouseLeave={() => setShowButtonTooltip(false)}
         >

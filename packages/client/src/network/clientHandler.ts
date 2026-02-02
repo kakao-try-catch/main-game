@@ -5,7 +5,15 @@ import {
   type RoomUpdatePacket,
   type GameConfigUpdatePacket,
   FlappyBirdPacketType,
+  MineSweeperPacketType,
 } from '../../../common/src/packets.ts';
+import type {
+  MSGameInitPacket,
+  MSTileUpdatePacket,
+  MSScoreUpdatePacket,
+  MSRemainingMinesPacket,
+  MSGameEndPacket,
+} from '../../../common/src/minesweeperPackets.ts';
 import { GameType } from '../../../common/src/config.ts';
 import type { PlayerData } from '../../../common/src/common-type.ts';
 import { useGameStore } from '../store/gameStore';
@@ -224,6 +232,37 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
+    // Minesweeper 패킷
+    case MineSweeperPacketType.MS_GAME_INIT: {
+      console.log('MS_GAME_INIT received:', packet);
+      handleMSGameInit(packet as MSGameInitPacket);
+      break;
+    }
+
+    case MineSweeperPacketType.MS_TILE_UPDATE: {
+      console.log('MS_TILE_UPDATE received:', packet);
+      handleMSTileUpdate(packet as MSTileUpdatePacket);
+      break;
+    }
+
+    case MineSweeperPacketType.MS_SCORE_UPDATE: {
+      console.log('MS_SCORE_UPDATE received:', packet);
+      handleMSScoreUpdate(packet as MSScoreUpdatePacket);
+      break;
+    }
+
+    case MineSweeperPacketType.MS_REMAINING_MINES: {
+      console.log('MS_REMAINING_MINES received:', packet);
+      handleMSRemainingMines(packet as MSRemainingMinesPacket);
+      break;
+    }
+
+    case MineSweeperPacketType.MS_GAME_END: {
+      console.log('MS_GAME_END received:', packet);
+      handleMSGameEnd(packet as MSGameEndPacket);
+      break;
+    }
+
     // 클라이언트가 보낸 패킷이 루프백으로 수신되는 경우 등 예외 처리
     default:
       console.warn('Unprocessed packet type:', packet);
@@ -250,3 +289,31 @@ export const handleServerPacket = (packet: ServerPacket) => {
 //   // 3. 공통: 점수판 갱신
 //   updateScoreUI(winnerId, totalScore);
 // }
+
+// ========== Minesweeper Handlers ==========
+
+function handleMSGameInit(packet: MSGameInitPacket): void {
+  // 게임 씬으로 이벤트 전달 (MineSweeperScene에서 수신)
+  const event = new CustomEvent('ms:game_init', { detail: packet });
+  window.dispatchEvent(event);
+}
+
+function handleMSTileUpdate(packet: MSTileUpdatePacket): void {
+  const event = new CustomEvent('ms:tile_update', { detail: packet });
+  window.dispatchEvent(event);
+}
+
+function handleMSScoreUpdate(packet: MSScoreUpdatePacket): void {
+  const event = new CustomEvent('ms:score_update', { detail: packet });
+  window.dispatchEvent(event);
+}
+
+function handleMSRemainingMines(packet: MSRemainingMinesPacket): void {
+  const event = new CustomEvent('ms:remaining_mines', { detail: packet });
+  window.dispatchEvent(event);
+}
+
+function handleMSGameEnd(packet: MSGameEndPacket): void {
+  const event = new CustomEvent('ms:game_end', { detail: packet });
+  window.dispatchEvent(event);
+}

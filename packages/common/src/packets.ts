@@ -229,4 +229,8 @@ export enum MineSweeperPacketType {
 export type { MineSweeperPacket } from './minesweeperPackets';
 
 // ========== UNIFIED PACKET TYPE ==========
-export type ServerPacket = SystemPacket | AppleGamePacket | FlappyBirdPacket;
+export type ServerPacket =
+  | SystemPacket
+  | AppleGamePacket
+  | FlappyBirdPacket
+  | import('./minesweeperPackets').MineSweeperPacket;

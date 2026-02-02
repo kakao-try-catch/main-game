@@ -842,8 +842,14 @@ export default class MineSweeperScene extends Phaser.Scene {
         if (data.playerCount !== undefined) {
           this.playerCount = data.playerCount;
         }
-        if (data.players !== undefined) {
-          this.players = data.players;
+        if (data.players !== undefined && data.players.length > 0) {
+          // common PlayerData를 로컬 PlayerData로 변환
+          this.players = data.players.map((p: any) => ({
+            id: p.id || '',
+            name: p.playerName || p.name || '',
+            score: p.reportCard?.score ?? p.score ?? 0,
+            color: p.color || '#ffffff',
+          }));
         }
         // 수동 플레이어 전환이 아닌 경우에만 currentPlayerIndex 업데이트
         // (Mock 모드에서 1-4키로 플레이어 전환 시에만 해당)

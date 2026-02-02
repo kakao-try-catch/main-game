@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { GameContainer, type GameEndEvent } from './game/GameContainer';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { GameContainer } from './game/GameContainer';
 import { BGMProvider, useBGMContext } from './contexts/BGMContext';
 import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
@@ -21,7 +21,6 @@ import {
   SystemPacketType,
   type JoinRoomPacket,
   type ServerPacket,
-  type PlayerData,
 } from '../../common/src/packets';
 import flappyBird1 from './assets/images/flappybird_1.png';
 import flappyBird2 from './assets/images/flappybird_2.png';
@@ -56,19 +55,28 @@ function AppContent() {
   const setGameStarted = useGameStore((s) => s.setGameStarted);
   const gameRef = useRef<Phaser.Game | null>(null);
 
-  // 플래피버드 관련 상태 // todo 이거 왜 여기? 플레이로 통일
-  const [flappyScore, setFlappyScore] = useState(0); // 팀 점수
-  const [flappyGameEnded, setFlappyGameEnded] = useState(false); // 플래피버드 게임 종료 여부
-  const [flappyFinalData, setFlappyFinalData] = useState<{
-    finalScore: number;
-    reason: string;
-    collidedPlayerId: PlayerId;
-    players: PlayerData[]; // todo/merge: 이거 PlayerResultData 였음
-  } | null>(null);
+  // 플래피버드 관련 상태 - store에서 직접 구독
+  const [flappyScore, setFlappyScore] = useState(0); // 팀 점수 (UI 표시용)
+  const isFlappyGameOver = useGameStore((s) => s.isFlappyGameOver);
+  const flappyGameOverData = useGameStore((s) => s.flappyGameOverData);
 
   // players: prefer server-provided players (from zustand store), fallback to currentPlayer
   const players = useGameStore((s) => s.players);
   const setPlayers = useGameStore((s) => s.setPlayers);
+
+  // FlappyBird 게임 오버 데이터를 GameResult가 기대하는 형식으로 변환
+  const flappyFinalData = useMemo(() => {
+    if (!isFlappyGameOver || !flappyGameOverData) return null;
+    return {
+      finalScore: flappyGameOverData.finalScore,
+      reason: flappyGameOverData.reason,
+      collidedPlayerId: String(flappyGameOverData.collidedPlayerIndex) as PlayerId,
+      players: players.map((p, i) => ({
+        ...p,
+        playerIndex: i,
+      })),
+    };
+  }, [isFlappyGameOver, flappyGameOverData, players]);
 
   // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
   const currentGameType = useGameStore((s) => s.selectedGameType || undefined);
@@ -88,29 +96,15 @@ function AppContent() {
     setGameReady(true);
   }, []);
 
-  // todo 제거 대상
-  // todo 얘도 제거 대상
-  const handleGameEnd = useCallback(
-    (data: GameEndEvent) => {
-      if (data.gameType === 'flappy') {
-        setFlappyFinalData({
-          finalScore: data.finalScore,
-          reason: data.reason,
-          collidedPlayerId: data.collidedPlayerId,
-          players: data.players,
-        });
-        setFlappyGameEnded(true);
-      } else {
-        // setFinalPlayers(data.players); // todo final players 는 제거 대상
-        setGameStarted(false);
-        // setGameEnded(true);
-      }
+  // 게임 종료 시 BGM/SFX 처리 (store에서 isFlappyGameOver 변경 감지)
+  const resetFlappyState = useGameStore((s) => s.resetFlappyState);
+  useEffect(() => {
+    if (isFlappyGameOver) {
       playSFX('appleGameEnd');
-      pause(); // 게임 종료 시 BGM 중지
-      reset(); // 게임 종료 시 BGM을 처음으로 되감기
-    },
-    [playSFX, pause, reset],
-  );
+      pause();
+      reset();
+    }
+  }, [isFlappyGameOver, playSFX, pause, reset]);
 
   // 플래피버드 점수 업데이트 핸들러
   // todo 이거 setFlappyScore 제거 해줘야 함. 통합 대상.
@@ -151,14 +145,13 @@ function AppContent() {
         `[App] Game Session ${gameSessionId} started - resetting states`,
       );
       setFlappyScore(0);
-      setFlappyGameEnded(false);
-      setFlappyFinalData(null);
+      resetFlappyState(); // store의 FlappyBird 상태 초기화
       // 플레이어 점수 초기화
       setPlayers((prev) =>
         prev.map((p) => ({ ...p, reportCard: { ...p.reportCard, score: 0 } })),
       );
     }
-  }, [gameSessionId, setPlayers]);
+  }, [gameSessionId, setPlayers, resetFlappyState]);
 
   const handleReplay = useCallback(() => {
     console.log('[App] handleReplay 호출됨');
@@ -412,9 +405,9 @@ function AppContent() {
         <GameResult
           currentGameType={currentGameType}
           gameEnded={!isGameStarted}
-          // finalPlayers={finalPlayers} // todo finalplayers는 없음
-          flappyGameEnded={flappyGameEnded}
-          flappyFinalData={flappyFinalData} // todo ?
+          finalPlayers={players.map((p, i) => ({ ...p, playerIndex: i }))}
+          flappyGameEnded={isFlappyGameOver}
+          flappyFinalData={flappyFinalData}
           onReplay={handleReplay}
           onLobby={handleLobby}
           ratio={gameResultRatio}

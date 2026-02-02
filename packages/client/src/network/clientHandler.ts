@@ -4,6 +4,7 @@ import {
   type ServerPacket,
   type RoomUpdatePacket,
   type GameConfigUpdatePacket,
+  FlappyBirdPacketType,
 } from '../../../common/src/packets.ts';
 import { GameType } from '../../../common/src/config.ts';
 import type { PlayerData } from '../../../common/src/common-type.ts';
@@ -136,6 +137,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
+    // Apple 패킷
     case AppleGamePacketType.DROP_CELL_INDEX: {
       const store = useGameStore.getState();
       const { winnerIndex, indices, totalScore } = packet;
@@ -181,6 +183,44 @@ export const handleServerPacket = (packet: ServerPacket) => {
       const store = useGameStore.getState();
       store.setScreen('lobby');
       console.log('RETURN_TO_THE_LOBBY packet received: returning to lobby');
+      break;
+    }
+
+    // Flappy 패킷
+    case FlappyBirdPacketType.FLAPPY_WORLD_STATE: {
+      const store = useGameStore.getState();
+      store.setFlappyWorldState(
+        packet.birds,
+        packet.pipes,
+        packet.tick,
+        packet.cameraX,
+      );
+      break;
+    }
+
+    case FlappyBirdPacketType.FLAPPY_SCORE_UPDATE: {
+      const store = useGameStore.getState();
+      store.setFlappyScore(packet.score);
+      console.log('FLAPPY_SCORE_UPDATE received:', packet.score);
+      break;
+    }
+
+    case FlappyBirdPacketType.FLAPPY_GAME_OVER: {
+      const store = useGameStore.getState();
+      store.setFlappyGameOver({
+        reason: packet.reason,
+        collidedPlayerIndex: packet.collidedPlayerIndex,
+        finalScore: packet.finalScore,
+      });
+      store.setGameStarted(false);
+      console.log(
+        'FLAPPY_GAME_OVER received:',
+        packet.reason,
+        'Player',
+        packet.collidedPlayerIndex,
+        'Score:',
+        packet.finalScore,
+      );
       break;
     }
 

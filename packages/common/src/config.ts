@@ -91,6 +91,27 @@ export interface ResolvedFlappyBirdConfig {
   connectAll: boolean; // 모두 묶기 (3인 이상일 때 폐쇄형 도형으로 연결)
 }
 
+/** 플래피버드 물리 상수 (서버/클라이언트 공유) */
+export const FLAPPY_PHYSICS = {
+  // 중력 및 새 크기
+  GRAVITY_Y: 1,
+  BIRD_WIDTH: 72,
+  BIRD_HEIGHT: 53,
+  FLAP_VELOCITY: -10,
+  FLAP_VERTICAL_JITTER_RATIO: 0.2,
+
+  // 게임 영역
+  GAME_WIDTH: 1440,
+  GAME_HEIGHT: 900,
+  FLAPPY_GROUND_Y: 800,
+  GAME_CENTER_X: 720,
+
+  // 충돌 카테고리 (Matter.js)
+  CATEGORY_BIRD: 0x0001,
+  CATEGORY_PIPE: 0x0002,
+  CATEGORY_GROUND: 0x0004,
+} as const;
+
 /** 프리셋을 실제 게임 설정으로 변환하는 헬퍼 함수 */
 export function resolveFlappyBirdPreset(
   preset: FlappyBirdGamePreset,

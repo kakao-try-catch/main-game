@@ -99,8 +99,29 @@ interface GameState {
   flappyBirds: FlappyBirdData[];
   flappyPipes: FlappyPipeData[];
   flappyServerTick: number;
+  flappyCameraX: number;
   flappyScore: number;
   isFlappyGameOver: boolean;
+  flappyGameOverData: {
+    reason: 'pipe_collision' | 'ground_collision';
+    collidedPlayerIndex: number;
+    finalScore: number;
+  } | null;
+
+  // FlappyBird 액션
+  setFlappyWorldState: (
+    birds: FlappyBirdData[],
+    pipes: FlappyPipeData[],
+    tick: number,
+    cameraX: number,
+  ) => void;
+  setFlappyScore: (score: number) => void;
+  setFlappyGameOver: (data: {
+    reason: 'pipe_collision' | 'ground_collision';
+    collidedPlayerIndex: number;
+    finalScore: number;
+  }) => void;
+  resetFlappyState: () => void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -179,6 +200,41 @@ export const useGameStore = create<GameState>()(
         gameResults: null,
       }),
     setConnectionError: (err) => set({ connectionError: err }),
+
+    // FlappyBird 초기값
+    flappyBirds: [],
+    flappyPipes: [],
+    flappyServerTick: 0,
+    flappyCameraX: 0,
+    flappyScore: 0,
+    isFlappyGameOver: false,
+    flappyGameOverData: null,
+
+    // FlappyBird 액션
+    setFlappyWorldState: (birds, pipes, tick, cameraX) =>
+      set({
+        flappyBirds: birds,
+        flappyPipes: pipes,
+        flappyServerTick: tick,
+        flappyCameraX: cameraX,
+      }),
+    setFlappyScore: (score) => set({ flappyScore: score }),
+    setFlappyGameOver: (data) =>
+      set({
+        isFlappyGameOver: true,
+        flappyGameOverData: data,
+        flappyScore: data.finalScore,
+      }),
+    resetFlappyState: () =>
+      set({
+        flappyBirds: [],
+        flappyPipes: [],
+        flappyServerTick: 0,
+        flappyCameraX: 0,
+        flappyScore: 0,
+        isFlappyGameOver: false,
+        flappyGameOverData: null,
+      }),
   })),
 );
 

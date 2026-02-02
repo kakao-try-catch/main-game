@@ -133,6 +133,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
           bgmManager.loadBGM('minesweeper');
           break;
       }
+      // 리플레이 시 BGM 재생 보장 (React 배치 업데이트로 인한 상태 변경 스킵 방지)
+      bgmManager.play();
       console.log('READY_SCENE packet received', packet);
       break;
     }

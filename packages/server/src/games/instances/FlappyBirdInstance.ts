@@ -101,8 +101,9 @@ export class FlappyBirdInstance implements GameInstance {
     this.session = session;
 
     // Matter.js 엔진 생성
+    // gravity.y = 0.0015: 60fps에서 약 1/프레임의 가속도 (클라이언트 GRAVITY_Y=1과 유사)
     this.engine = Matter.Engine.create({
-      gravity: { x: 0, y: GRAVITY_Y },
+      gravity: { x: 0, y: 0.0015 },
       enableSleeping: false,
       positionIterations: 10,
       velocityIterations: 10,
@@ -374,6 +375,30 @@ export class FlappyBirdInstance implements GameInstance {
         newVelX = currentVelX * noFlapPenalty;
       }
 
+      // NaN 방지: velocity나 position이 NaN이면 초기화
+      if (
+        !Number.isFinite(bird.position.x) ||
+        !Number.isFinite(bird.position.y) ||
+        !Number.isFinite(bird.velocity.x) ||
+        !Number.isFinite(bird.velocity.y)
+      ) {
+        console.warn(
+          `[WARNING] Bird ${i} has NaN! Resetting... pos=(${bird.position.x}, ${bird.position.y}), vel=(${bird.velocity.x}, ${bird.velocity.y})`,
+        );
+        const initialPos = this.calculateBirdPositions(this.birds.length)[i];
+        Matter.Body.setPosition(bird, { x: initialPos.x, y: initialPos.y });
+        Matter.Body.setVelocity(bird, { x: 0, y: 0 });
+        continue; // 이 프레임에서는 더 이상 처리하지 않음
+      }
+
+      // 디버그: 물리 상태 확인 (첫 번째 새만, 60틱마다)
+      if (i === 0 && this.physicsTick % 60 === 0) {
+        console.log(
+          `[DEBUG] Server Physics: y=${bird.position.y.toFixed(1)}, velY=${bird.velocity.y.toFixed(2)}`,
+        );
+      }
+
+      // X 속도만 수동 조절 (중력은 Matter.js가 처리)
       Matter.Body.setVelocity(bird, {
         x: newVelX,
         y: bird.velocity.y,
@@ -672,14 +697,32 @@ export class FlappyBirdInstance implements GameInstance {
         connectedBird,
       );
 
+      // NaN 체크
+      if (!Number.isFinite(transferRatio)) {
+        console.warn(
+          `[WARNING] transferRatio is NaN for Player ${jumperIndex} -> ${connectedIndex}`,
+        );
+        continue;
+      }
+
       // 부분 점프력 전달 (위로 당기는 힘)
       const transferredVelocityY =
         FLAP_VELOCITY * transferRatio * this.forceTransferRate;
 
+      const forceY = transferredVelocityY * connectedBird.mass * 0.1;
+
+      // NaN 체크
+      if (!Number.isFinite(forceY)) {
+        console.warn(
+          `[WARNING] forceY is NaN for Player ${connectedIndex}: transferredVelocityY=${transferredVelocityY}, mass=${connectedBird.mass}`,
+        );
+        continue;
+      }
+
       // 직접 속도 변경 대신 힘으로 적용 (더 자연스러움)
       Matter.Body.applyForce(connectedBird, connectedBird.position, {
         x: 0,
-        y: transferredVelocityY * connectedBird.mass * 0.1,
+        y: forceY,
       });
 
       console.log(
@@ -701,6 +744,11 @@ export class FlappyBirdInstance implements GameInstance {
     const dx = birdB.position.x - birdA.position.x;
     const dy = birdB.position.y - birdA.position.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // NaN 체크
+    if (!Number.isFinite(distance) || distance < 1) {
+      return 0;
+    }
 
     // 거리가 0이면 최대 전달, 밧줄 길이면 0
     // 선형 보간: ratio = 1 - (distance / ropeLength)
@@ -726,7 +774,8 @@ export class FlappyBirdInstance implements GameInstance {
       const dy = birdB.position.y - birdA.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance === 0) continue;
+      // NaN 또는 너무 작은 거리 무시 (힘 폭발 방지)
+      if (!Number.isFinite(distance) || distance < 1) continue;
 
       // 단위 벡터
       const nx = dx / distance;
@@ -736,14 +785,22 @@ export class FlappyBirdInstance implements GameInstance {
       const displacement = distance - this.ropeRestLength;
       const springForce = this.ropeStiffness * displacement;
 
+      // velocity가 NaN인 새가 있으면 건너뛰기
+      if (
+        !Number.isFinite(birdA.velocity.x) ||
+        !Number.isFinite(birdB.velocity.x)
+      ) {
+        continue;
+      }
+
       // 감쇠 힘 (상대 속도의 밧줄 방향 성분)
       const relVx = birdB.velocity.x - birdA.velocity.x;
       const relVy = birdB.velocity.y - birdA.velocity.y;
       const relVelAlongRope = relVx * nx + relVy * ny;
       const dampingForce = this.ropeDamping * relVelAlongRope;
 
-      // 총 힘
-      const totalForce = springForce + dampingForce;
+      // 총 힘 (크기 제한으로 폭발 방지)
+      const totalForce = Math.max(-5, Math.min(5, springForce + dampingForce));
 
       // 각 새에 힘 적용 (반대 방향)
       const forceX = totalForce * nx;
@@ -769,7 +826,9 @@ export class FlappyBirdInstance implements GameInstance {
       const dx = birdB.position.x - birdA.position.x;
       const dy = birdB.position.y - birdA.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance === 0) continue;
+
+      // NaN 또는 너무 작은 거리 무시
+      if (!Number.isFinite(distance) || distance < 1) continue;
 
       if (distance > this.ropeLength) {
         const nx = dx / distance;

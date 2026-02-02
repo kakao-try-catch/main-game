@@ -194,6 +194,13 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     const game = new Phaser.Game(gameConfig);
     gameRef.current = game;
 
+    // 비활성 탭에서도 게임 계속 실행 (멀티플레이어 동기화를 위해 필수)
+    game.events.on('blur', () => {
+      game.loop.wake();
+    });
+    game.events.on('hidden', () => {
+      game.loop.wake();
+    });
     game.sound.pauseOnBlur = false;
 
     onGameReady?.(game);

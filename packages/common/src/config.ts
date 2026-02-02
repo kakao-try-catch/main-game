@@ -94,10 +94,10 @@ export interface ResolvedFlappyBirdConfig {
 /** 플래피버드 물리 상수 (서버/클라이언트 공유) */
 export const FLAPPY_PHYSICS = {
   // 중력 및 새 크기
-  GRAVITY_Y: 0.05, // 원래 1
+  GRAVITY_Y: 1,
   BIRD_WIDTH: 72,
   BIRD_HEIGHT: 53,
-  FLAP_VELOCITY: -0.5, // 원래 -10
+  FLAP_VELOCITY: -10,
   FLAP_VERTICAL_JITTER_RATIO: 0.2,
 
   // 게임 영역

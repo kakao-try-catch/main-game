@@ -58,13 +58,24 @@ export class BootScene extends Phaser.Scene {
     // 다음 씬을 비활성화 상태로 유지
     this.scene.sleep(this.nextSceneName);
 
+    // 전환 완료 플래그
+    let transitioned = false;
+
+    const doTransition = () => {
+      if (transitioned) return;
+      transitioned = true;
+      this.transitionToNextScene();
+    };
+
     // 다음 씬이 준비되면 전환
     const nextScene = this.scene.get(this.nextSceneName);
     if (nextScene) {
-      nextScene.events.once('scene-ready', () => {
-        this.transitionToNextScene();
-      });
+      nextScene.events.once('scene-ready', doTransition);
     }
+
+    // 비활성 탭 등의 이유로 이벤트가 오지 않을 경우를 대비한 타임아웃
+    // 2초 후에도 전환되지 않으면 강제 전환
+    this.time.delayedCall(2000, doTransition);
   }
 
   private transitionToNextScene(): void {

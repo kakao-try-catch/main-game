@@ -193,7 +193,10 @@ export class GameSession {
   }
 
   public startGame(): void {
-    if (this.status === 'playing') return;
+    if (this.status === 'playing') {
+      console.log('status가 playing이라서 시작 못 함.: ', this.status);
+      return;
+    }
     this.status = 'playing';
     // 게임 인스턴스 생성
     // todo 이거 config 값을 생성할 때부터

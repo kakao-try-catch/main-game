@@ -20,23 +20,23 @@ import { PlayerData, ReportCard } from '../../../../common/src/common-type';
 import { GameSession } from '../gameSession';
 import { Socket } from 'socket.io';
 
-// Player ID -> last drag area & repeat count
-const playerDragState = new Map<
-  number,
-  {
-    startX: number;
-    startY: number;
-    endX: number;
-    endY: number;
-    repeatCount: number;
-  }
->();
-
 export class AppleGameInstance implements GameInstance {
   private apples: number[] = [];
   private removedIndices: Set<number> = new Set();
   private timerInterval: NodeJS.Timeout | null = null;
   private timeLeft: number = 0;
+
+  // Player ID -> last drag area & repeat count
+  private playerDragState = new Map<
+    number,
+    {
+      startX: number;
+      startY: number;
+      endX: number;
+      endY: number;
+      repeatCount: number;
+    }
+  >();
 
   private session: GameSession;
 
@@ -125,7 +125,7 @@ export class AppleGameInstance implements GameInstance {
         const ex = packet.endX;
         const ey = packet.endY;
 
-        const prev = playerDragState.get(playerIndex);
+        const prev = this.playerDragState.get(playerIndex);
         const isSame =
           !!prev &&
           prev.startX === sx &&
@@ -151,7 +151,7 @@ export class AppleGameInstance implements GameInstance {
             // 필요하면 로깅 추가
           }
         } else {
-          playerDragState.set(playerIndex, {
+          this.playerDragState.set(playerIndex, {
             startX: sx,
             startY: sy,
             endX: ex,

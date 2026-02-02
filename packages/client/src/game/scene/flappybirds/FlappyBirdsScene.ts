@@ -27,7 +27,10 @@ import type {
   FlappyBirdGamePreset,
   ResolvedFlappyBirdConfig,
 } from '../../../../../common/src/config';
-import { resolveFlappyBirdPreset, GameType } from '../../../../../common/src/config';
+import {
+  resolveFlappyBirdPreset,
+  GameType,
+} from '../../../../../common/src/config';
 import {
   FlappyBirdPacketType,
   type FlappyJumpPacket,

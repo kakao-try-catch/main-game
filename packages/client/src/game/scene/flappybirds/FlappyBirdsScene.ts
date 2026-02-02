@@ -27,7 +27,7 @@ import type {
   FlappyBirdGamePreset,
   ResolvedFlappyBirdConfig,
 } from '../../../../../common/src/config';
-import { resolveFlappyBirdPreset } from '../../../../../common/src/config';
+import { resolveFlappyBirdPreset, GameType } from '../../../../../common/src/config';
 import {
   FlappyBirdPacketType,
   type FlappyJumpPacket,
@@ -183,6 +183,15 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
       // 서버에서 플레이어 인덱스 가져오기
       const store = useGameStore.getState();
+
+      // 서버 설정 적용
+      if (store.gameConfig && store.selectedGameType === GameType.FLAPPY_BIRD) {
+        this.gameConfig = resolveFlappyBirdPreset(
+          store.gameConfig as FlappyBirdGamePreset,
+        );
+        console.log('[FlappyBirdsScene] 서버 설정 적용:', this.gameConfig);
+      }
+
       this.myPlayerId = String(store.myselfIndex) as PlayerId;
       this.playerCount = store.players.length || 4;
       this.playerNames = store.players.map(

@@ -106,6 +106,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   create() {
     console.log('[FlappyBirdsScene] create 메서드 시작');
 
+    // 이전 게임 상태 초기화 (리플레이 시 필요)
+    useGameStore.getState().resetFlappyState();
+
     // 소켓 연결 먼저 (기존 리스너 정리를 위해)
     this.socket = getSocket();
 

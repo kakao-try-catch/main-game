@@ -42,6 +42,7 @@ import type {
   FlappyBirdData,
   FlappyPipeData,
 } from '../../../../../common/src/common-type';
+import { RopeRenderer } from './RopeRenderer';
 
 interface InputRecord {
   timestamp: number;
@@ -107,6 +108,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private ropes: Phaser.GameObjects.Graphics[] = [];
   private ropeMidPoints: { y: number; vy: number }[] = []; // 밧줄 중간 지점의 관성 데이터
   private ropeConnections: [number, number][] = []; // 밧줄 연결 쌍 (새 인덱스)
+  private lastRopeTensions: number[] = []; // 이전 프레임의 장력 데이터 (진동 효과용)
   private gameStarted: boolean = false; // 게임 시작 여부 (1초 딜레이 동기화)
   private isGameOver: boolean = false; // 게임 오버 여부
   private debugGraphics!: Phaser.GameObjects.Graphics;
@@ -357,6 +359,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.ropes = [];
     this.targetPositions = [];
     this.ropeMidPoints = []; // 밧줄 관성 데이터 초기화 (누행 방지)
+    this.lastRopeTensions = []; // 장력 데이터 초기화
     this.isGameOver = false; // 상태 초기화
 
     // 새 생성
@@ -1186,23 +1189,19 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   /**
-   * 클라이언트 측 새 스프라이트 위치 및 관성을 이용한 밧줄 그리기 (느슨할 때만 처짐)
+   * 클라이언트 측 새 스프라이트 위치 및 RopeRenderer를 이용한 밧줄 그리기
    */
   private drawRopesFromSprites() {
     const ratio = this.getRatio();
-    const GRAVITY = 1.5 * ratio; // 밧줄의 자체 중력
-    const STIFFNESS = 0.3; // 밧줄 관성 복원력
-    const DAMPING = 0.8; // 진동 감춴
-    const MAX_ROPE_LENGTH = 120 * ratio; // 밧줄 최대 길이
+    const configRopeLength = this.gameConfig.ropeLength * ratio;
 
     for (let i = 0; i < this.ropes.length; i++) {
       const rope = this.ropes[i];
       const [indexA, indexB] = this.ropeConnections[i];
       const birdA = this.birdSprites[indexA];
       const birdB = this.birdSprites[indexB];
-      const midPoint = this.ropeMidPoints[i];
 
-      if (birdA && birdB && midPoint) {
+      if (birdA && birdB) {
         const distance = Phaser.Math.Distance.Between(
           birdA.x,
           birdA.y,
@@ -1210,40 +1209,76 @@ export default class FlappyBirdsScene extends Phaser.Scene {
           birdB.y,
         );
 
-        // 1. 거리에 따른 처짐량 계산
-        // 거리가 MAX_ROPE_LENGTH(120) 보다 짧으면 남는 길이만큼 아래로 처짐 발생
-        let sagTarget = 2;
-
-        if (distance < MAX_ROPE_LENGTH) {
-          // 밧줄이 느슨할 때 더 뚜렷하게 곡선이 생기도록 보정 계수 상향 (1.4 -> 1.8)
-          const baseSag = Math.sqrt(
-            Math.pow(MAX_ROPE_LENGTH / 2, 2) - Math.pow(distance / 2, 2),
-          );
-          sagTarget = baseSag * 1.8;
-        }
-
-        // 2. 물리적 타겟 위치 계산
-        const targetMidX = (birdA.x + birdB.x) / 2;
-        const targetMidY = (birdA.y + birdB.y) / 2 + sagTarget;
-
-        // 3. 관성 물리 시뮬레이션
-        const ay = (targetMidY - midPoint.y) * STIFFNESS + GRAVITY;
-        midPoint.vy = (midPoint.vy + ay) * DAMPING;
-        midPoint.y += midPoint.vy;
-
-        rope.clear();
-        rope.lineStyle(6 * ratio, 0x8b4513, 0.9); // 고전적인 갈색 밧줄
-
-        // 2차 베지어 곡선을 사용하여 부드러운 처짐 표현
-        const curve = new Phaser.Curves.QuadraticBezier(
-          new Phaser.Math.Vector2(birdA.x, birdA.y),
-          new Phaser.Math.Vector2(targetMidX, midPoint.y),
-          new Phaser.Math.Vector2(birdB.x, birdB.y),
+        // 시각 상태 계산 (70% ~ 100% 길이 사이에서 장력 표현)
+        const visualState = RopeRenderer.calculateRopeVisualState(
+          distance,
+          configRopeLength * 0.7,
+          configRopeLength,
         );
 
-        const points = curve.getPoints(16);
+        // 현수선(Catenary) 곡선 계산
+        const points = RopeRenderer.calculateCatenaryCurve(
+          new Phaser.Math.Vector2(birdA.x, birdA.y),
+          new Phaser.Math.Vector2(birdB.x, birdB.y),
+          configRopeLength,
+          20, // 세그먼트 수
+        );
+
+        // 장력 변화에 따른 떨림 효과
+        const lastTension = this.lastRopeTensions[i] || 0;
+        const tensionChange = visualState.tension - lastTension;
+        this.addTensionVibration(points, tensionChange);
+        this.lastRopeTensions[i] = visualState.tension;
+
+        rope.clear();
+
+        // 1. 그림자 효과
+        this.drawRopeShadow(rope, points, visualState.thickness * ratio);
+
+        // 2. 메인 밧줄 그리기
+        rope.lineStyle(
+          visualState.thickness * ratio,
+          visualState.color,
+          visualState.alpha,
+        );
         rope.strokePoints(points);
       }
+    }
+  }
+
+  /**
+   * 밧줄 그림자 그리기
+   */
+  private drawRopeShadow(
+    graphics: Phaser.GameObjects.Graphics,
+    points: Phaser.Math.Vector2[],
+    thickness: number,
+  ): void {
+    const shadowOffset = 3;
+    graphics.lineStyle(thickness + 2, 0x000000, 0.2);
+
+    const shadowPoints = points.map(
+      (p) => new Phaser.Math.Vector2(p.x + shadowOffset, p.y + shadowOffset),
+    );
+
+    graphics.strokePoints(shadowPoints);
+  }
+
+  /**
+   * 장력 변화 시 떨림 효과 추가
+   */
+  private addTensionVibration(
+    points: Phaser.Math.Vector2[],
+    tensionChange: number,
+  ): void {
+    if (Math.abs(tensionChange) < 0.05) return;
+
+    const vibrationAmount = Math.min(8, Math.abs(tensionChange) * 20);
+
+    for (let i = 1; i < points.length - 1; i++) {
+      // 수직 방향으로 랜덤 진동
+      points[i].y += (Math.random() - 0.5) * vibrationAmount;
+      points[i].x += (Math.random() - 0.5) * (vibrationAmount * 0.5);
     }
   }
 

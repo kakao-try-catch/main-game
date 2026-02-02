@@ -3,7 +3,7 @@ import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
 import type { PlayerResultData } from '../../types/common';
 import type { PlayerId } from '../../types/flappybird.types';
-import { type FlappyPlayerStats } from '../../../../../common/src/common-type';
+
 import { isPlayerHost } from '../../../store/gameStore';
 
 export interface FlappyBirdResultProps {
@@ -12,7 +12,7 @@ export interface FlappyBirdResultProps {
   collidedPlayerId?: PlayerId;
   collidedPlayerName?: string;
   gameDuration?: number;
-  playerStats?: FlappyPlayerStats[];
+
   players?: PlayerResultData[];
   onReplay: () => void;
   onLobby: () => void;
@@ -25,7 +25,7 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
   collidedPlayerId,
   collidedPlayerName,
   gameDuration,
-  playerStats,
+
   players,
   onReplay,
   onLobby,
@@ -118,45 +118,6 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
               </div>
             )}
           </div>
-
-          {playerStats && playerStats.length > 0 && (
-            <div
-              className="nes-table-responsive"
-              style={{ marginTop: `${20 * ratio}px` }}
-            >
-              <table
-                className="nes-table is-bordered is-centered"
-                style={{
-                  width: '100%',
-                  fontFamily: 'NeoDunggeunmo',
-                  fontSize: `${18 * ratio}px`,
-                }}
-              >
-                <thead>
-                  <tr>
-                    <th>플레이어</th>
-                    <th>점프 횟수</th>
-                    <th>평균 간격</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {playerStats.map((stat) => (
-                    <tr key={stat.playerIndex}>
-                      <td style={{ color: stat.playerColor }}>
-                        {stat.playerName}
-                      </td>
-                      <td>{stat.jumpCount}</td>
-                      <td>
-                        {stat.avgJumpInterval > 0
-                          ? `${(stat.avgJumpInterval / 1000).toFixed(2)}s`
-                          : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
         <div style={getButtonContainerStyle(ratio)}>

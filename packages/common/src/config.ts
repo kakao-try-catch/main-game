@@ -99,6 +99,7 @@ export const FLAPPY_PHYSICS = {
   BIRD_HEIGHT: 53,
   FLAP_VELOCITY: -10.5, // -7.0에서 1.5배 상향
   FLAP_VERTICAL_JITTER_RATIO: 0.1,
+  FRICTION_AIR: 0.01,
 
   // 게임 영역
   GAME_WIDTH: 1440,

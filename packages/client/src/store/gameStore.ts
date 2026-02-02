@@ -3,6 +3,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import type {
   FlappyBirdData,
   FlappyPipeData,
+  FlappyRopeData,
   PlayerData,
   FlappyPlayerStats,
 } from '../../../common/src/common-type';
@@ -104,6 +105,7 @@ export interface GameState {
   // FlappyBird 상태
   flappyBirds: FlappyBirdData[];
   flappyPipes: FlappyPipeData[];
+  flappyRopes: FlappyRopeData[];
   flappyServerTick: number;
   flappyCameraX: number;
   flappyScore: number;
@@ -121,6 +123,7 @@ export interface GameState {
   setFlappyWorldState: (
     birds: FlappyBirdData[],
     pipes: FlappyPipeData[],
+    ropes: FlappyRopeData[],
     tick: number,
     cameraX: number,
   ) => void;
@@ -229,6 +232,7 @@ export const useGameStore = create<GameState>()(
         // FlappyBird 초기값
         flappyBirds: [],
         flappyPipes: [],
+        flappyRopes: [],
         flappyServerTick: 0,
         flappyCameraX: 0,
         flappyScore: 0,
@@ -239,12 +243,14 @@ export const useGameStore = create<GameState>()(
         setFlappyWorldState: (
           birds: FlappyBirdData[],
           pipes: FlappyPipeData[],
+          ropes: FlappyRopeData[],
           tick: number,
           cameraX: number,
         ) =>
           set({
             flappyBirds: birds,
             flappyPipes: pipes,
+            flappyRopes: ropes,
             flappyServerTick: tick,
             flappyCameraX: cameraX,
           }),
@@ -266,6 +272,7 @@ export const useGameStore = create<GameState>()(
           set({
             flappyBirds: [],
             flappyPipes: [],
+            flappyRopes: [],
             flappyServerTick: 0,
             flappyCameraX: 0,
             flappyScore: 0,
@@ -279,6 +286,7 @@ export const useGameStore = create<GameState>()(
               set({
                 flappyBirds: packet.birds,
                 flappyPipes: packet.pipes,
+                flappyRopes: packet.ropes || [],
                 flappyServerTick: packet.tick,
                 flappyCameraX: packet.cameraX,
               });

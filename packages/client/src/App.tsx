@@ -326,6 +326,22 @@ function AppContent() {
     }
   }, [isGameStarted, pause, reset]);
 
+  // 비활성 탭에서 게임 오버 시 결과창이 나타나지 않는 버그 수정
+  // 탭이 다시 활성화될 때 강제로 상태를 다시 읽어 React 렌더링 트리거
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // 탭이 다시 보이게 되면 강제로 컴포넌트 리렌더링
+        forceUpdate((n) => n + 1);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   const gameResultRatio =
     (window as Window & { __GAME_RATIO?: number }).__GAME_RATIO || 1;
 

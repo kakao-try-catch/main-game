@@ -9,7 +9,6 @@ import FlappyBirdResult, {
 import MineSweeperResult, {
   type MineSweeperResultProps,
 } from './MineSweeperResult';
-import { type FlappyPlayerStats } from '../../../../../common/src/common-type';
 
 type ResultPropsByGame = {
   [GameType.APPLE_GAME]: AppleResultProps;
@@ -31,7 +30,7 @@ type FlappyResultPayload = {
   collidedPlayerId?: PlayerId;
   collidedPlayerName?: string;
   gameDuration?: number;
-  playerStats?: FlappyPlayerStats[];
+
   players: PlayerResultData[];
 };
 

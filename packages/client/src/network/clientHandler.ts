@@ -222,6 +222,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
       store.setFlappyWorldState(
         packet.birds,
         packet.pipes,
+        packet.ropes || [],
         packet.tick,
         packet.cameraX,
       );

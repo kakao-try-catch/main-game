@@ -34,6 +34,7 @@ const {
   CATEGORY_BIRD,
   CATEGORY_PIPE,
   CATEGORY_GROUND,
+  FRICTION_AIR,
 } = FLAPPY_PHYSICS;
 
 /** 서버 내부용 파이프 데이터 (통과 추적 포함) */
@@ -156,14 +157,21 @@ export class FlappyBirdInstance implements GameInstance {
 
     // 플레이어 수만큼 새 생성
     const playerCount = this.session.players.size;
+    const playerIds = Array.from(this.session.players.keys());
+    console.log(
+      `[FlappyBirdInstance] Creating birds for ${playerCount} players: ${playerIds.join(', ')}`,
+    );
     this.createBirds(playerCount);
 
     // 밧줄 연결 쌍 계산
     this.ropeConnections = this.calculateRopeConnections(playerCount);
 
     console.log(
-      `[FlappyBirdInstance] 게임 초기화 완료 (플레이어: ${playerCount}, 밧줄 연결: ${this.ropeConnections.map((c) => `${c[0]}-${c[1]}`).join(', ')})`,
+      `[FlappyBirdInstance] 게임 초기화 완료 (플레이어: ${playerCount}, 새 개수: ${this.birds.length}, 밧줄 연결: ${this.ropeConnections.map((c) => `${c[0]}-${c[1]}`).join(', ')})`,
     );
+
+    // 초기 상태 브로드캐스트하여 클라이언트 동기화
+    this.broadcastWorldState();
   }
 
   start(): void {
@@ -246,7 +254,7 @@ export class FlappyBirdInstance implements GameInstance {
         density: 0.001,
         restitution: 0.2,
         friction: 0.1,
-        frictionAir: 0.01,
+        frictionAir: FRICTION_AIR,
         label: 'bird',
         collisionFilter: {
           category: CATEGORY_BIRD,

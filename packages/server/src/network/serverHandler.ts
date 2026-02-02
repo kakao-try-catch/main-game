@@ -197,6 +197,11 @@ export function handleClientPacket(
       session.handleGamePacket(socket, packet);
       return;
     }
+
+    if (packet.type.startsWith('MS_')) {
+      session.handleGamePacket(socket, packet);
+      return;
+    }
   } catch (error) {
     console.error(`[Server] Error handling packet ${packet.type}:`, error);
   }

@@ -31,9 +31,9 @@ import { SystemPacketType } from '../../../common/src/packets';
 import {
   MapSize,
   GameType,
-  APPLE_GAME_CONFIG,
+  MAP_SIZE_TO_GRID,
 } from '../../../common/src/config.ts';
-import type { AppleGameConfig } from '../../../common/src/config.ts';
+import type { AppleGameRenderConfig } from '../../../common/src/config.ts';
 import { socketManager } from '../network/socket';
 import { type PlayerData } from '../../../common/src/packets';
 
@@ -137,44 +137,52 @@ function Lobby({ players, onGameStart }: LobbyProps) {
     if (!settings) return;
 
     let selectedGameType = GameType.APPLE_GAME;
+    // todo gameId 자체가 GameType이면 굳이 이런 분기 로직 없이 selectedGameType = gameId 가능
     if (gameId === 'apple') selectedGameType = GameType.APPLE_GAME;
     else if (gameId === 'flappy') selectedGameType = GameType.FLAPPY_BIRD;
     else if (gameId === 'minesweeper') selectedGameType = GameType.MINESWEEPER;
 
-    // For now the only concrete GameConfig type is AppleGameConfig
-    const appleCfg: AppleGameConfig = {
-      mapSize: MapSize.MEDIUM,
-      time: APPLE_GAME_CONFIG.totalTime,
-      generation: 0,
-      zero: APPLE_GAME_CONFIG.includeZero,
-    };
-
     if (gameId === 'apple') {
       const s = settings as GameSettings;
-      if (s.mapSize === 'small') appleCfg.mapSize = MapSize.SMALL;
-      else if (s.mapSize === 'normal') appleCfg.mapSize = MapSize.MEDIUM;
-      else if (s.mapSize === 'large') appleCfg.mapSize = MapSize.LARGE;
 
-      // derive a valid time to send to server
-      // if timeLimit is a number and not the sentinel -1, use it (covers manual input)
-      // otherwise fall back to DEFAULT_TIME_LIMIT
+      // MapSize → grid 변환
+      let mapSizeEnum = MapSize.MEDIUM;
+      if (s.mapSize === 'small') mapSizeEnum = MapSize.SMALL;
+      else if (s.mapSize === 'large') mapSizeEnum = MapSize.LARGE;
+
+      const grid = MAP_SIZE_TO_GRID[mapSizeEnum];
+
+      // time 계산
       const timeVal =
         typeof s.timeLimit === 'number' && s.timeLimit !== -1
           ? s.timeLimit
           : DEFAULT_TIME_LIMIT;
-      appleCfg.time = timeVal;
 
-      // map appleRange to protocol generation (0 = easy (1-9), 1 = hard (1-5))
-      if (s.appleRange === '1-5') appleCfg.generation = 1;
-      else appleCfg.generation = 0;
+      // AppleGameRenderConfig 직접 생성
+      const appleCfg: AppleGameRenderConfig = {
+        gridCols: grid.cols,
+        gridRows: grid.rows,
+        minNumber: s.includeZero ? 0 : 1,
+        maxNumber: s.appleRange === '1-5' ? 5 : 9,
+        totalTime: timeVal,
+        includeZero: !!s.includeZero,
+      };
 
-      appleCfg.zero = !!s.includeZero;
+      const packet = {
+        type: SystemPacketType.GAME_CONFIG_UPDATE_REQ,
+        selectedGameType,
+        gameConfig: appleCfg,
+      } as const;
+
+      socketManager.send(packet);
+      return;
     }
 
+    // TODO: flappy, minesweeper 처리
     const packet = {
       type: SystemPacketType.GAME_CONFIG_UPDATE_REQ,
       selectedGameType,
-      gameConfig: appleCfg,
+      gameConfig: {} as any,
     } as const;
 
     socketManager.send(packet);
@@ -248,7 +256,8 @@ function Lobby({ players, onGameStart }: LobbyProps) {
             ? 'manual'
             : (settings.timeLimit as TimeLimit),
         manualTime:
-          settings.timeLimit === -1 || ![120, 180, 240].includes(settings.timeLimit || 0)
+          settings.timeLimit === -1 ||
+          ![120, 180, 240].includes(settings.timeLimit || 0)
             ? settings.timeLimit
             : undefined,
       };
@@ -269,19 +278,16 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       // schedule selection update to avoid synchronous setState in effect
       setTimeout(() => setSelectedGame('apple'));
 
-      const cfg = serverGameConfig as AppleGameConfig;
+      const cfg = serverGameConfig as AppleGameRenderConfig;
 
+      // gridCols/gridRows → mapSize 역변환 (UI 표시용)
       let mapSize: 'small' | 'normal' | 'large' = 'normal';
-      if (cfg.mapSize === (MapSize.SMALL as unknown as MapSize))
-        mapSize = 'small';
-      else if (cfg.mapSize === (MapSize.MEDIUM as unknown as MapSize))
-        mapSize = 'normal';
-      else if (cfg.mapSize === (MapSize.LARGE as unknown as MapSize))
-        mapSize = 'large';
+      if (cfg.gridCols === 16 && cfg.gridRows === 8) mapSize = 'small';
+      else if (cfg.gridCols === 30 && cfg.gridRows === 15) mapSize = 'large';
+      // 그 외는 normal (20x10)
 
-      // generation -> appleRange (protocol uses 0/1)
-      let appleRange: '1-9' | '1-5' = '1-9';
-      if (cfg.generation === 1) appleRange = '1-5';
+      // maxNumber → appleRange 역변환
+      const appleRange: '1-9' | '1-5' = cfg.maxNumber === 5 ? '1-5' : '1-9';
 
       setTimeout(() => {
         setGameSettings((prev) => ({
@@ -289,9 +295,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
           apple: {
             ...prev.apple,
             mapSize,
-            timeLimit: cfg.time,
+            timeLimit: cfg.totalTime,
             appleRange,
-            includeZero: !!cfg.zero,
+            includeZero: cfg.includeZero,
           },
         }));
       });

@@ -12,31 +12,40 @@ export enum MapSize {
   LARGE = 'LARGE',
 }
 
-export interface AppleGameConfig {
-  mapSize: MapSize;
-  time: number;
-  generation: number;
-  zero: boolean;
-}
-
+// todo 여기로 통합하고 RenderConfig는 따로 만들기
+// todo MapSize 자체는 통신 받을 때 포장하고 보내고, 오면 포장 뜯는 방식으로 동작시키기. 결국 상태 자체는 gridCols 로 관리.
+// todo MapSize 자체 타입이 <number, number>를 갖도록 하고 그걸로 통신하게 하면 될 듯
 export interface AppleGameRenderConfig {
   gridCols: number; // 가로 사과 개수 (17)
   gridRows: number; // 세로 사과 개수 (10)
   minNumber: number; // 최소 숫자 (1)
   maxNumber: number; // 최대 숫자 (9)
   totalTime: number; // 전체 게임 시간 (110초)
-  maxPlayers: number; // 플레이어 수 (4)
   includeZero: boolean; // 0생성 여부
 }
 
-export const APPLE_GAME_CONFIG: AppleGameRenderConfig = {
-  gridCols: 17,
+// MEDIUM 맵 기준 기본 설정 (통신용)
+export const DEFAULT_APPLE_GAME_RENDER_CONFIG: AppleGameRenderConfig = {
+  gridCols: 20,
   gridRows: 10,
   minNumber: 1,
   maxNumber: 9,
   totalTime: 110,
-  maxPlayers: 4,
   includeZero: false,
+};
+
+export interface AppleGameConfigRequest {
+  mapSize: MapSize;
+  time: number;
+  generation: number;
+  zero: boolean;
+}
+
+export const DEFAULT_APPLE_GAME_CONFIG_REQ: AppleGameConfigRequest = {
+  mapSize: MapSize.MEDIUM,
+  time: DEFAULT_APPLE_GAME_RENDER_CONFIG.totalTime,
+  generation: 0,
+  zero: DEFAULT_APPLE_GAME_RENDER_CONFIG.includeZero,
 };
 
 // ========== FLAPPY BIRD CONFIG ==========
@@ -181,7 +190,7 @@ export function resolveFlappyBirdPreset(
 }
 
 // ========== UNION TYPE ==========
-export type GameConfig = AppleGameConfig | FlappyBirdGamePreset; // 통일된 그리드 크기 매핑 (클라이언트 기준)
+export type GameConfig = AppleGameRenderConfig | FlappyBirdGamePreset; // 통일된 그리드 크기 매핑 (클라이언트 기준)
 
 export const MAP_SIZE_TO_GRID = {
   [MapSize.SMALL]: { cols: 16, rows: 8 },
@@ -191,7 +200,7 @@ export const MAP_SIZE_TO_GRID = {
 // AppleGameConfig -> AppleGameRenderConfig 변환
 
 export function resolveAppleGameConfig(
-  cfg: AppleGameConfig,
+  cfg: AppleGameConfigRequest,
 ): AppleGameRenderConfig {
   const grid =
     MAP_SIZE_TO_GRID[cfg.mapSize] ?? MAP_SIZE_TO_GRID[MapSize.MEDIUM];
@@ -203,7 +212,6 @@ export function resolveAppleGameConfig(
     minNumber: cfg.zero ? 0 : 1,
     maxNumber,
     totalTime: cfg.time,
-    maxPlayers: APPLE_GAME_CONFIG.maxPlayers,
     includeZero: cfg.zero,
   };
 }
@@ -212,6 +220,88 @@ export function sanitizeTime(rawTime: any): number {
   const timeNum =
     typeof rawTime === 'number' && isFinite(rawTime)
       ? rawTime
-      : APPLE_GAME_CONFIG.totalTime;
+      : DEFAULT_APPLE_GAME_RENDER_CONFIG.totalTime;
   return Math.max(10, Math.min(300, Math.floor(timeNum)));
+}
+
+export function getDefaultConfig(gameType: GameType): GameConfig {
+  switch (gameType) {
+    case GameType.APPLE_GAME:
+      return { ...DEFAULT_APPLE_GAME_RENDER_CONFIG };
+    case GameType.FLAPPY_BIRD:
+      return {
+        pipeSpeed: 'normal',
+        pipeSpacing: 'normal',
+        pipeGap: 'normal',
+        pipeWidth: 'normal',
+        ropeLength: 'normal',
+        connectAll: false,
+      };
+    case GameType.MINESWEEPER:
+      throw new Error('MINESWEEPER config not implemented');
+  }
+}
+
+export function sanitizeForApple(
+  existingCfg: AppleGameRenderConfig | undefined,
+  raw: any,
+): AppleGameRenderConfig {
+  const defaults = DEFAULT_APPLE_GAME_RENDER_CONFIG;
+
+  // gridCols: 유효한 숫자인지 검증
+  let gridCols: number;
+  if (
+    typeof raw?.gridCols === 'number' &&
+    raw.gridCols > 0 &&
+    raw.gridCols <= 40
+  ) {
+    gridCols = Math.floor(raw.gridCols);
+  } else {
+    gridCols = existingCfg?.gridCols ?? defaults.gridCols;
+  }
+
+  // gridRows: 유효한 숫자인지 검증
+  let gridRows: number;
+  if (
+    typeof raw?.gridRows === 'number' &&
+    raw.gridRows > 0 &&
+    raw.gridRows <= 20
+  ) {
+    gridRows = Math.floor(raw.gridRows);
+  } else {
+    gridRows = existingCfg?.gridRows ?? defaults.gridRows;
+  }
+
+  // minNumber: 0 또는 1
+  const minNumber =
+    raw?.minNumber === 0 ? 0 : (existingCfg?.minNumber ?? defaults.minNumber);
+
+  // maxNumber: 5 또는 9
+  let maxNumber: number;
+  if (raw?.maxNumber === 5 || raw?.maxNumber === 9) {
+    maxNumber = raw.maxNumber;
+  } else {
+    maxNumber = existingCfg?.maxNumber ?? defaults.maxNumber;
+  }
+
+  // totalTime: sanitizeTime 사용
+  const totalTime =
+    typeof raw?.totalTime === 'number' && isFinite(raw.totalTime)
+      ? sanitizeTime(raw.totalTime)
+      : (existingCfg?.totalTime ?? defaults.totalTime);
+
+  // includeZero: boolean
+  const includeZero =
+    typeof raw?.includeZero === 'boolean'
+      ? raw.includeZero
+      : (existingCfg?.includeZero ?? defaults.includeZero);
+
+  return {
+    gridCols,
+    gridRows,
+    minNumber,
+    maxNumber,
+    totalTime,
+    includeZero,
+  };
 }

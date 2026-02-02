@@ -123,6 +123,7 @@ export class GameSession {
   }
   public getPlayers(): PlayerData[] {
     return Array.from(this.players.values()).map((p) => ({
+      id: p.id,
       playerName: p.playerName,
       color: p.color,
       reportCard: p.reportCard,

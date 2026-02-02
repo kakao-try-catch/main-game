@@ -9,6 +9,7 @@ import type { MineSweeperGamePreset } from './types/minesweeper.types';
 import type { PlayerData } from './types/common';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
 import { GameType } from '../../../common/src/config.ts';
+import { useGameStore } from '../store/gameStore';
 
 type SceneConstructor = new (...args: any[]) => Phaser.Scene;
 
@@ -89,6 +90,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     gameType === GameType.FLAPPY_BIRD ||
     gameType === GameType.MINESWEEPER;
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
+  const serverSelectedGameType = useGameStore((s) => s.selectedGameType);
+  const serverGameConfig = useGameStore((s) => s.gameConfig);
   // todo 얘 활용 안 되는데요?
   // const preset =
   //   gameType === GameType.APPLE_GAME
@@ -286,9 +289,15 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       const emitPlayerData = () => {
         const preset =
           gameType === GameType.FLAPPY_BIRD
-            ? flappyPreset
+            ? (flappyPreset ??
+              (serverSelectedGameType === GameType.FLAPPY_BIRD
+                ? (serverGameConfig as FlappyBirdGamePreset)
+                : undefined))
             : gameType === GameType.MINESWEEPER
-              ? minesweeperPreset
+              ? (minesweeperPreset ??
+                (serverSelectedGameType === GameType.MINESWEEPER
+                  ? (serverGameConfig as MineSweeperGamePreset)
+                  : undefined))
               : undefined;
 
         targetScene.events.emit('updatePlayers', {
@@ -328,9 +337,15 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     if (scene) {
       const preset =
         gameType === GameType.FLAPPY_BIRD
-          ? flappyPreset
+          ? (flappyPreset ??
+            (serverSelectedGameType === GameType.FLAPPY_BIRD
+              ? (serverGameConfig as FlappyBirdGamePreset)
+              : undefined))
           : gameType === GameType.MINESWEEPER
-            ? minesweeperPreset
+            ? (minesweeperPreset ??
+              (serverSelectedGameType === GameType.MINESWEEPER
+                ? (serverGameConfig as MineSweeperGamePreset)
+                : undefined))
             : undefined;
 
       scene.events.emit('updatePlayers', {
@@ -339,7 +354,16 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         ...(preset ? { preset } : {}),
       });
     }
-  }, [playerCount, players, flappyPreset, minesweeperPreset, config, gameType]);
+  }, [
+    playerCount,
+    players,
+    flappyPreset,
+    minesweeperPreset,
+    config,
+    gameType,
+    serverSelectedGameType,
+    serverGameConfig,
+  ]);
 
   // 구현되지 않은 게임 타입
   if (!config) {

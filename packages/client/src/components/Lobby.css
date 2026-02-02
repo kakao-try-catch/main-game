@@ -321,7 +321,6 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  cursor: pointer;
   font-weight: normal;
 }
 
@@ -333,7 +332,6 @@
   justify-content: center;
   align-items: center;
   min-height: 40px;
-  cursor: pointer;
 }
 
 .settings-placeholder {

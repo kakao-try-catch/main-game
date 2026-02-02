@@ -6,6 +6,8 @@ import type {
   ReportCard,
 } from './common-type';
 
+export type { PlayerData } from './common-type';
+
 // ========== SYSTEM PACKETS (공용) ==========
 export enum SystemPacketType {
   UPDATE_NUMBER = 'UPDATE_NUMBER',

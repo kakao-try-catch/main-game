@@ -3,10 +3,9 @@
  * 플레이어 정보, 게임 결과 등 여러 게임에서 공유하는 타입들
  */
 
-// PlayerData는 packets.ts의 공통 규격을 사용
-// todo 이거 왜 export 임?
-export type { PlayerData } from '../../../../common/src/packets';
-import type { PlayerData } from '../../../../common/src/packets';
+// PlayerData는 common-type.ts의 공통 규격을 사용
+export type { PlayerData } from '../../../../common/src/common-type';
+import type { PlayerData } from '../../../../common/src/common-type';
 
 /** 게임 결과를 위한 플레이어 정보 (playerIndex 포함) */
 export interface PlayerResultData extends PlayerData {

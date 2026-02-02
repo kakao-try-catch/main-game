@@ -4,7 +4,7 @@ import AppleGameScene from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
-import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
+import type { FlappyBirdGamePreset } from '../../../common/src/config';
 import type { MineSweeperGamePreset } from './types/minesweeper.types';
 import type { PlayerData } from './types/common';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
@@ -247,6 +247,17 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           );
         }
 
+        // 기존 game_over 이벤트 (호환성 유지) - 주석 처리
+        // if (onGameOver) {
+        //   targetScene.events.on(
+        //     'game_over',
+        //     (data: { reason: FlappyCollisionReason; finalScore: number }) => {
+        //       console.log('💀 game_over event received:', data);
+        //       onGameOver(data);
+        //     },
+        //   );
+        // }
+      } else if (gameType === 'minesweeper') {
         // 지뢰찾기 타일 열기 사운드 이벤트
         if (onMinesweeperTileReveal) {
           targetScene.events.on('minesweeperTileReveal', () => {
@@ -283,6 +294,19 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
+        // 지뢰찾기 게임 종료 이벤트 (타이머 완료) - 주석 처리
+        // if (onGameEnd) {
+        //   targetScene.events.on(
+        //     'gameEnd',
+        //     (data: { players: PlayerResultData[] }) => {
+        //       console.log('🏁 minesweeper gameEnd event received:', data);
+        //       onGameEnd({
+        //         gameType: 'minesweeper',
+        //         players: data.players,
+        //       });
+        //     },
+        //   );
+        // }
       }
 
       // 씬에 플레이어 데이터 전달

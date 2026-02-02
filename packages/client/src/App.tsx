@@ -11,7 +11,7 @@ import GameResult from './game/utils/game-result/GameResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
 import Lobby from './components/Lobby';
-import type { FlappyBirdGamePreset } from './game/types/FlappyBirdGamePreset';
+import type { FlappyBirdGamePreset } from '../../common/src/config';
 import {
   type MineSweeperGamePreset,
   DEFAULT_MINESWEEPER_PRESET,
@@ -106,27 +106,20 @@ function AppContent() {
 
   // 게임 종료 시 BGM/SFX 처리 (store에서 isFlappyGameOver 변경 감지)
   const resetFlappyState = useGameStore((s) => s.resetFlappyState);
-  const handleGameEnd = useCallback(
-    (data: GameEndEvent) => {
-      if (data.gameType === 'flappy') {
-        // isFlappyGameOver
-        setFlappyFinalData({
-          finalScore: data.finalScore,
-          reason: data.reason,
-          collidedPlayerId: data.collidedPlayerId,
-          players: data.players,
-        });
-        setFlappyGameEnded(true);
-      } else {
-        setFinalPlayers(data.players);
-        setGameEnded(true);
-      }
-      playSFX('appleGameEnd');
-      pause(); // 게임 종료 시 BGM 중지
-      reset(); // 게임 종료 시 BGM을 처음으로 되감기
-    },
-    [isFlappyGameOver, playSFX, pause, reset],
-  );
+  // handleGameEnd는 현재 GameContainer에서 사용하지 않으므로 주석 처리
+  // const handleGameEnd = useCallback(
+  //   (data: GameEndEvent) => {
+  //     if (data.gameType === 'flappy') {
+  //       // 플래피버드 게임 종료 처리는 store에서 관리
+  //     } else {
+  //       // 다른 게임 종료 처리
+  //     }
+  //     playSFX('appleGameEnd');
+  //     pause(); // 게임 종료 시 BGM 중지
+  //     reset(); // 게임 종료 시 BGM을 처음으로 되감기
+  //   },
+  //   [playSFX, pause, reset],
+  // );
 
   // 플래피버드 점수 업데이트 핸들러
   const handleFlappyScoreUpdate = useCallback((score: number) => {
@@ -460,7 +453,7 @@ function AppContent() {
                 extraContent={
                   <TintedFlagIcon color={player.color}>
                     <span style={{ color: '#212529', fontSize: '20px' }}>
-                      {flagCounts[player.id] || 0}
+                      {flagCounts[String(index)] || 0}
                     </span>
                   </TintedFlagIcon>
                 }

@@ -34,7 +34,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
     // todo 클라 핸들러는 이거 필요없는데?
     // JOIN_ROOM 패킷은 클라이언트가 서버로 보내는 것이므로 여기서 처리 불필요
     case SystemPacketType.JOIN_ROOM:
-      //console.log(`Player ${packet.playerId} joined ${packet.roomId}`);
+      console.log(`Player ${packet.playerName} joined ${packet.roomId}`);
       break;
 
     case SystemPacketType.ROOM_UPDATE: {

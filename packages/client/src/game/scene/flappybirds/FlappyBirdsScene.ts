@@ -29,6 +29,7 @@ import type {
 } from '../../../../../common/src/config';
 import { resolveFlappyBirdPreset } from '../../../../../common/src/config';
 import PipeManager from './PipeManager';
+import { useGameStore } from '../../../store/gameStore';
 
 export const DEFAULT_FLAPPYBIRD_PRESET: FlappyBirdGamePreset = {
   pipeSpeed: 'normal',
@@ -185,6 +186,49 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.debugGraphics.setDepth(1000); // 최상단
 
     console.log('[FlappyBirdsScene] 씬 생성 완료');
+  }
+
+  private setupStoreSubscription(): void {
+    // Zustand store 구독
+    this.storeUnsubscribe = useGameStore.subscribe(
+      (state) => ({
+        birds: state.flappyBirds,
+        pipes: state.flappyPipes,
+        score: state.flappyScore,
+        isGameOver: state.isFlappyGameOver,
+      }),
+      (current, previous) => {
+        // 점수 변경 시 사운드
+        if (current.score !== previous.score) {
+          this.playScoreSound();
+          // todo 점수 업데이트 이벤트
+          // // 플래피버드 점수 업데이트 이벤트
+          // if (onScoreUpdate) {
+          //   targetScene.events.on(
+          //     'scoreUpdate',
+          //     (data: { score: number; timestamp: number }) => {
+          //       console.log('📊 scoreUpdate event received:', data);
+          //       onScoreUpdate(data.score);
+          //     },
+          //   );
+          // }
+        }
+
+        // 게임 오버 시 사운드 + 화면
+        if (current.isGameOver && !previous.isGameOver) {
+          this.playStrikeSound();
+          this.showGameOverUI(); // todo ui 렌더링. 근데 이거 clientHandler에서 GameOver 패킷 받으면 보여줘야 함.
+        }
+      },
+    );
+  }
+
+  private playScoreSound(): void {
+    // sfxManager.play('flappyScore') 또는 이벤트 emit
+  }
+
+  private playStrikeSound(): void {
+    // sfxManager.play('flappyStrike')
   }
 
   /**

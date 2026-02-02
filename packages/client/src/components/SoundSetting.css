@@ -21,7 +21,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   flex-shrink: 0;
 }
 
@@ -60,7 +59,6 @@
   height: 10px;
   background: #d3d3d3;
   border: 2px solid #000;
-  cursor: pointer;
 }
 
 .pixel-slider::-webkit-slider-thumb {
@@ -70,7 +68,6 @@
   height: 14px;
   background: #fff;
   border: 2px solid #000;
-  cursor: pointer;
 }
 
 .pixel-slider::-moz-range-thumb {
@@ -78,5 +75,4 @@
   height: 14px;
   background: #fff;
   border: 2px solid #000;
-  cursor: pointer;
 }

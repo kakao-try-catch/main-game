@@ -445,7 +445,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           <div className="setting-item">
                             <label>0 생성:</label>
                             <div className="radio-group">
-                              <label>
+                              <label className="nes-pointer">
                                 <input
                                   type="radio"
                                   className="nes-radio"
@@ -462,7 +462,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 />
                                 <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
                               </label>
-                              <label>
+                              <label className="nes-pointer">
                                 <input
                                   type="radio"
                                   className="nes-radio"
@@ -638,7 +638,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                           <div className="setting-item">
                             <label>모두 묶기:</label>
                             <div className="radio-group">
-                              <label>
+                              <label className="nes-pointer">
                                 <input
                                   type="radio"
                                   className="nes-radio"
@@ -655,7 +655,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 />
                                 <span style={{ color: DIFFICULTY_COLORS.easy }}>X</span>
                               </label>
-                              <label>
+                              <label className="nes-pointer">
                                 <input
                                   type="radio"
                                   className="nes-radio"
@@ -837,7 +837,7 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                         </div>
                       ) : (
                         <div
-                          className="settings-edit settings-empty"
+                          className="settings-edit settings-empty nes-pointer"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
                               handleSelectGame(game.id);

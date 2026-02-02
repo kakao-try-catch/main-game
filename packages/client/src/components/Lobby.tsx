@@ -238,11 +238,14 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       if (s.mineRatio === 'easy') difficulty = 'easy';
       else if (s.mineRatio === 'hard') difficulty = 'hard';
 
+      // timeLimit === -1이면 "직접 입력" 선택 상태이므로 서버에 패킷 전송하지 않음
+      if (s.timeLimit === -1) {
+        return;
+      }
+
       // timeLimit 변환
       const timeVal =
-        typeof s.timeLimit === 'number' && s.timeLimit !== -1
-          ? s.timeLimit
-          : 180;
+        typeof s.timeLimit === 'number' ? s.timeLimit : 180;
 
       const minesweeperPreset: MineSweeperGamePreset = {
         mapSize: (s.mapSize || 'medium') as MapSizePreset,

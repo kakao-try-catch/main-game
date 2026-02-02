@@ -5,20 +5,20 @@ import {
   type RoomUpdatePacket,
   type GameConfigUpdatePacket,
   FlappyBirdPacketType,
+} from '../../../common/src/packets';
+import {
   MineSweeperPacketType,
-} from '../../../common/src/packets.ts';
-import type {
-  MSGameInitPacket,
-  MSTileUpdatePacket,
-  MSScoreUpdatePacket,
-  MSRemainingMinesPacket,
-  MSGameEndPacket,
-} from '../../../common/src/minesweeperPackets.ts';
-import { GameType } from '../../../common/src/config.ts';
-import type { PlayerData } from '../../../common/src/common-type.ts';
+  type MSGameInitPacket,
+  type MSTileUpdatePacket,
+  type MSScoreUpdatePacket,
+  type MSRemainingMinesPacket,
+  type MSGameEndPacket,
+} from '../../../common/src/minesweeperPackets';
+import { GameType } from '../../../common/src/config';
+import type { PlayerData } from '../../../common/src/common-type';
 import { useGameStore } from '../store/gameStore';
-import { sfxManager } from '../audio/sfx-manager.ts';
-import { bgmManager } from '../audio/bgm-manager.ts';
+import { sfxManager } from '../audio/sfx-manager';
+import { bgmManager } from '../audio/bgm-manager';
 //import { useDebugStore, useAppleGameStore } from "../store/store.ts";
 
 export const handleServerPacket = (packet: ServerPacket) => {

@@ -23,13 +23,13 @@ import {
   DEFAULT_MINESWEEPER_PRESET,
   resolveMineSweeperPreset,
 } from '../../types/minesweeper.types';
-import { MineSweeperPacketType } from '../../../../../common/src/packets';
 import type {
   MSGameInitPacket,
   MSTileUpdatePacket,
   MSScoreUpdatePacket,
   MSGameEndPacket,
 } from '../../../../../common/src/minesweeperPackets';
+import { MineSweeperPacketType } from '../../../../../common/src/minesweeperPackets';
 import { useGameStore } from '../../../store/gameStore';
 
 // 플레이어 데이터 인터페이스

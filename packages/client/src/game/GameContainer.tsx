@@ -9,8 +9,16 @@ import { type MineSweeperGamePreset } from './types/minesweeper.types';
 import type { PlayerData, PlayerResultData } from './types/common';
 import type { PlayerId, GameOverEvent } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
-import { GameType } from '../../../common/src/config.ts';
+import { GameType } from '../../../common/src/config';
 import { useGameStore } from '../store/gameStore';
+
+/**
+ * 게임 종료 이벤트 데이터
+ */
+export interface GameEndEvent {
+  gameType: string;
+  players?: PlayerData[];
+}
 
 type SceneConstructor = new (...args: any[]) => Phaser.Scene;
 
@@ -69,7 +77,7 @@ interface GameContainerProps {
   onFlappyStrike?: () => void;
   onFlappyScore?: () => void;
   onGameOver?: (data: { reason: string; finalScore: number }) => void;
-  onGameEnd?: (data: any) => void;
+  onGameEnd?: (data: GameEndEvent) => void;
 }
 
 export const GameContainer: React.FC<GameContainerProps> = ({
@@ -190,13 +198,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     const game = new Phaser.Game(gameConfig);
     gameRef.current = game;
 
-    // 비활성 탭에서도 게임 계속 실행 (멀티플레이어 동기화를 위해 필수)
-    game.events.on('blur', () => {
-      game.loop.wake();
-    });
-    game.events.on('hidden', () => {
-      game.loop.wake();
-    });
     game.sound.pauseOnBlur = false;
 
     onGameReady?.(game);
@@ -228,7 +229,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
             },
           );
         }
-/*
+        /*
         if (onGameOver) {
           targetScene.events.on(
             'game_over',

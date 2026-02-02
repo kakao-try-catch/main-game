@@ -1,11 +1,25 @@
-/**
- * 지뢰찾기 멀티플레이어 패킷 인터페이스 정의
- *
- * 이 파일은 서버-클라이언트 간 지뢰찾기 게임 통신에 사용되는
- * 모든 패킷 타입과 관련 인터페이스를 정의합니다.
- */
+/** 지뢰찾기 패킷 타입 */
+export enum MineSweeperPacketType {
+  // 클라이언트 → 서버
+  /** 타일 열기 요청 (좌클릭) */
+  MS_REVEAL_TILE = 'MS_REVEAL_TILE',
+  /** 깃발 토글 요청 (우클릭) */
+  MS_TOGGLE_FLAG = 'MS_TOGGLE_FLAG',
+  /** 게임 상태 동기화 요청 (씬 로딩 완료 후) */
+  MS_REQUEST_SYNC = 'MS_REQUEST_SYNC',
 
-import { MineSweeperPacketType } from './packets';
+  // 서버 → 클라이언트
+  /** 게임 초기화 (필드 + 초기 상태 전송) */
+  MS_GAME_INIT = 'MS_GAME_INIT',
+  /** 타일 상태 업데이트 (열기/깃발 결과) */
+  MS_TILE_UPDATE = 'MS_TILE_UPDATE',
+  /** 점수 변경 알림 */
+  MS_SCORE_UPDATE = 'MS_SCORE_UPDATE',
+  /** 남은 지뢰 수 업데이트 */
+  MS_REMAINING_MINES = 'MS_REMAINING_MINES',
+  /** 게임 종료 결과 */
+  MS_GAME_END = 'MS_GAME_END',
+}
 
 // ========== 공통 타입 ==========
 
@@ -242,7 +256,10 @@ export interface MSGameEndPacket {
 // ========== UNION TYPE ==========
 
 /** 클라이언트 → 서버 패킷 Union */
-export type MineSweeperClientPacket = MSRevealTilePacket | MSToggleFlagPacket | MSRequestSyncPacket;
+export type MineSweeperClientPacket =
+  | MSRevealTilePacket
+  | MSToggleFlagPacket
+  | MSRequestSyncPacket;
 
 /** 서버 → 클라이언트 패킷 Union */
 export type MineSweeperServerPacket =

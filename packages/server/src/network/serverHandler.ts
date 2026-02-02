@@ -224,7 +224,6 @@ export async function joinPlayerToGame(
   roomId: string,
   playerName: string,
 ) {
-  roomId = 'HARDCODE'; // test 용
   if (!roomId) {
     roomId = generateRoomId();
   }

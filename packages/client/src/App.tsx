@@ -106,36 +106,20 @@ function AppContent() {
     setGameReady(true);
   }, []);
 
-  // 게임 종료 시 BGM/SFX 처리 (store에서 isFlappyGameOver 변경 감지)
-  /*const handleGameEnd = useCallback(
+  const handleGameEnd = useCallback(
     (data: GameEndEvent) => {
-      // 플래피버드는 이미 store에서 상태가 관리되므로 사운드만 처리
-      if (data.gameType !== 'flappy') {
-        // TODO: 다른 게임들의 경우 결과 상태 처리가 필요하다면 여기서 수행
+      if (data.gameType === 'flappy') {
+        // 플래피버드 게임 종료 처리는 store에서 관리
+      } else {
+        // 다른 게임 종료 처리
         setGameStarted(false);
       }
-
       playSFX('appleGameEnd');
       pause(); // 게임 종료 시 BGM 중지
       reset(); // 게임 종료 시 BGM을 처음으로 되감기
     },
     [setGameStarted, playSFX, pause, reset],
-  );*/
-  const resetFlappyState = useGameStore((s) => s.resetFlappyState);
-  // handleGameEnd는 현재 GameContainer에서 사용하지 않으므로 주석 처리
-  // const handleGameEnd = useCallback(
-  //   (data: GameEndEvent) => {
-  //     if (data.gameType === 'flappy') {
-  //       // 플래피버드 게임 종료 처리는 store에서 관리
-  //     } else {
-  //       // 다른 게임 종료 처리
-  //     }
-  //     playSFX('appleGameEnd');
-  //     pause(); // 게임 종료 시 BGM 중지
-  //     reset(); // 게임 종료 시 BGM을 처음으로 되감기
-  //   },
-  //   [playSFX, pause, reset],
-  // );
+  );
 
   // 플래피버드 점프 사운드 핸들러
   const handleFlappyJump = useCallback(() => {
@@ -175,7 +159,7 @@ function AppContent() {
         console.error('Minesweeper score update handler error:', error);
       }
     },
-    [currentGameType, setPlayers],
+    [setPlayers],
   );
 
   // 게임 세션이 새로 시작될 때(리플레이 포함) 관련 상태 초기화

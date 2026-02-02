@@ -120,8 +120,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private isGameOver: boolean = false; // 게임 오버 여부
   private debugGraphics!: Phaser.GameObjects.Graphics;
   private showDebug: boolean = false;
-  private debugFrameCount: number = 0;
-  private cameraInitialized: boolean = false;
   private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(
     DEFAULT_FLAPPYBIRD_PRESET,
   );
@@ -193,8 +191,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.currentScore = 0;
     this.gameStarted = false;
     this.isGameOver = false;
-    this.cameraInitialized = false;
-    this.debugFrameCount = 0;
 
     this.editorCreate();
 
@@ -277,31 +273,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   private setupStoreSubscription(): void {
-    // 현재 Store 상태로 즉시 초기화 (게스트가 늦게 조인해도 동작하도록)
-    const initialState = useGameStore.getState();
-    if (initialState.flappyBirds.length > 0) {
-      this.targetPositions = initialState.flappyBirds.map(
-        (bird: FlappyBirdData, index: number): BirdPosition => ({
-          playerId: String(index) as PlayerId,
-          x: bird.x ?? 300,
-          y: bird.y ?? 300,
-          velocityX: bird.vx ?? 0,
-          velocityY: bird.vy ?? 0,
-          angle: bird.angle ?? 0,
-        }),
-      );
-      // 내 새의 로컬 예측 상태도 업데이트
-      const myIndex = Number(this.myPlayerId);
-      if (this.targetPositions[myIndex]) {
-        this.myY = this.targetPositions[myIndex].y;
-        this.myVy = this.targetPositions[myIndex].velocityY;
-      }
-      console.log(
-        '[FlappyBirdsScene] 초기 Store 상태로 targetPositions 설정:',
-        this.targetPositions.length,
-      );
-    }
-
     // Zustand store 구독 (실제 서버 모드에서만 사용)
     this.storeUnsubscribe = (useGameStore as any).subscribe(
       (state: GameState): FlappyStateSelection => ({
@@ -319,11 +290,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
           this.targetPositions = current.birds.map(
             (bird: FlappyBirdData, index: number): BirdPosition => ({
               playerId: String(index) as PlayerId,
-              x: bird.x ?? 300,
-              y: bird.y ?? 300,
-              velocityX: bird.vx ?? 0,
-              velocityY: bird.vy ?? 0,
-              angle: bird.angle ?? 0,
+              x: bird.x,
+              y: bird.y,
+              velocityX: bird.vx,
+              velocityY: bird.vy,
+              angle: bird.angle,
             }),
           );
 
@@ -919,25 +890,25 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     const diff = target.y - this.myY;
 
-    // 디버그: 서버 상태 확인
-    if (this.debugFrameCount % 60 === 0) {
-      console.log(
-        `[DEBUG] Server State: target.y=${target.y?.toFixed(1) ?? 'null'}, target.vy=${target.velocityY?.toFixed(2) ?? 'null'}, myY=${this.myY?.toFixed(1) ?? 'null'}, myVy=${this.myVy?.toFixed(2) ?? 'null'}, diff=${diff.toFixed(1)}`,
-      );
-    }
+    // 임계값 정의
+    const SNAP_THRESHOLD = 100; // 100px 이상: 즉시 스냅
+    const BLEND_THRESHOLD = 30; // 30px 이상: 빠른 블렌딩
+    const DRIFT_THRESHOLD = 10; // 10px 이상: 느린 보정
 
-    // 서버 권위 방식: 항상 서버 상태를 따름 (부드러운 보간)
-    const targetVy = target.velocityY ?? 0;
-
-    // 차이가 크면 즉시 스냅, 작으면 보간
-    if (Math.abs(diff) > 50) {
+    if (Math.abs(diff) > SNAP_THRESHOLD) {
+      // 큰 차이: 즉시 스냅 (롤백 상황)
+      console.log(`[Reconciliation] Snap! Diff: ${diff.toFixed(1)}`);
       this.myY = target.y;
-      this.myVy = targetVy;
-    } else {
-      // 빠른 보간으로 서버 상태 따르기
-      this.myY = Phaser.Math.Linear(this.myY, target.y, 0.3);
-      this.myVy = Phaser.Math.Linear(this.myVy, targetVy, 0.3);
+      this.myVy = target.velocityY;
+    } else if (Math.abs(diff) > BLEND_THRESHOLD) {
+      // 중간 차이: 빠른 블렌딩
+      this.myY = Phaser.Math.Linear(this.myY, target.y, 0.15);
+      this.myVy = Phaser.Math.Linear(this.myVy, target.velocityY, 0.1);
+    } else if (Math.abs(diff) > DRIFT_THRESHOLD) {
+      // 작은 차이: 느린 보정 (거의 느끼지 못함)
+      this.myY = Phaser.Math.Linear(this.myY, target.y, 0.05);
     }
+    // DRIFT_THRESHOLD 이하: 로컬 예측 유지
   }
 
   /**
@@ -1070,11 +1041,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     if (this.gameStarted && !this.isGameOver) {
       if (dt > 0) {
         // Physics step approximation (framerate independent)
-        // dtRatio 상한선 설정 (첫 프레임에서 비정상적으로 큰 값 방지)
-        const dtRatio = Math.min(dt / (1000 / 60), 2);
-
-        const prevVy = this.myVy ?? 0;
-        const prevY = this.myY ?? 0;
+        const dtRatio = dt / (1000 / 60);
 
         // Gravity
         this.myVy += FLAPPY_PHYSICS.GRAVITY_Y * dtRatio;
@@ -1098,13 +1065,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
           if (this.myVy < 0) this.myVy = 0;
         }
 
-        // 디버그: 중력 적용 확인
-        if (this.debugFrameCount % 60 === 0) {
-          console.log(
-            `[DEBUG] Client Physics: prevY=${prevY.toFixed(1)}, myY=${this.myY.toFixed(1)}, prevVy=${prevVy.toFixed(2)}, myVy=${this.myVy.toFixed(2)}, dtRatio=${dtRatio.toFixed(2)}`,
-          );
-        }
-
         // 밧줄 상호작용 예측 반영
         this.predictRopeInteraction();
       }
@@ -1112,7 +1072,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       // Reconciliation with Server
       this.reconcileWithServer();
     }
-    this.debugFrameCount++;
 
     // --- 2. Update Sprites ---
     for (let i = 0; i < this.birdSprites.length; i++) {
@@ -1150,18 +1109,12 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       const screenWidth = GAME_WIDTH * ratio;
       const targetCameraX = avgX - screenWidth / 4;
 
-      // 첫 프레임에서는 즉시 이동 (흔들림 방지)
-      if (!this.cameraInitialized) {
-        this.cameras.main.scrollX = targetCameraX;
-        this.cameraInitialized = true;
-      } else {
-        // 부드러운 카메라 추적
-        this.cameras.main.scrollX = Phaser.Math.Linear(
-          this.cameras.main.scrollX,
-          targetCameraX,
-          0.1,
-        );
-      }
+      // 부드러운 카메라 추적
+      this.cameras.main.scrollX = Phaser.Math.Linear(
+        this.cameras.main.scrollX,
+        targetCameraX,
+        0.1,
+      );
 
       // 지면 스크롤 (카메라 위치에 동기화)
       if (this.groundTile) {

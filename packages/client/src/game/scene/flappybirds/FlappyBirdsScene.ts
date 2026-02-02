@@ -377,13 +377,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     const centerY = 350;
     const spacing = 80;
 
-    // 기본: 수평 일렬 배치
+    // 기본: 수평 일렬 배치 (서버와 동일하게)
     if (!this.gameConfig.connectAll || count < 3) {
-      const startX = 200;
+      const startX = 250;
       const startY = 300;
       return Array.from({ length: count }, (_, i) => ({
-        x: startX + i * 120,
-        y: startY,
+        x: startX + i * 90,
+        y: startY + i * 3,
       }));
     }
 

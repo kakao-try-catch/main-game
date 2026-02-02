@@ -75,6 +75,10 @@ function Lobby({ players, onGameStart }: LobbyProps) {
   const [showTimeLimitTooltip, setShowTimeLimitTooltip] = useState<
     Record<string, boolean>
   >({});
+  // 직접 입력 중인 값 (문자열로 관리)
+  const [localTimeInput, setLocalTimeInput] = useState<Record<string, string>>(
+    {},
+  );
 
   // 각 게임의 설정 (기본값)
   const [gameSettings, setGameSettings] = useState<
@@ -127,6 +131,28 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       sendGameConfigUpdate(gameId, updated[gameId]);
       return updated;
     });
+  };
+
+  // 시간 입력 완료 시 호출 (blur/Enter)
+  const commitTimeLimit = (gameId: string, defaultValue: number) => {
+    const localValue = localTimeInput[gameId];
+    const numValue = localValue ? parseInt(localValue) : -1;
+
+    let finalValue: number;
+    if (!localValue) {
+      finalValue = defaultValue;
+    } else if (numValue < MIN_TIME_LIMIT || numValue > MAX_TIME_LIMIT) {
+      showTimeLimitTooltipForGame(gameId);
+      finalValue = defaultValue;
+    } else {
+      finalValue = numValue;
+    }
+
+    // 로컬 상태 초기화
+    setLocalTimeInput((prev) => ({ ...prev, [gameId]: '' }));
+
+    // 상태 업데이트 및 패킷 전송
+    handleSettingChange(gameId, 'timeLimit', finalValue);
   };
 
   // Build and send GAME_CONFIG_UPDATE_REQ according to current settings
@@ -454,22 +480,34 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                               <input
                                 type="number"
                                 value={
-                                  settings.timeLimit === -1
-                                    ? ''
-                                    : settings.timeLimit
+                                  localTimeInput[game.id] !== undefined &&
+                                  localTimeInput[game.id] !== ''
+                                    ? localTimeInput[game.id]
+                                    : settings.timeLimit === -1
+                                      ? ''
+                                      : settings.timeLimit
                                 }
-                                onChange={(e) =>
-                                  handleSettingChange(
-                                    game.id,
-                                    'timeLimit',
-                                    e.target.value
-                                      ? parseInt(e.target.value)
-                                      : -1,
-                                  )
-                                }
+                                onChange={(e) => {
+                                  // 로컬 상태만 업데이트, 패킷 전송 없음
+                                  setLocalTimeInput((prev) => ({
+                                    ...prev,
+                                    [game.id]: e.target.value,
+                                  }));
+                                }}
+                                onFocus={() => {
+                                  // 현재 값으로 로컬 상태 초기화
+                                  setLocalTimeInput((prev) => ({
+                                    ...prev,
+                                    [game.id]:
+                                      settings.timeLimit === -1
+                                        ? ''
+                                        : String(settings.timeLimit),
+                                  }));
+                                }}
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
+                                    commitTimeLimit(game.id, DEFAULT_TIME_LIMIT);
                                     e.currentTarget.blur();
                                   }
                                 }}
@@ -478,28 +516,8 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                 min={MIN_TIME_LIMIT}
                                 max={MAX_TIME_LIMIT}
                                 autoFocus
-                                onBlur={(e) => {
-                                  const val = parseInt(e.target.value);
-                                  if (!e.target.value) {
-                                    // 빈 값이면 셀렉트로 돌아가기
-                                    handleSettingChange(
-                                      game.id,
-                                      'timeLimit',
-                                      DEFAULT_TIME_LIMIT,
-                                    );
-                                  } else if (
-                                    val < MIN_TIME_LIMIT ||
-                                    val > MAX_TIME_LIMIT
-                                  ) {
-                                    showTimeLimitTooltipForGame(game.id);
-                                    setTimeout(() => {
-                                      handleSettingChange(
-                                        game.id,
-                                        'timeLimit',
-                                        DEFAULT_TIME_LIMIT,
-                                      );
-                                    }, 100);
-                                  }
+                                onBlur={() => {
+                                  commitTimeLimit(game.id, DEFAULT_TIME_LIMIT);
                                 }}
                               />
                             ) : (
@@ -965,22 +983,34 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                               <input
                                 type="number"
                                 value={
-                                  settings.timeLimit === -1
-                                    ? ''
-                                    : settings.timeLimit
+                                  localTimeInput[game.id] !== undefined &&
+                                  localTimeInput[game.id] !== ''
+                                    ? localTimeInput[game.id]
+                                    : settings.timeLimit === -1
+                                      ? ''
+                                      : settings.timeLimit
                                 }
-                                onChange={(e) =>
-                                  handleSettingChange(
-                                    game.id,
-                                    'timeLimit',
-                                    e.target.value
-                                      ? parseInt(e.target.value)
-                                      : -1,
-                                  )
-                                }
+                                onChange={(e) => {
+                                  // 로컬 상태만 업데이트, 패킷 전송 없음
+                                  setLocalTimeInput((prev) => ({
+                                    ...prev,
+                                    [game.id]: e.target.value,
+                                  }));
+                                }}
+                                onFocus={() => {
+                                  // 현재 값으로 로컬 상태 초기화
+                                  setLocalTimeInput((prev) => ({
+                                    ...prev,
+                                    [game.id]:
+                                      settings.timeLimit === -1
+                                        ? ''
+                                        : String(settings.timeLimit),
+                                  }));
+                                }}
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
+                                    commitTimeLimit(game.id, 180);
                                     e.currentTarget.blur();
                                   }
                                 }}
@@ -989,27 +1019,8 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                 min={MIN_TIME_LIMIT}
                                 max={MAX_TIME_LIMIT}
                                 autoFocus
-                                onBlur={(e) => {
-                                  const val = parseInt(e.target.value);
-                                  if (!e.target.value) {
-                                    handleSettingChange(
-                                      game.id,
-                                      'timeLimit',
-                                      180,
-                                    );
-                                  } else if (
-                                    val < MIN_TIME_LIMIT ||
-                                    val > MAX_TIME_LIMIT
-                                  ) {
-                                    showTimeLimitTooltipForGame(game.id);
-                                    setTimeout(() => {
-                                      handleSettingChange(
-                                        game.id,
-                                        'timeLimit',
-                                        180,
-                                      );
-                                    }, 100);
-                                  }
+                                onBlur={() => {
+                                  commitTimeLimit(game.id, 180);
                                 }}
                               />
                             ) : (

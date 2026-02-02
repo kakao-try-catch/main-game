@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+﻿import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import { TileState } from '../../types/minesweeper.types';
 
@@ -9,6 +9,8 @@ export interface TileRenderData {
   isMine: boolean;
   adjacentMines: number;
   state: TileState;
+  revealedBy?: string | null;
+  flaggedBy?: string | null;
 }
 
 // 타일 매니저 설정
@@ -83,15 +85,21 @@ export default class TileManager {
   }
 
   /**
-   * 타일 크기 계산 (화면을 가득 채우도록)
+   * 타일 크기 계산 (사과게임과 동일한 레이아웃)
    */
   private calculateTileSize(): void {
     const ratio = window.__GAME_RATIO || 1;
+    const canvasWidth = GAME_WIDTH * ratio;
+    const canvasHeight = GAME_HEIGHT * ratio;
 
-    // 타이머를 위한 공간 확보 (오른쪽에 80px 여유 공간)
-    const timerReservedSpace = 40 * ratio;
-    const availableWidth = GAME_WIDTH * ratio - timerReservedSpace;
-    const availableHeight = GAME_HEIGHT * ratio;
+    // 사과게임과 동일한 여백 설정
+    const timerBarWidth = 22 * ratio;
+    const timerBarMarginRight = 30 * ratio;
+    const verticalMargin = 50 * ratio; // 상하 여백 (사과게임과 동일)
+
+    // 사용 가능한 영역 계산 (타이머 영역 제외)
+    const availableWidth = canvasWidth - timerBarWidth - timerBarMarginRight;
+    const availableHeight = canvasHeight - 2 * verticalMargin;
 
     // 그리드에 맞는 타일 크기 계산
     const tileWidth = availableWidth / this.gridCols;
@@ -100,11 +108,11 @@ export default class TileManager {
     // 정사각형 타일 유지 (더 작은 쪽에 맞춤)
     this.tileSize = Math.floor(Math.min(tileWidth, tileHeight));
 
-    // 그리드 시작 위치 계산 (축소된 가로 공간 내에서 중앙 정렬)
+    // 그리드 시작 위치 계산 (사용 가능한 영역 내에서 중앙 정렬)
     const gridWidth = this.gridCols * this.tileSize;
     const gridHeight = this.gridRows * this.tileSize;
     this.gridStartX = (availableWidth - gridWidth) / 2;
-    this.gridStartY = (availableHeight - gridHeight) / 2;
+    this.gridStartY = verticalMargin + (availableHeight - gridHeight) / 2;
 
     console.log(`[TileManager] 타일 크기: ${this.tileSize}px`);
   }
@@ -125,6 +133,7 @@ export default class TileManager {
           isMine: false,
           adjacentMines: 0,
           state: TileState.HIDDEN,
+          revealedBy: null,
         };
       }
     }
@@ -222,6 +231,7 @@ export default class TileManager {
           this.tiles[row][col].isMine = serverTile.isMine;
           this.tiles[row][col].adjacentMines = serverTile.adjacentMines;
           this.tiles[row][col].state = serverTile.state;
+          this.tiles[row][col].revealedBy = serverTile.revealedBy;
         }
       }
     }
@@ -241,6 +251,7 @@ export default class TileManager {
       state: TileState;
       adjacentMines?: number;
       isMine?: boolean;
+      revealedBy?: string | null;
       flaggedBy?: string | null;
       distance: number;
     }>,
@@ -272,6 +283,7 @@ export default class TileManager {
             tile.state,
             tile.adjacentMines,
             tile.isMine,
+            tile.revealedBy,
             tile.flaggedBy,
           );
 
@@ -303,6 +315,7 @@ export default class TileManager {
     state: TileState,
     adjacentMines?: number,
     isMine?: boolean,
+    revealedBy?: string | null,
     flaggedBy?: string | null,
   ): boolean {
     if (row < 0 || row >= this.gridRows || col < 0 || col >= this.gridCols) {
@@ -318,6 +331,8 @@ export default class TileManager {
     tile.state = state;
     if (adjacentMines !== undefined) tile.adjacentMines = adjacentMines;
     if (isMine !== undefined) tile.isMine = isMine;
+    if (revealedBy !== undefined) tile.revealedBy = revealedBy;
+    tile.flaggedBy = flaggedBy;
 
     let isMineTile = false;
 
@@ -326,13 +341,19 @@ export default class TileManager {
       case TileState.REVEALED:
         sprite.setTexture('TileOpened');
         // 깃발 스프라이트 숨기기
+        const tileAlpha = 0.6;
         if (this.flagSprites[row][col]) {
           this.flagSprites[row][col]!.setVisible(false);
         }
         if (tile.isMine) {
-          isMineTile = true;
-          // 지뢰 이미지 표시
-          sprite.setTint(0xe74c3c); // 빨간색 틴트
+          // 지뢰 이미지 표시 - 플레이어 색상 적용
+          if (tile.revealedBy && this.playerColors.has(tile.revealedBy)) {
+            const colorStr = this.playerColors.get(tile.revealedBy)!;
+            const lightTint = this.getLightTint(colorStr, tileAlpha);
+            sprite.setTint(lightTint);
+          } else {
+            sprite.setTint(0xe74c3c); // 기본 빨간색 틴트
+          }
           text.setVisible(false);
           // 지뢰 스프라이트 생성 또는 표시
           if (!this.mineSprites[row][col]) {
@@ -349,7 +370,13 @@ export default class TileManager {
           this.scene.events.emit('minesweeperMineExplode');
         } else {
           // 빈 타일 또는 숫자 표시
-          sprite.clearTint();
+          if (tile.revealedBy && this.playerColors.has(tile.revealedBy)) {
+            const colorStr = this.playerColors.get(tile.revealedBy)!;
+            const lightTint = this.getLightTint(colorStr, tileAlpha);
+            sprite.setTint(lightTint);
+          } else {
+            sprite.clearTint();
+          }
           // 지뢰 스프라이트 숨기기
           if (this.mineSprites[row][col]) {
             this.mineSprites[row][col]!.setVisible(false);
@@ -369,7 +396,14 @@ export default class TileManager {
       case TileState.FLAGGED:
         // 플레이어별 색상으로 깃발 표시
         sprite.setTexture('TileClosed');
-        sprite.clearTint();
+        // 타일 배경에도 플레이어 색상 적용
+        if (flaggedBy && this.playerColors.has(flaggedBy)) {
+          const colorStr = this.playerColors.get(flaggedBy)!;
+          const lightTint = this.getLightTint(colorStr, 0.5);
+          sprite.setTint(lightTint);
+        } else {
+          sprite.clearTint();
+        }
         text.setVisible(false);
         // 깃발 스프라이트 생성 또는 표시
         if (!this.flagSprites[row][col]) {
@@ -419,6 +453,25 @@ export default class TileManager {
     }
 
     return isMineTile;
+  }
+
+  /**
+   * 색상을 흰색과 블렌딩하여 밝은 색상 반환
+   * @param colorStr #RRGGBB 형식의 색상
+   * @param ratio 원본 색상 비율 (0.0 = 흰색, 1.0 = 원본)
+   */
+  private getLightTint(colorStr: string, ratio: number): number {
+    const hex = colorStr.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // 흰색(255)과 블렌딩
+    const lightR = Math.round(255 + (r - 255) * ratio);
+    const lightG = Math.round(255 + (g - 255) * ratio);
+    const lightB = Math.round(255 + (b - 255) * ratio);
+
+    return (lightR << 16) | (lightG << 8) | lightB;
   }
 
   /**

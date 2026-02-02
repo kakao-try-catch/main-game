@@ -5,6 +5,7 @@ import { SFXProvider, useSFXContext } from './contexts/SFXContext';
 import { UserProvider, useUser } from './contexts/UserContext';
 
 import PlayerCard from './components/PlayerCard';
+import TintedFlagIcon from './components/TintedFlagIcon';
 import GameResult from './game/utils/game-result/GameResult';
 import SoundSetting from './components/SoundSetting';
 import LandingPage from './components/LandingPage';
@@ -23,6 +24,7 @@ import type {
 } from './game/types/common';
 import type { PlayerId, GameOverEvent } from './game/types/flappybird.types';
 import { CONSTANTS } from './game/types/common';
+import { GAME_DESCRIPTIONS } from './constants/gameDescriptions';
 import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
 import flappyBird1 from './assets/images/flappybird_1.png';
 import flappyBird2 from './assets/images/flappybird_2.png';
@@ -75,6 +77,9 @@ function AppContent() {
     collidedPlayerId: PlayerId;
     players: PlayerResultData[];
   } | null>(null);
+
+  // 지뢰찾기 깃발 카운트 (플레이어별)
+  const [flagCounts, setFlagCounts] = useState<Record<string, number>>({});
 
   const [players, setPlayers] = useState<PlayerData[]>([
     {
@@ -194,6 +199,17 @@ function AppContent() {
     [],
   );
 
+  // 지뢰찾기 깃발 카운트 업데이트 핸들러
+  const handleFlagCountUpdate = useCallback(
+    (newFlagCounts: Record<string, number>) => {
+      try {
+        setFlagCounts(newFlagCounts);
+      } catch (error) {
+        console.error('Flag count update handler error:', error);
+      }
+    },
+    [],
+  );
   // 지뢰찾기 타일 열기 사운드 핸들러
   const handleMinesweeperTileReveal = useCallback(() => {
     console.log('[App] 지뢰찾기 타일 열기 사운드 재생');
@@ -222,6 +238,7 @@ function AppContent() {
     setFlappyScore(0);
     setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+    setFlagCounts({});
 
     // 게임 컨테이너 key 증가로 강제 재마운트
     setGameKey((prev) => prev + 1);
@@ -249,6 +266,7 @@ function AppContent() {
     setFlappyScore(0);
     setFlappyFinalData(null);
     setPlayers((prev) => prev.map((p) => ({ ...p, score: 0 })));
+    setFlagCounts({});
     reset(); // 로비로 복귀 시에도 BGM을 처음으로 되감기
     setCurrentScreen('lobby');
 
@@ -389,15 +407,29 @@ function AppContent() {
       <div
         style={{
           width: '100%',
-          flex: 1,
           display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           justifyContent: 'center',
-          alignItems: 'flex-start',
-          marginTop: '4px',
-          overflow: 'auto',
+          flex: 1,
           minHeight: 0,
         }}
       >
+        {/* 게임 설명 */}
+        {currentGameType && GAME_DESCRIPTIONS[currentGameType] && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '4px 0',
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '14px',
+              fontWeight: 500,
+            }}
+          >
+            {GAME_DESCRIPTIONS[currentGameType]}
+          </div>
+        )}
+
         <div
           style={{
             ...playerListStyle,
@@ -444,33 +476,37 @@ function AppContent() {
 
           {/* 지뢰찾기: 4개 플레이어카드 */}
           {currentGameType === 'minesweeper' &&
-            players
-              .slice(0, testPlayerCount)
-              .map((player) => (
-                <PlayerCard
-                  key={player.id}
-                  name={player.name}
-                  score={player.score}
-                  color={player.color}
-                />
-              ))}
+            players.slice(0, testPlayerCount).map((player) => (
+              <PlayerCard
+                key={player.id}
+                name={player.name}
+                score={player.score}
+                color={player.color}
+                extraContent={
+                  <TintedFlagIcon color={player.color}>
+                    <span style={{ color: '#212529', fontSize: '20px' }}>
+                      {flagCounts[player.id] || 0}
+                    </span>
+                  </TintedFlagIcon>
+                }
+              />
+            ))}
 
           <SoundSetting gameReady={gameReady} />
         </div>
       </div>
 
-      {/* 하단 영역 */}
+      {/* 하단 영역 - 화면 하단에 고정 */}
       <main
         className="game-container"
         style={{
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           width: '100%',
-          flex: 4,
+          flexShrink: 0,
           margin: 0,
           padding: 0,
-          minHeight: 0,
           maxHeight: '80vh',
           overflow: 'hidden',
         }}
@@ -493,6 +529,7 @@ function AppContent() {
             onFlappyStrike={handleFlappyStrike}
             onFlappyScore={handleFlappyScore}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
+            onFlagCountUpdate={handleFlagCountUpdate}
             onMinesweeperTileReveal={handleMinesweeperTileReveal}
             onMinesweeperMineExplode={handleMinesweeperMineExplode}
             onMinesweeperFlagPlaced={handleMinesweeperFlagPlaced}
@@ -522,6 +559,7 @@ const playerListStyle: React.CSSProperties = {
   alignSelf: 'center',
   justifyContent: 'center',
 };
+
 
 export default function App() {
   return (

@@ -265,8 +265,10 @@ export class MineSweeperMockCore {
     playerId: PlayerId,
   ): void {
     // BFS로 열릴 타일을 거리별로 그룹화
-    const tilesByDistance: Map<number, Array<{ row: number; col: number }>> =
-      new Map();
+    const tilesByDistance: Map<
+      number,
+      Array<{ row: number; col: number }>
+    > = new Map();
     const visited = new Set<string>();
     const queue: Array<{ row: number; col: number; distance: number }> = [
       { row, col, distance: 0 },
@@ -327,6 +329,9 @@ export class MineSweeperMockCore {
     let totalScoreChange = 0;
     const allUpdates: (ClientTileData & { distance: number })[] = [];
 
+    // 연쇄 타일 열기 최대 점수 (지뢰 페널티 제외)
+    const MAX_CHAIN_SCORE = 10;
+
     for (const distance of distances) {
       const tilesAtDistance = tilesByDistance.get(distance)!;
 
@@ -347,7 +352,14 @@ export class MineSweeperMockCore {
           totalScoreChange += this.config.minePenalty;
           this.remainingMines--;
         } else {
-          totalScoreChange += this.config.tileRevealScore;
+          // 최대 점수 제한 적용
+          if (totalScoreChange < MAX_CHAIN_SCORE) {
+            totalScoreChange += this.config.tileRevealScore;
+            // 최대 점수 초과 시 상한 적용
+            if (totalScoreChange > MAX_CHAIN_SCORE) {
+              totalScoreChange = MAX_CHAIN_SCORE;
+            }
+          }
         }
       }
     }
@@ -477,6 +489,13 @@ export class MineSweeperMockCore {
       remainingMines: this.remainingMines,
       timestamp: Date.now(),
     });
+
+    // 깃발 카운트 업데이트 이벤트 전송 (React UI용)
+    const flagCounts: Record<string, number> = {};
+    for (const [id, playerData] of this.players.entries()) {
+      flagCounts[id] = playerData.flagsPlaced;
+    }
+    this.socket.triggerEvent('flagCountUpdate', flagCounts);
   }
 
   /**
@@ -507,6 +526,13 @@ export class MineSweeperMockCore {
         const flaggerPlayer = this.players.get(originalFlagger);
         if (flaggerPlayer) {
           flaggerPlayer.flagsPlaced--;
+
+          // 깃발 카운트 업데이트 이벤트 전송 (React UI용)
+          const flagCounts: Record<string, number> = {};
+          for (const [id, playerData] of this.players.entries()) {
+            flagCounts[id] = playerData.flagsPlaced;
+          }
+          this.socket.triggerEvent('flagCountUpdate', flagCounts);
         }
       }
 
@@ -593,10 +619,23 @@ export class MineSweeperMockCore {
       );
     }
 
+    // 플레이어 데이터에 깃발 통계 추가
+    const playersWithFlagStats = Array.from(this.players.values()).map(
+      (player) => {
+        const update = scoreUpdates.get(player.playerId);
+        return {
+          ...player,
+          correctFlags: update?.correctFlags ?? 0,
+          totalFlags:
+            (update?.correctFlags ?? 0) + (update?.incorrectFlags ?? 0),
+        };
+      },
+    );
+
     // 게임 종료 이벤트 전송
     this.socket.triggerEvent('game_end', {
       reason: 'win',
-      players: Array.from(this.players.values()),
+      players: playersWithFlagStats,
       timestamp: Date.now(),
     });
   }

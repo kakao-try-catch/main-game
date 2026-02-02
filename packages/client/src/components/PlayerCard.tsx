@@ -8,6 +8,7 @@ interface PlayerCardProps {
   spriteSrc?: string;
   spriteAlt?: string;
   showScore?: boolean;
+  extraContent?: React.ReactNode;
 }
 
 export const getNameFontSize = (nameLength: number): string => {
@@ -23,8 +24,9 @@ export default function PlayerCard({
   spriteSrc,
   spriteAlt,
   showScore = true,
+  extraContent,
 }: PlayerCardProps) {
-  const cardHeight = spriteSrc ? 110 : 80;
+  const cardHeight = 80;
   const displayScore = showScore;
   const safeScore = typeof score === 'number' ? score : 0;
 
@@ -34,7 +36,7 @@ export default function PlayerCard({
         className="nes-container is-centered"
         style={{
           ...contentLayout,
-          padding: '4px 8px',
+          padding: '12px 8px 4px',
           minHeight: `${cardHeight}px`,
           height: `${cardHeight}px`,
           backgroundColor: '#ffffff',
@@ -52,16 +54,40 @@ export default function PlayerCard({
             style={{
               ...nameStyle,
               color: color,
+              paddingTop: '2px',
               fontSize: getNameFontSize(name.length),
             }}
           >
             {name}
           </span>
         </div>
-        {displayScore && (
-          <span style={{ color: '#212529', fontSize: '28px' }}>
-            {safeScore.toLocaleString()}
-          </span>
+        {(extraContent || displayScore) && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+            }}
+          >
+            <div style={{ flex: 1 }} />
+            {displayScore && (
+              <span style={{ color: '#212529', fontSize: '28px' }}>
+                {safeScore.toLocaleString()}
+              </span>
+            )}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                justifyContent: 'flex-end',
+                position: 'relative',
+                top: '-2px',
+              }}
+            >
+              {extraContent}
+            </div>
+          </div>
         )}
       </div>
     </div>

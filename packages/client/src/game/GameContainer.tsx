@@ -52,6 +52,7 @@ interface GameContainerProps {
     newScore: number;
     reason: string;
   }) => void; // 지뢰찾기 점수 업데이트
+  onFlagCountUpdate?: (flagCounts: Record<string, number>) => void; // 지뢰찾기 깃발 카운트 업데이트
   onMinesweeperTileReveal?: () => void; // 지뢰찾기 타일 열기 사운드
   onMinesweeperMineExplode?: () => void; // 지뢰찾기 지뢰 폭발 사운드
   onMinesweeperFlagPlaced?: () => void; // 지뢰찾기 깃발 설치 사운드
@@ -89,6 +90,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onFlappyStrike,
   onFlappyScore,
   onMinesweeperScoreUpdate,
+  onFlagCountUpdate,
   onMinesweeperTileReveal,
   onMinesweeperMineExplode,
   onMinesweeperFlagPlaced,
@@ -339,6 +341,20 @@ export const GameContainer: React.FC<GameContainerProps> = ({
                 gameType: 'minesweeper',
                 players: data.players,
               });
+            },
+          );
+        }
+
+        // 지뢰찾기 깃발 카운트 업데이트 이벤트
+        if (onFlagCountUpdate) {
+          targetScene.events.on(
+            'flagCountUpdate',
+            (data: Record<string, number>) => {
+              console.log(
+                '🚩 minesweeper flagCountUpdate event received:',
+                data,
+              );
+              onFlagCountUpdate(data);
             },
           );
         }

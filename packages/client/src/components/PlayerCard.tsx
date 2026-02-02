@@ -1,6 +1,8 @@
 import React from 'react';
 import '../assets/fonts/Font.css';
 
+type CardVariant = 'compact' | 'full';
+
 interface PlayerCardProps {
   name?: string;
   score?: number;
@@ -9,6 +11,7 @@ interface PlayerCardProps {
   spriteAlt?: string;
   showScore?: boolean;
   extraContent?: React.ReactNode;
+  variant?: CardVariant;
 }
 
 export const getNameFontSize = (nameLength: number): string => {
@@ -25,8 +28,10 @@ export default function PlayerCard({
   spriteAlt,
   showScore = true,
   extraContent,
+  variant,
 }: PlayerCardProps) {
-  const cardHeight = spriteSrc || extraContent ? 110 : 80;
+  const cardHeight =
+    variant === 'full' || spriteSrc || extraContent ? 110 : 80;
   const displayScore = showScore;
   const safeScore = typeof score === 'number' ? score : 0;
 
@@ -36,7 +41,7 @@ export default function PlayerCard({
         className="nes-container is-centered"
         style={{
           ...contentLayout,
-          padding: '4px 8px',
+          padding: '12px 8px 4px',
           minHeight: `${cardHeight}px`,
           height: `${cardHeight}px`,
           backgroundColor: '#ffffff',

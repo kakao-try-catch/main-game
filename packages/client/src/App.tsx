@@ -455,6 +455,7 @@ function AppContent() {
                 name="Team Score"
                 score={flappyScore}
                 color="#209cee" // 메인 커러
+                variant="full"
               />
             </>
           )}

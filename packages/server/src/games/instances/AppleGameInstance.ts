@@ -18,6 +18,7 @@ import {
 } from '../../../../common/src/packets';
 import { PlayerData, ReportCard } from '../../../../common/src/common-type';
 import { GameSession } from '../gameSession';
+import { Socket } from 'socket.io';
 
 // Player ID -> last drag area & repeat count
 const playerDragState = new Map<
@@ -51,18 +52,64 @@ export class AppleGameInstance implements GameInstance {
   }
 
   start(): void {
+    // TODO 중복?
+    const applied = this.getAppliedAppleConfig();
+    this.timeLeft = applied.totalTime;
+    this.removedIndices.clear();
+    this.session.players.forEach((p) => {
+      p.reportCard.score = 0;
+    });
+
+    // Generate Apples
+    console.log('[appleGameInstance/start] generateField');
+    this.generateField(applied);
+
+    // Broadcast Field
+    const setFieldPacket: SetFieldPacket = {
+      type: AppleGamePacketType.SET_FIELD,
+      apples: this.apples,
+    };
+    console.log('[appleGameInstance/start] setfield');
+    this.session.broadcastPacket(setFieldPacket);
+
+    // ready_scene
+    const readyScenePacket: ReadyScenePacket = {
+      type: SystemPacketType.READY_SCENE,
+      selectedGameType: this.session.selectedGameType,
+    };
+    console.log('[appleGameInstance/start] readyscene');
+    this.session.broadcastPacket(readyScenePacket);
+
+    // Broadcast Time
+    const setTimePacket: SetTimePacket = {
+      type: SystemPacketType.SET_TIME,
+      limitTime: this.timeLeft,
+      serverStartTime: Date.now(), // 서버 시작 시간 전송
+    };
+    this.session.broadcastPacket(setTimePacket);
+
+    // 점수 초기화 알리기 (Snapshot)
+    this.broadcastScoreboard();
+
+    // Start Timer
+    console.log('...Game timer');
     this.startTimer();
+    console.log('...Game Started!');
   }
 
   stop(): void {
-    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.session.status = 'ended';
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
   }
 
   destroy(): void {}
 
   // todo 얘내 gameSession으로 빼내야 함
   handlePacket(
-    socketId: string,
+    socket: Socket,
     playerIndex: number,
     packet: AppleGamePacket,
   ): void {
@@ -73,7 +120,7 @@ export class AppleGameInstance implements GameInstance {
         // 드래그 영역은 정규화가 필요함.
         // 추가: 이전에 보냈던 것과 동일한지 비교해 동일한 패킷이 3번까지만 브로드캐스트,
         // 4번째부터는 무시하도록 함.
-        const playerIndex = this.session.getIndex(socketId);
+        const playerIndex = this.session.getIndex(socket.id);
         const sx = packet.startX;
         const sy = packet.startY;
         const ex = packet.endX;
@@ -90,7 +137,7 @@ export class AppleGameInstance implements GameInstance {
         if (isSame) {
           prev.repeatCount = (prev.repeatCount || 0) + 1;
           if (prev.repeatCount <= 3 || true) {
-            this.session.socket
+            socket
               .to(this.session.roomId)
               .emit(AppleGamePacketType.UPDATE_DRAG_AREA, {
                 type: AppleGamePacketType.UPDATE_DRAG_AREA,
@@ -126,7 +173,7 @@ export class AppleGameInstance implements GameInstance {
 
         break;
       case AppleGamePacketType.CONFIRM_DRAG_AREA:
-        this.handleDragConfirm(socketId, packet.indices);
+        this.handleDragConfirm(socket.id, packet.indices);
         break;
     }
   }
@@ -143,59 +190,6 @@ export class AppleGameInstance implements GameInstance {
   //     this.gameConfigs.set(GameType.APPLE_GAME, defaultCfg);
   //   }
   // }
-  public startGame2() {
-    if (this.session.status === 'playing') return;
-
-    this.session.status = 'playing';
-    const applied = this.getAppliedAppleConfig();
-    this.timeLeft = applied.totalTime;
-    this.removedIndices.clear();
-    this.session.players.forEach((p) => {
-      p.reportCard.score = 0;
-    });
-
-    // Generate Apples
-    this.generateField(applied);
-
-    // Broadcast Field
-    const setFieldPacket: SetFieldPacket = {
-      type: AppleGamePacketType.SET_FIELD,
-      apples: this.apples,
-    };
-    this.session.broadcastPacket(setFieldPacket);
-
-    // ready_scene
-    const readyScenePacket: ReadyScenePacket = {
-      type: SystemPacketType.READY_SCENE,
-      selectedGameType: this.session.selectedGameType,
-    };
-    this.session.broadcastPacket(readyScenePacket);
-
-    // Broadcast Time
-    const setTimePacket: SetTimePacket = {
-      type: SystemPacketType.SET_TIME,
-      limitTime: 10, //this.timeLeft, 일단 10초로.
-      serverStartTime: Date.now(), // 서버 시작 시간 전송
-    };
-    this.session.broadcastPacket(setTimePacket);
-
-    // 점수 초기화 알리기 (Snapshot)
-    this.broadcastScoreboard();
-
-    // Start Timer
-    console.log('...Game timer');
-    this.startTimer();
-    console.log('...Game Started!');
-  }
-
-  public stopGame2() {
-    this.session.status = 'ended';
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-    }
-  }
-
   private generateField(cfg?: AppleGameRenderConfig) {
     const used = cfg ?? this.getAppliedAppleConfig();
     // todo MapSize로부터 grid 얻는 공통 코드 두기

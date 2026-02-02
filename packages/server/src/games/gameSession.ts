@@ -19,7 +19,7 @@ import {
   AppleGameRenderConfig,
   sanitizeForApple,
 } from '../../../common/src/config';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { GameInstance } from './instances/GameInstance';
 import { AppleGameInstance } from './instances/AppleGameInstance';
 import { FlappyBirdInstance } from './instances/FlappyBirdInstance';
@@ -193,6 +193,7 @@ export class GameSession {
   }
 
   public startGame(): void {
+    if (this.status === 'playing') return;
     this.status = 'playing';
     // 게임 인스턴스 생성
     // todo 이거 config 값을 생성할 때부터
@@ -218,8 +219,10 @@ export class GameSession {
   private createGameInstance(gameType: GameType): GameInstance {
     switch (gameType) {
       case GameType.APPLE_GAME:
+        console.log('[GameSession/createGameInstance] appleGameInstance 생성');
         return new AppleGameInstance(this);
       case GameType.FLAPPY_BIRD:
+        console.log('[GameSession/createGameInstance] flappyBirdInstance 생성');
         return new FlappyBirdInstance(this);
       default:
         throw new Error(`Unknown game type: ${gameType}`);
@@ -270,11 +273,11 @@ export class GameSession {
   }
 
   // ========== PACKET ROUTING ==========
-  public handleGamePacket(socketId: string, packet: any): void {
+  public handleGamePacket(socket: Socket, packet: any): void {
     if (!this.games || this.status !== 'playing') return;
 
-    const playerIndex = this.getIndex(socketId);
-    this.games.handlePacket(socketId, playerIndex, packet);
+    const playerIndex = this.getIndex(socket.id);
+    this.games.handlePacket(socket, playerIndex, packet);
   }
 
   public broadcastPacket(packet: ServerPacket) {

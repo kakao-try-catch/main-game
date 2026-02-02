@@ -189,12 +189,12 @@ export function handleClientPacket(
 
     // 게임별 패킷 라우팅
     if (packet.type.startsWith('APPLE_')) {
-      session.handleGamePacket(socket.id, packet);
+      session.handleGamePacket(socket, packet);
       return;
     }
 
     if (packet.type.startsWith('FLAPPY_')) {
-      session.handleGamePacket(socket.id, packet);
+      session.handleGamePacket(socket, packet);
       return;
     }
   } catch (error) {

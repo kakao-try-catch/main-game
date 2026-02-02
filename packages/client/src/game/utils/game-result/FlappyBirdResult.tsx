@@ -88,6 +88,9 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
               playSFX('buttonClick');
               onReplay();
             }}
+            onMouseEnter={() => {
+              playSFX('buttonHover');
+            }}
           >
             REPLAY
           </button>
@@ -98,6 +101,9 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
             onClick={() => {
               playSFX('buttonClick');
               onLobby();
+            }}
+            onMouseEnter={() => {
+              playSFX('buttonHover');
             }}
           >
             LOBBY

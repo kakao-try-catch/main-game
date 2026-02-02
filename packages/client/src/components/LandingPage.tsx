@@ -3,6 +3,7 @@ import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './LandingPage.css';
 import { useGameStore } from '../store/gameStore';
+import { useSFXContext } from '../contexts/SFXContext';
 
 const MAX_NICKNAME_LENGTH = 8;
 const TOOLTIP_DURATION = 2000;
@@ -15,6 +16,7 @@ function LandingPage({ onStart }: LandingPageProps) {
   const [nickname, setNickname] = useState('');
   const [showTooltip, setShowTooltip] = useState(false);
   const [showLengthTooltip, setShowLengthTooltip] = useState(false);
+  const { playSFX } = useSFXContext();
 
   const connectionError = useGameStore((s) => s.connectionError);
   const setConnectionError = useGameStore((s) => s.setConnectionError);
@@ -75,13 +77,17 @@ function LandingPage({ onStart }: LandingPageProps) {
 
           <div
             className="button-wrapper"
-            onMouseEnter={() => !nickname.trim() && setShowTooltip(true)}
+            onMouseEnter={() => {
+              playSFX('buttonHover');
+              !nickname.trim() && setShowTooltip(true);
+            }}
             onMouseLeave={() => setShowTooltip(false)}
           >
             <button
               type="submit"
               className="nes-btn is-primary start-button"
               disabled={!nickname.trim()}
+              onClick={() => playSFX('buttonClick')}
             >
               시작
             </button>

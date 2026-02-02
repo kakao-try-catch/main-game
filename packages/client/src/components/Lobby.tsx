@@ -36,6 +36,7 @@ import {
 import type { AppleGameRenderConfig } from '../../../common/src/config.ts';
 import { socketManager } from '../network/socket';
 import { type PlayerData } from '../../../common/src/packets';
+import { useSFXContext } from '../contexts/SFXContext';
 
 export interface LobbyProps {
   players: PlayerData[];
@@ -58,6 +59,7 @@ const DIFFICULTY_COLORS = {
   hard: '#F44336',
 } as const;
 function Lobby({ players, onGameStart }: LobbyProps) {
+  const { playSFX } = useSFXContext();
   // 게임 리스트
   const [games] = useState<Game[]>([
     { id: 'apple', name: '다같이 사과 게임', thumbnail: '🍎' },
@@ -111,6 +113,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
   const isDisabled = !isHost;
 
   const handleSelectGame = (gameId: string) => {
+    playSFX('buttonClick');
     setSelectedGame(gameId);
     // send current settings to server
     const settings = gameSettings[gameId];
@@ -245,6 +248,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
   };
 
   const handleStartGame = () => {
+    playSFX('buttonClick');
     if (!selectedGame) {
       showTooltip('게임을 선택해주세요!', 'error');
       return;
@@ -323,8 +327,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
 
       // 입력 중이면 timeLimit은 덮어쓰지 않음
       const isEditingAppleTime =
-        localTimeInput['apple'] !== undefined &&
-        localTimeInput['apple'] !== '';
+        localTimeInput['apple'] !== undefined && localTimeInput['apple'] !== '';
 
       setTimeout(() => {
         setGameSettings((prev) => ({
@@ -332,7 +335,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
           apple: {
             ...prev.apple,
             mapSize,
-            timeLimit: isEditingAppleTime ? prev.apple.timeLimit : cfg.totalTime,
+            timeLimit: isEditingAppleTime
+              ? prev.apple.timeLimit
+              : cfg.totalTime,
             appleRange,
             includeZero: cfg.includeZero,
           },
@@ -427,6 +432,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                           className="settings-edit"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -512,7 +518,10 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
-                                    commitTimeLimit(game.id, DEFAULT_TIME_LIMIT);
+                                    commitTimeLimit(
+                                      game.id,
+                                      DEFAULT_TIME_LIMIT,
+                                    );
                                     e.currentTarget.blur();
                                   }
                                 }}
@@ -659,6 +668,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                           className="settings-edit settings-flappy"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -930,6 +940,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                           className="settings-edit"
                           onClick={(e) => {
                             if (selectedGame !== game.id) {
+                              playSFX('buttonClick');
                               handleSelectGame(game.id);
                             }
                             e.stopPropagation();
@@ -1165,16 +1176,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
 
       {/* 하단: 버튼들 */}
       <div className="lobby-footer">
-        <button className="nes-btn" onClick={handleCopyLink}>
+        <button
+          className="nes-btn"
+          onClick={() => {
+            playSFX('buttonClick');
+            handleCopyLink();
+          }}
+          onMouseEnter={() => playSFX('buttonHover')}
+        >
           <i className="nes-icon is-small link"></i>
           초대 링크 복사
         </button>
         <div
           className="button-wrapper"
-          onMouseEnter={() =>
+          onMouseEnter={() => {
+            playSFX('buttonHover');
             (!selectedGame || isDisabled || players.length < 2) &&
-            setShowButtonTooltip(true)
-          }
+              setShowButtonTooltip(true);
+          }}
           onMouseLeave={() => setShowButtonTooltip(false)}
         >
           <button

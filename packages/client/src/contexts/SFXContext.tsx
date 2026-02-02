@@ -9,6 +9,14 @@ import React, {
 import { SFX_CONFIG, type SFXName } from '../config/soundConfig';
 import { sfxManager } from '../audio/sfx-manager';
 
+const POOL_SIZE = 4; // 각 효과음당 미리 생성할 Audio 객체 수
+
+interface SFXPoolItem {
+  audio: HTMLAudioElement;
+  baseVolume: number;
+  startTime: number;
+}
+
 interface SFXContextType {
   setVolume: (volume: number) => void;
   getVolume: () => number;
@@ -27,47 +35,54 @@ const SFXContext = createContext<SFXContextType | undefined>(undefined);
 export const SFXProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const sfxMapRef = useRef<Map<string, HTMLAudioElement>>(new Map());
-  const sfxBaseVolumesRef = useRef<Map<string, number>>(new Map()); // 각 SFX의 기본 볼륨 저장
-  const sfxStartTimesRef = useRef<Map<string, number>>(new Map()); // 각 SFX의 시작 시점 저장
+  // Audio Pool: 각 SFX마다 여러 개의 Audio 객체를 미리 생성
+  const sfxPoolRef = useRef<Map<string, SFXPoolItem[]>>(new Map());
+  const poolIndexRef = useRef<Map<string, number>>(new Map()); // 현재 사용할 풀 인덱스
 
   const [masterVolume, setMasterVolume] = useState(0.5); // 마스터 볼륨 (0~1)
   const [sfxEnabled, setSfxEnabled] = useState(true); // SFX 활성화 여부
 
-  // SFX 오디오 객체 생성 (초기화)
+  // SFX Audio Pool 초기화
   useEffect(() => {
-    const currentMap = sfxMapRef.current;
-    const currentBaseVolumes = sfxBaseVolumesRef.current;
-    const currentStartTimes = sfxStartTimesRef.current;
+    const currentPool = sfxPoolRef.current;
+    const currentIndex = poolIndexRef.current;
 
-    // SFX 초기화 - 모든 SFX를 미리 로드
+    // 각 SFX에 대해 POOL_SIZE만큼 Audio 객체 미리 생성
     Object.entries(SFX_CONFIG).forEach(([name, config]) => {
-      const sfxAudio = new Audio(config.file);
+      const pool: SFXPoolItem[] = [];
       const baseVolume = config.volume ?? 0.7;
       const startTime = config.startTime ?? 0;
-      sfxAudio.volume = baseVolume * masterVolume;
-      currentMap.set(name, sfxAudio);
-      currentBaseVolumes.set(name, baseVolume); // 기본 볼륨 저장
-      currentStartTimes.set(name, startTime); // 시작 시점 저장
+
+      for (let i = 0; i < POOL_SIZE; i++) {
+        const audio = new Audio(config.file);
+        audio.preload = 'auto'; // 미리 로드
+        audio.volume = baseVolume * masterVolume;
+        pool.push({ audio, baseVolume, startTime });
+      }
+
+      currentPool.set(name, pool);
+      currentIndex.set(name, 0);
     });
 
     return () => {
       // 정리
-      currentMap.forEach((sfx) => {
-        sfx.src = '';
+      currentPool.forEach((pool) => {
+        pool.forEach((item) => {
+          item.audio.src = '';
+        });
       });
-      currentMap.clear();
-      currentBaseVolumes.clear();
-      currentStartTimes.clear();
+      currentPool.clear();
+      currentIndex.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // SFX 볼륨 업데이트
   useEffect(() => {
-    sfxMapRef.current.forEach((sfx, name) => {
-      const baseVolume = sfxBaseVolumesRef.current.get(name) ?? 0.7;
-      sfx.volume = sfxEnabled ? baseVolume * masterVolume : 0;
+    sfxPoolRef.current.forEach((pool) => {
+      pool.forEach((item) => {
+        item.audio.volume = sfxEnabled ? item.baseVolume * masterVolume : 0;
+      });
     });
   }, [sfxEnabled, masterVolume]);
 
@@ -78,10 +93,10 @@ export const SFXProvider: React.FC<{ children: React.ReactNode }> = ({
       setMasterVolume(clampedVolume);
 
       // SFX 볼륨은 sfxEnabled 상태에 따라 조절
-      // todo 이거 뭐임?
-      sfxMapRef.current.forEach((sfx, name) => {
-        const baseVolume = sfxBaseVolumesRef.current.get(name) ?? 0.7;
-        sfx.volume = sfxEnabled ? baseVolume * clampedVolume : 0;
+      sfxPoolRef.current.forEach((pool) => {
+        pool.forEach((item) => {
+          item.audio.volume = sfxEnabled ? item.baseVolume * clampedVolume : 0;
+        });
       });
       sfxManager.setVolume(clampedVolume);
     },
@@ -92,27 +107,39 @@ export const SFXProvider: React.FC<{ children: React.ReactNode }> = ({
     return masterVolume;
   }, [masterVolume]);
 
-  // sfxEnabled 변경 시 sfxManager와 동기화
-  useEffect(() => {
-    sfxManager.setEnabled(sfxEnabled);
-  }, [sfxEnabled]);
-
-  // 범용 SFX 재생 함수
+  // 범용 SFX 재생 함수 (Audio Pool 사용)
   const playSFX = useCallback(
     (soundName: SFXName, allowOverlap = true, startTime?: number) => {
       if (!sfxEnabled) return; // SFX가 비활성화되어 있으면 재생하지 않음
 
-      const sfx = sfxMapRef.current.get(soundName);
-      if (sfx) {
-        // 볼륨이 0이면 효과음 재생하지 않음
-        if (sfx.volume === 0) return;
-        if (!allowOverlap && !sfx.paused) return;
+      const pool = sfxPoolRef.current.get(soundName);
+      if (!pool || pool.length === 0) return;
 
-        const defaultStartTime = sfxStartTimesRef.current.get(soundName) ?? 0;
-        sfx.currentTime = startTime ?? defaultStartTime;
-        sfx
-          .play()
-          .catch((e) => console.log(`SFX "${soundName}" 재생 실패:`, e));
+      // 볼륨이 0이면 효과음 재생하지 않음
+      if (pool[0].audio.volume === 0) return;
+
+      const actualStartTime = startTime ?? pool[0].startTime;
+
+      if (allowOverlap) {
+        // 중첩 허용: 풀에서 다음 Audio 객체 사용 (라운드 로빈)
+        const currentIndex = poolIndexRef.current.get(soundName) ?? 0;
+        const item = pool[currentIndex];
+
+        // 다음 인덱스로 이동 (순환)
+        poolIndexRef.current.set(soundName, (currentIndex + 1) % pool.length);
+
+        item.audio.currentTime = actualStartTime;
+        item.audio.play().catch(() => {
+          // 재생 실패 시 무시 (사용자 상호작용 없이 재생 시도 등)
+        });
+      } else {
+        // 중첩 비허용: 첫 번째 Audio 객체만 사용
+        const item = pool[0];
+        if (!item.audio.paused) return;
+        item.audio.currentTime = actualStartTime;
+        item.audio.play().catch(() => {
+          // 재생 실패 시 무시
+        });
       }
     },
     [sfxEnabled],

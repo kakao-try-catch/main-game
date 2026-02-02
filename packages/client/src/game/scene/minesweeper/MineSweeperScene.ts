@@ -13,6 +13,7 @@ import TileManager from './TileManager';
 import TimerPrefab from '../../utils/TimerPrefab';
 import TimerSystem from '../../utils/TimerSystem';
 import {
+  TileState,
   type TileUpdateEvent,
   type GameInitEvent,
   type ScoreUpdateEvent,
@@ -421,27 +422,64 @@ export default class MineSweeperScene extends Phaser.Scene {
     });
 
     // 타일 업데이트 이벤트
-    this.socket.on('tile_update', (data: TileUpdateEvent) => {
-      for (const tileUpdate of data.tiles) {
-        this.tileManager.updateTileState(
-          tileUpdate.row,
-          tileUpdate.col,
-          tileUpdate.state,
-          tileUpdate.adjacentMines,
-          tileUpdate.isMine,
-          tileUpdate.flaggedBy,
-        );
-      }
+    this.socket.on(
+      'tile_update',
+      (data: TileUpdateEvent & { isSequentialReveal?: boolean }) => {
+        // 순차적 열기(파동) 플래그가 있고, 거리 정보가 포함된 경우 클라이언트에서 애니메이션 처리
+        if (
+          data.isSequentialReveal &&
+          data.tiles.length > 1 &&
+          'distance' in data.tiles[0]
+        ) {
+          // 거리 정보가 포함된 타일 배열로 순차 애니메이션
+          this.tileManager.revealTilesSequentially(
+            data.tiles as Array<{
+              row: number;
+              col: number;
+              state: any;
+              adjacentMines?: number;
+              isMine?: boolean;
+              flaggedBy?: string | null;
+              distance: number;
+            }>,
+            50, // 50ms 간격
+          );
+        } else {
+          // 일반 업데이트 (즉시 반영)
+          let hasNonMineTile = false;
 
-      // 남은 지뢰 수 업데이트
-      if (data.remainingMines !== undefined) {
-        this.remainingMines = data.remainingMines;
-        this.events.emit('remainingMinesUpdate', this.remainingMines);
-        console.log(
-          `[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`,
-        );
-      }
-    });
+          for (const tileUpdate of data.tiles) {
+            const isMine = this.tileManager.updateTileState(
+              tileUpdate.row,
+              tileUpdate.col,
+              tileUpdate.state,
+              tileUpdate.adjacentMines,
+              tileUpdate.isMine,
+              tileUpdate.flaggedBy,
+            );
+
+            // 지뢰가 아닌 타일이 열렸는지 확인
+            if (!isMine && tileUpdate.state === TileState.REVEALED) {
+              hasNonMineTile = true;
+            }
+          }
+
+          // 지뢰가 아닌 타일이 열렸을 때만 타일 열기 사운드 이벤트 발생
+          if (hasNonMineTile) {
+            this.events.emit('minesweeperTileReveal');
+          }
+        }
+
+        // 남은 지뢰 수 업데이트
+        if (data.remainingMines !== undefined) {
+          this.remainingMines = data.remainingMines;
+          this.events.emit('remainingMinesUpdate', this.remainingMines);
+          console.log(
+            `[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`,
+          );
+        }
+      },
+    );
 
     // 점수 업데이트 이벤트
     this.socket.on('score_update', (data: any) => {
@@ -479,7 +517,9 @@ export default class MineSweeperScene extends Phaser.Scene {
 
       // 승리로 인한 종료인 경우 메시지 표시
       if (data.reason === 'win') {
-        console.log('[MineSweeperScene] 🎉 게임 승리! 모든 안전한 타일을 열었습니다!');
+        console.log(
+          '[MineSweeperScene] 🎉 게임 승리! 모든 안전한 타일을 열었습니다!',
+        );
       }
 
       // 서버에서 받은 최종 플레이어 데이터로 업데이트 (있는 경우)
@@ -504,6 +544,22 @@ export default class MineSweeperScene extends Phaser.Scene {
    * 이벤트 리스너 설정 (React에서 수신)
    */
   private setupEventListeners(): void {
+    // 타일 열기 사운드 이벤트 리스너
+    this.events.on('minesweeperTileReveal', () => {
+      // TileManager에서 발생한 이벤트를 GameContainer로 전달
+      console.log(
+        '[MineSweeperScene] minesweeperTileReveal 이벤트 수신 및 재전송',
+      );
+    });
+
+    // 지뢰 폭발 사운드 이벤트 리스너
+    this.events.on('minesweeperMineExplode', () => {
+      // TileManager에서 발생한 이벤트를 GameContainer로 전달
+      console.log(
+        '[MineSweeperScene] minesweeperMineExplode 이벤트 수신 및 재전송',
+      );
+    });
+
     this.events.on(
       'updatePlayers',
       (data: {

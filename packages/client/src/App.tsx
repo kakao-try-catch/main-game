@@ -39,7 +39,7 @@ const FLAPPY_BIRD_SPRITES = [
 
 function AppContent() {
   const testPlayerCount = 4;
-  const { pause, reset } = useBGMContext();
+  const { pause, reset, loadBGM } = useBGMContext();
   const { playSFX } = useSFXContext();
 
   // todo 제거 예정
@@ -70,7 +70,9 @@ function AppContent() {
     return {
       finalScore: flappyGameOverData.finalScore,
       reason: flappyGameOverData.reason,
-      collidedPlayerId: String(flappyGameOverData.collidedPlayerIndex) as PlayerId,
+      collidedPlayerId: String(
+        flappyGameOverData.collidedPlayerIndex,
+      ) as PlayerId,
       players: players.map((p, i) => ({
         ...p,
         playerIndex: i,
@@ -230,9 +232,21 @@ function AppContent() {
   };
 
   const handleGameStart = (gameType: string, preset: unknown) => {
-    // 플래피버드 프리셋만 로컬에서 관리 (사과게임은 gameStore.gameConfig 사용)
-    if (gameType === 'flappy') {
+    // todo 잘못됨
+    // // 플래피버드 프리셋만 로컬에서 관리 (사과게임은 gameStore.gameConfig 사용)
+    //     if (gameType === 'flappy') {
+    //       setFlappyPreset(preset as FlappyBirdGamePreset);
+    setCurrentGameType(gameType as GameType);
+
+    // 새 게임 시작 시 key 변경
+    setGameKey((prev) => prev + 1);
+
+    if (gameType === 'apple') {
+      setApplePreset(preset as AppleGamePreset);
+      loadBGM('appleGame');
+    } else if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
+      loadBGM('flappyBird');
     } else if (gameType === 'minesweeper') {
       const minesweeperPreset =
         (preset as MineSweeperGamePreset | undefined)?.mapSize &&
@@ -241,6 +255,7 @@ function AppContent() {
           ? (preset as MineSweeperGamePreset)
           : DEFAULT_MINESWEEPER_PRESET;
       setMinesweeperPreset(minesweeperPreset);
+      loadBGM('minesweeper');
     }
 
     const gameStartReq: ServerPacket = {
@@ -399,6 +414,9 @@ function AppContent() {
             minesweeperPreset={minesweeperPreset}
             onScoreUpdate={handleFlappyScoreUpdate}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
+            onMinesweeperTileReveal={handleMinesweeperTileReveal}
+            onMinesweeperMineExplode={handleMinesweeperMineExplode}
+            onMinesweeperFlagPlaced={handleMinesweeperFlagPlaced}
             onGameReady={handleGameReady}
           />
         )}

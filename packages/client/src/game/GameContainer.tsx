@@ -56,6 +56,9 @@ interface GameContainerProps {
     newScore: number;
     reason: string;
   }) => void; // 지뢰찾기 점수 업데이트
+  onMinesweeperTileReveal?: () => void; // 지뢰찾기 타일 열기 사운드
+  onMinesweeperMineExplode?: () => void; // 지뢰찾기 지뢰 폭발 사운드
+  onMinesweeperFlagPlaced?: () => void; // 지뢰찾기 깃발 설치 사운드
   playerCount?: number;
   players?: PlayerData[];
   flappyPreset?: FlappyBirdGamePreset;
@@ -83,7 +86,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   playerCount = 4,
   players = [],
   flappyPreset,
-  // minesweeperPreset, todo preset 통일
+  minesweeperPreset,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);

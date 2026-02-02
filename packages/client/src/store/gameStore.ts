@@ -31,7 +31,7 @@ export interface GameResult {
 }
 
 // 1. 상태 인터페이스 정의
-interface GameState {
+export interface GameState {
   count: number;
   setCount: (newCount: number) => void;
   myselfIndex: number;
@@ -125,72 +125,19 @@ interface GameState {
 }
 
 export const useGameStore = create<GameState>()(
-  // gemini chat: zustand의 subscrebeWithSelector 미들웨어를 사용하는 이유 (vs 기본 create 방식)
-  // https://gemini.google.com/share/20ef8fcd6595
-  subscribeWithSelector((set) => ({
-    count: 0,
-    myselfIndex: -1,
-    roomId: null,
-    players: [] as PlayerData[],
-    selectedGameType: null,
-    gameConfig: null,
+  subscribeWithSelector(
+    (set) =>
+      ({
+        count: 0,
+        myselfIndex: -1,
+        roomId: null,
+        players: [] as PlayerData[],
+        selectedGameType: null,
+        gameConfig: null,
 
-    screen: 'landing',
+        screen: 'landing',
 
-    // 멀티플레이 상태 초기값
-    appleField: null,
-    gameTime: null,
-    serverStartTime: null,
-    isGameStarted: false,
-    dropCellEventQueue: [],
-    otherPlayerDrags: new Map<number, DragAreaData>(),
-    gameResults: null,
-    gameSessionId: 0,
-    connectionError: null,
-
-    // 기존 액션
-    setCount: (newCount: number) => set({ count: newCount }),
-    setMyselfIndex: (index: number) => set({ myselfIndex: index }),
-    setRoomId: (roomId: string) => set({ roomId }),
-    setPlayers: (playersOrUpdater) => {
-      if (typeof playersOrUpdater === 'function') {
-        set((state) => ({ players: playersOrUpdater(state.players) }));
-      } else {
-        set({ players: playersOrUpdater });
-      }
-    },
-    setGameConfig: (selected: GameType | null, cfg: GameConfig | null) =>
-      set({ selectedGameType: selected, gameConfig: cfg }),
-
-    setScreen: (screen: 'landing' | 'lobby' | 'game') => set({ screen }),
-
-    // 멀티플레이 액션
-    setAppleField: (apples: number[]) => set({ appleField: apples }),
-    setGameTime: (time: number) => set({ gameTime: time }),
-    setServerStartTime: (time: number) => set({ serverStartTime: time }),
-    setGameStarted: (started: boolean) => set({ isGameStarted: started }),
-    addDropCellEvent: (event: DropCellEvent) =>
-      set((state) => ({
-        dropCellEventQueue: [...state.dropCellEventQueue, event],
-      })),
-    clearDropCellEventQueue: () => set({ dropCellEventQueue: [] }),
-    updateOtherPlayerDrag: (data: DragAreaData) =>
-      set((state) => {
-        const newMap = new Map(state.otherPlayerDrags);
-        newMap.set(data.playerIndex, data);
-        return { otherPlayerDrags: newMap };
-      }),
-    removeOtherPlayerDrag: (playerIndex: number) =>
-      set((state) => {
-        const newMap = new Map(state.otherPlayerDrags);
-        newMap.delete(playerIndex);
-        return { otherPlayerDrags: newMap };
-      }),
-    setGameResults: (results: PlayerData[]) => set({ gameResults: results }),
-    incrementGameSession: () =>
-      set((state) => ({ gameSessionId: state.gameSessionId + 1 })),
-    resetGameState: () =>
-      set({
+        // 멀티플레이 상태 초기값
         appleField: null,
         gameTime: null,
         serverStartTime: null,
@@ -198,35 +145,73 @@ export const useGameStore = create<GameState>()(
         dropCellEventQueue: [],
         otherPlayerDrags: new Map<number, DragAreaData>(),
         gameResults: null,
-      }),
-    setConnectionError: (err) => set({ connectionError: err }),
+        gameSessionId: 0,
+        connectionError: null,
 
-    // FlappyBird 초기값
-    flappyBirds: [],
-    flappyPipes: [],
-    flappyServerTick: 0,
-    flappyCameraX: 0,
-    flappyScore: 0,
-    isFlappyGameOver: false,
-    flappyGameOverData: null,
+        // 기존 액션
+        setCount: (newCount: number) => set({ count: newCount }),
+        setMyselfIndex: (index: number) => set({ myselfIndex: index }),
+        setRoomId: (roomId: string) => set({ roomId }),
+        setPlayers: (
+          playersOrUpdater:
+            | PlayerData[]
+            | ((prev: PlayerData[]) => PlayerData[]),
+        ) => {
+          if (typeof playersOrUpdater === 'function') {
+            set((state: GameState) => ({
+              players: playersOrUpdater(state.players),
+            }));
+          } else {
+            set({ players: playersOrUpdater });
+          }
+        },
+        setGameConfig: (selected: GameType | null, cfg: GameConfig | null) =>
+          set({ selectedGameType: selected, gameConfig: cfg }),
 
-    // FlappyBird 액션
-    setFlappyWorldState: (birds, pipes, tick, cameraX) =>
-      set({
-        flappyBirds: birds,
-        flappyPipes: pipes,
-        flappyServerTick: tick,
-        flappyCameraX: cameraX,
-      }),
-    setFlappyScore: (score) => set({ flappyScore: score }),
-    setFlappyGameOver: (data) =>
-      set({
-        isFlappyGameOver: true,
-        flappyGameOverData: data,
-        flappyScore: data.finalScore,
-      }),
-    resetFlappyState: () =>
-      set({
+        setScreen: (screen: 'landing' | 'lobby' | 'game') => set({ screen }),
+
+        // 멀티플레이 액션
+        setAppleField: (apples: number[]) => set({ appleField: apples }),
+        setGameTime: (time: number) => set({ gameTime: time }),
+        setServerStartTime: (time: number) => set({ serverStartTime: time }),
+        setGameStarted: (started: boolean) => set({ isGameStarted: started }),
+        addDropCellEvent: (event: DropCellEvent) =>
+          set((state: GameState) => ({
+            dropCellEventQueue: [...state.dropCellEventQueue, event],
+          })),
+        clearDropCellEventQueue: () => set({ dropCellEventQueue: [] }),
+        updateOtherPlayerDrag: (data: DragAreaData) =>
+          set((state: GameState) => {
+            const newMap = new Map(state.otherPlayerDrags);
+            newMap.set(data.playerIndex, data);
+            return { otherPlayerDrags: newMap };
+          }),
+        removeOtherPlayerDrag: (playerIndex: number) =>
+          set((state: GameState) => {
+            const newMap = new Map(state.otherPlayerDrags);
+            newMap.delete(playerIndex);
+            return { otherPlayerDrags: newMap };
+          }),
+        setGameResults: (results: PlayerData[]) =>
+          set({ gameResults: results }),
+        incrementGameSession: () =>
+          set((state: GameState) => ({
+            gameSessionId: state.gameSessionId + 1,
+          })),
+        resetGameState: () =>
+          set({
+            appleField: null,
+            gameTime: null,
+            serverStartTime: null,
+            isGameStarted: false,
+            dropCellEventQueue: [],
+            otherPlayerDrags: new Map<number, DragAreaData>(),
+            gameResults: null,
+          }),
+        setConnectionError: (err: { message: string } | null) =>
+          set({ connectionError: err }),
+
+        // FlappyBird 초기값
         flappyBirds: [],
         flappyPipes: [],
         flappyServerTick: 0,
@@ -234,8 +219,43 @@ export const useGameStore = create<GameState>()(
         flappyScore: 0,
         isFlappyGameOver: false,
         flappyGameOverData: null,
-      }),
-  })),
+
+        // FlappyBird 액션
+        setFlappyWorldState: (
+          birds: FlappyBirdData[],
+          pipes: FlappyPipeData[],
+          tick: number,
+          cameraX: number,
+        ) =>
+          set({
+            flappyBirds: birds,
+            flappyPipes: pipes,
+            flappyServerTick: tick,
+            flappyCameraX: cameraX,
+          }),
+        setFlappyScore: (score: number) => set({ flappyScore: score }),
+        setFlappyGameOver: (data: {
+          reason: 'pipe_collision' | 'ground_collision';
+          collidedPlayerIndex: number;
+          finalScore: number;
+        }) =>
+          set({
+            isFlappyGameOver: true,
+            flappyGameOverData: data,
+            flappyScore: data.finalScore,
+          }),
+        resetFlappyState: () =>
+          set({
+            flappyBirds: [],
+            flappyPipes: [],
+            flappyServerTick: 0,
+            flappyCameraX: 0,
+            flappyScore: 0,
+            isFlappyGameOver: false,
+            flappyGameOverData: null,
+          }),
+      }) as any,
+  ),
 );
 
 // 현재 플레이어(자신)의 PlayerData를 정적으로 가져오는 헬퍼 함수

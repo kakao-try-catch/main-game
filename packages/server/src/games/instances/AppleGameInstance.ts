@@ -291,6 +291,9 @@ export class AppleGameInstance implements GameInstance {
           totalScore: player.reportCard.score,
         };
         this.session.broadcastPacket(dropCellIndexPacket);
+
+        // 점수 변경 시 UPDATE_SCORE 전송 (사운드 재생용)
+        this.broadcastScoreboard();
       }
     }
   }

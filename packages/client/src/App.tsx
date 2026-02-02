@@ -406,15 +406,29 @@ function AppContent() {
       <div
         style={{
           width: '100%',
-          flex: 1,
           display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-start',
-          marginTop: '4px',
-          overflow: 'auto',
-          minHeight: 0,
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginTop: '8px',
+          marginBottom: '8px',
+          flexShrink: 0,
         }}
       >
+        {/* 게임 설명 */}
+        {currentGameType && GAME_DESCRIPTIONS[currentGameType] && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '4px 0',
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '14px',
+              fontWeight: 500,
+            }}
+          >
+            {GAME_DESCRIPTIONS[currentGameType]}
+          </div>
+        )}
+
         <div
           style={{
             ...playerListStyle,
@@ -455,30 +469,27 @@ function AppContent() {
                 name="Team Score"
                 score={flappyScore}
                 color="#209cee" // 메인 커러
-                variant="full"
               />
             </>
           )}
 
           {/* 지뢰찾기: 4개 플레이어카드 */}
           {currentGameType === 'minesweeper' &&
-            players
-              .slice(0, testPlayerCount)
-              .map((player) => (
-                <PlayerCard
-                  key={player.id}
-                  name={player.name}
-                  score={player.score}
-                  color={player.color}
-                  extraContent={
-                    <TintedFlagIcon color={player.color}>
-                      <span style={{ color: '#212529', fontSize: '20px' }}>
-                        {flagCounts[player.id] || 0}
-                      </span>
-                    </TintedFlagIcon>
-                  }
-                />
-              ))}
+            players.slice(0, testPlayerCount).map((player) => (
+              <PlayerCard
+                key={player.id}
+                name={player.name}
+                score={player.score}
+                color={player.color}
+                extraContent={
+                  <TintedFlagIcon color={player.color}>
+                    <span style={{ color: '#212529', fontSize: '20px' }}>
+                      {flagCounts[player.id] || 0}
+                    </span>
+                  </TintedFlagIcon>
+                }
+              />
+            ))}
 
           <SoundSetting gameReady={gameReady} />
         </div>
@@ -547,6 +558,13 @@ const playerListStyle: React.CSSProperties = {
   marginTop: '0px',
   alignSelf: 'center',
   justifyContent: 'center',
+};
+
+const GAME_DESCRIPTIONS: Record<string, string> = {
+  apple: '드래그로 숫자를 더해서 10을 만들어보세요!',
+  flappy: '스페이스바로 점프해서 장애물을 피하세요! 팀원과 연결되어 있어요.',
+  minesweeper:
+    '좌클릭으로 타일을 열고, 우클릭으로 깃발을 꽂아 지뢰를 피하세요!',
 };
 
 export default function App() {

@@ -1,8 +1,6 @@
 import React from 'react';
 import '../assets/fonts/Font.css';
 
-type CardVariant = 'compact' | 'full';
-
 interface PlayerCardProps {
   name?: string;
   score?: number;
@@ -11,7 +9,6 @@ interface PlayerCardProps {
   spriteAlt?: string;
   showScore?: boolean;
   extraContent?: React.ReactNode;
-  variant?: CardVariant;
 }
 
 export const getNameFontSize = (nameLength: number): string => {
@@ -28,10 +25,8 @@ export default function PlayerCard({
   spriteAlt,
   showScore = true,
   extraContent,
-  variant,
 }: PlayerCardProps) {
-  const cardHeight =
-    variant === 'full' || spriteSrc || extraContent ? 110 : 80;
+  const cardHeight = 80;
   const displayScore = showScore;
   const safeScore = typeof score === 'number' ? score : 0;
 
@@ -59,17 +54,40 @@ export default function PlayerCard({
             style={{
               ...nameStyle,
               color: color,
+              paddingTop: '2px',
               fontSize: getNameFontSize(name.length),
             }}
           >
             {name}
           </span>
         </div>
-        {extraContent}
-        {displayScore && (
-          <span style={{ color: '#212529', fontSize: '28px' }}>
-            {safeScore.toLocaleString()}
-          </span>
+        {(extraContent || displayScore) && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+            }}
+          >
+            <div style={{ flex: 1 }} />
+            {displayScore && (
+              <span style={{ color: '#212529', fontSize: '28px' }}>
+                {safeScore.toLocaleString()}
+              </span>
+            )}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                justifyContent: 'flex-end',
+                position: 'relative',
+                top: '-2px',
+              }}
+            >
+              {extraContent}
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -109,4 +127,3 @@ const spriteStyle: React.CSSProperties = {
   width: 'auto',
   imageRendering: 'pixelated',
 };
-

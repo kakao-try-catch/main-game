@@ -302,12 +302,24 @@ export const handleServerPacket = (packet: ServerPacket) => {
 // ========== Minesweeper Handlers ==========
 
 function handleMSGameInit(packet: MSGameInitPacket): void {
-  // 리플레이 시 플레이어 점수 초기화
+  // 서버에서 받은 플레이어 점수로 업데이트 (동기화)
+  // 리플레이 시에는 모든 점수가 0으로 오고, 씬 로딩 중에는 현재 점수가 옴
   const store = useGameStore.getState();
+
+  // packet.players를 playerId 기준으로 맵핑
+  const serverScores = new Map<string, number>();
+  packet.players.forEach((p) => {
+    serverScores.set(p.playerId, p.score);
+  });
+
+  // 현재 플레이어 목록의 점수를 서버 데이터로 업데이트
   store.setPlayers((prev: PlayerData[]) =>
     prev.map((player: PlayerData) => ({
       ...player,
-      reportCard: { ...player.reportCard, score: 0 },
+      reportCard: {
+        ...player.reportCard,
+        score: serverScores.get(player.id) ?? 0,
+      },
     })),
   );
 
@@ -322,6 +334,20 @@ function handleMSTileUpdate(packet: MSTileUpdatePacket): void {
 }
 
 function handleMSScoreUpdate(packet: MSScoreUpdatePacket): void {
+  // gameStore의 플레이어 점수 업데이트 (PlayerCard UI 동기화)
+  const store = useGameStore.getState();
+  store.setPlayers((prev: PlayerData[]) =>
+    prev.map((player: PlayerData) =>
+      player.id === packet.playerId
+        ? {
+            ...player,
+            reportCard: { ...player.reportCard, score: packet.newScore },
+          }
+        : player,
+    ),
+  );
+
+  // 게임 씬으로 이벤트 전달 (MineSweeperScene에서 수신)
   const event = new CustomEvent('ms:score_update', { detail: packet });
   window.dispatchEvent(event);
 }

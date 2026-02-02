@@ -46,9 +46,10 @@ export class AppleGameInstance implements GameInstance {
 
   // 기존 gameSession.ts에서 Apple 전용 로직 이동
   initialize(config: AppleGameRenderConfig): void {
-    this.timeLeft = config.totalTime;
+    const validConfig = config ?? this.getAppliedAppleConfig();
+    this.timeLeft = validConfig.totalTime;
     this.removedIndices.clear();
-    this.generateField(config);
+    this.generateField(validConfig);
   }
 
   start(): void {

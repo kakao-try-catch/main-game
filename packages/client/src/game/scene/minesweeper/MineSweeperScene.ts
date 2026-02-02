@@ -67,6 +67,9 @@ export default class MineSweeperScene extends Phaser.Scene {
   // 남은 지뢰 수
   private remainingMines: number = 0;
 
+  // 플레이어별 깃발 개수 추적
+  private flagCounts: Record<string, number> = {};
+
   // 클릭 불가 상태 (지뢰 클릭 시 페널티)
   private isClickDisabled: boolean = false;
   private clickDisabledTimer?: Phaser.Time.TimerEvent;
@@ -662,6 +665,14 @@ export default class MineSweeperScene extends Phaser.Scene {
       }));
       this.tileManager.setPlayerColors(this.players);
       console.log('[MineSweeperScene] 플레이어 데이터 업데이트:', this.players);
+
+      // 플레이어별 깃발 개수 초기화 및 emit
+      this.flagCounts = {};
+      for (const p of data.players) {
+        this.flagCounts[p.playerId] = p.flagsPlaced || 0;
+      }
+      this.events.emit('flagCountUpdate', { ...this.flagCounts });
+      console.log('[MineSweeperScene] 초기 깃발 개수:', this.flagCounts);
     }
   }
 
@@ -695,8 +706,14 @@ export default class MineSweeperScene extends Phaser.Scene {
       // 일반 업데이트 (즉시 반영)
       let hasNonMineTile = false;
       let hasMineTile = false;
+      let flagCountChanged = false;
 
       for (const tileUpdate of data.tiles) {
+        // 깃발 상태 변경 감지를 위해 업데이트 전 현재 타일 상태 확인
+        const currentTile = this.tileManager.getTile(tileUpdate.row, tileUpdate.col);
+        const prevFlaggedBy = currentTile?.flaggedBy;
+        const prevState = currentTile?.state;
+
         const isMine = this.tileManager.updateTileState(
           tileUpdate.row,
           tileUpdate.col,
@@ -720,6 +737,19 @@ export default class MineSweeperScene extends Phaser.Scene {
         ) {
           hasMineTile = true;
         }
+
+        // 깃발 상태 변경 감지 및 카운트 업데이트
+        if (tileUpdate.state === TileState.FLAGGED && tileUpdate.flaggedBy) {
+          // 깃발 설치 (이전에 깃발이 없었던 경우에만)
+          if (prevState !== TileState.FLAGGED) {
+            this.flagCounts[tileUpdate.flaggedBy] = (this.flagCounts[tileUpdate.flaggedBy] || 0) + 1;
+            flagCountChanged = true;
+          }
+        } else if (prevState === TileState.FLAGGED && tileUpdate.state !== TileState.FLAGGED && prevFlaggedBy) {
+          // 깃발 해제 (이전에 깃발이 있었던 경우)
+          this.flagCounts[prevFlaggedBy] = Math.max(0, (this.flagCounts[prevFlaggedBy] || 0) - 1);
+          flagCountChanged = true;
+        }
       }
 
       // 지뢰가 아닌 타일이 열렸을 때만 타일 열기 사운드 이벤트 발생
@@ -730,6 +760,12 @@ export default class MineSweeperScene extends Phaser.Scene {
       // 내가 지뢰를 열었으면 클릭 불가 상태 활성화
       if (hasMineTile) {
         this.activateClickDisable();
+      }
+
+      // 깃발 개수 변경 시 이벤트 emit
+      if (flagCountChanged) {
+        this.events.emit('flagCountUpdate', { ...this.flagCounts });
+        console.log('[MineSweeperScene] flagCountUpdate emit:', this.flagCounts);
       }
     }
 
@@ -746,12 +782,14 @@ export default class MineSweeperScene extends Phaser.Scene {
    */
   private handleScoreUpdate(data: ScoreUpdateEvent): void {
     // 로컬 플레이어 점수 업데이트
-    const player = this.players.find((p) => p.id === data.playerId);
+    const playerIndex = this.players.findIndex((p) => p.id === data.playerId);
+    const player = playerIndex !== -1 ? this.players[playerIndex] : null;
     if (player) {
       player.score = data.newScore;
 
       // React UI에 점수 업데이트 알림
       this.events.emit('scoreUpdate', {
+        playerIndex,
         playerId: data.playerId,
         scoreChange: data.scoreChange,
         newScore: data.newScore,

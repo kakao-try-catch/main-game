@@ -243,6 +243,7 @@ export class GameSession {
     }
 
     // 3. 게임 재시작 (startGame이 상태 초기화 + 패킷 시퀀스 전송 처리)
+    this.status = 'playing';
     this.startGame();
   }
 

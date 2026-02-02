@@ -98,7 +98,6 @@ export class AppleGameInstance implements GameInstance {
   }
 
   stop(): void {
-    this.session.status = 'ended';
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
       this.timerInterval = null;
@@ -246,8 +245,6 @@ export class AppleGameInstance implements GameInstance {
   }
 
   public handleDragConfirm(playerId: string, indices: number[]) {
-    if (this.session.status !== 'playing') return;
-
     // Check if any index is already removed (Race condition check)
     const alreadyTaken = indices.some((idx) => this.removedIndices.has(idx));
     if (alreadyTaken) {

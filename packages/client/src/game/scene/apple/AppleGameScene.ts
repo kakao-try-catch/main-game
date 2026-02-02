@@ -189,13 +189,15 @@ export default class AppleGameScene extends Phaser.Scene {
 
         // gameStore.gameConfig에서 렌더링 설정 가져오기
         // gameConfig는 이미 AppleGameRenderConfig 타입임
-        const gameConfig = useGameStore.getState().gameConfig as AppleGameRenderConfig | null;
-        if (gameConfig && 'gridCols' in gameConfig && 'gridRows' in gameConfig) {
+        const gameConfig = useGameStore.getState()
+          .gameConfig as AppleGameRenderConfig | null;
+        if (
+          gameConfig &&
+          'gridCols' in gameConfig &&
+          'gridRows' in gameConfig
+        ) {
           // 그리드 크기에 맞춰 레이아웃 재계산
-          this.calculateGridConfig(
-            gameConfig.gridCols,
-            gameConfig.gridRows,
-          );
+          this.calculateGridConfig(gameConfig.gridCols, gameConfig.gridRows);
 
           // AppleGameManager 설정 업데이트
           this.gameManager.updateGameConfig({

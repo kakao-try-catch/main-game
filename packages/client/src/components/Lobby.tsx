@@ -12,11 +12,7 @@ import type {
   PipeSpeedPreset,
   RopeLengthPreset,
 } from '../../../common/src/config';
-import type {
-  LobbyPlayer,
-  Game,
-  GameSettings,
-} from '../game/types/common';
+import type { LobbyPlayer, Game, GameSettings } from '../game/types/common';
 import type {
   MineSweeperGamePreset,
   MapSizePreset,

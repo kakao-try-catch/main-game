@@ -682,6 +682,33 @@ export default class MineSweeperScene extends Phaser.Scene {
   private handleTileUpdate(
     data: TileUpdateEvent & { isSequentialReveal?: boolean; tiles: any[] },
   ): void {
+    // 순차적 열기 여부와 관계없이 먼저 깃발 개수 변경 감지
+    let flagCountChanged = false;
+    for (const tileUpdate of data.tiles) {
+      const currentTile = this.tileManager.getTile(tileUpdate.row, tileUpdate.col);
+      const prevState = currentTile?.state;
+      const prevFlaggedBy = currentTile?.flaggedBy;
+
+      // 깃발 상태 변경 감지 및 카운트 업데이트
+      if (tileUpdate.state === TileState.FLAGGED && tileUpdate.flaggedBy) {
+        // 깃발 설치 (이전에 깃발이 없었던 경우에만)
+        if (prevState !== TileState.FLAGGED) {
+          this.flagCounts[tileUpdate.flaggedBy] = (this.flagCounts[tileUpdate.flaggedBy] || 0) + 1;
+          flagCountChanged = true;
+        }
+      } else if (prevState === TileState.FLAGGED && tileUpdate.state !== TileState.FLAGGED && prevFlaggedBy) {
+        // 깃발 해제 (이전에 깃발이 있었던 경우 - 타일이 열릴 때 포함)
+        this.flagCounts[prevFlaggedBy] = Math.max(0, (this.flagCounts[prevFlaggedBy] || 0) - 1);
+        flagCountChanged = true;
+      }
+    }
+
+    // 깃발 개수 변경 시 이벤트 emit
+    if (flagCountChanged) {
+      this.events.emit('flagCountUpdate', { ...this.flagCounts });
+      console.log('[MineSweeperScene] flagCountUpdate emit:', this.flagCounts);
+    }
+
     // 순차적 열기(파동) 플래그가 있고, 거리 정보가 포함된 경우 클라이언트에서 애니메이션 처리
     if (
       data.isSequentialReveal &&
@@ -706,14 +733,8 @@ export default class MineSweeperScene extends Phaser.Scene {
       // 일반 업데이트 (즉시 반영)
       let hasNonMineTile = false;
       let hasMineTile = false;
-      let flagCountChanged = false;
 
       for (const tileUpdate of data.tiles) {
-        // 깃발 상태 변경 감지를 위해 업데이트 전 현재 타일 상태 확인
-        const currentTile = this.tileManager.getTile(tileUpdate.row, tileUpdate.col);
-        const prevFlaggedBy = currentTile?.flaggedBy;
-        const prevState = currentTile?.state;
-
         const isMine = this.tileManager.updateTileState(
           tileUpdate.row,
           tileUpdate.col,
@@ -737,19 +758,6 @@ export default class MineSweeperScene extends Phaser.Scene {
         ) {
           hasMineTile = true;
         }
-
-        // 깃발 상태 변경 감지 및 카운트 업데이트
-        if (tileUpdate.state === TileState.FLAGGED && tileUpdate.flaggedBy) {
-          // 깃발 설치 (이전에 깃발이 없었던 경우에만)
-          if (prevState !== TileState.FLAGGED) {
-            this.flagCounts[tileUpdate.flaggedBy] = (this.flagCounts[tileUpdate.flaggedBy] || 0) + 1;
-            flagCountChanged = true;
-          }
-        } else if (prevState === TileState.FLAGGED && tileUpdate.state !== TileState.FLAGGED && prevFlaggedBy) {
-          // 깃발 해제 (이전에 깃발이 있었던 경우)
-          this.flagCounts[prevFlaggedBy] = Math.max(0, (this.flagCounts[prevFlaggedBy] || 0) - 1);
-          flagCountChanged = true;
-        }
       }
 
       // 지뢰가 아닌 타일이 열렸을 때만 타일 열기 사운드 이벤트 발생
@@ -760,12 +768,6 @@ export default class MineSweeperScene extends Phaser.Scene {
       // 내가 지뢰를 열었으면 클릭 불가 상태 활성화
       if (hasMineTile) {
         this.activateClickDisable();
-      }
-
-      // 깃발 개수 변경 시 이벤트 emit
-      if (flagCountChanged) {
-        this.events.emit('flagCountUpdate', { ...this.flagCounts });
-        console.log('[MineSweeperScene] flagCountUpdate emit:', this.flagCounts);
       }
     }
 

@@ -34,7 +34,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
     // todo 클라 핸들러는 이거 필요없는데?
     // JOIN_ROOM 패킷은 클라이언트가 서버로 보내는 것이므로 여기서 처리 불필요
     case SystemPacketType.JOIN_ROOM:
-      console.log(`Player ${packet.playerId} joined ${packet.roomId}`);
+      //console.log(`Player ${packet.playerId} joined ${packet.roomId}`);
       break;
 
     case SystemPacketType.ROOM_UPDATE: {
@@ -302,6 +302,15 @@ export const handleServerPacket = (packet: ServerPacket) => {
 // ========== Minesweeper Handlers ==========
 
 function handleMSGameInit(packet: MSGameInitPacket): void {
+  // 리플레이 시 플레이어 점수 초기화
+  const store = useGameStore.getState();
+  store.setPlayers((prev: PlayerData[]) =>
+    prev.map((player: PlayerData) => ({
+      ...player,
+      reportCard: { ...player.reportCard, score: 0 },
+    })),
+  );
+
   // 게임 씬으로 이벤트 전달 (MineSweeperScene에서 수신)
   const event = new CustomEvent('ms:game_init', { detail: packet });
   window.dispatchEvent(event);
@@ -323,6 +332,31 @@ function handleMSRemainingMines(packet: MSRemainingMinesPacket): void {
 }
 
 function handleMSGameEnd(packet: MSGameEndPacket): void {
+  const store = useGameStore.getState();
+  const currentPlayers = store.players;
+
+  // MSGameEndPacket.results를 PlayerData[] 형식으로 변환
+  // rank 순으로 정렬되어 있으므로 그대로 사용
+  const gameResults = packet.results.map((result) => {
+    const player = currentPlayers.find((p) => p.id === result.playerId);
+    return {
+      id: result.playerId,
+      playerName: player?.playerName ?? 'Unknown',
+      color: player?.color ?? '#ffffff',
+      reportCard: {
+        score: result.score,
+      },
+      // MineSweeperResult에서 사용하는 추가 필드
+      correctFlags: result.correctFlags,
+      totalFlags: result.totalFlags,
+    };
+  });
+
+  store.setGameResults(gameResults);
+  store.setGameStarted(false);
+  sfxManager.play('appleGameEnd');
+  bgmManager.pause();
+
   const event = new CustomEvent('ms:game_end', { detail: packet });
   window.dispatchEvent(event);
 }

@@ -2,6 +2,8 @@ import { io, Socket } from 'socket.io-client';
 import { type ServerPacket } from '../../../common/src/packets.ts';
 import { handleServerPacket } from './clientHandler.ts';
 
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+
 class SocketManager {
   private socket: Socket | null = null;
 
@@ -65,4 +67,4 @@ class SocketManager {
 }
 
 export const socketManager = new SocketManager();
-socketManager.connect('http://localhost:3000');
+socketManager.connect(SERVER_URL);

@@ -132,6 +132,7 @@ export default class GameResultPrefab extends Phaser.GameObjects.Container {
       const defaultPlayers: RankedPlayer[] = [];
       for (let i = 0; i < playerCount; i++) {
         defaultPlayers.push({
+          id: `player-${i}`,
           playerName: `${i + 1}P`,
           color: ['#209cee', '#e76e55', '#92cc41', '#f2d024'][i] || '#209cee',
           reportCard: { score: 0 },

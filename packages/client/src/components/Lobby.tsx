@@ -239,8 +239,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       }
 
       // timeLimit 변환
-      const timeVal =
-        typeof s.timeLimit === 'number' ? s.timeLimit : 180;
+      const timeVal = typeof s.timeLimit === 'number' ? s.timeLimit : 180;
 
       const minesweeperPreset: MineSweeperGamePreset = {
         mapSize: (s.mapSize || 'medium') as MapSizePreset,
@@ -396,11 +395,17 @@ function Lobby({ players, onGameStart }: LobbyProps) {
         setGameSettings((prev) => ({
           ...prev,
           flappy: {
-            ...prev.flappy,
-            pipeGap: cfg.pipeGap || 'normal',
+            ...prev?.flappy,
+            pipeGap: (cfg.pipeGap || 'normal') as 'normal' | 'narrow' | 'wide',
             pipeWidth: cfg.pipeWidth || 'normal',
-            pipeSpacing: cfg.pipeSpacing || 'normal',
-            pipeSpeed: cfg.pipeSpeed || 'normal',
+            pipeSpacing: (cfg.pipeSpacing || 'normal') as
+              | 'normal'
+              | 'narrow'
+              | 'wide',
+            pipeSpeed: (cfg.pipeSpeed || 'normal') as
+              | 'normal'
+              | 'slow'
+              | 'fast',
             ropeLength: cfg.ropeLength || 'normal',
             connectAll: cfg.connectAll ?? false,
           },
@@ -419,7 +424,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       // timeLimit 역변환
       const timeLimit =
         cfg.timeLimit === 'manual'
-          ? cfg.manualTime ?? 180
+          ? (cfg.manualTime ?? 180)
           : (cfg.timeLimit as number);
 
       // difficulty → mineRatio 역변환

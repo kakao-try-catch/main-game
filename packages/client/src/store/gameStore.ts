@@ -199,13 +199,13 @@ export const useGameStore = create<GameState>()(
           })),
         clearDropCellEventQueue: () => set({ dropCellEventQueue: [] }),
         updateOtherPlayerDrag: (data: DragAreaData) =>
-          set((state: any) => {
+          set((state) => {
             const newMap = new Map(state.otherPlayerDrags);
             newMap.set(data.playerIndex, data);
             return { otherPlayerDrags: newMap };
           }),
         removeOtherPlayerDrag: (playerIndex: number) =>
-          set((state: any) => {
+          set((state) => {
             const newMap = new Map(state.otherPlayerDrags);
             newMap.delete(playerIndex);
             return { otherPlayerDrags: newMap };

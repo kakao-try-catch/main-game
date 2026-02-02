@@ -13,11 +13,7 @@ console.log('Game server starting...');
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: [
-      'http://localhost:5173',
-      'http://192.168.0.41:5173',
-      /\.vercel\.app$/,  // Vercel 배포 도메인 허용
-    ],
+    origin: '*',  // 모든 도메인 허용 (개발/테스트용)
     methods: ['GET', 'POST'],
   },
   transports: ['websocket'], // 서버도 웹소켓만 허용하도록 일치시킴

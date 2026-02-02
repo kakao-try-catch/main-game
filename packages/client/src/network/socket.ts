@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { type ServerPacket } from '../../../common/src/packets.ts';
 import { handleServerPacket } from './clientHandler.ts';
+import { useGameStore } from '../store/gameStore.ts';
 
 class SocketManager {
   private socket: Socket | null = null;
@@ -35,9 +36,17 @@ class SocketManager {
     this.socket.on('connect', () => {
       console.log('[SocketManager] Connected! url:', url);
     });
-    this.socket.on('disconnect', (reason) =>
-      console.log('[SocketManager] Disconnected! reason:', reason, 'url:', url),
-    );
+    this.socket.on('disconnect', (reason) => {
+      console.log('[SocketManager] Disconnected! reason:', reason, 'url:', url);
+
+      // 서버 측 또는 네트워크 문제로 인한 연결 끊김 처리
+      // 'io client disconnect'는 클라이언트가 명시적으로 끊은 경우이므로 제외
+      if (reason !== 'io client disconnect') {
+        const { setScreen, setConnectionError } = useGameStore.getState();
+        setConnectionError({ message: '서버와의 연결이 끊겨 랜딩페이지로 돌아왔습니다.' });
+        setScreen('landing');
+      }
+    });
   }
 
   // 서버로 데이터 전송할 때 사용하는 메서드

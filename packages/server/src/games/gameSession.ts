@@ -23,6 +23,7 @@ import { Server, Socket } from 'socket.io';
 import { GameInstance } from './instances/GameInstance';
 import { AppleGameInstance } from './instances/AppleGameInstance';
 import { FlappyBirdInstance } from './instances/FlappyBirdInstance';
+import { MineSweeperInstance } from './instances/MineSweeperInstance';
 
 export class GameSession {
   // selected game in this session (lobby choice)
@@ -227,6 +228,9 @@ export class GameSession {
       case GameType.FLAPPY_BIRD:
         console.log('[GameSession/createGameInstance] flappyBirdInstance 생성');
         return new FlappyBirdInstance(this);
+      case GameType.MINESWEEPER:
+        console.log('[GameSession/createGameInstance] mineSweeperInstance 생성');
+        return new MineSweeperInstance(this);
       default:
         throw new Error(`Unknown game type: ${gameType}`);
     }

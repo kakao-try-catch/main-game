@@ -36,6 +36,13 @@ export const handleServerPacket = (packet: ServerPacket) => {
       if (useGameStore.getState().screen !== 'lobby') {
         useGameStore.getState().setScreen('lobby');
       }
+
+      // URL에 /invite가 있으면 제거
+      if (window.location.pathname.includes('/invite')) {
+        const newUrl = window.location.pathname.replace(/\/invite.*$/, '');
+        window.history.replaceState(null, '', newUrl || '/');
+      }
+
       console.log(
         `ROOM_UPDATE packet received: , ${roomPacket.updateType}, ${roomPacket.yourIndex}`,
         roomPacket.players,

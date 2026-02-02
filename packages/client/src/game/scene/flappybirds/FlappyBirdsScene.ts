@@ -798,6 +798,9 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       }
     }
 
+    // 2. 보간 후 밧줄 제약 적용 (시각적 일관성)
+    this.enforceClientRopeConstraint();
+
     // 3. 카메라 추적: 새들의 평균 X를 화면의 1/4 지점에 유지 (게임 시작 후에만)
     if (this.gameStarted && this.birdSprites.length > 0) {
       let totalX = 0;
@@ -898,6 +901,38 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       GAME_WIDTH * ratio,
       FLAPPY_GROUND_Y * ratio,
     );
+  }
+
+  /**
+   * 클라이언트 측 밧줄 제약 적용 (시각적 일관성용)
+   * 보간 후 밧줄 최대 길이를 초과하면 스프라이트 위치 보정
+   */
+  private enforceClientRopeConstraint(): void {
+    const ratio = this.getRatio();
+    const maxLength = this.gameConfig.ropeLength * ratio;
+
+    for (const [indexA, indexB] of this.ropeConnections) {
+      const spriteA = this.birdSprites[indexA];
+      const spriteB = this.birdSprites[indexB];
+      if (!spriteA || !spriteB) continue;
+
+      const dx = spriteB.x - spriteA.x;
+      const dy = spriteB.y - spriteA.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > maxLength && distance > 0) {
+        const nx = dx / distance;
+        const ny = dy / distance;
+        const excess = distance - maxLength;
+        const correction = excess / 2;
+
+        // 양쪽 스프라이트를 당김
+        spriteA.x += nx * correction;
+        spriteA.y += ny * correction;
+        spriteB.x -= nx * correction;
+        spriteB.y -= ny * correction;
+      }
+    }
   }
 
   /**

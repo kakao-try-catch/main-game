@@ -56,6 +56,7 @@ export default class MineSweeperScene extends Phaser.Scene {
   // 타이머 관련
   private timerPrefab!: TimerPrefab;
   private timerSystem!: TimerSystem;
+  private unsubscribeGameTime?: () => void;
 
   // 플레이어 관련
   private playerCount: number = 4;
@@ -173,12 +174,17 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 마우스 입력 설정
     this.setupMouseInput();
 
+    // gameStore 구독 설정 (타이머 시작을 위해)
+    this.subscribeToGameStore();
+
+    // 씬 종료 시 구독 해제
+    this.events.once('shutdown', () => {
+      this.unsubscribeGameTime?.();
+    });
+
     console.log(
       `[MineSweeperScene] 생성 완료: ${this.gameConfig.gridCols}x${this.gameConfig.gridRows} 그리드, 지뢰 ${this.gameConfig.mineCount}개`,
     );
-
-    // 타이머 시작
-    this.startTimer();
   }
 
   /**
@@ -188,6 +194,30 @@ export default class MineSweeperScene extends Phaser.Scene {
   private requestGameSync(): void {
     console.log('[MineSweeperScene] 게임 상태 동기화 요청');
     this.socket.emit(MineSweeperPacketType.MS_REQUEST_SYNC, {});
+  }
+
+  /**
+   * gameStore 구독 설정 (타이머 시작용)
+   */
+  private subscribeToGameStore(): void {
+    let previousGameTime: number | null = null;
+
+    // SET_TIME 패킷 수신 시 타이머 시작
+    this.unsubscribeGameTime = useGameStore.subscribe((state) => {
+      const gameTime = state.gameTime;
+
+      // 씬이 파괴되었거나 비활성 상태면 무시
+      if (!this.scene || !this.sys || !this.sys.game) {
+        return;
+      }
+
+      // gameTime이 변경되었을 때만 처리
+      if (gameTime && gameTime !== previousGameTime) {
+        console.log(`[MineSweeperScene] ⏱️ SET_TIME 수신: ${gameTime}초`);
+        this.startTimer(gameTime);
+        previousGameTime = gameTime;
+      }
+    });
   }
 
   /**
@@ -221,14 +251,14 @@ export default class MineSweeperScene extends Phaser.Scene {
   }
 
   /**
-   * 타이머 시작
+   * 타이머 시작 (SET_TIME 패킷에서 호출)
    */
-  private startTimer(): void {
+  private startTimer(gameTime: number): void {
     this.timerSystem = new TimerSystem(this, this.timerPrefab);
 
     // 서버 시작 시간 가져오기 (사과게임과 동일한 방식)
     const serverStartTime = useGameStore.getState().serverStartTime;
-    this.timerSystem.start(this.gameConfig.totalTime, serverStartTime || undefined);
+    this.timerSystem.start(gameTime, serverStartTime || undefined);
 
     // 타이머 완료 이벤트 리스너 등록
     this.events.once('timer:complete', () => {
@@ -236,7 +266,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     });
 
     console.log(
-      `[MineSweeperScene] 타이머 시작: ${this.gameConfig.totalTime}초, 서버시작시간: ${serverStartTime}`,
+      `[MineSweeperScene] 타이머 시작: ${gameTime}초, 서버시작시간: ${serverStartTime}`,
     );
   }
 
@@ -574,7 +604,9 @@ export default class MineSweeperScene extends Phaser.Scene {
       });
     };
     window.addEventListener('ms:game_init', handleGameInit);
-    this.serverEventCleanup.push(() => window.removeEventListener('ms:game_init', handleGameInit));
+    this.serverEventCleanup.push(() =>
+      window.removeEventListener('ms:game_init', handleGameInit),
+    );
 
     // MS_TILE_UPDATE: 타일 상태 업데이트
     const handleTileUpdate = (e: Event) => {
@@ -597,7 +629,9 @@ export default class MineSweeperScene extends Phaser.Scene {
       });
     };
     window.addEventListener('ms:tile_update', handleTileUpdate);
-    this.serverEventCleanup.push(() => window.removeEventListener('ms:tile_update', handleTileUpdate));
+    this.serverEventCleanup.push(() =>
+      window.removeEventListener('ms:tile_update', handleTileUpdate),
+    );
 
     // MS_SCORE_UPDATE: 점수 업데이트
     const handleScoreUpdate = (e: Event) => {
@@ -613,7 +647,9 @@ export default class MineSweeperScene extends Phaser.Scene {
       });
     };
     window.addEventListener('ms:score_update', handleScoreUpdate);
-    this.serverEventCleanup.push(() => window.removeEventListener('ms:score_update', handleScoreUpdate));
+    this.serverEventCleanup.push(() =>
+      window.removeEventListener('ms:score_update', handleScoreUpdate),
+    );
 
     // MS_REMAINING_MINES: 남은 지뢰 수 업데이트
     const handleRemainingMines = (e: Event) => {
@@ -623,7 +659,9 @@ export default class MineSweeperScene extends Phaser.Scene {
       this.events.emit('remainingMinesUpdate', this.remainingMines);
     };
     window.addEventListener('ms:remaining_mines', handleRemainingMines);
-    this.serverEventCleanup.push(() => window.removeEventListener('ms:remaining_mines', handleRemainingMines));
+    this.serverEventCleanup.push(() =>
+      window.removeEventListener('ms:remaining_mines', handleRemainingMines),
+    );
 
     // MS_GAME_END: 게임 종료
     const handleGameEnd = (e: Event) => {
@@ -636,7 +674,9 @@ export default class MineSweeperScene extends Phaser.Scene {
       });
     };
     window.addEventListener('ms:game_end', handleGameEnd);
-    this.serverEventCleanup.push(() => window.removeEventListener('ms:game_end', handleGameEnd));
+    this.serverEventCleanup.push(() =>
+      window.removeEventListener('ms:game_end', handleGameEnd),
+    );
   }
 
   /**
@@ -652,7 +692,9 @@ export default class MineSweeperScene extends Phaser.Scene {
     if (data.remainingMines !== undefined) {
       this.remainingMines = data.remainingMines;
       this.events.emit('remainingMinesUpdate', this.remainingMines);
-      console.log(`[MineSweeperScene] 초기 남은 지뢰 수: ${this.remainingMines}`);
+      console.log(
+        `[MineSweeperScene] 초기 남은 지뢰 수: ${this.remainingMines}`,
+      );
     }
 
     // 플레이어 데이터 업데이트 (서버에서 받은 경우)
@@ -685,7 +727,10 @@ export default class MineSweeperScene extends Phaser.Scene {
     // 순차적 열기 여부와 관계없이 먼저 깃발 개수 변경 감지
     let flagCountChanged = false;
     for (const tileUpdate of data.tiles) {
-      const currentTile = this.tileManager.getTile(tileUpdate.row, tileUpdate.col);
+      const currentTile = this.tileManager.getTile(
+        tileUpdate.row,
+        tileUpdate.col,
+      );
       const prevState = currentTile?.state;
       const prevFlaggedBy = currentTile?.flaggedBy;
 
@@ -693,12 +738,20 @@ export default class MineSweeperScene extends Phaser.Scene {
       if (tileUpdate.state === TileState.FLAGGED && tileUpdate.flaggedBy) {
         // 깃발 설치 (이전에 깃발이 없었던 경우에만)
         if (prevState !== TileState.FLAGGED) {
-          this.flagCounts[tileUpdate.flaggedBy] = (this.flagCounts[tileUpdate.flaggedBy] || 0) + 1;
+          this.flagCounts[tileUpdate.flaggedBy] =
+            (this.flagCounts[tileUpdate.flaggedBy] || 0) + 1;
           flagCountChanged = true;
         }
-      } else if (prevState === TileState.FLAGGED && tileUpdate.state !== TileState.FLAGGED && prevFlaggedBy) {
+      } else if (
+        prevState === TileState.FLAGGED &&
+        tileUpdate.state !== TileState.FLAGGED &&
+        prevFlaggedBy
+      ) {
         // 깃발 해제 (이전에 깃발이 있었던 경우 - 타일이 열릴 때 포함)
-        this.flagCounts[prevFlaggedBy] = Math.max(0, (this.flagCounts[prevFlaggedBy] || 0) - 1);
+        this.flagCounts[prevFlaggedBy] = Math.max(
+          0,
+          (this.flagCounts[prevFlaggedBy] || 0) - 1,
+        );
         flagCountChanged = true;
       }
     }
@@ -775,7 +828,9 @@ export default class MineSweeperScene extends Phaser.Scene {
     if (data.remainingMines !== undefined) {
       this.remainingMines = data.remainingMines;
       this.events.emit('remainingMinesUpdate', this.remainingMines);
-      console.log(`[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`);
+      console.log(
+        `[MineSweeperScene] 남은 지뢰 수 업데이트: ${this.remainingMines}`,
+      );
     }
   }
 
@@ -815,7 +870,9 @@ export default class MineSweeperScene extends Phaser.Scene {
 
     // 승리로 인한 종료인 경우 메시지 표시
     if (data.reason === 'win') {
-      console.log('[MineSweeperScene] 🎉 게임 승리! 모든 안전한 타일을 열었습니다!');
+      console.log(
+        '[MineSweeperScene] 🎉 게임 승리! 모든 안전한 타일을 열었습니다!',
+      );
     }
 
     // 서버에서 받은 최종 플레이어 데이터로 업데이트 및 깃발 통계 추출
@@ -975,7 +1032,7 @@ export default class MineSweeperScene extends Phaser.Scene {
             if (this.timerSystem) {
               this.timerSystem.destroy();
             }
-            this.startTimer();
+            this.startTimer(this.gameConfig.totalTime);
             console.log(
               `[MineSweeperScene] 타이머 재시작: ${this.gameConfig.totalTime}초`,
             );

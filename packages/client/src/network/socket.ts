@@ -5,10 +5,16 @@ import { handleServerPacket } from './clientHandler.ts';
 class SocketManager {
   private socket: Socket | null = null;
 
-  connect(url: string) {
+  connect(url: string): void {
     // [중요] 이미 소켓이 생성되어 있고 연결 중이라면 중복 실행 방지
     if (this.socket && this.socket.connected) {
       return;
+    }
+
+    // 기존 소켓이 있지만 연결이 끊어진 경우 정리
+    if (this.socket && !this.socket.connected) {
+      this.socket.removeAllListeners();
+      this.socket = null;
     }
 
     this.socket = io(url, {
@@ -26,9 +32,9 @@ class SocketManager {
       handleServerPacket(packet);
     });
 
-    this.socket.on('connect', () =>
-      console.log('[SocketManager] Connected! url:', url),
-    );
+    this.socket.on('connect', () => {
+      console.log('[SocketManager] Connected! url:', url);
+    });
     this.socket.on('disconnect', (reason) =>
       console.log('[SocketManager] Disconnected! reason:', reason, 'url:', url),
     );

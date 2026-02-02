@@ -28,15 +28,12 @@ export default class TimerSystem {
   private totalTime = 0;
   private remainingTime = 0;
 
-  // Timestamp 기반 타이머 (탭 전환에 강함)
-  private startTimestamp = 0;
-  private pausedTimestamp = 0;
-  private totalPausedDuration = 0;
+  // 서버 타임스탬프 (탭 전환 시 재동기화용)
+  private serverStartTimestamp = 0;
 
-  private updateEvent?: Phaser.Time.TimerEvent; // 매 프레임 업데이트
+  private updateIntervalId?: number; // setInterval ID (비활성 창에서도 동작)
   private lastSecond = -1; // 초 단위 변화 감지용
   private isFinished = false;
-  private isPaused = false;
 
   // Visibility change 감지
   private visibilityChangeHandler?: () => void;
@@ -65,7 +62,7 @@ export default class TimerSystem {
         console.log('⏸️ 탭 비활성화 - 타이머 계속 실행 중');
       } else {
         // 탭이 다시 활성화됨 - 타이머 동기화
-        if (!this.isFinished && !this.isPaused) {
+        if (!this.isFinished) {
           this.syncTimer();
           console.log('▶️ 탭 활성화 - 타이머 동기화 완료');
         }
@@ -77,8 +74,7 @@ export default class TimerSystem {
   /** 타이머 동기화 (탭 전환 후 복귀 시) */
   private syncTimer(): void {
     const now = Date.now();
-    const elapsed =
-      (now - this.startTimestamp - this.totalPausedDuration) / 1000;
+    const elapsed = (now - this.serverStartTimestamp) / 1000;
     this.remainingTime = Math.max(0, this.totalTime - elapsed);
 
     // 바 스케일 즉시 업데이트
@@ -92,42 +88,42 @@ export default class TimerSystem {
   }
 
   /** 전체 시간을 설정하고 타이머를 시작합니다. */
-  start(totalSeconds: number): void {
+  start(totalSeconds: number, serverStartTime?: number): void {
     if (totalSeconds <= 0) return;
 
     this.totalTime = totalSeconds;
-    this.remainingTime = totalSeconds;
     this.isFinished = false;
-    this.isPaused = false;
-    this.lastSecond = Math.ceil(totalSeconds);
 
-    // Timestamp 기록
-    this.startTimestamp = Date.now();
-    this.pausedTimestamp = 0;
-    this.totalPausedDuration = 0;
+    // 서버 시작 시간 저장 (탭 전환 시 재동기화용)
+    this.serverStartTimestamp = serverStartTime || Date.now();
 
-    // 초기 상태 - 바를 가득 채움
-    this.timerPrefab.setBarScale(1);
+    // 초기 남은 시간 계산 (서버 시작 시간 기준)
+    const now = Date.now();
+    const alreadyElapsed = (now - this.serverStartTimestamp) / 1000;
+    this.remainingTime = Math.max(0, totalSeconds - alreadyElapsed);
+    this.lastSecond = Math.ceil(this.remainingTime);
 
-    // 매 프레임 업데이트 (약 60fps)
-    this.updateEvent = this.scene.time.addEvent({
-      delay: 16, // ~60fps
-      callback: this.update,
-      callbackScope: this,
-      loop: true,
-    });
+    // 초기 상태 - 바를 현재 비율로 설정
+    this.timerPrefab.setBarScale(this.ratio);
+    this.updateBarColor();
 
-    console.log(`⏱️ 타이머 시작: ${totalSeconds}초`);
+    // setInterval 사용 (비활성 창에서도 동작)
+    // Phaser의 time.addEvent는 비활성 창에서 throttle됨
+    this.updateIntervalId = window.setInterval(() => {
+      this.update();
+    }, 16); // ~60fps
+
+    console.log(
+      `⏱️ 타이머 시작: ${totalSeconds}초 (초기 남은 시간: ${this.remainingTime.toFixed(1)}초, 서버 시작: ${serverStartTime ? new Date(serverStartTime).toISOString() : '로컬'})`,
+    );
   }
 
-  /** 매 프레임 업데이트 - timestamp 기반으로 정확한 시간 계산 */
+  /** 매 프레임 업데이트 - 단순 감소 방식 */
   private update(): void {
-    if (this.isFinished || this.isPaused) return;
+    if (this.isFinished) return;
 
-    const now = Date.now();
-    const elapsed =
-      (now - this.startTimestamp - this.totalPausedDuration) / 1000;
-    this.remainingTime = Math.max(0, this.totalTime - elapsed);
+    // 16ms(0.016초)만큼 감소
+    this.remainingTime = Math.max(0, this.remainingTime - 0.016);
 
     // 바 스케일 업데이트
     const ratio = this.ratio;
@@ -175,37 +171,16 @@ export default class TimerSystem {
     this.stop();
 
     console.log('⏱️ 타이머 종료! 시간이 모두 소진되었습니다.');
-    this.scene.events.emit(TimerEvents.COMPLETE);
-    this.appleGameManager?.gameEnd();
-  }
-
-  /** 타이머 일시정지 */
-  pause(): void {
-    if (this.isFinished || this.isPaused) return;
-    this.isPaused = true;
-    this.pausedTimestamp = Date.now();
-    console.log('⏸️ 타이머 일시정지');
-  }
-
-  /** 타이머 재개 */
-  resume(): void {
-    if (this.isFinished || !this.isPaused) return;
-    this.isPaused = false;
-
-    // 일시정지된 시간을 누적
-    const pauseDuration = Date.now() - this.pausedTimestamp;
-    this.totalPausedDuration += pauseDuration;
-    this.pausedTimestamp = 0;
-
-    console.log(
-      `▶️ 타이머 재개 (일시정지 시간: ${(pauseDuration / 1000).toFixed(1)}초)`,
-    );
+    // this.scene.events.emit(TimerEvents.COMPLETE);
+    // this.appleGameManager?.gameEnd();
   }
 
   /** 타이머 정지 */
   stop(): void {
-    this.updateEvent?.destroy();
-    this.updateEvent = undefined;
+    if (this.updateIntervalId !== undefined) {
+      window.clearInterval(this.updateIntervalId);
+      this.updateIntervalId = undefined;
+    }
   }
 
   /** 시스템 정리 */
@@ -233,9 +208,6 @@ export default class TimerSystem {
   }
   get finished(): boolean {
     return this.isFinished;
-  }
-  get paused(): boolean {
-    return this.isPaused;
   }
   get ratio(): number {
     return this.totalTime > 0 ? this.remainingTime / this.totalTime : 0;

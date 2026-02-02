@@ -1,7 +1,8 @@
 import { Server, Socket } from 'socket.io';
 // @ts-ignore
 import { joinPlayerToGame, getSession } from '../network/serverHandler';
-// Mock Socket + Server with minimal adapter.rooms tracking
+
+// Mock Socket + Server (lobby-req-test.ts 참고)
 const mockAdapter = { rooms: new Map<string, Set<string>>() };
 
 const createMockSocket = (id: string): Socket => {
@@ -34,9 +35,11 @@ const createMockSocket = (id: string): Socket => {
   } as unknown as Socket;
 };
 
-// Mock Server
 const mockIo = {
-  sockets: { adapter: mockAdapter },
+  sockets: {
+    adapter: mockAdapter,
+    sockets: new Map<string, Socket>(),
+  },
   to: (roomId: string) => ({
     emit: (event: string, data: any) =>
       console.log(
@@ -46,34 +49,30 @@ const mockIo = {
   }),
 } as unknown as Server;
 
-const roomId = 'test-room';
+async function runTest_NanoidRoomId() {
+  console.log('=== TEST: nanoid roomId generation ===\n');
 
-async function runTest_4PlayerJoin() {
-  console.log('=== TEST START: Joining 5 Players ===');
+  const socket = createMockSocket('test-socket-1');
 
-  const players = ['a1', 'a2', 'a3', 'a4', 'a5'];
+  // Test 1: 빈 roomId로 joinPlayerToGame 호출
+  console.log('--- Test 1: 빈 roomId로 방 생성 ---');
+  await joinPlayerToGame(mockIo, socket, '', 'Player1');
 
-  for (let i = 0; i < players.length; i++) {
-    const playerName = players[i];
-    const playerId = `socket-${i + 1}`;
-    console.log(`\n--- Player ${i + 1} (${playerName}) joining ---`);
+  // mockAdapter.rooms에서 생성된 roomId 확인
+  const rooms = Array.from(mockAdapter.rooms.keys());
+  console.log(`[Result] Created rooms: ${rooms.join(', ')}`);
 
-    // Mock socket for each player
-    const mockSocket = createMockSocket(playerId);
-
-    joinPlayerToGame(mockIo, mockSocket, roomId, playerName);
-
-    // Check session state
-    const session = getSession(roomId);
-    if (session) {
-      console.log(`Current Session Player Count: ${session.getPlayerCount()}`);
-      console.log(
-        `Current Players: ${JSON.stringify(session.getPlayers().map((p) => p.playerName))}`,
-      );
-    }
+  if (rooms.length > 0) {
+    const generatedRoomId = rooms[0];
+    const isValid = /^[0-9a-z]{10}$/.test(generatedRoomId);
+    console.log(`[Result] Generated roomId: ${generatedRoomId}`);
+    console.log(`[Result] Is 10-char alphanumeric: ${isValid}`);
+    console.log(isValid ? '[PASS]' : '[FAIL]');
+  } else {
+    console.log('[FAIL] No room created');
   }
 
   console.log('\n=== TEST END ===');
 }
 
-runTest_4PlayerJoin();
+runTest_NanoidRoomId();

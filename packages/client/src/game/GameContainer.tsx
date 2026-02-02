@@ -4,30 +4,41 @@ import AppleGameScene from './scene/apple/AppleGameScene';
 import { BootScene } from './scene/apple/BootScene';
 import FlappyBirdsScene from './scene/flappybirds/FlappyBirdsScene';
 import MineSweeperScene from './scene/minesweeper/MineSweeperScene';
-import type { AppleGamePreset } from './types/AppleGamePreset';
-import type { FlappyBirdGamePreset } from './types/FlappyBirdGamePreset';
+import type { FlappyBirdGamePreset } from '../../../common/src/config.ts';
 import type { MineSweeperGamePreset } from './types/minesweeper.types';
-import type { PlayerData, PlayerResultData, GameType } from './types/common';
-import type { PlayerId, GameOverEvent } from './types/flappybird.types';
+import type { PlayerData, PlayerResultData } from './types/common';
+import type { PlayerId } from './types/flappybird.types';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig';
+import { GameType } from '../../../common/src/config.ts';
+
+type SceneConstructor = new (...args: any[]) => Phaser.Scene;
+
+interface ConfigDetails {
+  sceneName: string;
+  readonly sceneClasses: readonly SceneConstructor[];
+  maxWidth: number;
+  maxHeight: number;
+  backgroundColor: string;
+}
 
 // 게임 설정 상수 분리
-const GAME_CONFIGS = {
-  apple: {
+// todo 다 BootScene이 공통
+const GAME_CONFIGS: Record<GameType, ConfigDetails> = {
+  [GameType.APPLE_GAME]: {
     sceneName: 'AppleGameScene',
     sceneClasses: [BootScene, AppleGameScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#FFFFFF',
   },
-  flappy: {
+  [GameType.FLAPPY_BIRD]: {
     sceneName: 'FlappyBirdsScene',
     sceneClasses: [BootScene, FlappyBirdsScene] as const,
     maxWidth: GAME_WIDTH,
     maxHeight: GAME_HEIGHT,
     backgroundColor: '#46d1fd',
   },
-  minesweeper: {
+  [GameType.MINESWEEPER]: {
     sceneName: 'MineSweeperScene',
     sceneClasses: [BootScene, MineSweeperScene] as const,
     maxWidth: GAME_WIDTH,
@@ -39,15 +50,8 @@ const GAME_CONFIGS = {
 interface GameContainerProps {
   gameType: GameType;
   onGameReady?: (game: Phaser.Game) => void;
-  onAppleScored?: (points: number) => void;
-  onGameEnd?: (data: GameEndEvent) => void;
-  onGameOver?: (data: { reason: string; finalScore: number }) => void;
-  onScoreUpdate?: (score: number) => void; // 플래피버드 점수 업데이트
-  onFlappyJump?: () => void; // 플래피버드 점프 사운드
-  onFlappyStrike?: () => void; // 플래피버드 충돌 사운드
-  onFlappyScore?: () => void; // 플래피버드 점수 획득 사운드
   onMinesweeperScoreUpdate?: (data: {
-    playerId: string;
+    playerIndex: number;
     scoreChange: number;
     newScore: number;
     reason: string;
@@ -57,14 +61,11 @@ interface GameContainerProps {
   onMinesweeperFlagPlaced?: () => void; // 지뢰찾기 깃발 설치 사운드
   playerCount?: number;
   players?: PlayerData[];
-  currentPlayerIndex?: number;
-  applePreset?: AppleGamePreset;
   flappyPreset?: FlappyBirdGamePreset;
   minesweeperPreset?: MineSweeperGamePreset;
 }
 
-type FlappyCollisionReason = GameOverEvent['reason'];
-
+// todo gametype GameType으로 처리하기
 export type GameEndEvent =
   | {
       gameType: 'apple' | 'minesweeper';
@@ -73,7 +74,7 @@ export type GameEndEvent =
   | {
       gameType: 'flappy';
       finalScore: number;
-      reason: FlappyCollisionReason;
+      reason: string;
       collidedPlayerId: PlayerId;
       players: PlayerResultData[];
     };
@@ -81,21 +82,9 @@ export type GameEndEvent =
 export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
-  onAppleScored,
-  onGameEnd,
-  onGameOver,
-  onScoreUpdate,
-  onFlappyJump,
-  onFlappyStrike,
-  onFlappyScore,
   onMinesweeperScoreUpdate,
-  onMinesweeperTileReveal,
-  onMinesweeperMineExplode,
-  onMinesweeperFlagPlaced,
   playerCount = 4,
   players = [],
-  currentPlayerIndex = 0,
-  applePreset,
   flappyPreset,
   minesweeperPreset,
 }) => {
@@ -103,16 +92,21 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   const parentRef = useRef<HTMLDivElement>(null);
 
   const isValidGameType =
-    gameType === 'apple' || gameType === 'flappy' || gameType === 'minesweeper';
+    //   gameType === GameType.APPLE_GAME || gameType === GameType.FLAPPY_BIRD;
+    // const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
+    gameType === GameType.APPLE_GAME ||
+    gameType === GameType.FLAPPY_BIRD ||
+    gameType === GameType.MINESWEEPER;
   const config = isValidGameType ? GAME_CONFIGS[gameType] : null;
-  const preset =
-    gameType === 'apple'
-      ? applePreset
-      : gameType === 'flappy'
-        ? flappyPreset
-        : gameType === 'minesweeper'
-          ? minesweeperPreset
-          : undefined;
+  // todo 얘 활용 안 되는데요?
+  // const preset =
+  //   gameType === GameType.APPLE_GAME
+  //     ? applePreset
+  //     : gameType === GameType.FLAPPY_BIRD
+  //       ? flappyPreset
+  //       : gameType === GameType.MINESWEEPER
+  //         ? minesweeperPreset
+  //         : undefined;
 
   // 레이아웃 계산 (useMemo로 최적화)
   const layout = useMemo(() => {
@@ -194,131 +188,61 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     const game = new Phaser.Game(gameConfig);
     gameRef.current = game;
 
+    // Phaser 3에서는 disableVisibilityChange가 제거됨
+    // 대신 pauseOnBlur를 false로 설정하여 탭 전환 시 오디오/사운드 일시정지 방지
+    // 참고: 브라우저의 Page Visibility API로 인해 게임 루프 자체는 비활성 탭에서 일시정지됨 (브라우저 제한)
+    game.sound.pauseOnBlur = false;
+
     onGameReady?.(game);
 
+    // todo 얘내 로직들 싹 다 제어해야 함. 클라측 게임 로직인데 너무 강결합되어있음.
     game.events.once('ready', () => {
       const targetScene = game.scene.getScene(config.sceneName);
       if (!targetScene) return;
 
       // 이벤트 리스너 등록
-      if (gameType === 'apple') {
-        if (onAppleScored) {
-          targetScene.events.on('appleScored', (data: { points: number }) => {
-            console.log('🍎 appleScored event received:', data);
-            onAppleScored(data.points);
-          });
-        }
-
-        if (onGameEnd) {
-          targetScene.events.on(
-            'gameEnd',
-            (data: { players: PlayerResultData[] }) => {
-              console.log('🏁 gameEnd event received:', data);
-              onGameEnd({
-                gameType: 'apple',
-                players: data.players,
-              });
-            },
-          );
-        }
-      } else if (gameType === 'flappy') {
-        // 플래피버드 점프 사운드 이벤트
-        if (onFlappyJump) {
-          targetScene.events.on('flappyJump', () => {
-            console.log('🦅 flappyJump event received');
-            onFlappyJump();
-          });
-        }
-
-        // 플래피버드 충돌 사운드 이벤트
-        if (onFlappyStrike) {
-          targetScene.events.on('flappyStrike', () => {
-            console.log('💥 flappyStrike event received');
-            onFlappyStrike();
-          });
-        }
-
-        // 플래피버드 점수 획득 사운드 이벤트
-        if (onFlappyScore) {
-          targetScene.events.on('flappyScore', () => {
-            console.log('🎵 flappyScore event received');
-            onFlappyScore();
-          });
-        }
-
-        // 플래피버드 점수 업데이트 이벤트
-        if (onScoreUpdate) {
-          targetScene.events.on(
-            'scoreUpdate',
-            (data: { score: number; timestamp: number }) => {
-              console.log('📊 scoreUpdate event received:', data);
-              onScoreUpdate(data.score);
-            },
-          );
-        }
-
+      if (gameType === GameType.APPLE_GAME) {
+        // todo
+      } else if (gameType === GameType.FLAPPY_BIRD) {
         // 플래피버드 게임 종료 이벤트
-        if (onGameEnd) {
-          targetScene.events.on(
-            'gameEnd',
-            (data: {
-              finalScore: number;
-              reason: FlappyCollisionReason;
-              collidedPlayerId: PlayerId;
-              players: PlayerResultData[];
-            }) => {
-              console.log('🏁 flappy gameEnd event received:', data);
-              onGameEnd({
-                gameType: 'flappy',
-                finalScore: data.finalScore,
-                reason: data.reason,
-                collidedPlayerId: data.collidedPlayerId,
-                players: data.players,
-              });
-            },
-          );
-        }
-
+        // todo 해결해야 함. 다 클라쪽으로 그거 됨.
+        // if (onGameEnd) {
+        //   targetScene.events.on(
+        //     'gameEnd',
+        //     (data: {
+        //       finalScore: number;
+        //       reason: string;
+        //       collidedPlayerId: PlayerId;
+        //       players: PlayerResultData[];
+        //     }) => {
+        //       console.log('🏁 flappy gameEnd event received:', data);
+        //       onGameEnd({
+        //         gameType: 'flappy',
+        //         finalScore: data.finalScore,
+        //         reason: data.reason,
+        //         collidedPlayerId: data.collidedPlayerId,
+        //         players: data.players,
+        //       });
+        //     },
+        //   );
+        // }
         // 기존 game_over 이벤트 (호환성 유지)
-        if (onGameOver) {
-          targetScene.events.on(
-            'game_over',
-            (data: { reason: FlappyCollisionReason; finalScore: number }) => {
-              console.log('💀 game_over event received:', data);
-              onGameOver(data);
-            },
-          );
-        }
-      } else if (gameType === 'minesweeper') {
-        // 지뢰찾기 타일 열기 사운드 이벤트
-        if (onMinesweeperTileReveal) {
-          targetScene.events.on('minesweeperTileReveal', () => {
-            onMinesweeperTileReveal();
-          });
-        }
-
-        // 지뢰찾기 지뢰 폭발 사운드 이벤트
-        if (onMinesweeperMineExplode) {
-          targetScene.events.on('minesweeperMineExplode', () => {
-            console.log('💣 minesweeperMineExplode event received');
-            onMinesweeperMineExplode();
-          });
-        }
-
-        // 지뢰찾기 깃발 설치 사운드 이벤트
-        if (onMinesweeperFlagPlaced) {
-          targetScene.events.on('minesweeperFlagPlaced', () => {
-            console.log('🚩 minesweeperFlagPlaced event received');
-            onMinesweeperFlagPlaced();
-          });
-        }
-
+        // if (onGameOver) {
+        //   targetScene.events.on(
+        //     'game_over',
+        //     (data: { reason: string; finalScore: number }) => {
+        //       console.log('💀 game_over event received:', data);
+        //       onGameOver(data);
+        //     },
+        //   );
+        // }
+      } else if (gameType === GameType.MINESWEEPER) {
         // 지뢰찾기 점수 업데이트 이벤트
         if (onMinesweeperScoreUpdate) {
           targetScene.events.on(
             'scoreUpdate',
             (data: {
-              playerId: string;
+              playerIndex: number;
               scoreChange: number;
               newScore: number;
               reason: string;
@@ -330,18 +254,18 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         }
 
         // 지뢰찾기 게임 종료 이벤트 (타이머 완료)
-        if (onGameEnd) {
-          targetScene.events.on(
-            'gameEnd',
-            (data: { players: PlayerResultData[] }) => {
-              console.log('🏁 minesweeper gameEnd event received:', data);
-              onGameEnd({
-                gameType: 'minesweeper',
-                players: data.players,
-              });
-            },
-          );
-        }
+        // if (onGameEnd) {
+        //   targetScene.events.on(
+        //     'gameEnd',
+        //     (data: { players: PlayerResultData[] }) => {
+        //       console.log('🏁 minesweeper gameEnd event received:', data);
+        //       onGameEnd({
+        //         gameType: 'minesweeper',
+        //         players: data.players,
+        //       });
+        //     },
+        //   );
+        // }
       }
 
       // 씬에 플레이어 데이터 전달
@@ -349,8 +273,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         targetScene.events.emit('updatePlayers', {
           playerCount,
           players,
-          currentPlayerIndex,
-          preset,
+          ...(gameType === GameType.FLAPPY_BIRD && flappyPreset
+            ? { preset: flappyPreset }
+            : {}),
         });
       };
 
@@ -385,11 +310,12 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       scene.events.emit('updatePlayers', {
         playerCount,
         players,
-        currentPlayerIndex,
-        preset,
+        ...(gameType === GameType.FLAPPY_BIRD && flappyPreset
+          ? { preset: flappyPreset }
+          : {}),
       });
     }
-  }, [playerCount, players, currentPlayerIndex, preset, config]);
+  }, [playerCount, players, flappyPreset, config, gameType]);
 
   // 구현되지 않은 게임 타입
   if (!config) {
@@ -412,6 +338,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   return (
     <div
       ref={parentRef}
+      // todo 이게 무슨 하드코딩임? id가 뭔지 역할을 알 필요가 있음.
+      // id={gameType === GameType.APPLE_GAME ? 'apple-game' : 'flappy-game'}
       id={`${gameType}-game`}
       style={{
         width: `${layout.width}px`,

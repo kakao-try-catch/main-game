@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 // @ts-ignore
-import { joinPlayerToGame, getSession } from '../applegame/serverHandler';
+import { joinPlayerToGame, getSession } from '../network/serverHandler';
 import { GameType, MapSize } from '../../../common/src/packets';
 
 // Mock Socket + Server with minimal adapter.rooms tracking

@@ -7,6 +7,7 @@ import React, {
   useEffect,
 } from 'react';
 import { SFX_CONFIG, type SFXName } from '../config/soundConfig';
+import { sfxManager } from '../audio/sfx-manager';
 
 const POOL_SIZE = 4; // 각 효과음당 미리 생성할 Audio 객체 수
 
@@ -97,6 +98,7 @@ export const SFXProvider: React.FC<{ children: React.ReactNode }> = ({
           item.audio.volume = sfxEnabled ? item.baseVolume * clampedVolume : 0;
         });
       });
+      sfxManager.setVolume(clampedVolume);
     },
     [sfxEnabled],
   );

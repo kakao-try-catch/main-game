@@ -14,6 +14,7 @@ import {
 import {
   FlappyPipeData,
   FlappyBirdData,
+  FlappyRopeData,
 } from '../../../../common/src/common-type';
 import { GameSession } from '../gameSession';
 import { Socket } from 'socket.io';
@@ -59,6 +60,7 @@ export class FlappyBirdInstance implements GameInstance {
 
   // 플레이어 추적
   private lastFlapTime: Map<number, number> = new Map();
+  private timeSinceLastBroadcast: number = 0;
 
   // 밧줄 물리
   private ropeConnections: [number, number][] = [];
@@ -76,7 +78,7 @@ export class FlappyBirdInstance implements GameInstance {
   // 루프 관리
   private updateInterval: NodeJS.Timeout | null = null;
   private readonly PHYSICS_FPS = 60;
-  private readonly NETWORK_TICK_RATE = 20;
+  private readonly NETWORK_TICK_RATE = 60;
 
   private session: GameSession;
 
@@ -107,6 +109,7 @@ export class FlappyBirdInstance implements GameInstance {
     this.nextPipeId = 0;
     this.lastFlapTime.clear();
     this.physicsTick = 0;
+    this.timeSinceLastBroadcast = 0;
 
     // 설정 적용
     this.pipeSpeed = resolved.pipeSpeed;
@@ -370,9 +373,12 @@ export class FlappyBirdInstance implements GameInstance {
       this.checkCollisions();
     }
 
-    // 6. 네트워크 브로드캐스트 (20Hz)
-    if (this.physicsTick % (this.PHYSICS_FPS / this.NETWORK_TICK_RATE) === 0) {
+    // 6. 네트워크 브로드캐스트 (40Hz)
+    this.timeSinceLastBroadcast += 1000 / this.PHYSICS_FPS;
+    const networkInterval = 1000 / this.NETWORK_TICK_RATE;
+    if (this.timeSinceLastBroadcast >= networkInterval) {
       this.broadcastWorldState();
+      this.timeSinceLastBroadcast -= networkInterval;
     }
   }
 
@@ -621,6 +627,34 @@ export class FlappyBirdInstance implements GameInstance {
     }
   }
 
+  /**
+   * 밧줄 정점 계산 (선형 보간) - MockServerCore.ts와 동일
+   */
+  private calculateRopePoints(): FlappyRopeData[] {
+    const ropes: FlappyRopeData[] = [];
+    const segments = 10;
+
+    for (const [indexA, indexB] of this.ropeConnections) {
+      const birdA = this.birds[indexA];
+      const birdB = this.birds[indexB];
+      if (!birdA || !birdB) continue;
+
+      const points: { x: number; y: number }[] = [];
+
+      for (let j = 0; j <= segments; j++) {
+        const t = j / segments;
+        points.push({
+          x: birdA.position.x + (birdB.position.x - birdA.position.x) * t,
+          y: birdA.position.y + (birdB.position.y - birdA.position.y) * t,
+        });
+      }
+
+      ropes.push({ points });
+    }
+
+    return ropes;
+  }
+
   // ========== 브로드캐스트 ==========
 
   private broadcastWorldState(): void {
@@ -652,11 +686,15 @@ export class FlappyBirdInstance implements GameInstance {
       gap: pipe.gap,
     }));
 
+    // 밧줄 정점 계산
+    const ropes: FlappyRopeData[] = this.calculateRopePoints();
+
     const worldStatePacket: FlappyWorldStatePacket = {
       type: FlappyBirdPacketType.FLAPPY_WORLD_STATE,
       tick: this.physicsTick,
       birds,
       pipes,
+      ropes,
       cameraX,
     };
 

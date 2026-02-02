@@ -39,3 +39,10 @@ export interface FlappyPipeData {
   width: number;
   gap: number;
 }
+
+export interface FlappyRopeData {
+  points: {
+    x: number;
+    y: number;
+  }[];
+}

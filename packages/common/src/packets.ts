@@ -2,6 +2,7 @@ import { type GameConfig, GameType } from './config';
 import {
   FlappyBirdData,
   FlappyPipeData,
+  FlappyRopeData,
   PlayerData,
   ReportCard,
 } from './common-type';
@@ -183,6 +184,7 @@ export interface FlappyWorldStatePacket {
   tick: number;
   birds: FlappyBirdData[];
   pipes: FlappyPipeData[];
+  ropes: FlappyRopeData[];
   cameraX: number;
 }
 

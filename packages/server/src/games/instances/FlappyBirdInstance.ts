@@ -80,6 +80,9 @@ export class FlappyBirdInstance implements GameInstance {
   private ropeDamping: number = 0.1; // 감쇠 계수
   private ropeRestLength: number = 70; // 자연 길이 (ropeLength의 70%)
 
+  // 점프 힘 전달
+  private forceTransferRate: number = 0.4; // 힘 전달 비율 (normal: 0.4)
+
   // 루프 관리
   private updateInterval: NodeJS.Timeout | null = null;
   private readonly PHYSICS_FPS = 60;
@@ -575,7 +578,7 @@ export class FlappyBirdInstance implements GameInstance {
       // 점프 시간 기록
       this.lastFlapTime.set(playerIndex, this.physicsTick);
 
-      // 플랩 속도 적용
+      // 1. 점프하는 새에 기본 힘 적용
       const extraBoost =
         this.flapBoostBase + Math.random() * this.flapBoostRandom;
       const verticalJitter =
@@ -589,7 +592,70 @@ export class FlappyBirdInstance implements GameInstance {
       });
 
       Matter.Body.setAngularVelocity(bird, 0);
+
+      // 2. 연결된 새들에게 부분 힘 전달
+      this.transferJumpForceToConnectedBirds(playerIndex);
     }
+  }
+
+  /**
+   * 점프한 새와 연결된 다른 새들에게 일부 힘을 전달
+   * 거리가 가까울수록 더 많은 힘이 전달됨
+   */
+  private transferJumpForceToConnectedBirds(jumperIndex: number): void {
+    const jumpingBird = this.birds[jumperIndex];
+
+    for (const [indexA, indexB] of this.ropeConnections) {
+      // 점프한 새와 연결된 경우만 처리
+      if (indexA !== jumperIndex && indexB !== jumperIndex) continue;
+
+      const connectedIndex = indexA === jumperIndex ? indexB : indexA;
+      const connectedBird = this.birds[connectedIndex];
+
+      if (!connectedBird || connectedBird.isStatic) continue;
+
+      // 힘 전달 비율 계산 (거리에 반비례)
+      const transferRatio = this.calculateForceTransferRatio(
+        jumpingBird,
+        connectedBird,
+      );
+
+      // 부분 점프력 전달 (위로 당기는 힘)
+      const transferredVelocityY =
+        FLAP_VELOCITY * transferRatio * this.forceTransferRate;
+
+      // 직접 속도 변경 대신 힘으로 적용 (더 자연스러움)
+      Matter.Body.applyForce(connectedBird, connectedBird.position, {
+        x: 0,
+        y: transferredVelocityY * connectedBird.mass * 0.1,
+      });
+
+      console.log(
+        `[FlappyBirdInstance] 힘 전달: Player ${jumperIndex} -> Player ${connectedIndex}, ratio: ${transferRatio.toFixed(2)}`,
+      );
+    }
+  }
+
+  /**
+   * 두 새 사이의 거리에 따른 힘 전달 비율 계산
+   * 가까울수록 더 많은 힘이 전달됨
+   *
+   * @returns 0.0 ~ 1.0 사이의 비율
+   */
+  private calculateForceTransferRatio(
+    birdA: Matter.Body,
+    birdB: Matter.Body,
+  ): number {
+    const dx = birdB.position.x - birdA.position.x;
+    const dy = birdB.position.y - birdA.position.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // 거리가 0이면 최대 전달, 밧줄 길이면 0
+    // 선형 보간: ratio = 1 - (distance / ropeLength)
+    const ratio = 1 - distance / this.ropeLength;
+
+    // 0 ~ 1 범위로 클램핑
+    return Math.max(0, Math.min(1, ratio));
   }
 
   // ========== 밧줄 물리 ==========

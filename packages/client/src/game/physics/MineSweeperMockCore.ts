@@ -329,6 +329,9 @@ export class MineSweeperMockCore {
     let totalScoreChange = 0;
     const allUpdates: (ClientTileData & { distance: number })[] = [];
 
+    // 연쇄 타일 열기 최대 점수 (지뢰 페널티 제외)
+    const MAX_CHAIN_SCORE = 10;
+
     for (const distance of distances) {
       const tilesAtDistance = tilesByDistance.get(distance)!;
 
@@ -349,7 +352,14 @@ export class MineSweeperMockCore {
           totalScoreChange += this.config.minePenalty;
           this.remainingMines--;
         } else {
-          totalScoreChange += this.config.tileRevealScore;
+          // 최대 점수 제한 적용
+          if (totalScoreChange < MAX_CHAIN_SCORE) {
+            totalScoreChange += this.config.tileRevealScore;
+            // 최대 점수 초과 시 상한 적용
+            if (totalScoreChange > MAX_CHAIN_SCORE) {
+              totalScoreChange = MAX_CHAIN_SCORE;
+            }
+          }
         }
       }
     }

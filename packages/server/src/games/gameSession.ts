@@ -77,9 +77,26 @@ export class GameSession {
       this.availableColors.add(player.color);
     }
     this.players.delete(id);
+
+    // 게임 중에 플레이어가 나갔을 경우 게임을 정리하고 상태를 리셋
+    if (this.status === 'playing' || this.status === 'ended') {
+      console.log(
+        `[GameSession] 플레이어 ${id}가 게임 중 퇴장 - 게임 상태 리셋`,
+      );
+      // 게임 인스턴스 정리
+      if (this.games) {
+        this.games.stop();
+        this.games.destroy();
+        this.games = null;
+      }
+      // 상태를 waiting으로 리셋
+      this.status = 'waiting';
+    }
+
     // Notify remaining clients about updated room player list
     this.updateRemainingPlayers(id); // io 필요하면 전달하도록 수정 필요
 
+    // 모든 플레이어가 나간 경우 추가 정리 (이미 위에서 처리되지만 안전장치)
     if (this.players.size === 0) {
       this.stopGame();
     }
@@ -200,6 +217,14 @@ export class GameSession {
       return;
     }
     this.status = 'playing';
+
+    // 이전 게임 인스턴스 정리 (혹시 남아있을 경우 대비)
+    if (this.games) {
+      console.log('[GameSession] 이전 게임 인스턴스 정리 중...');
+      this.games.destroy();
+      this.games = null;
+    }
+
     // 게임 인스턴스 생성
     // todo 이거 config 값을 생성할 때부터
     this.games = this.createGameInstance(this.selectedGameType);
@@ -218,7 +243,11 @@ export class GameSession {
 
   public stopGame(): void {
     this.status = 'ended';
-    this.games?.stop();
+    if (this.games) {
+      this.games.stop();
+      this.games.destroy();
+      this.games = null;
+    }
   }
 
   private createGameInstance(gameType: GameType): GameInstance {
@@ -230,7 +259,9 @@ export class GameSession {
         console.log('[GameSession/createGameInstance] flappyBirdInstance 생성');
         return new FlappyBirdInstance(this);
       case GameType.MINESWEEPER:
-        console.log('[GameSession/createGameInstance] mineSweeperInstance 생성');
+        console.log(
+          '[GameSession/createGameInstance] mineSweeperInstance 생성',
+        );
         return new MineSweeperInstance(this);
       default:
         throw new Error(`Unknown game type: ${gameType}`);
@@ -268,10 +299,16 @@ export class GameSession {
       return;
     }
 
-    // 3. 상태를 waiting으로 초기화
+    // 3. 게임 인스턴스 정리
+    if (this.games) {
+      this.games.destroy();
+      this.games = null;
+    }
+
+    // 4. 상태를 waiting으로 초기화
     this.status = 'waiting';
 
-    // 4. 방 인원 모두에게 ReturnToTheLobby 패킷 전송
+    // 5. 방 인원 모두에게 ReturnToTheLobby 패킷 전송
     const returnToLobbyPacket: ReturnToTheLobbyPacket = {
       type: SystemPacketType.RETURN_TO_THE_LOBBY,
     };

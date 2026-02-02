@@ -111,7 +111,9 @@ export class MineSweeperInstance implements GameInstance {
     // 타이머 시작
     this.startTimer();
 
-    console.log(`[MineSweeperInstance] 게임 시작, 제한 시간: ${this.totalTime}초`);
+    console.log(
+      `[MineSweeperInstance] 게임 시작, 제한 시간: ${this.totalTime}초`,
+    );
   }
 
   stop(): void {
@@ -152,7 +154,9 @@ export class MineSweeperInstance implements GameInstance {
         this.handleRequestSync(socket);
         break;
       default:
-        console.warn(`[MineSweeperInstance] Unknown packet type: ${packet.type}`);
+        console.warn(
+          `[MineSweeperInstance] Unknown packet type: ${packet.type}`,
+        );
     }
   }
 
@@ -299,8 +303,10 @@ export class MineSweeperInstance implements GameInstance {
     if (!this.config) return;
 
     // BFS로 열릴 타일을 거리별로 그룹화
-    const tilesByDistance: Map<number, Array<{ row: number; col: number }>> =
-      new Map();
+    const tilesByDistance: Map<
+      number,
+      Array<{ row: number; col: number }>
+    > = new Map();
     const visited = new Set<string>();
     const queue: Array<{ row: number; col: number; distance: number }> = [
       { row, col, distance: 0 },
@@ -610,6 +616,14 @@ export class MineSweeperInstance implements GameInstance {
   }
 
   private triggerGameEnd(reason: 'win' | 'timeout' | 'all_mines_hit'): void {
+    // 이미 게임이 종료된 상태면 중복 처리 방지
+    if (this.session.status === 'ended') {
+      console.log(
+        '[MineSweeperInstance] 게임이 이미 종료됨 - triggerGameEnd 무시',
+      );
+      return;
+    }
+
     this.stopTimer();
 
     // 최종 정산 수행
@@ -625,7 +639,8 @@ export class MineSweeperInstance implements GameInstance {
           tilesRevealed: player.tilesRevealed,
           minesHit: player.minesHit,
           correctFlags: update?.correctFlags ?? 0,
-          totalFlags: (update?.correctFlags ?? 0) + (update?.incorrectFlags ?? 0),
+          totalFlags:
+            (update?.correctFlags ?? 0) + (update?.incorrectFlags ?? 0),
         };
       })
       .sort((a, b) => b.score - a.score)
@@ -710,7 +725,10 @@ export class MineSweeperInstance implements GameInstance {
             reason: 'final_settlement',
             timestamp: Date.now(),
           };
-          this.broadcast(MineSweeperPacketType.MS_SCORE_UPDATE, scoreUpdatePacket);
+          this.broadcast(
+            MineSweeperPacketType.MS_SCORE_UPDATE,
+            scoreUpdatePacket,
+          );
 
           // 세션 점수 업데이트
           this.updateSessionScore(playerId, player.score);

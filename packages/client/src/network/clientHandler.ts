@@ -40,12 +40,25 @@ export const handleServerPacket = (packet: ServerPacket) => {
     case SystemPacketType.ROOM_UPDATE: {
       // update global store (clientHandler runs outside React)
       const roomPacket = packet as RoomUpdatePacket;
-      useGameStore.getState().setPlayers(roomPacket.players || []);
-      useGameStore.getState().setMyselfIndex(roomPacket.yourIndex);
-      useGameStore.getState().setRoomId(roomPacket.roomId);
+      const store = useGameStore.getState();
+      store.setPlayers(roomPacket.players || []);
+      store.setMyselfIndex(roomPacket.yourIndex);
+      store.setRoomId(roomPacket.roomId);
+
+      // 게임 중이었다면 게임 상태 초기화 (플레이어 탈주로 인한 ROOM_UPDATE)
+      if (store.screen === 'game' || store.isGameStarted) {
+        console.log(
+          'ROOM_UPDATE: 게임 중 플레이어 변경 감지 - 게임 상태 초기화',
+        );
+        store.resetGameState();
+        store.resetFlappyState();
+        store.setGameStarted(false);
+        bgmManager.pause(); // 게임 중이었다면 BGM 정지
+      }
+
       // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
-      if (useGameStore.getState().screen !== 'lobby') {
-        useGameStore.getState().setScreen('lobby');
+      if (store.screen !== 'lobby') {
+        store.setScreen('lobby');
       }
 
       // URL에 /invite가 있으면 제거

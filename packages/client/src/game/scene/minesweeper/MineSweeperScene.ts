@@ -165,7 +165,7 @@ export default class MineSweeperScene extends Phaser.Scene {
   }
 
   /**
-   * 타이머 생성
+   * 타이머 생성 (사과게임과 동일한 위치)
    */
   private createTimer(): void {
     const ratio = window.__GAME_RATIO || 1;
@@ -175,9 +175,10 @@ export default class MineSweeperScene extends Phaser.Scene {
     const timerBarMarginBottom = 50 * ratio;
     const timerBarCanvasHeight =
       canvasHeight - timerBarMarginTop - timerBarMarginBottom;
-    // 타이머를 오른쪽 3% 영역의 중앙에 배치
-    const timerAreaWidth = canvasWidth * 0.03;
-    const timerBarX = canvasWidth - timerAreaWidth / 2;
+    // 타이머 위치를 사과게임과 동일하게 설정
+    const timerBarWidth = 22 * ratio;
+    const timerBarMarginRight = 30 * ratio;
+    const timerBarX = canvasWidth - timerBarMarginRight - timerBarWidth / 2;
     const timerBarY = timerBarMarginTop + timerBarCanvasHeight;
 
     this.timerPrefab = new TimerPrefab(

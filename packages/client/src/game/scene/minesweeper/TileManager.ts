@@ -85,15 +85,21 @@ export default class TileManager {
   }
 
   /**
-   * 타일 크기 계산 (화면을 가득 채우도록)
+   * 타일 크기 계산 (사과게임과 동일한 레이아웃)
    */
   private calculateTileSize(): void {
     const ratio = window.__GAME_RATIO || 1;
+    const canvasWidth = GAME_WIDTH * ratio;
+    const canvasHeight = GAME_HEIGHT * ratio;
 
-    // 타이머를 위한 공간 확보 (오른쪽 3%를 타이머 영역으로 예약)
-    const timerReservedSpace = GAME_WIDTH * ratio * 0.03;
-    const availableWidth = GAME_WIDTH * ratio - timerReservedSpace;
-    const availableHeight = GAME_HEIGHT * ratio;
+    // 사과게임과 동일한 여백 설정
+    const timerBarWidth = 22 * ratio;
+    const timerBarMarginRight = 30 * ratio;
+    const verticalMargin = 50 * ratio; // 상하 여백 (사과게임과 동일)
+
+    // 사용 가능한 영역 계산 (타이머 영역 제외)
+    const availableWidth = canvasWidth - timerBarWidth - timerBarMarginRight;
+    const availableHeight = canvasHeight - 2 * verticalMargin;
 
     // 그리드에 맞는 타일 크기 계산
     const tileWidth = availableWidth / this.gridCols;
@@ -102,11 +108,11 @@ export default class TileManager {
     // 정사각형 타일 유지 (더 작은 쪽에 맞춤)
     this.tileSize = Math.floor(Math.min(tileWidth, tileHeight));
 
-    // 그리드 시작 위치 계산 (축소된 가로 공간 내에서 중앙 정렬)
+    // 그리드 시작 위치 계산 (사용 가능한 영역 내에서 중앙 정렬)
     const gridWidth = this.gridCols * this.tileSize;
     const gridHeight = this.gridRows * this.tileSize;
     this.gridStartX = (availableWidth - gridWidth) / 2;
-    this.gridStartY = (availableHeight - gridHeight) / 2;
+    this.gridStartY = verticalMargin + (availableHeight - gridHeight) / 2;
 
     console.log(`[TileManager] 타일 크기: ${this.tileSize}px`);
   }

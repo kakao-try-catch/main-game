@@ -127,6 +127,14 @@ export interface MSToggleFlagPacket {
   col: number;
 }
 
+/**
+ * 게임 상태 동기화 요청 패킷
+ * 씬 로딩 완료 후 현재 게임 상태를 요청할 때 전송
+ */
+export interface MSRequestSyncPacket {
+  type: MineSweeperPacketType.MS_REQUEST_SYNC;
+}
+
 // ========== 서버 → 클라이언트 패킷 ==========
 
 /**
@@ -234,7 +242,7 @@ export interface MSGameEndPacket {
 // ========== UNION TYPE ==========
 
 /** 클라이언트 → 서버 패킷 Union */
-export type MineSweeperClientPacket = MSRevealTilePacket | MSToggleFlagPacket;
+export type MineSweeperClientPacket = MSRevealTilePacket | MSToggleFlagPacket | MSRequestSyncPacket;
 
 /** 서버 → 클라이언트 패킷 Union */
 export type MineSweeperServerPacket =

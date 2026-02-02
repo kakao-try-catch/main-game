@@ -211,6 +211,8 @@ export enum MineSweeperPacketType {
   MS_REVEAL_TILE = 'MS_REVEAL_TILE',
   /** 깃발 토글 요청 (우클릭) */
   MS_TOGGLE_FLAG = 'MS_TOGGLE_FLAG',
+  /** 게임 상태 동기화 요청 (씬 로딩 완료 후) */
+  MS_REQUEST_SYNC = 'MS_REQUEST_SYNC',
 
   // 서버 → 클라이언트
   /** 게임 초기화 (필드 + 초기 상태 전송) */

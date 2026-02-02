@@ -30,6 +30,7 @@ import type {
   MSScoreUpdatePacket,
   MSGameEndPacket,
 } from '../../../../../common/src/minesweeperPackets';
+import { useGameStore } from '../../../store/gameStore';
 
 // 플레이어 데이터 인터페이스
 interface PlayerData {
@@ -155,6 +156,9 @@ export default class MineSweeperScene extends Phaser.Scene {
     // Mock 모드인 경우 MockServerCore 생성
     if (isMockMode() && this.socket instanceof MockSocket) {
       this.setupMockServer();
+    } else {
+      // 서버 모드: 씬 로딩 완료 후 현재 게임 상태 동기화 요청
+      this.requestGameSync();
     }
 
     // 준비 완료 신호
@@ -172,6 +176,15 @@ export default class MineSweeperScene extends Phaser.Scene {
 
     // 타이머 시작
     this.startTimer();
+  }
+
+  /**
+   * 서버에 현재 게임 상태 동기화 요청
+   * 씬 로딩이 완료된 후 호출하여 놓친 업데이트를 받아옴
+   */
+  private requestGameSync(): void {
+    console.log('[MineSweeperScene] 게임 상태 동기화 요청');
+    this.socket.emit(MineSweeperPacketType.MS_REQUEST_SYNC, {});
   }
 
   /**
@@ -209,7 +222,10 @@ export default class MineSweeperScene extends Phaser.Scene {
    */
   private startTimer(): void {
     this.timerSystem = new TimerSystem(this, this.timerPrefab);
-    this.timerSystem.start(this.gameConfig.totalTime);
+
+    // 서버 시작 시간 가져오기 (사과게임과 동일한 방식)
+    const serverStartTime = useGameStore.getState().serverStartTime;
+    this.timerSystem.start(this.gameConfig.totalTime, serverStartTime || undefined);
 
     // 타이머 완료 이벤트 리스너 등록
     this.events.once('timer:complete', () => {
@@ -217,7 +233,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     });
 
     console.log(
-      `[MineSweeperScene] 타이머 시작: ${this.gameConfig.totalTime}초`,
+      `[MineSweeperScene] 타이머 시작: ${this.gameConfig.totalTime}초, 서버시작시간: ${serverStartTime}`,
     );
   }
 

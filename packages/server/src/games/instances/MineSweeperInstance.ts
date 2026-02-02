@@ -145,6 +145,12 @@ export class MineSweeperInstance implements GameInstance {
       case MineSweeperPacketType.MS_TOGGLE_FLAG:
         this.handleToggleFlag(playerId, packet.row, packet.col);
         break;
+      case MineSweeperPacketType.MS_REQUEST_SYNC:
+        console.log(
+          `[MineSweeperInstance] MS_REQUEST_SYNC 처리 - playerId: ${playerId}`,
+        );
+        this.handleRequestSync(socket);
+        break;
       default:
         console.warn(`[MineSweeperInstance] Unknown packet type: ${packet.type}`);
     }
@@ -776,5 +782,31 @@ export class MineSweeperInstance implements GameInstance {
     );
     this.session.io.to(this.session.roomId).emit(eventType, packet);
     console.log(`[MineSweeperInstance] broadcast 완료 - ${eventType}`);
+  }
+
+  /**
+   * 게임 상태 동기화 요청 처리
+   * 클라이언트가 씬 로딩 완료 후 현재 게임 상태를 요청할 때 호출
+   */
+  private handleRequestSync(socket: Socket): void {
+    if (!this.config) {
+      console.warn('[MineSweeperInstance] handleRequestSync - config 없음');
+      return;
+    }
+
+    // 현재 게임 상태를 해당 클라이언트에게만 전송
+    const initPacket: MSGameInitPacket = {
+      type: MineSweeperPacketType.MS_GAME_INIT,
+      config: this.config,
+      tiles: this.getClientTiles(),
+      players: Array.from(this.players.values()),
+      remainingMines: this.remainingMines,
+      timestamp: Date.now(),
+    };
+
+    socket.emit(MineSweeperPacketType.MS_GAME_INIT, initPacket);
+    console.log(
+      `[MineSweeperInstance] MS_GAME_INIT 전송 (동기화) - playerId: ${socket.id}`,
+    );
   }
 }

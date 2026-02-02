@@ -2,7 +2,6 @@
 
 플레이어가 방에 입장할 때 서버로 보내는 프로토콜입니다.
 
-playerid: string # 플레이어 id (socket id)
 roomid: string # 방 id (가고자하는 방 id)
 playerName: string # 플레이어 이름 (서버가 알아야 함)
 
@@ -14,6 +13,8 @@ playerName: string # 플레이어 이름 (서버가 알아야 함)
 
 players: PlayerData[] # 플레이어 정보를 담은 배열
 updateType: RoomUpdateType # INIT(0): 플레이어 본인 입장 (전체 리스트), JOIN(1): 다른 플레이어 입장 (추가됨) 클라이언트는 추후에 이걸 받고 0이면 닉네임 설정창에서 로비 화면으로 넘어가야 하고, 1이면 목록 업데이트를 해주어야 함. 서버는 방에 들어 온 참여자에게는 0으로 보내줘야 하고, 나머지 참여자들에게는 1로 보내줘야 함.
+yourIndex: number # 플레이어마다 배열 order 보내주기
+roomId: string # 현재 방 id
 
 PlayerData는 { order: number, playerName: string, color: string } 으로 구성되어 있음.
 
@@ -63,7 +64,6 @@ config는 게임마다 다를 수 있지만 일단 사과게임을 우선적으�
 
 클라이언트의 점수판을 업데이트 합니다.
 
-- playerOrder: number # 점수를 업데이트할 플레이어 order
 - reportCard: ReportCard[] # 해당 플레이어가 나타내는 점수판
 
 ReportCard = AppleGameReportCard | MineSweeperReportCard;
@@ -74,3 +74,19 @@ MineSweeperReportCard = {
 score: number,
 flags: number,
 }
+
+# RETURN_TO_THE_LOBBY_REQ (ServerBound)
+
+서버에게 해당 방장이 로비로 가고 싶다고 요청.
+서버측은 요청을 받으면 1. 게임 결과창 화면인지 검사 2. 방장인지 검사
+후에 방 인원 모두를 로비로 보내야 함.
+
+# RETURN_TO_THE_LOBBY (ClientBound)
+
+이 패킷을 받은 클라들은 로비로 screen 전환해야 함.
+
+# REPLAY_REQ (ServerBound)
+
+서버에게 해당 방 방장이 리플레이 한다고 요청
+서버측은 요청을 받으면 1. 게임 결과창 화면인지 검사 2. 방장인지 검사
+후에 다시 해당 게임을 진행시키기

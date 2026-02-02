@@ -161,6 +161,23 @@ export const SFX_CONFIG: Record<SFXName, SoundConfig> = {
     startTime: 0,
   },
 
+  // 플래피버드 효과음
+  flappyJump: {
+    file: flappyJumpSound,
+    volume: 0.9,
+    startTime: 0,
+  },
+  flappyStrike: {
+    file: flappyStrikeSound,
+    volume: 0.8,
+    startTime: 0,
+  },
+  flappyScore: {
+    file: flappyScoreSound,
+    volume: 0.7,
+    startTime: 0,
+  },
+
   // TODO: 플래피버드 효과음 추가
   // flappyHit: { file: flappyHitSound, volume: 0.8 },
 

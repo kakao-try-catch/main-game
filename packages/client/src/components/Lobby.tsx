@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import 'nes.css/css/nes.min.css';
 import '../assets/fonts/Font.css';
 import './Lobby.css';
+// import type { Game, GameSettings } from '../game/types/common';
 import type { AppleGamePreset } from '../game/types/AppleGamePreset';
 import type {
   FlappyBirdGamePreset,
@@ -25,6 +26,21 @@ import type {
 } from '../game/types/minesweeperPresets';
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
+import { useGameStore } from '../store/gameStore';
+import { SystemPacketType } from '../../../common/src/packets';
+import {
+  MapSize,
+  GameType,
+  MAP_SIZE_TO_GRID,
+} from '../../../common/src/config.ts';
+import type { AppleGameRenderConfig } from '../../../common/src/config.ts';
+import { socketManager } from '../network/socket';
+import { type PlayerData } from '../../../common/src/packets';
+
+export interface LobbyProps {
+  players: PlayerData[];
+  onGameStart: (gameType: string, preset: unknown) => void;
+}
 import { useSFXContext } from '../contexts/SFXContext';
 import { GAME_DESCRIPTIONS } from '../constants/gameDescriptions';
 
@@ -43,14 +59,8 @@ const DIFFICULTY_COLORS = {
   normal: '#FF9800',
   hard: '#F44336',
 } as const;
-
-function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
+function Lobby({ players, onGameStart }: LobbyProps) {
   const { playSFX } = useSFXContext();
-  // 테스트용 플레이어 목록 (나중에 서버에서 받아올 예정)
-  const players: LobbyPlayer[] = [
-    { ...currentPlayer, color: PLAYER_COLORS[0] },
-  ];
-
   // 게임 리스트
   const [games] = useState<Game[]>([
     { id: 'apple', name: '다같이 사과 게임', thumbnail: '🍎' },
@@ -68,6 +78,10 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   const [showTimeLimitTooltip, setShowTimeLimitTooltip] = useState<
     Record<string, boolean>
   >({});
+  // 직접 입력 중인 값 (문자열로 관리)
+  const [localTimeInput, setLocalTimeInput] = useState<Record<string, string>>(
+    {},
+  );
 
   // 각 게임의 설정 (기본값)
   const [gameSettings, setGameSettings] = useState<
@@ -94,8 +108,17 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     },
   });
 
+  // 방장 여부 확인 (myselfIndex가 변경될 때마다 리렌더링)
+  const myselfIndex = useGameStore((s) => s.myselfIndex);
+  const isHost = myselfIndex === 0;
+  const isDisabled = !isHost;
+
   const handleSelectGame = (gameId: string) => {
+    playSFX('buttonClick');
     setSelectedGame(gameId);
+    // send current settings to server
+    const settings = gameSettings[gameId];
+    sendGameConfigUpdate(gameId, settings);
   };
 
   const handleSettingChange = (
@@ -103,10 +126,96 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     setting: keyof GameSettings,
     value: string | number | boolean,
   ) => {
-    setGameSettings((prev) => ({
-      ...prev,
-      [gameId]: { ...prev[gameId], [setting]: value },
-    }));
+    setGameSettings((prev) => {
+      const updated = {
+        ...prev,
+        [gameId]: { ...prev[gameId], [setting]: value },
+      };
+      // send updated settings to server immediately
+      sendGameConfigUpdate(gameId, updated[gameId]);
+      return updated;
+    });
+  };
+
+  // 시간 입력 완료 시 호출 (blur/Enter)
+  const commitTimeLimit = (gameId: string, defaultValue: number) => {
+    const localValue = localTimeInput[gameId];
+    const numValue = localValue ? parseInt(localValue) : -1;
+
+    let finalValue: number;
+    if (!localValue) {
+      finalValue = defaultValue;
+    } else if (numValue < MIN_TIME_LIMIT || numValue > MAX_TIME_LIMIT) {
+      showTimeLimitTooltipForGame(gameId);
+      finalValue = defaultValue;
+    } else {
+      finalValue = numValue;
+    }
+
+    // 로컬 상태 초기화
+    setLocalTimeInput((prev) => ({ ...prev, [gameId]: '' }));
+
+    // 상태 업데이트 및 패킷 전송
+    handleSettingChange(gameId, 'timeLimit', finalValue);
+  };
+
+  // Build and send GAME_CONFIG_UPDATE_REQ according to current settings
+  const sendGameConfigUpdate = (
+    gameId: string,
+    settings: GameSettings | undefined,
+  ) => {
+    if (!settings) return;
+
+    let selectedGameType = GameType.APPLE_GAME;
+    // todo gameId 자체가 GameType이면 굳이 이런 분기 로직 없이 selectedGameType = gameId 가능
+    if (gameId === 'apple') selectedGameType = GameType.APPLE_GAME;
+    else if (gameId === 'flappy') selectedGameType = GameType.FLAPPY_BIRD;
+    else if (gameId === 'minesweeper') selectedGameType = GameType.MINESWEEPER;
+
+    if (gameId === 'apple') {
+      const s = settings as GameSettings;
+
+      // MapSize → grid 변환
+      let mapSizeEnum = MapSize.MEDIUM;
+      if (s.mapSize === 'small') mapSizeEnum = MapSize.SMALL;
+      else if (s.mapSize === 'large') mapSizeEnum = MapSize.LARGE;
+
+      const grid = MAP_SIZE_TO_GRID[mapSizeEnum];
+
+      // time 계산
+      const timeVal =
+        typeof s.timeLimit === 'number' && s.timeLimit !== -1
+          ? s.timeLimit
+          : DEFAULT_TIME_LIMIT;
+
+      // AppleGameRenderConfig 직접 생성
+      const appleCfg: AppleGameRenderConfig = {
+        gridCols: grid.cols,
+        gridRows: grid.rows,
+        minNumber: s.includeZero ? 0 : 1,
+        maxNumber: s.appleRange === '1-5' ? 5 : 9,
+        totalTime: timeVal,
+        includeZero: !!s.includeZero,
+      };
+
+      const packet = {
+        type: SystemPacketType.GAME_CONFIG_UPDATE_REQ,
+        selectedGameType,
+        gameConfig: appleCfg,
+      } as const;
+
+      socketManager.send(packet);
+      return;
+    }
+
+    // TODO: flappy, minesweeper 처리
+    const packet = {
+      type: SystemPacketType.GAME_CONFIG_UPDATE_REQ,
+      selectedGameType,
+      gameConfig: {} as any,
+    } as const;
+
+    socketManager.send(packet);
   };
 
   const showTooltip = (
@@ -127,9 +236,15 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
   };
 
   const handleCopyLink = () => {
-    // TODO: 서버에서 받은 실제 초대 링크로 교체 필요
-    const link = window.location.href;
-    navigator.clipboard.writeText(link);
+    const roomId = useGameStore.getState().roomId;
+
+    if (!roomId) {
+      showTooltip('방 ID를 가져올 수 없습니다', 'error');
+      return;
+    }
+
+    const inviteLink = `${window.location.origin}/invite/${roomId}`;
+    navigator.clipboard.writeText(inviteLink);
     showTooltip('초대 링크가 복사되었습니다!', 'success');
   };
 
@@ -139,34 +254,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
       return;
     }
 
-    // 사과 게임 설정을 프리셋으로 변환
+    // 사과 게임: gameStore.gameConfig를 사용하므로 별도 프리셋 불필요
     if (selectedGame === 'apple') {
-      const settings = gameSettings.apple;
-
-      // mapSize를 gridSize로 변환
-      let gridSize: 'S' | 'M' | 'L' = 'M';
-      if (settings.mapSize === 'small') gridSize = 'S';
-      else if (settings.mapSize === 'normal') gridSize = 'M';
-      else if (settings.mapSize === 'large') gridSize = 'L';
-
-      // appleRange를 numberRange로 변환
-      let numberRange: '1-9' | '1-5' | '1-3' = '1-9';
-      if (settings.appleRange === '1-5') numberRange = '1-5';
-      else if (settings.appleRange === '1-3') numberRange = '1-3';
-
-      // TODO 서버가 프리셋 가지고 있어야 하는 것. GAME_CONFIG_UPDATE
-      const preset: AppleGamePreset = {
-        gridSize,
-        timeLimit:
-          settings.timeLimit === -1
-            ? 'manual'
-            : (settings.timeLimit as 90 | 120 | 180),
-        manualTime: settings.timeLimit === -1 ? undefined : settings.timeLimit,
-        numberRange,
-        includeZero: settings.includeZero || false,
-      };
-
-      onGameStart('apple', preset);
+      onGameStart('apple', null);
     } else if (selectedGame === 'flappy') {
       const settings = gameSettings.flappy;
 
@@ -212,6 +302,54 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
     }
   };
 
+  // React to server-provided game config updates
+  const serverSelectedGame = useGameStore((s) => s.selectedGameType);
+  const serverGameConfig = useGameStore((s) => s.gameConfig);
+
+  useEffect(() => {
+    if (!serverSelectedGame || !serverGameConfig) return;
+
+    // Map common GameType to local game id
+    if (serverSelectedGame === ('APPLE_GAME' as unknown as GameType)) {
+      // schedule selection update to avoid synchronous setState in effect
+      setTimeout(() => setSelectedGame('apple'));
+
+      const cfg = serverGameConfig as AppleGameRenderConfig;
+
+      // gridCols/gridRows → mapSize 역변환 (UI 표시용)
+      let mapSize: 'small' | 'normal' | 'large' = 'normal';
+      if (cfg.gridCols === 16 && cfg.gridRows === 8) mapSize = 'small';
+      else if (cfg.gridCols === 30 && cfg.gridRows === 15) mapSize = 'large';
+      // 그 외는 normal (20x10)
+
+      // maxNumber → appleRange 역변환
+      const appleRange: '1-9' | '1-5' = cfg.maxNumber === 5 ? '1-5' : '1-9';
+
+      // 입력 중이면 timeLimit은 덮어쓰지 않음
+      const isEditingAppleTime =
+        localTimeInput['apple'] !== undefined && localTimeInput['apple'] !== '';
+
+      setTimeout(() => {
+        setGameSettings((prev) => ({
+          ...prev,
+          apple: {
+            ...prev.apple,
+            mapSize,
+            timeLimit: isEditingAppleTime
+              ? prev.apple.timeLimit
+              : cfg.totalTime,
+            appleRange,
+            includeZero: cfg.includeZero,
+          },
+        }));
+      });
+    } else if (serverSelectedGame === ('FLAPPY_BIRD' as unknown as GameType)) {
+      setTimeout(() => setSelectedGame('flappy'));
+    } else if (serverSelectedGame === ('MINESWEEPER' as unknown as GameType)) {
+      setTimeout(() => setSelectedGame('minesweeper'));
+    }
+  }, [serverSelectedGame, serverGameConfig]);
+
   // 빈 슬롯 생성
   const emptySlots = Array(MAX_PLAYERS - players.length).fill(null);
 
@@ -227,9 +365,9 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
           <div className="nes-container is-rounded player-section">
             <h2 className="section-title">플레이어</h2>
             <div className="player-list">
-              {players.map((player) => (
+              {players.map((player, index) => (
                 <div
-                  key={player.id}
+                  key={`player-${index}`}
                   className="player-item"
                   style={{ borderColor: player.color }}
                 >
@@ -237,8 +375,8 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                     className="player-color-indicator"
                     style={{ backgroundColor: player.color }}
                   />
-                  <span className="player-name">{player.name}</span>
-                  {player.isHost && (
+                  <span className="player-name">{player.playerName}</span>
+                  {index == 0 && (
                     <span className="player-host-badge">방장</span>
                   )}
                 </div>
@@ -266,24 +404,26 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
               </div>
             </div>
             <div className="game-list">
+              {/* 이거 map 이어야 함? */}
               {games.map((game) => {
                 const settings = gameSettings[game.id];
 
                 return (
+                  // 이거 다 컴포넌트로 분리 가능한 거 아님?
                   <div
                     key={game.id}
                     className={`game-item ${
                       selectedGame === game.id ? 'selected' : ''
                     } ${
                       selectedGame && selectedGame !== game.id ? 'dimmed' : ''
-                    }`}
-                    onClick={(e) => {
-                      if (selectedGame !== game.id) {
-                        playSFX('buttonClick');
-                        handleSelectGame(game.id);
-                      }
-                    }}
+                    } ${isDisabled ? 'disabled' : ''}`}
+                    onClick={() => !isDisabled && handleSelectGame(game.id)}
                   >
+                    {isDisabled && (
+                      <span className="game-item-tooltip">
+                        방장만 게임을 선택할 수 있습니다
+                      </span>
+                    )}
                     <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
                       <div className="game-name-row">
@@ -358,22 +498,37 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                               <input
                                 type="number"
                                 value={
-                                  settings.timeLimit === -1
-                                    ? ''
-                                    : settings.timeLimit
+                                  localTimeInput[game.id] !== undefined &&
+                                  localTimeInput[game.id] !== ''
+                                    ? localTimeInput[game.id]
+                                    : settings.timeLimit === -1
+                                      ? ''
+                                      : settings.timeLimit
                                 }
-                                onChange={(e) =>
-                                  handleSettingChange(
-                                    game.id,
-                                    'timeLimit',
-                                    e.target.value
-                                      ? parseInt(e.target.value)
-                                      : -1,
-                                  )
-                                }
+                                onChange={(e) => {
+                                  // 로컬 상태만 업데이트, 패킷 전송 없음
+                                  setLocalTimeInput((prev) => ({
+                                    ...prev,
+                                    [game.id]: e.target.value,
+                                  }));
+                                }}
+                                onFocus={() => {
+                                  // 현재 값으로 로컬 상태 초기화
+                                  setLocalTimeInput((prev) => ({
+                                    ...prev,
+                                    [game.id]:
+                                      settings.timeLimit === -1
+                                        ? ''
+                                        : String(settings.timeLimit),
+                                  }));
+                                }}
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
+                                    commitTimeLimit(
+                                      game.id,
+                                      DEFAULT_TIME_LIMIT,
+                                    );
                                     e.currentTarget.blur();
                                   }
                                 }}
@@ -382,28 +537,8 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 min={MIN_TIME_LIMIT}
                                 max={MAX_TIME_LIMIT}
                                 autoFocus
-                                onBlur={(e) => {
-                                  const val = parseInt(e.target.value);
-                                  if (!e.target.value) {
-                                    // 빈 값이면 셀렉트로 돌아가기
-                                    handleSettingChange(
-                                      game.id,
-                                      'timeLimit',
-                                      DEFAULT_TIME_LIMIT,
-                                    );
-                                  } else if (
-                                    val < MIN_TIME_LIMIT ||
-                                    val > MAX_TIME_LIMIT
-                                  ) {
-                                    showTimeLimitTooltipForGame(game.id);
-                                    setTimeout(() => {
-                                      handleSettingChange(
-                                        game.id,
-                                        'timeLimit',
-                                        DEFAULT_TIME_LIMIT,
-                                      );
-                                    }, 100);
-                                  }
+                                onBlur={() => {
+                                  commitTimeLimit(game.id, DEFAULT_TIME_LIMIT);
                                 }}
                               />
                             ) : (
@@ -871,22 +1006,34 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                               <input
                                 type="number"
                                 value={
-                                  settings.timeLimit === -1
-                                    ? ''
-                                    : settings.timeLimit
+                                  localTimeInput[game.id] !== undefined &&
+                                  localTimeInput[game.id] !== ''
+                                    ? localTimeInput[game.id]
+                                    : settings.timeLimit === -1
+                                      ? ''
+                                      : settings.timeLimit
                                 }
-                                onChange={(e) =>
-                                  handleSettingChange(
-                                    game.id,
-                                    'timeLimit',
-                                    e.target.value
-                                      ? parseInt(e.target.value)
-                                      : -1,
-                                  )
-                                }
+                                onChange={(e) => {
+                                  // 로컬 상태만 업데이트, 패킷 전송 없음
+                                  setLocalTimeInput((prev) => ({
+                                    ...prev,
+                                    [game.id]: e.target.value,
+                                  }));
+                                }}
+                                onFocus={() => {
+                                  // 현재 값으로 로컬 상태 초기화
+                                  setLocalTimeInput((prev) => ({
+                                    ...prev,
+                                    [game.id]:
+                                      settings.timeLimit === -1
+                                        ? ''
+                                        : String(settings.timeLimit),
+                                  }));
+                                }}
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
+                                    commitTimeLimit(game.id, 180);
                                     e.currentTarget.blur();
                                   }
                                 }}
@@ -895,27 +1042,8 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                 min={MIN_TIME_LIMIT}
                                 max={MAX_TIME_LIMIT}
                                 autoFocus
-                                onBlur={(e) => {
-                                  const val = parseInt(e.target.value);
-                                  if (!e.target.value) {
-                                    handleSettingChange(
-                                      game.id,
-                                      'timeLimit',
-                                      180,
-                                    );
-                                  } else if (
-                                    val < MIN_TIME_LIMIT ||
-                                    val > MAX_TIME_LIMIT
-                                  ) {
-                                    showTimeLimitTooltipForGame(game.id);
-                                    setTimeout(() => {
-                                      handleSettingChange(
-                                        game.id,
-                                        'timeLimit',
-                                        180,
-                                      );
-                                    }, 100);
-                                  }
+                                onBlur={() => {
+                                  commitTimeLimit(game.id, 180);
                                 }}
                               />
                             ) : (
@@ -1070,7 +1198,8 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
           className="button-wrapper"
           onMouseEnter={() => {
             playSFX('buttonHover');
-            !selectedGame && setShowButtonTooltip(true);
+            (!selectedGame || isDisabled || players.length < 2) &&
+              setShowButtonTooltip(true);
           }}
           onMouseLeave={() => setShowButtonTooltip(false)}
         >
@@ -1080,13 +1209,24 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
               playSFX('buttonClick');
               handleStartGame();
             }}
-            disabled={!selectedGame}
+            disabled={!selectedGame || isDisabled || players.length < 2}
           >
             게임 시작
           </button>
-          {showButtonTooltip && !selectedGame && (
-            <div className="button-tooltip">게임을 선택해주세요</div>
+          {showButtonTooltip && !isHost && (
+            <div className="button-tooltip">
+              {'방장만 게임을 시작할 수 있습니다.'}
+            </div>
           )}
+          {showButtonTooltip &&
+            isHost &&
+            (players.length < 2 || !selectedGame) && (
+              <div className="button-tooltip">
+                {players.length < 2
+                  ? '최소 2명이 있어야 진행할 수 있습니다.'
+                  : '게임을 선택해주세요'}
+              </div>
+            )}
         </div>
       </div>
     </div>

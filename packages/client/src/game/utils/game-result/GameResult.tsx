@@ -1,5 +1,6 @@
 import React from 'react';
-import type { PlayerResultData, GameType } from '../../types/common';
+import type { PlayerResultData } from '../../types/common';
+import { GameType } from '../../../../../common/src/config';
 import type { PlayerId } from '../../types/flappybird.types';
 import AppleResult, { type AppleResultProps } from './AppleResult';
 import FlappyBirdResult, {
@@ -10,9 +11,9 @@ import MineSweeperResult, {
 } from './MineSweeperResult';
 
 type ResultPropsByGame = {
-  apple: AppleResultProps;
-  minesweeper: MineSweeperResultProps;
-  flappy: FlappyBirdResultProps;
+  [GameType.APPLE_GAME]: AppleResultProps;
+  [GameType.FLAPPY_BIRD]: FlappyBirdResultProps;
+  [GameType.MINESWEEPER]: MineSweeperResultProps;
 };
 
 type GameResultRenderableProps<
@@ -42,22 +43,31 @@ export interface GameResultManagerProps {
 }
 
 const RESULT_COMPONENTS = {
-  apple: AppleResult,
-  minesweeper: MineSweeperResult,
-  flappy: FlappyBirdResult,
+  [GameType.APPLE_GAME]: AppleResult,
+  [GameType.FLAPPY_BIRD]: FlappyBirdResult,
+  [GameType.MINESWEEPER]: MineSweeperResult,
 } as const;
 
 class GameResultManagerModel {
   constructor(private props: GameResultManagerProps) {}
 
   private createRankedPayload():
-    | GameResultRenderableProps<'apple'>
-    | GameResultRenderableProps<'minesweeper'>
+    | GameResultRenderableProps<GameType.APPLE_GAME>
+    | GameResultRenderableProps<GameType.MINESWEEPER>
     | null {
-    const { currentGameType, gameEnded, finalPlayers, onReplay, onLobby, ratio } =
-      this.props;
+    const {
+      currentGameType,
+      gameEnded,
+      finalPlayers,
+      onReplay,
+      onLobby,
+      ratio,
+    } = this.props;
     if (!gameEnded) return null;
-    if (currentGameType !== 'apple' && currentGameType !== 'minesweeper') {
+    if (
+      currentGameType !== GameType.APPLE_GAME &&
+      currentGameType !== GameType.MINESWEEPER
+    ) {
       return null;
     }
     const payload: RankedResultPayload = { players: finalPlayers };
@@ -70,18 +80,13 @@ class GameResultManagerModel {
     };
   }
 
-  private createFlappyPayload(): GameResultRenderableProps<'flappy'> | null {
-    const {
-      flappyGameEnded,
-      flappyFinalData,
-      onReplay,
-      onLobby,
-      ratio,
-    } = this.props;
+  private createFlappyPayload(): GameResultRenderableProps<GameType.FLAPPY_BIRD> | null {
+    const { flappyGameEnded, flappyFinalData, onReplay, onLobby, ratio } =
+      this.props;
     if (!flappyGameEnded || !flappyFinalData) return null;
     const payload: FlappyResultPayload = { ...flappyFinalData };
     return {
-      gameType: 'flappy',
+      gameType: GameType.FLAPPY_BIRD,
       ...payload,
       onReplay,
       onLobby,
@@ -98,10 +103,9 @@ const GameResult: React.FC<GameResultManagerProps> = (props) => {
   const model = new GameResultManagerModel(props);
   const renderProps = model.buildRenderableProps();
   if (!renderProps) return null;
-  const Component =
-    RESULT_COMPONENTS[renderProps.gameType] as React.ComponentType<
-      ResultPropsByGame[typeof renderProps.gameType]
-    >;
+  const Component = RESULT_COMPONENTS[
+    renderProps.gameType
+  ] as React.ComponentType<ResultPropsByGame[typeof renderProps.gameType]>;
   return (
     <Component
       {...(renderProps as ResultPropsByGame[keyof ResultPropsByGame])}

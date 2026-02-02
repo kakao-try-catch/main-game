@@ -1,4 +1,12 @@
-// --- ENUMS ---
+import { type GameConfig, GameType } from './config';
+import {
+  FlappyBirdData,
+  FlappyPipeData,
+  PlayerData,
+  ReportCard,
+} from './common-type';
+
+// ========== SYSTEM PACKETS (공용) ==========
 export enum SystemPacketType {
   UPDATE_NUMBER = 'UPDATE_NUMBER',
   JOIN_ROOM = 'JOIN_ROOM',
@@ -9,87 +17,41 @@ export enum SystemPacketType {
   GAME_START_REQ = 'GAME_START_REQ',
   READY_SCENE = 'READY_SCENE',
   UPDATE_SCORE = 'UPDATE_SCORE',
-}
-
-export enum GameType {
-  APPLE_GAME = 'APPLE_GAME',
-  FLAPPY_BIRD = 'FLAPPY_BIRD',
-  MINESWEEPER = 'MINESWEEPER',
-}
-
-export enum MapSize {
-  SMALL = 'SMALL',
-  MEDIUM = 'MEDIUM',
-  LARGE = 'LARGE',
-}
-
-export enum GamePacketType {
-  SET_FIELD = 'SET_FIELD',
+  RETURN_TO_THE_LOBBY_REQ = 'RETURN_TO_THE_LOBBY_REQ',
+  RETURN_TO_THE_LOBBY = 'RETURN_TO_THE_LOBBY',
+  REPLAY_REQ = 'REPLAY_REQ',
   SET_TIME = 'SET_TIME',
-  UPDATE_DRAG_AREA = 'UPDATE_DRAG_AREA',
-  DROP_CELL_INDEX = 'DROP_CELL_INDEX',
   TIME_END = 'TIME_END',
-  CONFIRM_DRAG_AREA = 'CONFIRM_DRAG_AREA',
-  DRAWING_DRAG_AREA = 'DRAWING_DRAG_AREA',
 }
 
-// --- COMMON TYPES ---
-type PlayerId = string;
-type AppleIndex = number;
-
-export interface PlayerData {
-  order: number;
-  playerName: string;
-  color: string;
-  score: number; // User requested score to be in PlayerData
-}
-
-export interface ReportCard {
-  score: number;
-}
-
-export interface AppleGameReportCard extends ReportCard { }
-
-export interface MineSweeperReportCard extends ReportCard {
-  flags: number;
-}
-
-// --- SYSTEM PACKETS ---
 export interface UpdateNumberPacket {
   type: SystemPacketType.UPDATE_NUMBER;
   number: number;
 }
 export interface JoinRoomPacket {
   type: SystemPacketType.JOIN_ROOM;
-  playerId: PlayerId;
   roomId: string;
   playerName: string;
 }
 
 export enum RoomUpdateType {
-  INIT = 0,
-  JOIN = 1,
+  INIT_ROOM = 0,
+  PLAYER_JOIN = 1,
+  PLAYER_QUIT = 2,
 }
 
 export interface RoomUpdatePacket {
   type: SystemPacketType.ROOM_UPDATE;
   players: PlayerData[];
   updateType: RoomUpdateType;
+  yourIndex: number;
+  roomId: string;
 }
 
 export interface SystemMessagePacket {
   type: SystemPacketType.SYSTEM_MESSAGE;
   message: string;
 }
-
-export interface AppleGameConfig {
-  mapSize: MapSize;
-  time: number;
-  generation: number;
-  zero: boolean;
-}
-
-export type GameConfig = AppleGameConfig;
 
 export interface GameConfigUpdateReqPacket {
   type: SystemPacketType.GAME_CONFIG_UPDATE_REQ;
@@ -112,14 +74,32 @@ export interface ReadyScenePacket {
   selectedGameType: GameType;
 }
 
-export type PlayerSummary = {
-  playerOrder: number;
-  reportCard: ReportCard[];
-};
-
 export interface UpdateScorePacket {
   type: SystemPacketType.UPDATE_SCORE;
-  scoreboard: PlayerSummary[];
+  // scoreboard is an array of ReportCard objects where index = player order
+  scoreboard: ReportCard[];
+}
+
+export interface ReturnToTheLobbyReqPacket {
+  type: SystemPacketType.RETURN_TO_THE_LOBBY_REQ;
+}
+
+export interface ReturnToTheLobbyPacket {
+  type: SystemPacketType.RETURN_TO_THE_LOBBY;
+}
+
+export interface ReplayReqPacket {
+  type: SystemPacketType.REPLAY_REQ;
+}
+
+export interface SetTimePacket {
+  type: SystemPacketType.SET_TIME;
+  limitTime: number;
+  serverStartTime: number; // 서버에서 게임이 시작된 시간 (timestamp)
+}
+export interface TimeEndPacket {
+  type: SystemPacketType.TIME_END;
+  results: PlayerData[];
 }
 
 export type SystemPacket =
@@ -131,56 +111,98 @@ export type SystemPacket =
   | GameConfigUpdatePacket
   | GameStartReqPacket
   | ReadyScenePacket
-  | UpdateScorePacket;
+  | UpdateScorePacket
+  | ReturnToTheLobbyReqPacket
+  | ReturnToTheLobbyPacket
+  | ReplayReqPacket
+  | SetTimePacket
+  | TimeEndPacket;
 
-// --- GAME PACKETS ---
+// ========== APPLE GAME PACKETS ==========
+
+export enum AppleGamePacketType {
+  SET_FIELD = 'APPLE_SET_FIELD',
+  UPDATE_DRAG_AREA = 'APPLE_UPDATE_DRAG_AREA',
+  DROP_CELL_INDEX = 'APPLE_DROP_CELL_INDEX',
+  CONFIRM_DRAG_AREA = 'APPLE_CONFIRM_DRAG_AREA',
+  DRAWING_DRAG_AREA = 'APPLE_DRAWING_DRAG_AREA',
+}
+
 export interface SetFieldPacket {
-  type: GamePacketType.SET_FIELD;
+  type: AppleGamePacketType.SET_FIELD;
   apples: number[];
 }
-export interface SetTimePacket {
-  type: GamePacketType.SET_TIME;
-  limitTime: number;
-}
 export interface UpdateDragAreaPacket {
-  type: GamePacketType.UPDATE_DRAG_AREA;
-  playerId: PlayerId;
+  type: AppleGamePacketType.UPDATE_DRAG_AREA;
+  playerIndex: number;
   startX: number;
   startY: number;
   endX: number;
   endY: number;
 }
 export interface DropCellIndexPacket {
-  type: GamePacketType.DROP_CELL_INDEX;
-  winnerId: PlayerId;
-  indices: AppleIndex[];
+  type: AppleGamePacketType.DROP_CELL_INDEX;
+  winnerIndex: number;
+  indices: number[];
   totalScore: number;
 }
-export interface TimeEndPacket {
-  type: GamePacketType.TIME_END;
-  results: { rank: number; playerId: PlayerId; score: number }[];
-}
 export interface ConfirmDragAreaPacket {
-  type: GamePacketType.CONFIRM_DRAG_AREA;
-  indices: AppleIndex[];
+  type: AppleGamePacketType.CONFIRM_DRAG_AREA;
+  indices: number[];
 }
 export interface DrawingDragAreaPacket {
-  type: GamePacketType.DRAWING_DRAG_AREA;
+  type: AppleGamePacketType.DRAWING_DRAG_AREA;
   startX: number;
   startY: number;
   endX: number;
   endY: number;
 }
 
-export type GamePacket =
+export type AppleGamePacket =
   | SetFieldPacket
-  | SetTimePacket
   | UpdateDragAreaPacket
   | DropCellIndexPacket
-  | TimeEndPacket
   | ConfirmDragAreaPacket
   | DrawingDragAreaPacket;
 
-// --- UNIFIED PACKET TYPE ---
-// 서버에서 클라이언트로 올 수 있는 모든 가능성을 합칩니다.
-export type ServerPacket = SystemPacket | GamePacket;
+// ========== FLAPPY BIRD PACKETS ==========
+export enum FlappyBirdPacketType {
+  FLAPPY_JUMP = 'FLAPPY_JUMP',
+  FLAPPY_WORLD_STATE = 'FLAPPY_WORLD_STATE',
+  FLAPPY_SCORE_UPDATE = 'FLAPPY_SCORE_UPDATE',
+  FLAPPY_GAME_OVER = 'FLAPPY_GAME_OVER',
+}
+
+export interface FlappyJumpPacket {
+  type: FlappyBirdPacketType.FLAPPY_JUMP;
+  timestamp: number;
+}
+
+export interface FlappyWorldStatePacket {
+  type: FlappyBirdPacketType.FLAPPY_WORLD_STATE;
+  tick: number;
+  birds: FlappyBirdData[];
+  pipes: FlappyPipeData[];
+  cameraX: number;
+}
+
+export interface FlappyScoreUpdatePacket {
+  type: FlappyBirdPacketType.FLAPPY_SCORE_UPDATE;
+  score: number;
+}
+
+export interface FlappyGameOverPacket {
+  type: FlappyBirdPacketType.FLAPPY_GAME_OVER;
+  collidedPlayerIndex: number;
+  reason: 'pipe_collision' | 'ground_collision';
+  finalScore: number;
+}
+
+export type FlappyBirdPacket =
+  | FlappyJumpPacket
+  | FlappyWorldStatePacket
+  | FlappyScoreUpdatePacket
+  | FlappyGameOverPacket;
+
+// ========== UNIFIED PACKET TYPE ==========
+export type ServerPacket = SystemPacket | AppleGamePacket | FlappyBirdPacket;

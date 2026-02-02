@@ -106,7 +106,7 @@ export default class TileManager {
     const tileHeight = availableHeight / this.gridRows;
 
     // 정사각형 타일 유지 (더 작은 쪽에 맞춤)
-    this.tileSize = Math.floor(Math.min(tileWidth, tileHeight));
+    this.tileSize = Math.min(tileWidth, tileHeight);
 
     // 그리드 시작 위치 계산 (사용 가능한 영역 내에서 중앙 정렬)
     const gridWidth = this.gridCols * this.tileSize;
@@ -248,7 +248,9 @@ export default class TileManager {
       }
     }
 
-    console.log(`[TileManager] 서버 타일 데이터 동기화 완료: ${syncedCount}개 타일 업데이트`);
+    console.log(
+      `[TileManager] 서버 타일 데이터 동기화 완료: ${syncedCount}개 타일 업데이트`,
+    );
   }
 
   /**

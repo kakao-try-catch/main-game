@@ -131,9 +131,15 @@ export class MineSweeperInstance implements GameInstance {
 
   handlePacket(socket: Socket, _playerIndex: number, packet: any): void {
     const playerId = socket.id;
+    console.log(
+      `[MineSweeperInstance] handlePacket 호출됨 - type: ${packet.type}, playerId: ${playerId}`,
+    );
 
     switch (packet.type) {
       case MineSweeperPacketType.MS_REVEAL_TILE:
+        console.log(
+          `[MineSweeperInstance] MS_REVEAL_TILE 처리 시작 - row: ${packet.row}, col: ${packet.col}`,
+        );
         this.handleRevealTile(playerId, packet.row, packet.col);
         break;
       case MineSweeperPacketType.MS_TOGGLE_FLAG:
@@ -243,7 +249,14 @@ export class MineSweeperInstance implements GameInstance {
   // ========== GAME LOGIC ==========
 
   private handleRevealTile(playerId: PlayerId, row: number, col: number): void {
-    if (!this.config) return;
+    console.log(
+      `[MineSweeperInstance] handleRevealTile 시작 - playerId: ${playerId}, row: ${row}, col: ${col}`,
+    );
+
+    if (!this.config) {
+      console.log('[MineSweeperInstance] handleRevealTile 중단 - config 없음');
+      return;
+    }
 
     // 유효성 검사
     if (
@@ -257,13 +270,18 @@ export class MineSweeperInstance implements GameInstance {
     }
 
     const tile = this.tiles[row][col];
+    console.log(
+      `[MineSweeperInstance] 타일 상태 확인 - state: ${tile.state}, isMine: ${tile.isMine}`,
+    );
 
     // 이미 열린 타일은 무시
     if (tile.state === TileState.REVEALED) {
+      console.log('[MineSweeperInstance] 이미 열린 타일 - 무시');
       return;
     }
 
     // Flood Fill로 타일 열기
+    console.log('[MineSweeperInstance] revealTileWithFloodFill 호출');
     this.revealTileWithFloodFill(row, col, playerId);
   }
 
@@ -387,6 +405,9 @@ export class MineSweeperInstance implements GameInstance {
     }
 
     // 한 번에 모든 타일 업데이트 전송
+    console.log(
+      `[MineSweeperInstance] revealTileWithFloodFill 완료 - 열린 타일 수: ${allUpdates.length}`,
+    );
     if (allUpdates.length > 0) {
       const tileUpdatePacket: MSTileUpdatePacket = {
         type: MineSweeperPacketType.MS_TILE_UPDATE,
@@ -395,7 +416,12 @@ export class MineSweeperInstance implements GameInstance {
         isSequentialReveal: true,
         timestamp: Date.now(),
       };
+      console.log(
+        `[MineSweeperInstance] MS_TILE_UPDATE 브로드캐스트 - tiles: ${allUpdates.length}개`,
+      );
       this.broadcast(MineSweeperPacketType.MS_TILE_UPDATE, tileUpdatePacket);
+    } else {
+      console.log('[MineSweeperInstance] 열린 타일 없음 - 브로드캐스트 안함');
     }
 
     // 점수 업데이트
@@ -745,6 +771,10 @@ export class MineSweeperInstance implements GameInstance {
   }
 
   private broadcast(eventType: string, packet: any): void {
+    console.log(
+      `[MineSweeperInstance] broadcast 호출 - eventType: ${eventType}, roomId: ${this.session.roomId}`,
+    );
     this.session.io.to(this.session.roomId).emit(eventType, packet);
+    console.log(`[MineSweeperInstance] broadcast 완료 - ${eventType}`);
   }
 }

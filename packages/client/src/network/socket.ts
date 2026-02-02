@@ -71,6 +71,10 @@ class SocketManager {
     if (!this.socket) return null;
     return this.socket.id;
   }
+
+  getSocket(): Socket | null {
+    return this.socket;
+  }
 }
 
 export const socketManager = new SocketManager();

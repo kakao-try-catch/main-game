@@ -74,6 +74,9 @@ export default class MineSweeperScene extends Phaser.Scene {
   // UI 컨테이너
   private gameContainer!: Phaser.GameObjects.Container;
 
+  // 서버 이벤트 리스너 정리용
+  private serverEventCleanup: (() => void)[] = [];
+
   constructor() {
     super('MineSweeperScene');
 
@@ -536,10 +539,12 @@ export default class MineSweeperScene extends Phaser.Scene {
 
   /**
    * 서버 모드 이벤트 리스너 (새 패킷 타입)
+   * clientHandler에서 CustomEvent를 발생시키므로 window.addEventListener 사용
    */
   private setupServerEventListeners(): void {
     // MS_GAME_INIT: 게임 초기화
-    this.socket.on(MineSweeperPacketType.MS_GAME_INIT, (data: MSGameInitPacket) => {
+    const handleGameInit = (e: Event) => {
+      const data = (e as CustomEvent<MSGameInitPacket>).detail;
       console.log('[MineSweeperScene] MS_GAME_INIT 수신:', data);
       this.handleGameInit({
         config: data.config,
@@ -548,10 +553,13 @@ export default class MineSweeperScene extends Phaser.Scene {
         remainingMines: data.remainingMines,
         timestamp: data.timestamp,
       });
-    });
+    };
+    window.addEventListener('ms:game_init', handleGameInit);
+    this.serverEventCleanup.push(() => window.removeEventListener('ms:game_init', handleGameInit));
 
     // MS_TILE_UPDATE: 타일 상태 업데이트
-    this.socket.on(MineSweeperPacketType.MS_TILE_UPDATE, (data: MSTileUpdatePacket) => {
+    const handleTileUpdate = (e: Event) => {
+      const data = (e as CustomEvent<MSTileUpdatePacket>).detail;
       console.log('[MineSweeperScene] MS_TILE_UPDATE 수신:', data);
       this.handleTileUpdate({
         tiles: data.tiles.map((t) => ({
@@ -568,10 +576,13 @@ export default class MineSweeperScene extends Phaser.Scene {
         timestamp: data.timestamp,
         isSequentialReveal: data.isSequentialReveal,
       });
-    });
+    };
+    window.addEventListener('ms:tile_update', handleTileUpdate);
+    this.serverEventCleanup.push(() => window.removeEventListener('ms:tile_update', handleTileUpdate));
 
     // MS_SCORE_UPDATE: 점수 업데이트
-    this.socket.on(MineSweeperPacketType.MS_SCORE_UPDATE, (data: MSScoreUpdatePacket) => {
+    const handleScoreUpdate = (e: Event) => {
+      const data = (e as CustomEvent<MSScoreUpdatePacket>).detail;
       console.log('[MineSweeperScene] MS_SCORE_UPDATE 수신:', data);
       this.handleScoreUpdate({
         playerId: data.playerId,
@@ -581,24 +592,32 @@ export default class MineSweeperScene extends Phaser.Scene {
         reason: data.reason as 'safe_tile' | 'flood_fill' | 'mine_hit',
         timestamp: data.timestamp,
       });
-    });
+    };
+    window.addEventListener('ms:score_update', handleScoreUpdate);
+    this.serverEventCleanup.push(() => window.removeEventListener('ms:score_update', handleScoreUpdate));
 
     // MS_REMAINING_MINES: 남은 지뢰 수 업데이트
-    this.socket.on(MineSweeperPacketType.MS_REMAINING_MINES, (data: any) => {
+    const handleRemainingMines = (e: Event) => {
+      const data = (e as CustomEvent<any>).detail;
       console.log('[MineSweeperScene] MS_REMAINING_MINES 수신:', data);
       this.remainingMines = data.remainingMines;
       this.events.emit('remainingMinesUpdate', this.remainingMines);
-    });
+    };
+    window.addEventListener('ms:remaining_mines', handleRemainingMines);
+    this.serverEventCleanup.push(() => window.removeEventListener('ms:remaining_mines', handleRemainingMines));
 
     // MS_GAME_END: 게임 종료
-    this.socket.on(MineSweeperPacketType.MS_GAME_END, (data: MSGameEndPacket) => {
+    const handleGameEnd = (e: Event) => {
+      const data = (e as CustomEvent<MSGameEndPacket>).detail;
       console.log('[MineSweeperScene] MS_GAME_END 수신:', data);
       this.handleGameEnd({
         reason: data.reason,
         results: data.results,
         timestamp: data.timestamp,
       });
-    });
+    };
+    window.addEventListener('ms:game_end', handleGameEnd);
+    this.serverEventCleanup.push(() => window.removeEventListener('ms:game_end', handleGameEnd));
   }
 
   /**
@@ -967,12 +986,9 @@ export default class MineSweeperScene extends Phaser.Scene {
     this.socket.off('flagCountUpdate');
     this.socket.off('game_end');
 
-    // 소켓 이벤트 리스너 제거 (서버 모드)
-    this.socket.off(MineSweeperPacketType.MS_GAME_INIT);
-    this.socket.off(MineSweeperPacketType.MS_TILE_UPDATE);
-    this.socket.off(MineSweeperPacketType.MS_SCORE_UPDATE);
-    this.socket.off(MineSweeperPacketType.MS_REMAINING_MINES);
-    this.socket.off(MineSweeperPacketType.MS_GAME_END);
+    // 서버 모드 이벤트 리스너 제거 (CustomEvent)
+    this.serverEventCleanup.forEach((cleanup) => cleanup());
+    this.serverEventCleanup = [];
 
     this.events.off('updatePlayers');
 

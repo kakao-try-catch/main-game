@@ -95,22 +95,19 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
-    case SystemPacketType.READY_SCENE:
-      useGameStore.getState().setScreen('game');
-      useGameStore.getState().setGameStarted(true);
-      // 게임 세션 ID 증가로 게임 컨테이너 재마운트 트리거
-      useGameStore.getState().incrementGameSession();
-      switch (packet.selectedGameType) {
-        // 다른 게임 타입이 추가되면 여기에 케이스 추가
-        case GameType.APPLE_GAME:
-          break;
-        case GameType.FLAPPY_BIRD:
-          break;
-        case GameType.MINESWEEPER:
-          break;
+    case SystemPacketType.READY_SCENE: {
+      const store = useGameStore.getState();
+      // selectedGameType이 설정되지 않은 경우 (게스트가 로비에서 설정 안 받았을 때) 설정
+      if (packet.selectedGameType) {
+        store.setGameConfig(packet.selectedGameType, store.gameConfig ?? null);
       }
+      store.setScreen('game');
+      store.setGameStarted(true);
+      // 게임 세션 ID 증가로 게임 컨테이너 재마운트 트리거
+      store.incrementGameSession();
       console.log('READY_SCENE packet received', packet);
       break;
+    }
 
     case SystemPacketType.TIME_END: {
       const store = useGameStore.getState();

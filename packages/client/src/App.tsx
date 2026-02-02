@@ -41,7 +41,7 @@ const FLAPPY_BIRD_SPRITES = [
 
 function AppContent() {
   const testPlayerCount = 4;
-  const { pause, reset, loadBGM } = useBGMContext();
+  const { pause, reset } = useBGMContext();
   const { playSFX } = useSFXContext();
 
   // todo 제거 예정
@@ -107,7 +107,7 @@ function AppContent() {
   }, []);
 
   // 게임 종료 시 BGM/SFX 처리 (store에서 isFlappyGameOver 변경 감지)
-  const handleGameEnd = useCallback(
+  /*const handleGameEnd = useCallback(
     (data: GameEndEvent) => {
       // 플래피버드는 이미 store에서 상태가 관리되므로 사운드만 처리
       if (data.gameType !== 'flappy') {
@@ -120,7 +120,22 @@ function AppContent() {
       reset(); // 게임 종료 시 BGM을 처음으로 되감기
     },
     [setGameStarted, playSFX, pause, reset],
-  );
+  );*/
+  const resetFlappyState = useGameStore((s) => s.resetFlappyState);
+  // handleGameEnd는 현재 GameContainer에서 사용하지 않으므로 주석 처리
+  // const handleGameEnd = useCallback(
+  //   (data: GameEndEvent) => {
+  //     if (data.gameType === 'flappy') {
+  //       // 플래피버드 게임 종료 처리는 store에서 관리
+  //     } else {
+  //       // 다른 게임 종료 처리
+  //     }
+  //     playSFX('appleGameEnd');
+  //     pause(); // 게임 종료 시 BGM 중지
+  //     reset(); // 게임 종료 시 BGM을 처음으로 되감기
+  //   },
+  //   [playSFX, pause, reset],
+  // );
 
   // 플래피버드 점프 사운드 핸들러
   const handleFlappyJump = useCallback(() => {
@@ -297,10 +312,10 @@ function AppContent() {
     // todo 이거 음악 clientHandler에서 READY_SCENE 받을 때 수행하기
     if (gameType === 'apple') {
       // setApplePreset(preset as AppleGamePreset);
-      loadBGM('appleGame');
+      //loadBGM('appleGame');
     } else if (gameType === 'flappy') {
       setFlappyPreset(preset as FlappyBirdGamePreset);
-      loadBGM('flappyBird');
+      //loadBGM('flappyBird');
     } else if (gameType === 'minesweeper') {
       const minesweeperPreset =
         (preset as MineSweeperGamePreset | undefined)?.mapSize &&
@@ -309,7 +324,7 @@ function AppContent() {
           ? (preset as MineSweeperGamePreset)
           : DEFAULT_MINESWEEPER_PRESET;
       setMinesweeperPreset(minesweeperPreset);
-      loadBGM('minesweeper');
+      //loadBGM('minesweeper');
     }
 
     const gameStartReq: ServerPacket = {
@@ -449,7 +464,7 @@ function AppContent() {
                 extraContent={
                   <TintedFlagIcon color={player.color}>
                     <span style={{ color: '#212529', fontSize: '20px' }}>
-                      {flagCounts[index] || 0}
+                      {flagCounts[String(index)] || 0}
                     </span>
                   </TintedFlagIcon>
                 }

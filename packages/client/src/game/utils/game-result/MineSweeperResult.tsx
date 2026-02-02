@@ -2,7 +2,7 @@ import React from 'react';
 import BaseRankedResult, {
   type BaseRankedResultProps,
 } from './BaseRankedResult';
-import type { PlayerResultData } from '../../types/common';
+import type { PlayerData } from '../../types/common';
 import type { MineSweeperResultPlayer } from '../../types/minesweeper.types';
 import TintedFlagIcon from '../../../components/TintedFlagIcon';
 
@@ -18,8 +18,8 @@ export interface MineSweeperResultProps extends Omit<
   };
 }
 
-const getPlayerSubline = (player: PlayerResultData): React.ReactNode => {
-  const statsPlayer = player as MineSweeperResultPlayer;
+const getPlayerSubline = (player: PlayerData): React.ReactNode => {
+  const statsPlayer = player as unknown as MineSweeperResultPlayer;
   const totalFlags = statsPlayer.totalFlags ?? 0;
   if (totalFlags <= 0) return null;
   const correctFlags = statsPlayer.correctFlags ?? 0;

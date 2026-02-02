@@ -1,89 +1,60 @@
 /**
  * 지뢰찾기 게임 타입 정의
+ *
+ * 공통 타입은 common 패키지에서 import하여 사용합니다.
+ * 이 파일은 클라이언트 전용 타입과 re-export를 담당합니다.
  */
 
 import type { PlayerResultData } from './common';
-import { DEFAULT_RESOLVED_CONFIG } from './minesweeperPresets';
 
-// 프리셋 re-export
+// ========== common 패키지에서 타입 re-export ==========
 export {
+  // 타일 관련
+  TileState,
+  type ServerTileData,
+  type ClientTileData,
+  type PlayerId,
+  type PlayerScoreData,
+
+  // 게임 설정 관련
   type MapSizePreset,
   type DifficultyPreset,
   type TimeLimit,
   type MineSweeperGamePreset,
+  type MineSweeperConfig,
   type ResolvedMineSweeperConfig,
+
+  // 기본값
   DEFAULT_MINESWEEPER_PRESET,
+  DEFAULT_MINESWEEPER_CONFIG,
   DEFAULT_RESOLVED_CONFIG,
   resolveMineSweeperPreset,
-} from './minesweeperPresets';
+} from '../../../../common/src/minesweeperPackets';
 
-// 플레이어 ID
-export type PlayerId = string;
-
-// 타일 상태
-export enum TileState {
-  HIDDEN = 'hidden',
-  REVEALED = 'revealed',
-  FLAGGED = 'flagged',
-}
-
-// 서버 내부용 타일 데이터 (지뢰 정보 포함)
-export interface ServerTileData {
-  row: number;
-  col: number;
-  isMine: boolean;
-  adjacentMines: number;
-  state: TileState;
-  revealedBy: PlayerId | null;
-  flaggedBy: PlayerId | null;
-}
-
-// 클라이언트용 타일 데이터 (REVEALED 전까지 지뢰 정보 숨김)
-export interface ClientTileData {
-  row: number;
-  col: number;
-  state: TileState;
-  // REVEALED 상태일 때만 제공
-  isMine?: boolean;
-  adjacentMines?: number;
-  revealedBy: PlayerId | null;
-  flaggedBy: PlayerId | null;
-}
+// 하위 호환성을 위한 import
+import {
+  type ServerTileData,
+  DEFAULT_RESOLVED_CONFIG,
+  type MineSweeperConfig,
+  TileState,
+  type PlayerId,
+} from '../../../../common/src/minesweeperPackets';
 
 // 하위 호환성을 위한 alias
 export type TileData = ServerTileData;
 
-// 플레이어 점수 데이터
-export interface PlayerScoreData {
-  playerId: PlayerId;
-  playerName: string;
-  playerColor: string;
-  score: number;
-  tilesRevealed: number;
-  minesHit: number;
-  flagsPlaced: number;
-}
+// ========== 클라이언트 전용 타입 ==========
 
+/** 지뢰찾기 결과 화면용 플레이어 데이터 */
 export interface MineSweeperResultPlayer extends PlayerResultData {
   correctFlags?: number;
   totalFlags?: number;
 }
 
-// 게임 설정
-export interface MineSweeperConfig {
-  gridCols: number;
-  gridRows: number;
-  mineCount: number;
-  // 점수 설정
-  tileRevealScore: number;
-  minePenalty: number;
-  flagCorrectBonus: number;
-  flagWrongPenalty: number;
-  minScore: number;
-}
+// ========== 하위 호환성을 위한 기본 설정 ==========
 
-// 기본 게임 설정 (DEFAULT_MINESWEEPER_PRESET 기반)
-export const DEFAULT_MINESWEEPER_CONFIG: MineSweeperConfig = {
+/** @deprecated DEFAULT_MINESWEEPER_CONFIG 사용 권장 */
+export const DEFAULT_MINESWEEPER_CONFIG_LEGACY: MineSweeperConfig = {
   gridCols: DEFAULT_RESOLVED_CONFIG.gridCols,
   gridRows: DEFAULT_RESOLVED_CONFIG.gridRows,
   mineCount: DEFAULT_RESOLVED_CONFIG.mineCount,
@@ -91,31 +62,36 @@ export const DEFAULT_MINESWEEPER_CONFIG: MineSweeperConfig = {
   minePenalty: -20,
   flagCorrectBonus: 10,
   flagWrongPenalty: -10,
-  minScore: Number.NEGATIVE_INFINITY, // 음수 허용 (지뢰 많이 밟으면 마이너스)
+  minScore: Number.NEGATIVE_INFINITY,
 };
 
-// ===== 소켓 이벤트 타입 =====
+// ========== 소켓 이벤트 타입 (Mock용 - 추후 제거 예정) ==========
 
-// 클라이언트 -> 서버 이벤트 타입
+/** 클라이언트 -> 서버 이벤트 타입 */
 export type ClientEventType = 'reveal_tile' | 'toggle_flag';
 
-// 타일 열기 요청
+/** 타일 열기 요청 */
 export interface RevealTileRequest {
-  playerId: PlayerId;
+  playerId: string;
   row: number;
   col: number;
 }
 
-// 깃발 토글 요청
+/** 깃발 토글 요청 */
 export interface ToggleFlagRequest {
-  playerId: PlayerId;
+  playerId: string;
   row: number;
   col: number;
 }
 
-// 서버 -> 클라이언트 이벤트
+// ========== 서버 -> 클라이언트 이벤트 (Mock용 - 추후 제거 예정) ==========
 
-// 타일 상태 업데이트
+import type {
+  ClientTileData,
+  PlayerScoreData,
+} from '../../../../common/src/minesweeperPackets';
+
+/** 타일 상태 업데이트 */
 export interface TileUpdateEvent {
   tiles: {
     row: number;
@@ -130,7 +106,7 @@ export interface TileUpdateEvent {
   timestamp: number;
 }
 
-// 게임 초기화 이벤트 (게임 시작 시 전체 맵 전송 - 지뢰 정보 제외)
+/** 게임 초기화 이벤트 */
 export interface GameInitEvent {
   config: MineSweeperConfig;
   tiles: ClientTileData[][];
@@ -139,13 +115,13 @@ export interface GameInitEvent {
   timestamp: number;
 }
 
-// 남은 지뢰 수 업데이트 이벤트
+/** 남은 지뢰 수 업데이트 이벤트 */
 export interface RemainingMinesUpdateEvent {
   remainingMines: number;
   timestamp: number;
 }
 
-// 점수 업데이트 이벤트
+/** 점수 업데이트 이벤트 */
 export interface ScoreUpdateEvent {
   playerId: PlayerId;
   scoreChange: number;

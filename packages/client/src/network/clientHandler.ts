@@ -5,7 +5,15 @@ import {
   type RoomUpdatePacket,
   type GameConfigUpdatePacket,
   FlappyBirdPacketType,
+  MineSweeperPacketType,
 } from '../../../common/src/packets.ts';
+import type {
+  MSGameInitPacket,
+  MSTileUpdatePacket,
+  MSScoreUpdatePacket,
+  MSRemainingMinesPacket,
+  MSGameEndPacket,
+} from '../../../common/src/minesweeperPackets.ts';
 import { GameType } from '../../../common/src/config.ts';
 import type { PlayerData } from '../../../common/src/common-type.ts';
 import { useGameStore } from '../store/gameStore';
@@ -26,18 +34,31 @@ export const handleServerPacket = (packet: ServerPacket) => {
     // todo 클라 핸들러는 이거 필요없는데?
     // JOIN_ROOM 패킷은 클라이언트가 서버로 보내는 것이므로 여기서 처리 불필요
     case SystemPacketType.JOIN_ROOM:
-      console.log(`Player ${packet.playerId} joined ${packet.roomId}`);
+      console.log(`Player ${packet.playerName} joined ${packet.roomId}`);
       break;
 
     case SystemPacketType.ROOM_UPDATE: {
       // update global store (clientHandler runs outside React)
       const roomPacket = packet as RoomUpdatePacket;
-      useGameStore.getState().setPlayers(roomPacket.players || []);
-      useGameStore.getState().setMyselfIndex(roomPacket.yourIndex);
-      useGameStore.getState().setRoomId(roomPacket.roomId);
+      const store = useGameStore.getState();
+      store.setPlayers(roomPacket.players || []);
+      store.setMyselfIndex(roomPacket.yourIndex);
+      store.setRoomId(roomPacket.roomId);
+
+      // 게임 중이었다면 게임 상태 초기화 (플레이어 탈주로 인한 ROOM_UPDATE)
+      if (store.screen === 'game' || store.isGameStarted) {
+        console.log(
+          'ROOM_UPDATE: 게임 중 플레이어 변경 감지 - 게임 상태 초기화',
+        );
+        store.resetGameState();
+        store.resetFlappyState();
+        store.setGameStarted(false);
+        bgmManager.pause(); // 게임 중이었다면 BGM 정지
+      }
+
       // 얘는 클라측에서 ROOM_UPDATE를 받았을 때 type이 0이면 동작함.
-      if (useGameStore.getState().screen !== 'lobby') {
-        useGameStore.getState().setScreen('lobby');
+      if (store.screen !== 'lobby') {
+        store.setScreen('lobby');
       }
 
       // URL에 /invite가 있으면 제거
@@ -87,22 +108,31 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
-    case SystemPacketType.READY_SCENE:
-      useGameStore.getState().setScreen('game');
-      useGameStore.getState().setGameStarted(true);
+    case SystemPacketType.READY_SCENE: {
+      const store = useGameStore.getState();
+      // selectedGameType이 설정되지 않은 경우 (게스트가 로비에서 설정 안 받았을 때) 설정
+      if (packet.selectedGameType) {
+        store.setGameConfig(packet.selectedGameType, store.gameConfig ?? null);
+      }
+      store.setScreen('game');
+      store.setGameStarted(true);
       // 게임 세션 ID 증가로 게임 컨테이너 재마운트 트리거
-      useGameStore.getState().incrementGameSession();
+      store.incrementGameSession();
+      // 게임 타입에 맞는 BGM 로드 (방장/비방장 모두 여기서 처리)
       switch (packet.selectedGameType) {
-        // 다른 게임 타입이 추가되면 여기에 케이스 추가
         case GameType.APPLE_GAME:
+          bgmManager.loadBGM('appleGame');
           break;
         case GameType.FLAPPY_BIRD:
+          bgmManager.loadBGM('flappyBird');
           break;
         case GameType.MINESWEEPER:
+          bgmManager.loadBGM('minesweeper');
           break;
       }
       console.log('READY_SCENE packet received', packet);
       break;
+    }
 
     case SystemPacketType.TIME_END: {
       const store = useGameStore.getState();
@@ -227,6 +257,37 @@ export const handleServerPacket = (packet: ServerPacket) => {
       break;
     }
 
+    // Minesweeper 패킷
+    case MineSweeperPacketType.MS_GAME_INIT: {
+      console.log('MS_GAME_INIT received:', packet);
+      handleMSGameInit(packet as MSGameInitPacket);
+      break;
+    }
+
+    case MineSweeperPacketType.MS_TILE_UPDATE: {
+      console.log('MS_TILE_UPDATE received:', packet);
+      handleMSTileUpdate(packet as MSTileUpdatePacket);
+      break;
+    }
+
+    case MineSweeperPacketType.MS_SCORE_UPDATE: {
+      console.log('MS_SCORE_UPDATE received:', packet);
+      handleMSScoreUpdate(packet as MSScoreUpdatePacket);
+      break;
+    }
+
+    case MineSweeperPacketType.MS_REMAINING_MINES: {
+      console.log('MS_REMAINING_MINES received:', packet);
+      handleMSRemainingMines(packet as MSRemainingMinesPacket);
+      break;
+    }
+
+    case MineSweeperPacketType.MS_GAME_END: {
+      console.log('MS_GAME_END received:', packet);
+      handleMSGameEnd(packet as MSGameEndPacket);
+      break;
+    }
+
     // 클라이언트가 보낸 패킷이 루프백으로 수신되는 경우 등 예외 처리
     default:
       console.warn('Unprocessed packet type:', packet);
@@ -253,3 +314,91 @@ export const handleServerPacket = (packet: ServerPacket) => {
 //   // 3. 공통: 점수판 갱신
 //   updateScoreUI(winnerId, totalScore);
 // }
+
+// ========== Minesweeper Handlers ==========
+
+function handleMSGameInit(packet: MSGameInitPacket): void {
+  // 서버에서 받은 플레이어 점수로 업데이트 (동기화)
+  // 리플레이 시에는 모든 점수가 0으로 오고, 씬 로딩 중에는 현재 점수가 옴
+  const store = useGameStore.getState();
+
+  // packet.players를 playerId 기준으로 맵핑
+  const serverScores = new Map<string, number>();
+  packet.players.forEach((p) => {
+    serverScores.set(p.playerId, p.score);
+  });
+
+  // 현재 플레이어 목록의 점수를 서버 데이터로 업데이트
+  store.setPlayers((prev: PlayerData[]) =>
+    prev.map((player: PlayerData) => ({
+      ...player,
+      reportCard: {
+        ...player.reportCard,
+        score: serverScores.get(player.id) ?? 0,
+      },
+    })),
+  );
+
+  // 게임 씬으로 이벤트 전달 (MineSweeperScene에서 수신)
+  const event = new CustomEvent('ms:game_init', { detail: packet });
+  window.dispatchEvent(event);
+}
+
+function handleMSTileUpdate(packet: MSTileUpdatePacket): void {
+  const event = new CustomEvent('ms:tile_update', { detail: packet });
+  window.dispatchEvent(event);
+}
+
+function handleMSScoreUpdate(packet: MSScoreUpdatePacket): void {
+  // gameStore의 플레이어 점수 업데이트 (PlayerCard UI 동기화)
+  const store = useGameStore.getState();
+  store.setPlayers((prev: PlayerData[]) =>
+    prev.map((player: PlayerData) =>
+      player.id === packet.playerId
+        ? {
+            ...player,
+            reportCard: { ...player.reportCard, score: packet.newScore },
+          }
+        : player,
+    ),
+  );
+
+  // 게임 씬으로 이벤트 전달 (MineSweeperScene에서 수신)
+  const event = new CustomEvent('ms:score_update', { detail: packet });
+  window.dispatchEvent(event);
+}
+
+function handleMSRemainingMines(packet: MSRemainingMinesPacket): void {
+  const event = new CustomEvent('ms:remaining_mines', { detail: packet });
+  window.dispatchEvent(event);
+}
+
+function handleMSGameEnd(packet: MSGameEndPacket): void {
+  const store = useGameStore.getState();
+  const currentPlayers = store.players;
+
+  // MSGameEndPacket.results를 PlayerData[] 형식으로 변환
+  // rank 순으로 정렬되어 있으므로 그대로 사용
+  const gameResults = packet.results.map((result) => {
+    const player = currentPlayers.find((p) => p.id === result.playerId);
+    return {
+      id: result.playerId,
+      playerName: player?.playerName ?? 'Unknown',
+      color: player?.color ?? '#ffffff',
+      reportCard: {
+        score: result.score,
+      },
+      // MineSweeperResult에서 사용하는 추가 필드
+      correctFlags: result.correctFlags,
+      totalFlags: result.totalFlags,
+    };
+  });
+
+  store.setGameResults(gameResults);
+  store.setGameStarted(false);
+  sfxManager.play('appleGameEnd');
+  bgmManager.pause();
+
+  const event = new CustomEvent('ms:game_end', { detail: packet });
+  window.dispatchEvent(event);
+}

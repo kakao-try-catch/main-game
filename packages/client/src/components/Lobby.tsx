@@ -208,14 +208,60 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       return;
     }
 
-    // TODO: flappy, minesweeper 처리
-    const packet = {
-      type: SystemPacketType.GAME_CONFIG_UPDATE_REQ,
-      selectedGameType,
-      gameConfig: {} as any,
-    } as const;
+    if (gameId === 'flappy') {
+      const s = settings as GameSettings;
 
-    socketManager.send(packet);
+      const flappyPreset: FlappyBirdGamePreset = {
+        pipeGap: (s.pipeGap || 'normal') as PipeGapPreset,
+        pipeWidth: (s.pipeWidth || 'normal') as PipeWidthPreset,
+        pipeSpacing: (s.pipeSpacing || 'normal') as PipeSpacingPreset,
+        pipeSpeed: (s.pipeSpeed || 'normal') as PipeSpeedPreset,
+        ropeLength: (s.ropeLength || 'normal') as RopeLengthPreset,
+        connectAll: s.connectAll ?? false,
+      };
+
+      const packet = {
+        type: SystemPacketType.GAME_CONFIG_UPDATE_REQ,
+        selectedGameType,
+        gameConfig: flappyPreset,
+      } as const;
+
+      socketManager.send(packet);
+      return;
+    }
+
+    if (gameId === 'minesweeper') {
+      const s = settings as GameSettings;
+
+      // difficulty 변환 (mineRatio)
+      let difficulty: DifficultyPreset = 'normal';
+      if (s.mineRatio === 'easy') difficulty = 'easy';
+      else if (s.mineRatio === 'hard') difficulty = 'hard';
+
+      // timeLimit 변환
+      const timeVal =
+        typeof s.timeLimit === 'number' && s.timeLimit !== -1
+          ? s.timeLimit
+          : 180;
+
+      const minesweeperPreset: MineSweeperGamePreset = {
+        mapSize: (s.mapSize || 'medium') as MapSizePreset,
+        difficulty,
+        timeLimit: [120, 180, 240].includes(timeVal)
+          ? (timeVal as TimeLimit)
+          : 'manual',
+        manualTime: ![120, 180, 240].includes(timeVal) ? timeVal : undefined,
+      };
+
+      const packet = {
+        type: SystemPacketType.GAME_CONFIG_UPDATE_REQ,
+        selectedGameType,
+        gameConfig: minesweeperPreset,
+      } as const;
+
+      socketManager.send(packet);
+      return;
+    }
   };
 
   const showTooltip = (
@@ -345,8 +391,55 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       });
     } else if (serverSelectedGame === ('FLAPPY_BIRD' as unknown as GameType)) {
       setTimeout(() => setSelectedGame('flappy'));
+
+      const cfg = serverGameConfig as FlappyBirdGamePreset;
+
+      setTimeout(() => {
+        setGameSettings((prev) => ({
+          ...prev,
+          flappy: {
+            ...prev.flappy,
+            pipeGap: cfg.pipeGap || 'normal',
+            pipeWidth: cfg.pipeWidth || 'normal',
+            pipeSpacing: cfg.pipeSpacing || 'normal',
+            pipeSpeed: cfg.pipeSpeed || 'normal',
+            ropeLength: cfg.ropeLength || 'normal',
+            connectAll: cfg.connectAll ?? false,
+          },
+        }));
+      });
     } else if (serverSelectedGame === ('MINESWEEPER' as unknown as GameType)) {
       setTimeout(() => setSelectedGame('minesweeper'));
+
+      const cfg = serverGameConfig as MineSweeperGamePreset;
+
+      // 입력 중이면 timeLimit은 덮어쓰지 않음
+      const isEditingMinesweeperTime =
+        localTimeInput['minesweeper'] !== undefined &&
+        localTimeInput['minesweeper'] !== '';
+
+      // timeLimit 역변환
+      const timeLimit =
+        cfg.timeLimit === 'manual'
+          ? cfg.manualTime ?? 180
+          : (cfg.timeLimit as number);
+
+      // difficulty → mineRatio 역변환
+      const mineRatio = cfg.difficulty || 'normal';
+
+      setTimeout(() => {
+        setGameSettings((prev) => ({
+          ...prev,
+          minesweeper: {
+            ...prev.minesweeper,
+            mapSize: cfg.mapSize || 'medium',
+            timeLimit: isEditingMinesweeperTime
+              ? prev.minesweeper.timeLimit
+              : timeLimit,
+            mineRatio,
+          },
+        }));
+      });
     }
   }, [serverSelectedGame, serverGameConfig]);
 

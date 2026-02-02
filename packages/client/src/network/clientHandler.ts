@@ -6,6 +6,7 @@ import {
   type GameConfigUpdatePacket,
 } from '../../../common/src/packets.ts';
 import { GameType } from '../../../common/src/config.ts';
+import type { PlayerData } from '../../../common/src/common-type.ts';
 import { useGameStore } from '../store/gameStore';
 import { sfxManager } from '../audio/sfx-manager.ts';
 import { bgmManager } from '../audio/bgm-manager.ts';
@@ -74,8 +75,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
       const store = useGameStore.getState();
       // scoreboard 배열의 인덱스가 플레이어 순서와 일치해야 함. 게임 중엔 안 바뀜?
       // todo 이거 검증 필요함.
-      store.setPlayers((prev) =>
-        prev.map((player, index) => ({
+      store.setPlayers((prev: PlayerData[]) =>
+        prev.map((player: PlayerData, index: number) => ({
           ...player,
           reportCard: packet.scoreboard[index] ?? player.reportCard,
         })),
@@ -142,6 +143,18 @@ export const handleServerPacket = (packet: ServerPacket) => {
       // 사과 제거 이벤트를 큐에 추가 (AppleGameManager에서 처리)
       // 로딩 중에 도착한 이벤트도 누적되어 게임 초기화 시 처리됨
       store.addDropCellEvent({ winnerIndex, indices, totalScore });
+
+      // winnerIndex에 해당하는 플레이어의 점수를 totalScore로 업데이트 (diff 방식)
+      store.setPlayers((prev: PlayerData[]) =>
+        prev.map((player: PlayerData, index: number) =>
+          index === winnerIndex
+            ? {
+                ...player,
+                reportCard: { ...player.reportCard, score: totalScore },
+              }
+            : player,
+        ),
+      );
 
       console.log(
         'DROP_CELL_INDEX packet received:',

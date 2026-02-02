@@ -105,6 +105,18 @@ export const handleServerPacket = (packet: ServerPacket) => {
       store.setGameStarted(true);
       // 게임 세션 ID 증가로 게임 컨테이너 재마운트 트리거
       store.incrementGameSession();
+      // 게임 타입에 맞는 BGM 로드 (방장/비방장 모두 여기서 처리)
+      switch (packet.selectedGameType) {
+        case GameType.APPLE_GAME:
+          bgmManager.loadBGM('appleGame');
+          break;
+        case GameType.FLAPPY_BIRD:
+          bgmManager.loadBGM('flappyBird');
+          break;
+        case GameType.MINESWEEPER:
+          bgmManager.loadBGM('minesweeper');
+          break;
+      }
       console.log('READY_SCENE packet received', packet);
       break;
     }

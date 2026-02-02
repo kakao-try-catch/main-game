@@ -225,22 +225,36 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
           <div className="nes-container is-rounded player-section">
             <h2 className="section-title">플레이어</h2>
             <div className="player-list">
-              {players.map((player) => (
-                <div
-                  key={player.id}
-                  className="player-item"
-                  style={{ borderColor: player.color }}
-                >
+              {players.map((player) => {
+                const isMe = player.id === currentPlayer.id;
+                return (
                   <div
-                    className="player-color-indicator"
-                    style={{ backgroundColor: player.color }}
-                  />
-                  <span className="player-name">{player.name}</span>
-                  {player.isHost && (
-                    <span className="player-host-badge">방장</span>
-                  )}
-                </div>
-              ))}
+                    key={player.id}
+                    className={`player-item ${isMe ? 'is-me' : ''}`}
+                    style={{
+                      borderColor: player.color,
+                      boxShadow: isMe ? `0 0 0 3px ${player.color}` : undefined,
+                    }}
+                  >
+                    <div
+                      className="player-color-indicator"
+                      style={{ backgroundColor: player.color }}
+                    />
+                    <span className="player-name">{player.name}</span>
+                    {isMe && (
+                      <span
+                        className="player-me-badge"
+                        style={{ backgroundColor: player.color }}
+                      >
+                        나
+                      </span>
+                    )}
+                    {player.isHost && (
+                      <span className="player-host-badge">방장</span>
+                    )}
+                  </div>
+                );
+              })}
               {emptySlots.map((_, index) => (
                 <div key={`empty-${index}`} className="player-item empty">
                   <div className="player-color-indicator empty" />

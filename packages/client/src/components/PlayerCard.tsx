@@ -8,7 +8,7 @@ interface PlayerCardProps {
   spriteSrc?: string;
   spriteAlt?: string;
   showScore?: boolean;
-  extraContent?: React.ReactNode;
+  isMe?: boolean;
 }
 
 export const getNameFontSize = (nameLength: number): string => {
@@ -24,9 +24,9 @@ export default function PlayerCard({
   spriteSrc,
   spriteAlt,
   showScore = true,
-  extraContent,
+  isMe = false,
 }: PlayerCardProps) {
-  const cardHeight = 80;
+  const cardHeight = spriteSrc ? 110 : 80;
   const displayScore = showScore;
   const safeScore = typeof score === 'number' ? score : 0;
 
@@ -36,10 +36,11 @@ export default function PlayerCard({
         className="nes-container is-centered"
         style={{
           ...contentLayout,
-          padding: '12px 8px 4px',
+          padding: '4px 8px',
           minHeight: `${cardHeight}px`,
           height: `${cardHeight}px`,
           backgroundColor: '#ffffff',
+          boxShadow: isMe ? `0 0 0 4px ${color}` : undefined,
         }}
       >
         {spriteSrc && (
@@ -54,40 +55,19 @@ export default function PlayerCard({
             style={{
               ...nameStyle,
               color: color,
-              paddingTop: '2px',
-              fontSize: getNameFontSize(name.length),
+              fontSize: getNameFontSize(isMe ? name.length + 4 : name.length),
             }}
           >
             {name}
+            {isMe && (
+              <span style={{ color: color, marginLeft: '4px' }}>(나)</span>
+            )}
           </span>
         </div>
-        {(extraContent || displayScore) && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-            }}
-          >
-            <div style={{ flex: 1 }} />
-            {displayScore && (
-              <span style={{ color: '#212529', fontSize: '28px' }}>
-                {safeScore.toLocaleString()}
-              </span>
-            )}
-            <div
-              style={{
-                flex: 1,
-                display: 'flex',
-                justifyContent: 'flex-end',
-                position: 'relative',
-                top: '-2px',
-              }}
-            >
-              {extraContent}
-            </div>
-          </div>
+        {displayScore && (
+          <span style={{ color: '#212529', fontSize: '28px' }}>
+            {safeScore.toLocaleString()}
+          </span>
         )}
       </div>
     </div>

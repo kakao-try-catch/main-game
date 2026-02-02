@@ -44,7 +44,7 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
   const collidedPlayer = players?.find(
     (p) => p.playerIndex === Number(collidedPlayerId),
   );
-  const playerName = collidedPlayer?.name || '';
+  const playerName = collidedPlayer?.playerName || '';
   const playerColor = collidedPlayer?.color || '#333';
 
   const collisionType =

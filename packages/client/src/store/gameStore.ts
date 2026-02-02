@@ -70,6 +70,10 @@ interface GameState {
   isGameStarted: boolean;
   setGameStarted: (started: boolean) => void;
 
+  // 게임 준비 완료 여부 (Phaser 게임 인스턴스 생성 완료)
+  gameReady: boolean;
+  setGameReady: (ready: boolean) => void;
+
   // 사과 제거 이벤트 큐 (DROP_CELL_INDEX) - 로딩 중 도착한 이벤트도 누적
   dropCellEventQueue: DropCellEvent[];
   addDropCellEvent: (event: DropCellEvent) => void;
@@ -142,6 +146,7 @@ export const useGameStore = create<GameState>()(
     gameTime: null,
     serverStartTime: null,
     isGameStarted: false,
+    gameReady: false,
     dropCellEventQueue: [],
     otherPlayerDrags: new Map<number, DragAreaData>(),
     gameResults: null,
@@ -169,6 +174,7 @@ export const useGameStore = create<GameState>()(
     setGameTime: (time: number) => set({ gameTime: time }),
     setServerStartTime: (time: number) => set({ serverStartTime: time }),
     setGameStarted: (started: boolean) => set({ isGameStarted: started }),
+    setGameReady: (ready: boolean) => set({ gameReady: ready }),
     addDropCellEvent: (event: DropCellEvent) =>
       set((state) => ({
         dropCellEventQueue: [...state.dropCellEventQueue, event],

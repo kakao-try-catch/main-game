@@ -116,6 +116,9 @@ export const handleServerPacket = (packet: ServerPacket) => {
       }
       store.setScreen('game');
       store.setGameStarted(true);
+      // 리플레이 시 BGM 재생 트리거를 위해 gameReady를 먼저 false로 초기화
+      // (GameContainer의 onGameReady에서 다시 true로 설정됨)
+      store.setGameReady(false);
       // 게임 세션 ID 증가로 게임 컨테이너 재마운트 트리거
       store.incrementGameSession();
       // 게임 타입에 맞는 BGM 로드 (방장/비방장 모두 여기서 처리)

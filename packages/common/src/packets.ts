@@ -1,10 +1,12 @@
 import { type GameConfig, GameType } from './config';
-import {
+import type {
   FlappyBirdData,
   FlappyPipeData,
   PlayerData,
   ReportCard,
 } from './common-type';
+
+export type { PlayerData } from './common-type';
 
 // ========== SYSTEM PACKETS (공용) ==========
 export enum SystemPacketType {

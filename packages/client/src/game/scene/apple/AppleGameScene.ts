@@ -3,7 +3,7 @@ import AppleGameManager from './AppleGameManager';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
 import type { PlayerData } from '../../types/common';
 import { useGameStore } from '../../../store/gameStore';
-import { resolveAppleGameConfig } from '../../../../../common/src/config';
+import type { AppleGameRenderConfig } from '../../../../../common/src/config';
 
 // You can write more code here
 
@@ -188,26 +188,25 @@ export default class AppleGameScene extends Phaser.Scene {
         console.log('📩 updatePlayers 이벤트 수신:', data);
 
         // gameStore.gameConfig에서 렌더링 설정 가져오기
-        const gameConfig = useGameStore.getState().gameConfig;
-        if (gameConfig) {
-          const renderConfig = resolveAppleGameConfig(gameConfig);
-
+        // gameConfig는 이미 AppleGameRenderConfig 타입임
+        const gameConfig = useGameStore.getState().gameConfig as AppleGameRenderConfig | null;
+        if (gameConfig && 'gridCols' in gameConfig && 'gridRows' in gameConfig) {
           // 그리드 크기에 맞춰 레이아웃 재계산
           this.calculateGridConfig(
-            renderConfig.gridCols,
-            renderConfig.gridRows,
+            gameConfig.gridCols,
+            gameConfig.gridRows,
           );
 
           // AppleGameManager 설정 업데이트
           this.gameManager.updateGameConfig({
-            ...renderConfig,
+            ...gameConfig,
             baseX: this._appleGridConfig.baseX,
             baseY: this._appleGridConfig.baseY,
             spacingX: this._appleGridConfig.spacingX,
             spacingY: this._appleGridConfig.spacingY,
           });
 
-          console.log('🎮 gameConfig 적용:', gameConfig, '→', renderConfig);
+          console.log('🎮 gameConfig 적용:', gameConfig);
         }
 
         // 플레이어 데이터 저장 (멀티플레이에서 SET_FIELD 대기용)

@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
-import type { PlayerResultData } from '../../types/common';
+import type { PlayerResultData, PlayerData } from '../../types/common';
 import { useGameStore, isPlayerHost } from '../../../store/gameStore';
-import type { PlayerData } from '../../../../../common/src/common-type';
 
 // crown.svg 내용을 직접 컴포넌트로 정의 (fill 색상 props로 제어, style prop 허용)
 type CrownSvgProps = { fill: string; style?: React.CSSProperties };

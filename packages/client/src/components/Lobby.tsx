@@ -11,12 +11,11 @@ import type {
   PipeSpacingPreset,
   PipeSpeedPreset,
   RopeLengthPreset,
-} from '../game/types/FlappyBirdGamePreset';
+} from '../../../common/src/config';
 import type {
   LobbyPlayer,
   Game,
   GameSettings,
-  LobbyProps,
 } from '../game/types/common';
 import type {
   MineSweeperGamePreset,
@@ -35,7 +34,7 @@ import {
 } from '../../../common/src/config.ts';
 import type { AppleGameRenderConfig } from '../../../common/src/config.ts';
 import { socketManager } from '../network/socket';
-import { type PlayerData } from '../../../common/src/packets';
+import type { PlayerData } from '../../../common/src/common-type';
 
 export interface LobbyProps {
   players: PlayerData[];

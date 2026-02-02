@@ -1,0 +1,11 @@
+{
+  "framework": null,
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install",
+  "rewrites": [
+    { "source": "/invite/:roomId", "destination": "/index.html" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ],
+  "public": true
+}

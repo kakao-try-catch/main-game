@@ -175,9 +175,9 @@ export default class MineSweeperScene extends Phaser.Scene {
     const timerBarMarginBottom = 50 * ratio;
     const timerBarCanvasHeight =
       canvasHeight - timerBarMarginTop - timerBarMarginBottom;
-    const timerBarWidth = 22 * ratio;
-    const timerBarMarginRight = 30 * ratio;
-    const timerBarX = canvasWidth - timerBarMarginRight - timerBarWidth / 2;
+    // 타이머를 오른쪽 3% 영역의 중앙에 배치
+    const timerAreaWidth = canvasWidth * 0.03;
+    const timerBarX = canvasWidth - timerAreaWidth / 2;
     const timerBarY = timerBarMarginTop + timerBarCanvasHeight;
 
     this.timerPrefab = new TimerPrefab(

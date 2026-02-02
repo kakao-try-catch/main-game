@@ -708,9 +708,24 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                                         : DIFFICULTY_COLORS.hard,
                                 }}
                               >
-                                <option value="large" style={{ color: DIFFICULTY_COLORS.easy }}>큼 (60x30)</option>
-                                <option value="medium" style={{ color: DIFFICULTY_COLORS.normal }}>보통 (40x20)</option>
-                                <option value="small" style={{ color: DIFFICULTY_COLORS.hard }}>작음 (20x10)</option>
+                                <option
+                                  value="large"
+                                  style={{ color: DIFFICULTY_COLORS.easy }}
+                                >
+                                  큼 (60x36)
+                                </option>
+                                <option
+                                  value="medium"
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
+                                  보통 (45x27)
+                                </option>
+                                <option
+                                  value="small"
+                                  style={{ color: DIFFICULTY_COLORS.hard }}
+                                >
+                                  작음 (30x18)
+                                </option>
                               </select>
                             </div>
                           </div>

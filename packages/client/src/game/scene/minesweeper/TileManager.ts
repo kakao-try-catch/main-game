@@ -90,8 +90,8 @@ export default class TileManager {
   private calculateTileSize(): void {
     const ratio = window.__GAME_RATIO || 1;
 
-    // 타이머를 위한 공간 확보 (오른쪽에 80px 여유 공간)
-    const timerReservedSpace = 40 * ratio;
+    // 타이머를 위한 공간 확보 (오른쪽 3%를 타이머 영역으로 예약)
+    const timerReservedSpace = GAME_WIDTH * ratio * 0.03;
     const availableWidth = GAME_WIDTH * ratio - timerReservedSpace;
     const availableHeight = GAME_HEIGHT * ratio;
 

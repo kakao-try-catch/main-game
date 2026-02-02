@@ -281,9 +281,17 @@ export class GameSession {
 
   // ========== PACKET ROUTING ==========
   public handleGamePacket(socket: Socket, packet: any): void {
-    if (!this.games || this.status !== 'playing') return;
+    if (!this.games || this.status !== 'playing') {
+      console.log(
+        `[GameSession] handleGamePacket 무시됨 - games: ${!!this.games}, status: ${this.status}`,
+      );
+      return;
+    }
 
     const playerIndex = this.getIndex(socket.id);
+    console.log(
+      `[GameSession] handleGamePacket 전달 - type: ${packet.type}, playerIndex: ${playerIndex}`,
+    );
     this.games.handlePacket(socket, playerIndex, packet);
   }
 

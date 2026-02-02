@@ -75,10 +75,16 @@ export function handleClientPacket(
     }
 
     const roomId = playerRooms.get(socket.id);
-    if (!roomId) return;
+    if (!roomId) {
+      console.log(`[Server] roomId 없음 - socket.id: ${socket.id}`);
+      return;
+    }
 
     const session = sessions.get(roomId);
-    if (!session) return;
+    if (!session) {
+      console.log(`[Server] session 없음 - roomId: ${roomId}`);
+      return;
+    }
 
     // System 패킷 처리
     switch (packet.type) {
@@ -199,6 +205,9 @@ export function handleClientPacket(
     }
 
     if (packet.type.startsWith('MS_')) {
+      console.log(
+        `[Server] MS_ 패킷 라우팅 - roomId: ${roomId}, session status: ${session.status}`,
+      );
       session.handleGamePacket(socket, packet);
       return;
     }

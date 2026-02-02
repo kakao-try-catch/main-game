@@ -24,6 +24,7 @@ import type {
 } from './game/types/common';
 import type { PlayerId, GameOverEvent } from './game/types/flappybird.types';
 import { CONSTANTS } from './game/types/common';
+import { GAME_DESCRIPTIONS } from './constants/gameDescriptions';
 import { SystemPacketType, type ServerPacket } from '../../common/src/packets';
 import flappyBird1 from './assets/images/flappybird_1.png';
 import flappyBird2 from './assets/images/flappybird_2.png';
@@ -409,9 +410,9 @@ function AppContent() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          marginTop: '8px',
-          marginBottom: '8px',
-          flexShrink: 0,
+          justifyContent: 'center',
+          flex: 1,
+          minHeight: 0,
         }}
       >
         {/* 게임 설명 */}
@@ -495,18 +496,17 @@ function AppContent() {
         </div>
       </div>
 
-      {/* 하단 영역 */}
+      {/* 하단 영역 - 화면 하단에 고정 */}
       <main
         className="game-container"
         style={{
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           width: '100%',
-          flex: 4,
+          flexShrink: 0,
           margin: 0,
           padding: 0,
-          minHeight: 0,
           maxHeight: '80vh',
           overflow: 'hidden',
         }}
@@ -560,14 +560,6 @@ const playerListStyle: React.CSSProperties = {
   justifyContent: 'center',
 };
 
-const GAME_DESCRIPTIONS: Record<string, string> = {
-  apple:
-    '드래그로 인접한 숫자 타일을 연결해서 합이 10이 되도록 만들어 점수를 획득하세요!',
-  flappy:
-    '스페이스바로 새를 점프시켜 파이프 장애물을 피하세요! 모든 팀원이 연결되어 함께 움직입니다.',
-  minesweeper:
-    '좌클릭으로 타일을 열어 숫자 힌트를 확인하고, 우클릭으로 지뢰 위치에 깃발을 꽂아 점수를 획득하세요!',
-};
 
 export default function App() {
   return (

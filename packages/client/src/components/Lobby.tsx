@@ -26,6 +26,7 @@ import type {
 import { CONSTANTS } from '../game/types/common';
 import SoundSetting from './SoundSetting';
 import { useSFXContext } from '../contexts/SFXContext';
+import { GAME_DESCRIPTIONS } from '../constants/gameDescriptions';
 
 const {
   PLAYER_COLORS,
@@ -285,7 +286,14 @@ function Lobby({ currentPlayer, onGameStart }: LobbyProps) {
                   >
                     <div className="game-thumbnail">{game.thumbnail}</div>
                     <div className="game-info">
-                      <h3 className="game-name">{game.name}</h3>
+                      <div className="game-name-row">
+                        <h3 className="game-name">{game.name}</h3>
+                        {GAME_DESCRIPTIONS[game.id] && (
+                          <span className="game-description">
+                            {GAME_DESCRIPTIONS[game.id]}
+                          </span>
+                        )}
+                      </div>
                       {game.id === 'apple' ? (
                         <div
                           className="settings-edit"

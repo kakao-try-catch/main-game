@@ -321,13 +321,18 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       // maxNumber → appleRange 역변환
       const appleRange: '1-9' | '1-5' = cfg.maxNumber === 5 ? '1-5' : '1-9';
 
+      // 입력 중이면 timeLimit은 덮어쓰지 않음
+      const isEditingAppleTime =
+        localTimeInput['apple'] !== undefined &&
+        localTimeInput['apple'] !== '';
+
       setTimeout(() => {
         setGameSettings((prev) => ({
           ...prev,
           apple: {
             ...prev.apple,
             mapSize,
-            timeLimit: cfg.totalTime,
+            timeLimit: isEditingAppleTime ? prev.apple.timeLimit : cfg.totalTime,
             appleRange,
             includeZero: cfg.includeZero,
           },

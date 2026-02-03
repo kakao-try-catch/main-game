@@ -484,6 +484,9 @@ function AppContent() {
             players={players}
             flappyPreset={flappyPreset}
             minesweeperPreset={minesweeperPreset}
+            onFlappyJump={handleFlappyJump}
+            onFlappyStrike={handleFlappyStrike}
+            onFlappyScore={handleFlappyScore}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
             onFlagCountUpdate={handleFlagCountUpdate}
             onMinesweeperTileReveal={handleMinesweeperTileReveal}

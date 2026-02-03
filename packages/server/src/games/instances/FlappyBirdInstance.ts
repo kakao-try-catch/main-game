@@ -10,6 +10,7 @@ import {
   FlappyScoreUpdatePacket,
   FlappyGameOverPacket,
   FlappyWorldStatePacket,
+  FlappySyncStatePacket,
 } from '../../../../common/src/packets';
 import {
   FlappyPipeData,
@@ -52,6 +53,10 @@ export class FlappyBirdInstance implements GameInstance {
   private isRunning: boolean = false;
   private isGameOverState: boolean = false;
   private physicsTick: number = 0;
+  private lastGameOverData: {
+    reason: 'pipe_collision' | 'ground_collision';
+    collidedPlayerIndex: number;
+  } | null = null;
 
   // 파이프 관리
   private pipes: InternalPipeData[] = [];
@@ -103,6 +108,7 @@ export class FlappyBirdInstance implements GameInstance {
     this.birds = [];
     this.score = 0;
     this.isGameOverState = false;
+    this.lastGameOverData = null;
     this.pipes = [];
     this.nextPipeId = 0;
     this.lastFlapTime.clear();
@@ -182,7 +188,62 @@ export class FlappyBirdInstance implements GameInstance {
       case FlappyBirdPacketType.FLAPPY_JUMP:
         this.handleJump(playerIndex);
         break;
+      case FlappyBirdPacketType.FLAPPY_REQUEST_SYNC:
+        this.handleSyncRequest(socket);
+        break;
     }
+  }
+
+  /**
+   * 클라이언트 씬 로딩 완료 후 동기화 요청 처리
+   * 현재 게임 상태를 해당 클라이언트에게 전송
+   */
+  private handleSyncRequest(socket: Socket): void {
+    // 현재 새 위치 정보
+    const birds: FlappyBirdData[] = this.birds.map((bird) => ({
+      x: bird.position.x,
+      y: bird.position.y,
+      vx: bird.velocity.x,
+      vy: bird.velocity.y,
+      angle: bird.angle * (180 / Math.PI),
+    }));
+
+    // 현재 파이프 정보
+    const pipes: FlappyPipeData[] = this.pipes.map((pipe) => ({
+      id: pipe.id,
+      x: pipe.x,
+      gapY: pipe.gapY,
+      width: pipe.width,
+      gap: pipe.gap,
+    }));
+
+    // 카메라 X 계산
+    let cameraX = 250;
+    if (this.birds.length > 0) {
+      let totalX = 0;
+      for (const bird of this.birds) {
+        totalX += bird.position.x;
+      }
+      cameraX = totalX / this.birds.length;
+    }
+
+    const syncPacket: FlappySyncStatePacket = {
+      type: FlappyBirdPacketType.FLAPPY_SYNC_STATE,
+      tick: this.physicsTick,
+      birds,
+      pipes,
+      cameraX,
+      score: this.score,
+      isGameOver: this.isGameOverState,
+      gameOverData: this.lastGameOverData ?? undefined,
+    };
+
+    // 요청한 클라이언트에게만 전송
+    socket.emit('packet', syncPacket);
+
+    console.log(
+      `[FlappyBirdInstance] 동기화 응답 전송 (gameOver: ${this.isGameOverState}, score: ${this.score})`,
+    );
   }
 
   // ========== 물리 생성 메서드 ==========
@@ -370,7 +431,7 @@ export class FlappyBirdInstance implements GameInstance {
       this.checkCollisions();
     }
 
-    // 6. 네트워크 브로드캐스트 (20Hz)
+    // 6. 네트워크 브로드캐스트 (60Hz)
     if (this.physicsTick % (this.PHYSICS_FPS / this.NETWORK_TICK_RATE) === 0) {
       this.broadcastWorldState();
     }
@@ -531,6 +592,24 @@ export class FlappyBirdInstance implements GameInstance {
 
     this.isGameOverState = true;
 
+    // 게임 오버 데이터 저장 (동기화 요청 시 사용)
+    this.lastGameOverData = { reason, collidedPlayerIndex: playerIndex };
+
+    // ❗ 중요: stopGame() 호출 전에 birds 데이터를 먼저 수집 (stopGame이 destroy를 호출하면 this.birds가 초기화됨)
+    const birds: FlappyBirdData[] = this.birds.map((bird) => ({
+      x: bird.position.x,
+      y: bird.position.y,
+      vx: bird.velocity.x,
+      vy: bird.velocity.y,
+      angle: bird.angle * (180 / Math.PI),
+    }));
+
+    // 카메라 X 위치 계산 (새들의 평균 X 위치 기준)
+    const avgX =
+      this.birds.reduce((sum, bird) => sum + bird.position.x, 0) /
+      this.birds.length;
+    const cameraX = avgX - 300; // 화면 너비의 1/4 지점에 새가 위치하도록
+
     // 패킷을 먼저 전송한 후 게임을 정지해야 함
     // (stopGame에서 destroy가 호출되어 this.score가 0으로 초기화되기 때문)
     const gameOverPacket: FlappyGameOverPacket = {
@@ -538,11 +617,16 @@ export class FlappyBirdInstance implements GameInstance {
       reason,
       finalScore: this.score,
       collidedPlayerIndex: playerIndex,
+      birds,
+      cameraX,
     };
+
+    // 패킷 전송 후 게임 정지 (이 순서가 중요!)
     this.session.broadcastPacket(gameOverPacket);
+    this.session.stopGame();
 
     console.log(
-      `[FlappyBirdInstance] 게임 오버: ${reason} (Player ${playerIndex}), 점수: ${this.score}`,
+      `[FlappyBirdInstance] 게임 오버: ${reason} (Player ${playerIndex}), birds: ${birds.length}, cameraX: ${cameraX}`,
     );
 
     this.session.stopGame();

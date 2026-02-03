@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter ./packages/client dev",
-    "build": "pnpm --filter ./packages/common build && pnpm --filter ./packages/client build && cp -r packages/client/dist .",
+    "build": "pnpm --filter ./packages/common build && pnpm --filter ./packages/client build && node -e \"const fs = require('fs'); if (fs.existsSync('dist')) fs.rmSync('dist', { recursive: true, force: true }); fs.cpSync('packages/client/dist', 'dist', { recursive: true });\"",
     "preview": "pnpm --filter ./packages/client preview",
     "lint": "pnpm --filter ./packages/client lint",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",

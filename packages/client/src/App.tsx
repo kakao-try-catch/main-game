@@ -52,6 +52,7 @@ function AppContent() {
   //   'landing' | 'lobby' | 'game' | 'flappybird'
   // >('landing');
   const screen = useGameStore((s) => s.screen);
+  const setConnectionError = useGameStore((s) => s.setConnectionError);
 
   const gameReady = useGameStore((s) => s.gameReady);
   const setGameReady = useGameStore((s) => s.setGameReady);
@@ -287,16 +288,22 @@ function AppContent() {
       }
     }
 
-    // 소켓이 끊어진 경우 재연결 후 패킷 전송
+    // 소켓이 끊어진 경우 에러 메시지 표시 후 재연결 시도
     if (!socketManager.isConnected()) {
       console.log(
         '[App] Socket disconnected, reconnecting before JOIN_ROOM...',
       );
+
+      // 즉시 에러 메시지 표시
+      setConnectionError({ message: '서버가 응답하지 않습니다.' });
+
+      // 백그라운드에서 재연결 시도
       socketManager.reconnect();
-      // 연결 완료 후 패킷 전송을 위해 약간의 지연 필요
       const socket = socketManager.getSocket();
       if (socket) {
-        socket.once('connect', () => {
+        const onConnect = () => {
+          // 연결 성공 시 에러 메시지 제거하고 JOIN_ROOM 전송
+          setConnectionError(null);
           const joinRoomPacket: JoinRoomPacket = {
             type: SystemPacketType.JOIN_ROOM,
             roomId: roomId,
@@ -304,9 +311,11 @@ function AppContent() {
           };
           socketManager.send(joinRoomPacket);
           console.log('JOIN_ROOM sent after reconnect: ', joinRoomPacket);
-        });
-        return;
+        };
+
+        socket.once('connect', onConnect);
       }
+      return;
     }
 
     const joinRoomPacket: JoinRoomPacket = {

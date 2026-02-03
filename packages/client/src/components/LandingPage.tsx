@@ -95,17 +95,7 @@ function LandingPage({ onStart }: LandingPageProps) {
               <div className="tooltip">닉네임을 입력하세요</div>
             )}
             {connectionError && (
-              <div
-                className="length-tooltip"
-                style={{
-                  bottom: '100%',
-                  top: 'auto',
-                  marginBottom: '10px',
-                  marginTop: 0,
-                }}
-              >
-                {connectionError.message}
-              </div>
+              <div className="error-tooltip">{connectionError.message}</div>
             )}
           </div>
         </form>

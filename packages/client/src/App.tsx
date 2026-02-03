@@ -40,6 +40,14 @@ const FLAPPY_BIRD_SPRITES = [
   flappyBird4,
 ];
 
+/** 플레이어 색상 → 새 스프라이트 인덱스 매핑 */
+const COLOR_TO_SPRITE_INDEX: Record<string, number> = {
+  '#209cee': 0, // 파랑
+  '#e76e55': 1, // 빨강
+  '#92cc41': 2, // 초록
+  '#f2d024': 3, // 노랑
+};
+
 function AppContent() {
   const testPlayerCount = 4;
   const { pause, reset } = useBGMContext();
@@ -436,7 +444,9 @@ function AppContent() {
                   name={player.playerName}
                   color={player.color}
                   spriteSrc={
-                    FLAPPY_BIRD_SPRITES[index % FLAPPY_BIRD_SPRITES.length]
+                    FLAPPY_BIRD_SPRITES[
+                      COLOR_TO_SPRITE_INDEX[player.color] ?? index
+                    ]
                   }
                   showScore={false}
                 />

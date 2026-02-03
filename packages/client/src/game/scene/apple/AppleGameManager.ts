@@ -465,11 +465,19 @@ export default class AppleGameManager {
     // 드래그 선택 비활성화
     this.detachDrag?.();
 
-    // 멀티플레이 리소스 정리
-    this.dragAreaSender?.destroy();
-    this.dragAreaSender = undefined;
+    // 1. 먼저 store의 otherPlayerDrags 클리어 (렌더링 트리거 방지)
+    const store = useGameStore.getState();
+    store.otherPlayerDrags.forEach((_, playerIndex) => {
+      store.removeOtherPlayerDrag(playerIndex);
+    });
+
+    // 2. 그 다음 렌더러 정리
     this.otherPlayerDragRenderer?.destroy();
     this.otherPlayerDragRenderer = undefined;
+
+    // 3. 드래그 영역 전송기 정리
+    this.dragAreaSender?.destroy();
+    this.dragAreaSender = undefined;
   }
 
   /** 현재 플레이어 인덱스 업데이트 */

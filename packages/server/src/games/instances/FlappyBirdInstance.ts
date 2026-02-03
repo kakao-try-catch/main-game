@@ -76,7 +76,7 @@ export class FlappyBirdInstance implements GameInstance {
   // 루프 관리
   private updateInterval: NodeJS.Timeout | null = null;
   private readonly PHYSICS_FPS = 60;
-  private readonly NETWORK_TICK_RATE = 20;
+  private readonly NETWORK_TICK_RATE = 60;
 
   private session: GameSession;
 

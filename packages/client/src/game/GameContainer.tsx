@@ -50,6 +50,9 @@ const GAME_CONFIGS: Record<GameType, ConfigDetails> = {
 interface GameContainerProps {
   gameType: GameType;
   onGameReady?: (game: Phaser.Game) => void;
+  onFlappyJump?: () => void;
+  onFlappyStrike?: () => void;
+  onFlappyScore?: () => void;
   onMinesweeperScoreUpdate?: (data: {
     playerIndex: number;
     scoreChange: number;
@@ -69,6 +72,9 @@ interface GameContainerProps {
 export const GameContainer: React.FC<GameContainerProps> = ({
   gameType,
   onGameReady,
+  onFlappyJump,
+  onFlappyStrike,
+  onFlappyScore,
   onMinesweeperScoreUpdate,
   onFlagCountUpdate,
   onMinesweeperTileReveal,
@@ -198,6 +204,21 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       if (gameType === GameType.APPLE_GAME) {
         // todo
       } else if (gameType === GameType.FLAPPY_BIRD) {
+        if (onFlappyJump) {
+          targetScene.events.on('flappyJump', () => {
+            onFlappyJump();
+          });
+        }
+        if (onFlappyStrike) {
+          targetScene.events.on('flappyStrike', () => {
+            onFlappyStrike();
+          });
+        }
+        if (onFlappyScore) {
+          targetScene.events.on('flappyScore', () => {
+            onFlappyScore();
+          });
+        }
         // 플래피버드 게임 종료 이벤트
         // todo 해결해야 함. 다 클라쪽으로 그거 됨.
         // if (onGameEnd) {
@@ -257,7 +278,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         //     },
         //   );
         // }
-      } else if (gameType === 'minesweeper') {
         // 지뢰찾기 타일 열기 사운드 이벤트
         if (onMinesweeperTileReveal) {
           targetScene.events.on('minesweeperTileReveal', () => {

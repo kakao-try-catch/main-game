@@ -1039,7 +1039,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       if (this.groundTile) {
         this.groundTile.tilePositionX = this.cameras.main.scrollX;
       }
-      // 배경은 scrollFactor(0)으로 카메라를 따라다니므로 별도 처리 불필요
+      // 배경은 TileSprite이므로 tilePositionX로 천천히 스크롤
+      if (this.background) {
+        this.background.tilePositionX = this.cameras.main.scrollX * 0.2;
+      }
     }
 
     // 4. 밧줄 그리기
@@ -1275,8 +1278,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       console.log('[FlappyBirdsScene] Store 구독 해제 완료');
     }
 
-    // FlappyBird 상태 초기화
-    useGameStore.getState().resetFlappyState();
+    // 게임 오버 상태가 아닐 때만 FlappyBird 상태 초기화
+    // (게임 오버 시에는 결과 화면에서 점수를 표시해야 하므로 상태 유지)
+    if (!this.isGameOver) {
+      useGameStore.getState().resetFlappyState();
+    }
 
     // Mock 서버 코어 정리
     if (this.mockServerCore) {

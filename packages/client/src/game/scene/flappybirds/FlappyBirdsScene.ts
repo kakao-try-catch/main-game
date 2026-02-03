@@ -531,6 +531,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.ropes.forEach((rope) => rope.destroy());
     this.birdSprites = [];
     this.background?.destroy();
+    this.groundTile?.destroy();
     this.ropes = [];
     this.targetPositions = [];
     this.ropeMidPoints = []; // 밧줄 관성 데이터 초기화 (누행 방지)

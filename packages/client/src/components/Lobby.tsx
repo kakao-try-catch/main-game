@@ -1279,17 +1279,24 @@ function Lobby({ players, onGameStart }: LobbyProps) {
 
       {/* 하단: 버튼들 */}
       <div className="lobby-footer">
-        <button
-          className="nes-btn"
-          onClick={() => {
-            playSFX('buttonClick');
-            handleCopyLink();
-          }}
-          onMouseEnter={() => playSFX('buttonHover')}
-        >
-          <i className="nes-icon is-small link"></i>
-          초대 링크 복사
-        </button>
+        <div className="button-wrapper">
+          <button
+            className="nes-btn"
+            onClick={() => {
+              playSFX('buttonClick');
+              handleCopyLink();
+            }}
+            onMouseEnter={() => playSFX('buttonHover')}
+          >
+            <i className="nes-icon is-small link"></i>
+            초대 링크 복사
+          </button>
+          {isHost && players.length === 1 && (
+            <div className="button-tooltip invite-tooltip">
+              {'다른 사람을 초대하고 게임을 시작하세요'}
+            </div>
+          )}
+        </div>
         <div
           className="button-wrapper"
           onMouseEnter={() => {
@@ -1316,12 +1323,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
           )}
           {showButtonTooltip &&
             isHost &&
-            (players.length < 2 || !selectedGame) && (
-              <div className="button-tooltip">
-                {players.length < 2
-                  ? '최소 2명이 있어야 진행할 수 있습니다.'
-                  : '게임을 선택해주세요'}
-              </div>
+            players.length >= 2 &&
+            !selectedGame && (
+              <div className="button-tooltip">{'게임을 선택해주세요'}</div>
             )}
         </div>
       </div>

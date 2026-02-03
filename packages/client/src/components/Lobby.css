@@ -227,7 +227,7 @@
   font-weight: normal;
   color: #aaa;
   line-height: 1.4;
-  --description-highlight-color: #4CAF50;
+  --description-highlight-color: #4caf50;
 }
 
 .settings-edit {
@@ -453,6 +453,27 @@
   transform: translateX(-50%);
   border: 6px solid transparent;
   border-top-color: #212529;
+}
+
+.button-tooltip.invite-tooltip {
+  background-color: #209cee;
+  animation: invite-tooltip-pulse 2s ease-in-out infinite;
+}
+
+.button-tooltip.invite-tooltip::after {
+  border-top-color: #209cee;
+}
+
+@keyframes invite-tooltip-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateX(-50%) scale(1.02);
+  }
 }
 
 /* 툴팁 */

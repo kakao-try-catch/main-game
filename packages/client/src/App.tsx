@@ -454,7 +454,7 @@ function AppContent() {
                 extraContent={
                   <TintedFlagIcon color={player.color}>
                     <span style={{ color: '#212529', fontSize: '20px' }}>
-                      {flagCounts[String(index)] || 0}
+                      {flagCounts[player.id] || 0}
                     </span>
                   </TintedFlagIcon>
                 }

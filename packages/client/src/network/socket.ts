@@ -17,8 +17,13 @@ class SocketManager {
     // 기존 소켓이 있지만 연결이 끊어진 경우 정리
     if (this.socket && !this.socket.connected) {
       this.socket.removeAllListeners();
+      this.socket.io.removeAllListeners();
       this.socket = null;
     }
+
+    // 새 연결 시작 시 소켓 끊김 상태 리셋
+    const { setSocketDisconnected } = useGameStore.getState();
+    setSocketDisconnected(false);
 
     this.socket = io(url, {
       transports: ['websocket'], // 성능을 위해 웹소켓 강제
@@ -44,10 +49,20 @@ class SocketManager {
       // 서버 측 또는 네트워크 문제로 인한 연결 끊김 처리
       // 'io client disconnect'는 클라이언트가 명시적으로 끊은 경우이므로 제외
       if (reason !== 'io client disconnect') {
-        const { setScreen, setConnectionError } = useGameStore.getState();
-        setConnectionError({ message: '서버와의 연결이 끊겨 랜딩페이지로 돌아왔습니다.' });
+        const { setScreen, setConnectionError, setSocketDisconnected } =
+          useGameStore.getState();
+        setSocketDisconnected(true);
+        setConnectionError({
+          message: '서버와의 연결이 끊겨 랜딩페이지로 돌아왔습니다.',
+        });
         setScreen('landing');
       }
+    });
+
+    // 재연결 성공 시 상태 복원
+    this.socket.on('connect', () => {
+      const { setSocketDisconnected } = useGameStore.getState();
+      setSocketDisconnected(false);
     });
   }
 
@@ -76,6 +91,19 @@ class SocketManager {
 
   getSocket(): Socket | null {
     return this.socket;
+  }
+
+  // 소켓이 연결되어 있는지 확인
+  isConnected(): boolean {
+    return this.socket !== null && this.socket.connected;
+  }
+
+  // 소켓 재연결 (끊어진 경우에만)
+  reconnect(): void {
+    if (!this.isConnected()) {
+      console.log('[SocketManager] Reconnecting...');
+      this.connect(SERVER_URL);
+    }
   }
 }
 

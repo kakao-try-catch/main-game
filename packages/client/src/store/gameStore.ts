@@ -99,6 +99,10 @@ interface GameState {
   connectionError: { message: string } | null;
   setConnectionError: (err: { message: string } | null) => void;
 
+  // 소켓 연결 상태 (재연결 시도 모두 실패 후 true)
+  isSocketDisconnected: boolean;
+  setSocketDisconnected: (disconnected: boolean) => void;
+
   // FlappyBird 상태
   flappyBirds: FlappyBirdData[];
   flappyPipes: FlappyPipeData[];
@@ -156,6 +160,7 @@ export const useGameStore = create<GameState>()(
     gameResults: null,
     gameSessionId: 0,
     connectionError: null,
+    isSocketDisconnected: false,
 
     // 기존 액션
     setCount: (newCount: number) => set({ count: newCount }),
@@ -210,6 +215,8 @@ export const useGameStore = create<GameState>()(
         gameResults: null,
       }),
     setConnectionError: (err) => set({ connectionError: err }),
+    setSocketDisconnected: (disconnected) =>
+      set({ isSocketDisconnected: disconnected }),
 
     // FlappyBird 초기값
     flappyBirds: [],

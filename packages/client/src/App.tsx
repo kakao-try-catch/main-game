@@ -287,6 +287,28 @@ function AppContent() {
       }
     }
 
+    // 소켓이 끊어진 경우 재연결 후 패킷 전송
+    if (!socketManager.isConnected()) {
+      console.log(
+        '[App] Socket disconnected, reconnecting before JOIN_ROOM...',
+      );
+      socketManager.reconnect();
+      // 연결 완료 후 패킷 전송을 위해 약간의 지연 필요
+      const socket = socketManager.getSocket();
+      if (socket) {
+        socket.once('connect', () => {
+          const joinRoomPacket: JoinRoomPacket = {
+            type: SystemPacketType.JOIN_ROOM,
+            roomId: roomId,
+            playerName: inputNickname,
+          };
+          socketManager.send(joinRoomPacket);
+          console.log('JOIN_ROOM sent after reconnect: ', joinRoomPacket);
+        });
+        return;
+      }
+    }
+
     const joinRoomPacket: JoinRoomPacket = {
       type: SystemPacketType.JOIN_ROOM,
       roomId: roomId, // URL에서 추출한 roomId 또는 빈 문자열

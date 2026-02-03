@@ -3,7 +3,7 @@ import 'nes.css/css/nes.min.css';
 import { useSFXContext } from '../../../contexts/SFXContext';
 import type { PlayerResultData } from '../../types/common';
 import type { PlayerId } from '../../types/flappybird.types';
-import { isPlayerHost } from '../../../store/gameStore';
+import { isPlayerHost, useGameStore } from '../../../store/gameStore';
 
 export interface FlappyBirdResultProps {
   finalScore: number;
@@ -34,7 +34,11 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
   const [opacity, setOpacity] = useState(0);
   const [showReplayTooltip, setShowReplayTooltip] = useState(false);
   const [showLobbyTooltip, setShowLobbyTooltip] = useState(false);
+  const [showDisconnectTooltip, setShowDisconnectTooltip] = useState<
+    'replay' | 'lobby' | null
+  >(null);
   const isHost = isPlayerHost();
+  const isSocketDisconnected = useGameStore((s) => s.isSocketDisconnected);
 
   useEffect(() => {
     // 마운트 후 페이드인 시작
@@ -76,97 +80,127 @@ const FlappyBirdResult: React.FC<FlappyBirdResultProps> = ({
           transition: 'opacity 1.5s ease-in',
         }}
       >
-      <div
-        className="nes-container is-rounded"
-        style={{
-          ...getContainerStyle(ratio),
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      >
-        <h1 style={getTitleStyle(ratio)}>GAME OVER</h1>
+        <div
+          className="nes-container is-rounded"
+          style={{
+            ...getContainerStyle(ratio),
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <h1 style={getTitleStyle(ratio)}>GAME OVER</h1>
 
-        <div style={getContentStyle(ratio)}>
-          {collidedPlayerId ? (
-            <div style={getReasonStyle(ratio)}>
-              <span style={{ color: playerColor, fontWeight: 'bold' }}>
-                {playerName}
-              </span>{' '}
-              {collisionType}
-            </div>
-          ) : (
-            <div style={getReasonStyle(ratio)}>{collisionType}</div>
-          )}
-
-          <div style={getScoreLabelStyle(ratio)}>최종 점수</div>
-          <div style={getFinalScoreStyle(ratio)}>{finalScore}</div>
-        </div>
-
-        <div style={getButtonContainerStyle(ratio)}>
-          {/* REPLAY 버튼 */}
-          <div
-            style={{ position: 'relative', display: 'inline-block' }}
-            onMouseEnter={() => !isHost && setShowReplayTooltip(true)}
-            onMouseLeave={() => setShowReplayTooltip(false)}
-          >
-            <button
-              type="button"
-              className="nes-btn is-primary"
-              style={getButtonStyle(ratio)}
-              onClick={() => {
-                if (!isHost) return;
-                playSFX('buttonClick');
-                onReplay();
-              }}
-              onMouseEnter={() => {
-                if (isHost) playSFX('buttonHover');
-              }}
-              disabled={!isHost}
-            >
-              REPLAY
-            </button>
-            {showReplayTooltip && !isHost && (
-              <div style={getTooltipBoxStyle(ratio)}>
-                방장만 해당 작업을 수행할 수 있습니다.
-                <div style={getTooltipArrowStyle(ratio)} />
+          <div style={getContentStyle(ratio)}>
+            {collidedPlayerId ? (
+              <div style={getReasonStyle(ratio)}>
+                <span style={{ color: playerColor, fontWeight: 'bold' }}>
+                  {playerName}
+                </span>{' '}
+                {collisionType}
               </div>
+            ) : (
+              <div style={getReasonStyle(ratio)}>{collisionType}</div>
             )}
+
+            <div style={getScoreLabelStyle(ratio)}>최종 점수</div>
+            <div style={getFinalScoreStyle(ratio)}>{finalScore}</div>
           </div>
 
-          {/* LOBBY 버튼 */}
-          <div
-            style={{ position: 'relative', display: 'inline-block' }}
-            onMouseEnter={() => !isHost && setShowLobbyTooltip(true)}
-            onMouseLeave={() => setShowLobbyTooltip(false)}
-          >
-            <button
-              type="button"
-              className="nes-btn"
-              style={getButtonStyle(ratio)}
-              onClick={() => {
-                if (!isHost) return;
-                playSFX('buttonClick');
-                onLobby();
+          <div style={getButtonContainerStyle(ratio)}>
+            {/* REPLAY 버튼 */}
+            <div
+              style={{ position: 'relative', display: 'inline-block' }}
+              onMouseEnter={() =>
+                !isHost && !isSocketDisconnected && setShowReplayTooltip(true)
+              }
+              onMouseLeave={() => {
+                setShowReplayTooltip(false);
+                setShowDisconnectTooltip(null);
               }}
-              onMouseEnter={() => {
-                if (isHost) playSFX('buttonHover');
-              }}
-              disabled={!isHost}
             >
-              LOBBY
-            </button>
-            {showLobbyTooltip && !isHost && (
-              <div style={getTooltipBoxStyle(ratio)}>
-                방장만 해당 작업을 수행할 수 있습니다.
-                <div style={getTooltipArrowStyle(ratio)} />
-              </div>
-            )}
+              <button
+                type="button"
+                className="nes-btn is-primary"
+                style={getButtonStyle(ratio)}
+                onClick={() => {
+                  if (isSocketDisconnected) {
+                    setShowDisconnectTooltip('replay');
+                    return;
+                  }
+                  if (!isHost) return;
+                  playSFX('buttonClick');
+                  onReplay();
+                }}
+                onMouseEnter={() => {
+                  if (isHost && !isSocketDisconnected) playSFX('buttonHover');
+                }}
+                disabled={!isHost && !isSocketDisconnected}
+              >
+                REPLAY
+              </button>
+              {showReplayTooltip && !isHost && !isSocketDisconnected && (
+                <div style={getTooltipBoxStyle(ratio)}>
+                  방장만 해당 작업을 수행할 수 있습니다.
+                  <div style={getTooltipArrowStyle(ratio)} />
+                </div>
+              )}
+              {showDisconnectTooltip === 'replay' && (
+                <div style={getTooltipBoxStyle(ratio)}>
+                  서버와 연결이 끊겼어요. 연결을 위해서 재접속해주세요.
+                  <div style={getTooltipArrowStyle(ratio)} />
+                </div>
+              )}
+            </div>
+
+            {/* LOBBY 버튼 */}
+            <div
+              style={{ position: 'relative', display: 'inline-block' }}
+              onMouseEnter={() =>
+                !isHost && !isSocketDisconnected && setShowLobbyTooltip(true)
+              }
+              onMouseLeave={() => {
+                setShowLobbyTooltip(false);
+                setShowDisconnectTooltip(null);
+              }}
+            >
+              <button
+                type="button"
+                className="nes-btn"
+                style={getButtonStyle(ratio)}
+                onClick={() => {
+                  if (isSocketDisconnected) {
+                    setShowDisconnectTooltip('lobby');
+                    return;
+                  }
+                  if (!isHost) return;
+                  playSFX('buttonClick');
+                  onLobby();
+                }}
+                onMouseEnter={() => {
+                  if (isHost && !isSocketDisconnected) playSFX('buttonHover');
+                }}
+                disabled={!isHost && !isSocketDisconnected}
+              >
+                LOBBY
+              </button>
+              {showLobbyTooltip && !isHost && !isSocketDisconnected && (
+                <div style={getTooltipBoxStyle(ratio)}>
+                  방장만 해당 작업을 수행할 수 있습니다.
+                  <div style={getTooltipArrowStyle(ratio)} />
+                </div>
+              )}
+              {showDisconnectTooltip === 'lobby' && (
+                <div style={getTooltipBoxStyle(ratio)}>
+                  서버와 연결이 끊겼어요. 연결을 위해서 재접속해주세요.
+                  <div style={getTooltipArrowStyle(ratio)} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 };

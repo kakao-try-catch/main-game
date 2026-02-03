@@ -282,6 +282,12 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
   const [showReplayTooltip, setShowReplayTooltip] = useState(false);
   const [showLobbyTooltip, setShowLobbyTooltip] = useState(false);
 
+  const playerRanks = result.reduce<number[]>((ranks, player, idx) => {
+    if (idx === 0) return [1];
+    const prevScore = result[idx - 1].reportCard.score;
+    return [...ranks, player.reportCard.score === prevScore ? ranks[idx - 1] : idx + 1];
+  }, []);
+
   const playerSublines = renderPlayerSubline
     ? result.map((player) => renderPlayerSubline(player))
     : null;
@@ -319,8 +325,8 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
           <h1 style={styles.title()}>{title}</h1>
           <div style={styles.rankContainer()}>
             {result.map((player, idx) => {
-              const height = getRankHeight(idx + 1) * ratio;
-              const crown = getCrownProps(idx + 1);
+              const height = getRankHeight(playerRanks[idx]) * ratio;
+              const crown = getCrownProps(playerRanks[idx]);
               return (
                 <div
                   key={idx}

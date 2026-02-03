@@ -12,9 +12,9 @@ interface PlayerCardProps {
 }
 
 export const getNameFontSize = (nameLength: number): string => {
-  if (nameLength <= 4) return '28px';
-  if (nameLength <= 6) return '24px';
-  return '20px'; // 7-8자
+  if (nameLength <= 4) return '24px';
+  if (nameLength <= 6) return '20px';
+  return '18px'; // 7-8자
 };
 
 export default function PlayerCard({
@@ -26,7 +26,7 @@ export default function PlayerCard({
   showScore = true,
   extraContent,
 }: PlayerCardProps) {
-  const cardHeight = 80;
+  const cardHeight = 90;
   const displayScore = showScore;
   const safeScore = typeof score === 'number' ? score : 0;
 
@@ -115,11 +115,13 @@ const nameContainerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  overflow: 'hidden',
 };
 
 const nameStyle: React.CSSProperties = {
   wordBreak: 'keep-all',
   textAlign: 'center',
+  lineHeight: '1',
 };
 
 const spriteStyle: React.CSSProperties = {

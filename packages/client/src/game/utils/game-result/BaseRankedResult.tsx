@@ -52,10 +52,10 @@ function getCrownProps(rank: number): CrownProps {
 }
 
 function getNameFontSize(nameLength: number): string {
-  if (nameLength <= 3) return '48px';
-  if (nameLength <= 5) return '40px';
-  if (nameLength <= 7) return '34px';
-  return '28px';
+  if (nameLength <= 3) return '24px';
+  if (nameLength <= 5) return '20px';
+  if (nameLength <= 7) return '18px';
+  return '14px';
 
   // todo 랭크 계산 필요함. 등수 2개 같은 경우 같은 높이 줘야 해서
   // private calculateRanks(players: PlayerResultData[]): RankedPlayer[] {
@@ -351,8 +351,9 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
                       marginTop: 0,
                       fontSize: getNameFontSize(player.playerName.length),
                       whiteSpace: 'nowrap',
-                      maxWidth: '210px',
+                      maxWidth: `${210 * ratio}px`,
                       textAlign: 'center',
+                      lineHeight: 1.2,
                     }}
                   >
                     {player.playerName}

@@ -292,6 +292,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
           collidedPlayerIndex: packet.gameOverData.collidedPlayerIndex,
           finalScore: packet.score,
           birds: packet.birds,
+          cameraX: packet.cameraX,
         });
         store.setGameStarted(false);
       }

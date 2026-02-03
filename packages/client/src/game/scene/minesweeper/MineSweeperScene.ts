@@ -169,7 +169,7 @@ export default class MineSweeperScene extends Phaser.Scene {
     this.events.emit('scene-ready');
 
     // 키보드 입력 설정
-    this.setupKeyboardInput();
+    // this.setupKeyboardInput();
 
     // 마우스 입력 설정
     this.setupMouseInput();
@@ -326,42 +326,34 @@ export default class MineSweeperScene extends Phaser.Scene {
     console.log('🎮 게임 종료! React로 이벤트 전달', playersWithIndex);
   }
 
-  /**
-   * 키보드 입력 설정
-   */
-  private setupKeyboardInput(): void {
-    // D 키로 디버그 모드 토글
-    this.input.keyboard?.on('keydown-D', () => {
-      if (this.tileManager) {
-        // Mock 모드에서는 서버 내부 데이터를 전달하여 디버그 표시
-        const debugTiles = this.mockServerCore?.getDebugTiles();
-        this.tileManager.toggleDebugMode(debugTiles);
-      }
-    });
+  // /**
+  //  * 키보드 입력 설정
+  //  */
+  // private setupKeyboardInput(): void {
 
-    // 1-4 키로 플레이어 전환 (Mock 모드 테스트용)
-    if (isMockMode()) {
-      this.input.keyboard?.on('keydown-ONE', () => {
-        this.switchPlayer(0);
-      });
+  //   // 1-4 키로 플레이어 전환 (Mock 모드 테스트용)
+  //   if (isMockMode()) {
+  //     this.input.keyboard?.on('keydown-ONE', () => {
+  //       this.switchPlayer(0);
+  //     });
 
-      this.input.keyboard?.on('keydown-TWO', () => {
-        this.switchPlayer(1);
-      });
+  //     this.input.keyboard?.on('keydown-TWO', () => {
+  //       this.switchPlayer(1);
+  //     });
 
-      this.input.keyboard?.on('keydown-THREE', () => {
-        this.switchPlayer(2);
-      });
+  //     this.input.keyboard?.on('keydown-THREE', () => {
+  //       this.switchPlayer(2);
+  //     });
 
-      this.input.keyboard?.on('keydown-FOUR', () => {
-        this.switchPlayer(3);
-      });
-    }
+  //     this.input.keyboard?.on('keydown-FOUR', () => {
+  //       this.switchPlayer(3);
+  //     });
+  //   }
 
-    console.log(
-      '[MineSweeperScene] 키보드 입력 설정 완료 (D: 디버그 모드, 1-4: 플레이어 전환)',
-    );
-  }
+  //   console.log(
+  //     '[MineSweeperScene] 키보드 입력 설정 완료 (D: 디버그 모드, 1-4: 플레이어 전환)',
+  //   );
+  // }
 
   /**
    * 플레이어 전환 (테스트용)

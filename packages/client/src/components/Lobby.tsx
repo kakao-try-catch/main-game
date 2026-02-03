@@ -239,8 +239,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       }
 
       // timeLimit 변환
-      const timeVal =
-        typeof s.timeLimit === 'number' ? s.timeLimit : 180;
+      const timeVal = typeof s.timeLimit === 'number' ? s.timeLimit : 180;
 
       const minesweeperPreset: MineSweeperGamePreset = {
         mapSize: (s.mapSize || 'medium') as MapSizePreset,
@@ -419,7 +418,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
       // timeLimit 역변환
       const timeLimit =
         cfg.timeLimit === 'manual'
-          ? cfg.manualTime ?? 180
+          ? (cfg.manualTime ?? 180)
           : (cfg.timeLimit as number);
 
       // difficulty → mineRatio 역변환
@@ -735,7 +734,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   }
                                   onFocus={() => handleSelectGame(game.id)}
                                 />
-                                <span style={{ color: DIFFICULTY_COLORS.easy }}>
+                                <span
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
                                   X
                                 </span>
                               </label>
@@ -970,7 +971,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   value="long"
                                   style={{ color: DIFFICULTY_COLORS.easy }}
                                 >
-                                  길음
+                                  짧음
                                 </option>
                                 <option
                                   value="normal"
@@ -982,7 +983,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   value="short"
                                   style={{ color: DIFFICULTY_COLORS.hard }}
                                 >
-                                  짧음
+                                  긺
                                 </option>
                               </select>
                             </div>
@@ -1007,7 +1008,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   }
                                   onFocus={() => handleSelectGame(game.id)}
                                 />
-                                <span style={{ color: DIFFICULTY_COLORS.easy }}>
+                                <span
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
                                   X
                                 </span>
                               </label>
@@ -1026,7 +1029,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   }
                                   onFocus={() => handleSelectGame(game.id)}
                                 />
-                                <span style={{ color: DIFFICULTY_COLORS.hard }}>
+                                <span style={{ color: DIFFICULTY_COLORS.easy }}>
                                   O
                                 </span>
                               </label>

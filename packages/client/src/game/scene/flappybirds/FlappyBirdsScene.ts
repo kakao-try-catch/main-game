@@ -1,4 +1,4 @@
-// You can write more code here
+﻿// You can write more code here
 
 /* START OF COMPILED CODE */
 
@@ -675,12 +675,12 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     // });
 
     // D키 - 디버그 토글
-    this.input.keyboard?.on('keydown-D', () => {
-      this.showDebug = !this.showDebug;
-      if (!this.showDebug) {
-        this.debugGraphics.clear();
-      }
-    });
+    // this.input.keyboard?.on('keydown-D', () => {
+    //   this.showDebug = !this.showDebug;
+    //   if (!this.showDebug) {
+    //     this.debugGraphics.clear();
+    //   }
+    // });
 
     console.log(
       '[FlappyBirdsScene] 입력 방식: 순수 연타(Tapping) 모드 - 꾹 누르기가 방지되었습니다.',
@@ -809,7 +809,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       if (this.groundTile) {
         this.groundTile.tilePositionX = this.cameras.main.scrollX;
       }
-      // 배경은 scrollFactor(0)으로 카메라를 따라다니므로 별도 처리 불필요
+      // 배경은 TileSprite이므로 tilePositionX로 천천히 스크롤
+      if (this.background) {
+        this.background.tilePositionX = this.cameras.main.scrollX * 0.2;
+      }
     }
 
     // 4. 밧줄 그리기
@@ -828,64 +831,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
     // 밧줄을 클라이언트 측 새 스프라이트 위치로 직접 그리기 (레이턴시 없음)
     this.drawRopesFromSprites();
-
-    // 디버그 히트박스 그리기
-    if (this.showDebug) {
-      this.drawDebugHitboxes();
-    }
-  }
-
-  /**
-   * 디버그용 히트박스 시각화
-   */
-  private drawDebugHitboxes() {
-    this.debugGraphics.clear();
-    const ratio = this.getRatio();
-
-    // 새 히트박스 (36x36 정사각형, 회전 무시)
-    const hitboxSize = 36 * ratio;
-    const halfHitbox = hitboxSize / 2;
-    this.debugGraphics.lineStyle(2, 0xff00ff, 1); // 마젠타
-    for (const sprite of this.birdSprites) {
-      this.debugGraphics.strokeRect(
-        sprite.x - halfHitbox,
-        sprite.y - halfHitbox,
-        hitboxSize,
-        hitboxSize,
-      );
-    }
-
-    // 파이프 히트박스
-    this.debugGraphics.lineStyle(2, 0x00ffff, 1); // 시안
-    for (const pipeData of this.targetPipes) {
-      const pipeWidth = pipeData.width * ratio;
-      const halfW = pipeWidth / 2;
-      const gapY = pipeData.gapY * ratio;
-      const gap = pipeData.gap * ratio;
-      const gapTop = gapY - gap / 2;
-      const gapBottom = gapY + gap / 2;
-      const pipeX = pipeData.x * ratio;
-
-      // 위쪽 파이프
-      this.debugGraphics.strokeRect(pipeX - halfW, 0, pipeWidth, gapTop);
-
-      // 아래쪽 파이프
-      this.debugGraphics.strokeRect(
-        pipeX - halfW,
-        gapBottom,
-        pipeWidth,
-        GAME_HEIGHT * ratio - gapBottom,
-      );
-    }
-
-    // 바닥 히트박스 (y=800)
-    this.debugGraphics.lineStyle(2, 0xff0000, 1); // 빨간색
-    this.debugGraphics.lineBetween(
-      0,
-      FLAPPY_GROUND_Y * ratio,
-      GAME_WIDTH * ratio,
-      FLAPPY_GROUND_Y * ratio,
-    );
   }
 
   /**
@@ -976,8 +921,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       console.log('[FlappyBirdsScene] Store 구독 해제 완료');
     }
 
-    // FlappyBird 상태 초기화
-    useGameStore.getState().resetFlappyState();
+    // 게임 오버 상태가 아닐 때만 FlappyBird 상태 초기화
+    // (게임 오버 시에는 결과 화면에서 점수를 표시해야 하므로 상태 유지)
+    if (!this.isGameOver) {
+      useGameStore.getState().resetFlappyState();
+    }
 
     // Mock 서버 코어 정리
     if (this.mockServerCore) {

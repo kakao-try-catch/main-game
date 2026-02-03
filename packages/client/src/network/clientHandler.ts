@@ -114,6 +114,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
       if (packet.selectedGameType) {
         store.setGameConfig(packet.selectedGameType, store.gameConfig ?? null);
       }
+      // 리플레이 시 FlappyBird 상태 초기화 (이전 게임 오버 상태 제거)
+      store.resetFlappyState();
       store.setScreen('game');
       store.setGameStarted(true);
       // 리플레이 시 BGM 재생 트리거를 위해 gameReady를 먼저 false로 초기화
@@ -216,6 +218,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
 
     case SystemPacketType.RETURN_TO_THE_LOBBY: {
       const store = useGameStore.getState();
+      // 로비 복귀 시 FlappyBird 상태 초기화
+      store.resetFlappyState();
       store.setScreen('lobby');
       console.log('RETURN_TO_THE_LOBBY packet received: returning to lobby');
       break;

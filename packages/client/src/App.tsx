@@ -60,7 +60,7 @@ function AppContent() {
   const gameRef = useRef<Phaser.Game | null>(null);
 
   // 플래피버드 관련 상태 - store에서 직접 구독
-  const [flappyScore, setFlappyScore] = useState(0); // 팀 점수 (UI 표시용)
+  const flappyScore = useGameStore((s) => s.flappyScore); // 팀 점수 (UI 표시용)
   const isFlappyGameOver = useGameStore((s) => s.isFlappyGameOver);
   const flappyGameOverData = useGameStore((s) => s.flappyGameOverData);
 
@@ -89,6 +89,18 @@ function AppContent() {
 
   // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
   const currentGameType = useGameStore((s) => s.selectedGameType || undefined);
+  const descriptionKey = useMemo(() => {
+    switch (currentGameType) {
+      case GameType.APPLE_GAME:
+        return 'apple';
+      case GameType.FLAPPY_BIRD:
+        return 'flappy';
+      case GameType.MINESWEEPER:
+        return 'minesweeper';
+      default:
+        return undefined;
+    }
+  }, [currentGameType]);
   const [flappyPreset, setFlappyPreset] = useState<
     FlappyBirdGamePreset | undefined
   >(undefined);
@@ -121,11 +133,6 @@ function AppContent() {
   //   },
   //   [playSFX, pause, reset],
   // );
-
-  // 플래피버드 점수 업데이트 핸들러
-  const handleFlappyScoreUpdate = useCallback((score: number) => {
-    setFlappyScore(score);
-  }, []);
 
   // 플래피버드 점프 사운드 핸들러
   const handleFlappyJump = useCallback(() => {
@@ -384,7 +391,7 @@ function AppContent() {
         }}
       >
         {/* 게임 설명 */}
-        {currentGameType && GAME_DESCRIPTIONS[currentGameType] && (
+        {descriptionKey && GAME_DESCRIPTIONS[descriptionKey] && (
           <div
             style={{
               textAlign: 'center',
@@ -394,7 +401,7 @@ function AppContent() {
               fontWeight: 500,
             }}
           >
-            {GAME_DESCRIPTIONS[currentGameType]}
+            {GAME_DESCRIPTIONS[descriptionKey]}
           </div>
         )}
 
@@ -489,6 +496,9 @@ function AppContent() {
             players={players}
             flappyPreset={flappyPreset}
             minesweeperPreset={minesweeperPreset}
+            onFlappyJump={handleFlappyJump}
+            onFlappyStrike={handleFlappyStrike}
+            onFlappyScore={handleFlappyScore}
             onMinesweeperScoreUpdate={handleMinesweeperScoreUpdate}
             onFlagCountUpdate={handleFlagCountUpdate}
             onMinesweeperTileReveal={handleMinesweeperTileReveal}

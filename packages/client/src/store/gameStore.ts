@@ -124,6 +124,7 @@ interface GameState {
     reason: 'pipe_collision' | 'ground_collision';
     collidedPlayerIndex: number;
     finalScore: number;
+    birds: FlappyBirdData[];
   }) => void;
   resetFlappyState: () => void;
 }
@@ -230,6 +231,7 @@ export const useGameStore = create<GameState>()(
         isFlappyGameOver: true,
         flappyGameOverData: data,
         flappyScore: data.finalScore,
+        flappyBirds: data.birds, // 게임 오버 시점의 새 위치 적용 (로딩 중인 플레이어용)
       }),
     resetFlappyState: () =>
       set({

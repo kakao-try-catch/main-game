@@ -169,10 +169,17 @@ export type AppleGamePacket =
 
 // ========== FLAPPY BIRD PACKETS ==========
 export enum FlappyBirdPacketType {
+  // 클라이언트 → 서버
   FLAPPY_JUMP = 'FLAPPY_JUMP',
+  /** 게임 상태 동기화 요청 (씬 로딩 완료 후) */
+  FLAPPY_REQUEST_SYNC = 'FLAPPY_REQUEST_SYNC',
+
+  // 서버 → 클라이언트
   FLAPPY_WORLD_STATE = 'FLAPPY_WORLD_STATE',
   FLAPPY_SCORE_UPDATE = 'FLAPPY_SCORE_UPDATE',
   FLAPPY_GAME_OVER = 'FLAPPY_GAME_OVER',
+  /** 게임 상태 동기화 응답 (씬 로딩 완료 후 현재 상태 전송) */
+  FLAPPY_SYNC_STATE = 'FLAPPY_SYNC_STATE',
 }
 
 export interface FlappyJumpPacket {
@@ -198,13 +205,36 @@ export interface FlappyGameOverPacket {
   collidedPlayerIndex: number;
   reason: 'pipe_collision' | 'ground_collision';
   finalScore: number;
+  birds: FlappyBirdData[]; // 게임 오버 시점의 새 위치 (로딩 중인 플레이어용)
+}
+
+/** 클라이언트 → 서버: 씬 로딩 완료 후 동기화 요청 */
+export interface FlappyRequestSyncPacket {
+  type: FlappyBirdPacketType.FLAPPY_REQUEST_SYNC;
+}
+
+/** 서버 → 클라이언트: 현재 게임 상태 동기화 응답 */
+export interface FlappySyncStatePacket {
+  type: FlappyBirdPacketType.FLAPPY_SYNC_STATE;
+  tick: number;
+  birds: FlappyBirdData[];
+  pipes: FlappyPipeData[];
+  cameraX: number;
+  score: number;
+  isGameOver: boolean;
+  gameOverData?: {
+    reason: 'pipe_collision' | 'ground_collision';
+    collidedPlayerIndex: number;
+  };
 }
 
 export type FlappyBirdPacket =
   | FlappyJumpPacket
+  | FlappyRequestSyncPacket
   | FlappyWorldStatePacket
   | FlappyScoreUpdatePacket
-  | FlappyGameOverPacket;
+  | FlappyGameOverPacket
+  | FlappySyncStatePacket;
 
 // ========== MINESWEEPER PACKETS ==========
 export enum MineSweeperPacketType {

@@ -6,7 +6,8 @@
       "Bash(npm run type-check:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(pnpm build:*)"
     ]
   }
 }

@@ -31,6 +31,7 @@ import { resolveFlappyBirdPreset } from '../../../../../common/src/config';
 import {
   FlappyBirdPacketType,
   type FlappyJumpPacket,
+  type FlappyRequestSyncPacket,
 } from '../../../../../common/src/packets';
 import PipeManager from './PipeManager';
 import { useGameStore } from '../../../store/gameStore';
@@ -76,6 +77,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   private ropeConnections: [number, number][] = []; // 밧줄 연결 쌍 (새 인덱스)
   private gameStarted: boolean = false; // 게임 시작 여부 (1초 딜레이 동기화)
   private isGameOver: boolean = false; // 게임 오버 여부
+  private pendingGameOverFromSync: boolean = false; // 동기화 응답에서 게임오버 처리 대기 여부
   private debugGraphics!: Phaser.GameObjects.Graphics;
   private showDebug: boolean = false;
   private gameConfig: ResolvedFlappyBirdConfig = resolveFlappyBirdPreset(
@@ -140,6 +142,7 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.currentScore = 0;
     this.gameStarted = false;
     this.isGameOver = false;
+    this.pendingGameOverFromSync = false;
 
     this.editorCreate();
 
@@ -190,6 +193,14 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       this.gameStarted = true;
       // BootScene에 준비 완료 신호 보내기
       this.events.emit('scene-ready');
+
+      // 씬 로딩 완료 후 서버에 동기화 요청 (로딩 중 놓친 상태 동기화)
+      const syncPacket: FlappyRequestSyncPacket = {
+        type: FlappyBirdPacketType.FLAPPY_REQUEST_SYNC,
+      };
+      socketManager.send(syncPacket);
+      console.log('[FlappyBirdsScene] 동기화 요청 전송');
+
       console.log(
         `[FlappyBirdsScene] 실제 서버 모드로 실행 중 (플레이어: ${this.playerCount}명, 내 인덱스: ${this.myPlayerId})`,
       );
@@ -205,7 +216,156 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     this.debugGraphics = this.add.graphics();
     this.debugGraphics.setDepth(1000); // 최상단
 
+    // 동기화 응답 이벤트 리스너 (Store 구독보다 확실한 처리)
+    this.setupSyncEventListener();
+
+    // 씬 생성 완료 후 이미 게임 오버 상태인지 확인 (Store 구독 전에 게임 오버 패킷이 온 경우)
+    this.checkInitialGameOverState();
+
     console.log('[FlappyBirdsScene] 씬 생성 완료');
+  }
+
+  /**
+   * 동기화 응답 커스텀 이벤트 리스너 설정
+   */
+  private setupSyncEventListener(): void {
+    const handleSyncState = (event: Event) => {
+      const packet = (event as CustomEvent).detail;
+      console.log('[FlappyBirdsScene] flappy:sync_state 이벤트 수신');
+
+      // 새 위치 적용
+      if (packet.birds && packet.birds.length > 0) {
+        this.targetPositions = packet.birds.map(
+          (
+            bird: {
+              x: number;
+              y: number;
+              vx: number;
+              vy: number;
+              angle: number;
+            },
+            index: number,
+          ) => ({
+            playerId: String(index) as PlayerId,
+            x: bird.x,
+            y: bird.y,
+            velocityX: bird.vx,
+            velocityY: bird.vy,
+            angle: bird.angle,
+          }),
+        );
+      }
+
+      // 게임 오버 상태면 즉시 처리
+      if (packet.isGameOver) {
+        this.handleGameOverFromSync(packet);
+      }
+    };
+
+    window.addEventListener('flappy:sync_state', handleSyncState);
+
+    // 씬 종료 시 리스너 제거를 위해 저장
+    this.events.once('shutdown', () => {
+      window.removeEventListener('flappy:sync_state', handleSyncState);
+    });
+  }
+
+  /**
+   * 씬 생성 시 이미 게임 오버 상태인지 확인
+   */
+  private checkInitialGameOverState(): void {
+    const store = useGameStore.getState();
+    if (store.isFlappyGameOver && store.flappyGameOverData) {
+      console.log(
+        '[FlappyBirdsScene] 씬 생성 시 이미 게임 오버 상태 감지, flappyBirds.length:',
+        store.flappyBirds.length,
+      );
+
+      // 새 위치가 있을 때만 처리 (없으면 동기화 응답에서 처리)
+      if (store.flappyBirds.length > 0) {
+        this.targetPositions = store.flappyBirds.map((bird, index) => ({
+          playerId: String(index) as PlayerId,
+          x: bird.x,
+          y: bird.y,
+          velocityX: bird.vx,
+          velocityY: bird.vy,
+          angle: bird.angle,
+        }));
+
+        console.log(
+          '[FlappyBirdsScene] 게임 오버 새 위치:',
+          this.targetPositions.map((p) => ({ x: p.x, y: p.y })),
+        );
+
+        // 게임 오버 처리
+        this.gameStarted = false;
+        this.isGameOver = true;
+        this.applyGameOverPositions();
+        this.events.emit('flappyStrike');
+
+        const gameEndData: FlappyBirdGameEndData = {
+          finalScore: store.flappyGameOverData.finalScore,
+          reason: store.flappyGameOverData.reason,
+          collidedPlayerId: String(
+            store.flappyGameOverData.collidedPlayerIndex,
+          ) as PlayerId,
+          timestamp: Date.now(),
+        };
+
+        this.events.emit('gameEnd', {
+          ...gameEndData,
+          players: this.getPlayersData(),
+        });
+      } else {
+        console.log(
+          '[FlappyBirdsScene] 새 위치 데이터 없음 - 동기화 응답 대기 (pendingGameOverFromSync = true)',
+        );
+        // 새 위치 데이터가 없으면 동기화 응답에서 처리하도록 플래그 설정
+        this.pendingGameOverFromSync = true;
+      }
+    }
+  }
+
+  /**
+   * 동기화 응답에서 게임 오버 처리
+   */
+  private handleGameOverFromSync(packet: {
+    score: number;
+    birds: { x: number; y: number; vx: number; vy: number; angle: number }[];
+    gameOverData?: {
+      reason: 'pipe_collision' | 'ground_collision';
+      collidedPlayerIndex: number;
+    };
+  }): void {
+    // 이미 처리됨 (단, pendingGameOverFromSync 상태면 처리 필요)
+    if (this.isGameOver && !this.pendingGameOverFromSync) return;
+
+    console.log(
+      '[FlappyBirdsScene] 동기화 응답에서 게임 오버 처리, pendingGameOverFromSync:',
+      this.pendingGameOverFromSync,
+    );
+
+    // pending 상태 해제
+    this.pendingGameOverFromSync = false;
+
+    this.gameStarted = false;
+    this.isGameOver = true;
+    this.applyGameOverPositions();
+    this.events.emit('flappyStrike');
+
+    const gameEndData: FlappyBirdGameEndData = {
+      finalScore: packet.score,
+      reason: packet.gameOverData?.reason || 'ground_collision',
+      collidedPlayerId: String(
+        packet.gameOverData?.collidedPlayerIndex ?? 0,
+      ) as PlayerId,
+      timestamp: Date.now(),
+    };
+
+    this.events.emit('gameEnd', {
+      ...gameEndData,
+      players: this.getPlayersData(),
+    });
   }
 
   private setupStoreSubscription(): void {
@@ -220,6 +380,44 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         gameOverData: state.flappyGameOverData,
       }),
       (current, previous) => {
+        // pendingGameOverFromSync 상태에서 birds 데이터가 도착하면 게임 오버 처리
+        if (this.pendingGameOverFromSync && current.birds.length > 0) {
+          console.log(
+            '[FlappyBirdsScene] Store 구독: pendingGameOverFromSync 상태에서 birds 데이터 도착, 게임 오버 처리',
+          );
+          this.pendingGameOverFromSync = false;
+
+          this.targetPositions = current.birds.map((bird, index) => ({
+            playerId: String(index) as PlayerId,
+            x: bird.x,
+            y: bird.y,
+            velocityX: bird.vx,
+            velocityY: bird.vy,
+            angle: bird.angle,
+          }));
+
+          this.gameStarted = false;
+          this.isGameOver = true;
+          this.applyGameOverPositions();
+          this.events.emit('flappyStrike');
+
+          const gameOverData = current.gameOverData;
+          const gameEndData: FlappyBirdGameEndData = {
+            finalScore: gameOverData?.finalScore ?? current.score,
+            reason: gameOverData?.reason || 'ground_collision',
+            collidedPlayerId: String(
+              gameOverData?.collidedPlayerIndex ?? 0,
+            ) as PlayerId,
+            timestamp: Date.now(),
+          };
+
+          this.events.emit('gameEnd', {
+            ...gameEndData,
+            players: this.getPlayersData(),
+          });
+          return; // 이미 처리됨
+        }
+
         // 새 위치 데이터 업데이트
         if (current.birds.length > 0 && !this.isGameOver) {
           this.targetPositions = current.birds.map((bird, index) => ({
@@ -264,6 +462,22 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         ) {
           this.gameStarted = false;
           this.isGameOver = true;
+
+          // 게임 오버 시점의 새 위치 적용 (로딩 중인 플레이어가 올바른 위치를 볼 수 있도록)
+          if (current.birds.length > 0) {
+            this.targetPositions = current.birds.map((bird, index) => ({
+              playerId: String(index) as PlayerId,
+              x: bird.x,
+              y: bird.y,
+              velocityX: bird.vx,
+              velocityY: bird.vy,
+              angle: bird.angle,
+            }));
+
+            // 비활성 탭에서도 즉시 반영되도록 스프라이트 위치 직접 설정
+            this.applyGameOverPositions();
+          }
+
           this.events.emit('flappyStrike');
 
           const gameEndData: FlappyBirdGameEndData = {
@@ -756,9 +970,6 @@ export default class FlappyBirdsScene extends Phaser.Scene {
   }
 
   update() {
-    if (this.isGameOver) {
-      return;
-    }
     // 선형 보간으로 부드러운 이동
     const ratio = this.getRatio();
     for (let i = 0; i < this.birdSprites.length; i++) {
@@ -784,6 +995,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
 
         sprite.rotation = Phaser.Math.DegToRad(angle);
       }
+    }
+
+    // 게임 오버 시에도 밧줄은 새 위치에 맞게 그려야 함 (비활성 탭에서 복귀 시 동기화)
+    if (this.isGameOver) {
+      // 밧줄만 새 스프라이트 위치에 맞게 그리기
+      this.drawRopesFromSprites();
+      return;
     }
 
     // 3. 카메라 추적: 새들의 평균 X를 화면의 1/4 지점에 유지 (게임 시작 후에만)
@@ -948,6 +1166,62 @@ export default class FlappyBirdsScene extends Phaser.Scene {
         rope.strokePoints(points);
       }
     }
+  }
+
+  /**
+   * 게임 오버 시 스프라이트 위치와 밧줄을 즉시 적용 (비활성 탭 대응)
+   * update()가 호출되지 않아도 최종 위치가 반영되도록 함
+   */
+  private applyGameOverPositions(): void {
+    const ratio = this.getRatio();
+
+    // 1. 스프라이트 위치 즉시 설정
+    for (let i = 0; i < this.birdSprites.length; i++) {
+      const sprite = this.birdSprites[i];
+      const target = this.targetPositions[i];
+
+      if (target) {
+        sprite.x = target.x * ratio;
+        sprite.y = target.y * ratio;
+
+        // 각도 설정
+        let angle = target.angle;
+        if (angle === 0) {
+          angle = Phaser.Math.Clamp(target.velocityY * 10, -30, 90);
+        }
+        // 바닥 부근이면 수직 상태
+        if (sprite.y > (FLAPPY_GROUND_Y - 30) * ratio) {
+          angle = 90;
+        }
+        sprite.rotation = Phaser.Math.DegToRad(angle);
+      }
+    }
+
+    // 2. 밧줄 중간점을 새 위치에 맞게 리셋하고 즉시 그리기
+    for (let i = 0; i < this.ropes.length; i++) {
+      const rope = this.ropes[i];
+      const [indexA, indexB] = this.ropeConnections[i];
+      const birdA = this.birdSprites[indexA];
+      const birdB = this.birdSprites[indexB];
+      const midPoint = this.ropeMidPoints[i];
+
+      if (birdA && birdB && midPoint) {
+        // 중간점을 새들 사이의 중앙으로 리셋
+        const targetMidY = (birdA.y + birdB.y) / 2;
+        midPoint.y = targetMidY;
+        midPoint.vy = 0;
+
+        // 밧줄 즉시 그리기
+        rope.clear();
+        rope.lineStyle(6 * ratio, 0x8b4513, 0.9);
+        rope.beginPath();
+        rope.moveTo(birdA.x, birdA.y);
+        rope.lineTo(birdB.x, birdB.y);
+        rope.strokePath();
+      }
+    }
+
+    console.log('[FlappyBirdsScene] 게임 오버 위치 즉시 적용 완료');
   }
 
   /**

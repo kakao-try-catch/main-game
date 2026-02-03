@@ -47,6 +47,14 @@ export const DEFAULT_FLAPPYBIRD_PRESET: FlappyBirdGamePreset = {
 };
 
 export default class FlappyBirdsScene extends Phaser.Scene {
+  /** 플레이어 색상 → 새 스프라이트 매핑 */
+  private static readonly COLOR_TO_SPRITE: Record<string, string> = {
+    '#209cee': 'flappybird_1', // 파랑
+    '#e76e55': 'flappybird_2', // 빨강
+    '#92cc41': 'flappybird_3', // 초록
+    '#f2d024': 'flappybird_4', // 노랑
+  };
+
   private socket!: Socket | MockSocket;
   private mockServerCore?: MockServerCore;
   private myPlayerId: PlayerId = '0';
@@ -552,8 +560,13 @@ export default class FlappyBirdsScene extends Phaser.Scene {
     const positions = this.calculateBirdPositions(count);
 
     for (let i = 0; i < count; i++) {
-      // 플레이어 번호에 맞는 이미지 선택 (1, 2, 3, 4 순환)
-      const birdKey = `flappybird_${(i % 4) + 1}`;
+      // 플레이어의 실제 할당 색상에 맞는 이미지 선택
+      const store = useGameStore.getState();
+      const playerColor = store.players[i]?.color;
+      const birdKey = playerColor
+        ? FlappyBirdsScene.COLOR_TO_SPRITE[playerColor] ||
+          `flappybird_${(i % 4) + 1}`
+        : `flappybird_${(i % 4) + 1}`;
       const { x, y } = positions[i];
       const bird = this.add.sprite(x * ratio, y * ratio, birdKey);
 

@@ -53,7 +53,8 @@ function AppContent() {
   // >('landing');
   const screen = useGameStore((s) => s.screen);
 
-  const [gameReady, setGameReady] = useState(false);
+  const gameReady = useGameStore((s) => s.gameReady);
+  const setGameReady = useGameStore((s) => s.setGameReady);
   const isGameStarted = useGameStore((s) => s.isGameStarted);
   const setGameStarted = useGameStore((s) => s.setGameStarted);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -453,7 +454,7 @@ function AppContent() {
                 extraContent={
                   <TintedFlagIcon color={player.color}>
                     <span style={{ color: '#212529', fontSize: '20px' }}>
-                      {flagCounts[String(index)] || 0}
+                      {flagCounts[player.id] || 0}
                     </span>
                   </TintedFlagIcon>
                 }

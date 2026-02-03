@@ -5,6 +5,7 @@ import TimerSystem from '../../utils/TimerSystem';
 import { attachDragSelection } from '../../utils/dragSelection';
 import { socketManager } from '../../../network/socket';
 import { AppleGamePacketType } from '../../../../../common/src/packets';
+import { GameType } from '../../../../../common/src/config';
 import type { PlayerData } from '../../types/common';
 import { hexStringToNumber, adjustBrightness } from '../../utils/colorUtils';
 import { GAME_WIDTH, GAME_HEIGHT } from '../../config/gameConfig';
@@ -364,6 +365,13 @@ export default class AppleGameManager {
 
   /** 드래그 중 호출 - 선택 영역 업데이트 */
   private onDragUpdate(rect: Phaser.Geom.Rectangle): void {
+    const { screen, selectedGameType } = useGameStore.getState();
+
+    // 사과 게임 화면이 아니면 드래그 처리 스킵
+    if (screen !== 'game' || selectedGameType !== GameType.APPLE_GAME) {
+      return;
+    }
+
     // 이전 선택 해제
     this.selectedApples.forEach((apple) => apple.setFrameVisible(false));
     this.selectedApples.clear();
@@ -390,6 +398,15 @@ export default class AppleGameManager {
   /** 드래그 종료 시 호출 */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private onDragEnd(_rect: Phaser.Geom.Rectangle): void {
+    const { screen, selectedGameType } = useGameStore.getState();
+
+    // 사과 게임 화면이 아니면 처리 스킵
+    if (screen !== 'game' || selectedGameType !== GameType.APPLE_GAME) {
+      this.selectedApples.clear();
+      this.dragAreaSender?.clearDragArea();
+      return;
+    }
+
     // 선택된 사과들의 숫자 합 계산
     let sum = 0;
     this.selectedApples.forEach((apple) => {

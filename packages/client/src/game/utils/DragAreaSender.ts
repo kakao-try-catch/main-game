@@ -21,7 +21,7 @@ export class DragAreaSender {
   private sendInterval: ReturnType<typeof setInterval> | null = null;
   private pendingRect: NormalizedRect | null = null;
 
-  private static readonly SEND_INTERVAL_MS = 100;
+  private static readonly SEND_INTERVAL_MS = 200;
   private static readonly MAX_DUPLICATE_COUNT = 3;
   private static readonly EPSILON = 0.001; // 부동소수점 비교 허용 오차
 

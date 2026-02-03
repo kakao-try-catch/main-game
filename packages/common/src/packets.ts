@@ -206,6 +206,7 @@ export interface FlappyGameOverPacket {
   reason: 'pipe_collision' | 'ground_collision';
   finalScore: number;
   birds: FlappyBirdData[]; // 게임 오버 시점의 새 위치 (로딩 중인 플레이어용)
+  cameraX: number; // 게임 오버 시점의 카메라 위치
 }
 
 /** 클라이언트 → 서버: 씬 로딩 완료 후 동기화 요청 */

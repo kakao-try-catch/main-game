@@ -279,11 +279,23 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       console.log(
         '[FlappyBirdsScene] 씬 생성 시 이미 게임 오버 상태 감지, flappyBirds.length:',
         store.flappyBirds.length,
+        ', gameOverData.birds.length:',
+        store.flappyGameOverData.birds?.length ?? 0,
+        ', cameraX:',
+        store.flappyCameraX,
+        ', gameOverData.cameraX:',
+        store.flappyGameOverData.cameraX ?? 0,
       );
 
+      // flappyBirds를 우선 사용하고, 없으면 gameOverData.birds를 fallback으로 사용
+      const birds =
+        store.flappyBirds.length > 0
+          ? store.flappyBirds
+          : store.flappyGameOverData.birds;
+
       // 새 위치가 있을 때만 처리 (없으면 동기화 응답에서 처리)
-      if (store.flappyBirds.length > 0) {
-        this.targetPositions = store.flappyBirds.map((bird, index) => ({
+      if (birds && birds.length > 0) {
+        this.targetPositions = birds.map((bird, index) => ({
           playerId: String(index) as PlayerId,
           x: bird.x,
           y: bird.y,
@@ -1174,6 +1186,19 @@ export default class FlappyBirdsScene extends Phaser.Scene {
    */
   private applyGameOverPositions(): void {
     const ratio = this.getRatio();
+    const store = useGameStore.getState();
+
+    // 0. 카메라 위치 설정 (새들이 화면에 보이도록)
+    const cameraX =
+      store.flappyCameraX ?? store.flappyGameOverData?.cameraX ?? 0;
+    if (cameraX > 0) {
+      this.cameras.main.scrollX = cameraX * ratio;
+      // 지면 스크롤도 동기화
+      if (this.groundTile) {
+        this.groundTile.tilePositionX = this.cameras.main.scrollX;
+      }
+      console.log('[FlappyBirdsScene] 게임 오버 카메라 위치 적용:', cameraX);
+    }
 
     // 1. 스프라이트 위치 즉시 설정
     for (let i = 0; i < this.birdSprites.length; i++) {

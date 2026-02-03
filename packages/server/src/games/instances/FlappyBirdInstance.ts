@@ -591,12 +591,11 @@ export class FlappyBirdInstance implements GameInstance {
     if (this.isGameOverState) return;
 
     this.isGameOverState = true;
-    this.session.stopGame();
 
     // 게임 오버 데이터 저장 (동기화 요청 시 사용)
     this.lastGameOverData = { reason, collidedPlayerIndex: playerIndex };
 
-    // 게임 오버 시점의 새 위치 정보 포함 (로딩 중인 플레이어용)
+    // ❗ 중요: stopGame() 호출 전에 birds 데이터를 먼저 수집 (stopGame이 destroy를 호출하면 this.birds가 초기화됨)
     const birds: FlappyBirdData[] = this.birds.map((bird) => ({
       x: bird.position.x,
       y: bird.position.y,
@@ -605,17 +604,27 @@ export class FlappyBirdInstance implements GameInstance {
       angle: bird.angle * (180 / Math.PI),
     }));
 
+    // 카메라 X 위치 계산 (새들의 평균 X 위치 기준)
+    const avgX =
+      this.birds.reduce((sum, bird) => sum + bird.position.x, 0) /
+      this.birds.length;
+    const cameraX = avgX - 300; // 화면 너비의 1/4 지점에 새가 위치하도록
+
     const gameOverPacket: FlappyGameOverPacket = {
       type: FlappyBirdPacketType.FLAPPY_GAME_OVER,
       reason,
       finalScore: this.score,
       collidedPlayerIndex: playerIndex,
       birds,
+      cameraX,
     };
+
+    // 패킷 전송 후 게임 정지 (이 순서가 중요!)
     this.session.broadcastPacket(gameOverPacket);
+    this.session.stopGame();
 
     console.log(
-      `[FlappyBirdInstance] 게임 오버: ${reason} (Player ${playerIndex})`,
+      `[FlappyBirdInstance] 게임 오버: ${reason} (Player ${playerIndex}), birds: ${birds.length}, cameraX: ${cameraX}`,
     );
   }
 

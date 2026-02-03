@@ -119,7 +119,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
       // 리플레이 시 BGM 재생 트리거를 위해 gameReady를 먼저 false로 초기화
       // (GameContainer의 onGameReady에서 다시 true로 설정됨)
       store.setGameReady(false);
-      // 리플레이 시 FlappyBird 상태 초기화 (결과창 숨김)
+      // FlappyBird 상태 초기화 (새 게임 시작)
+      // 비활성 탭에서 늦게 로딩되는 경우, FLAPPY_GAME_OVER 패킷이 이후에 도착하면 게임 오버 상태가 설정됨
       store.resetFlappyState();
       // 게임 세션 ID 증가로 게임 컨테이너 재마운트 트리거
       store.incrementGameSession();
@@ -219,6 +220,8 @@ export const handleServerPacket = (packet: ServerPacket) => {
     case SystemPacketType.RETURN_TO_THE_LOBBY: {
       const store = useGameStore.getState();
       store.setScreen('lobby');
+      // 로비로 돌아갈 때 FlappyBird 상태 초기화 (다음 게임을 위한 클린 상태)
+      store.resetFlappyState();
       console.log('RETURN_TO_THE_LOBBY packet received: returning to lobby');
       break;
     }
@@ -249,6 +252,7 @@ export const handleServerPacket = (packet: ServerPacket) => {
         collidedPlayerIndex: packet.collidedPlayerIndex,
         finalScore: packet.finalScore,
         birds: packet.birds, // 게임 오버 시점의 새 위치 (로딩 중인 플레이어용)
+        cameraX: packet.cameraX, // 게임 오버 시점의 카메라 위치
       });
       store.setGameStarted(false);
       console.log(
@@ -258,6 +262,10 @@ export const handleServerPacket = (packet: ServerPacket) => {
         packet.collidedPlayerIndex,
         'Score:',
         packet.finalScore,
+        'Birds:',
+        packet.birds?.length ?? 0,
+        'CameraX:',
+        packet.cameraX,
       );
       break;
     }

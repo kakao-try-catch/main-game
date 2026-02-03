@@ -110,6 +110,8 @@ interface GameState {
     reason: 'pipe_collision' | 'ground_collision';
     collidedPlayerIndex: number;
     finalScore: number;
+    birds: FlappyBirdData[]; // 게임 오버 시점의 새 위치 (백업용)
+    cameraX: number; // 게임 오버 시점의 카메라 위치
   } | null;
 
   // FlappyBird 액션
@@ -125,6 +127,7 @@ interface GameState {
     collidedPlayerIndex: number;
     finalScore: number;
     birds: FlappyBirdData[];
+    cameraX: number;
   }) => void;
   resetFlappyState: () => void;
 }
@@ -229,9 +232,16 @@ export const useGameStore = create<GameState>()(
     setFlappyGameOver: (data) =>
       set({
         isFlappyGameOver: true,
-        flappyGameOverData: data,
+        flappyGameOverData: {
+          reason: data.reason,
+          collidedPlayerIndex: data.collidedPlayerIndex,
+          finalScore: data.finalScore,
+          birds: data.birds, // 백업용으로 gameOverData에도 저장
+          cameraX: data.cameraX, // 카메라 위치 저장
+        },
         flappyScore: data.finalScore,
         flappyBirds: data.birds, // 게임 오버 시점의 새 위치 적용 (로딩 중인 플레이어용)
+        flappyCameraX: data.cameraX, // 카메라 위치도 적용
       }),
     resetFlappyState: () =>
       set({

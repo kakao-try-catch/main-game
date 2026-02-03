@@ -4,6 +4,7 @@ import {
   ServerPacket,
   RoomUpdatePacket,
   RoomUpdateType,
+  GameConfigUpdatePacket,
 } from '../../../common/src/packets';
 import { GameSession } from '../games/gameSession';
 import { customAlphabet } from 'nanoid';
@@ -314,6 +315,18 @@ export async function joinPlayerToGame(
   );
 
   session.updateRemainingPlayers(socket.id);
+
+  // 현재 게임 설정을 새 플레이어에게 전송 (동기화)
+  const currentConfig = session.gameConfigs.get(session.selectedGameType);
+  if (currentConfig) {
+    const configPacket: GameConfigUpdatePacket = {
+      type: SystemPacketType.GAME_CONFIG_UPDATE,
+      selectedGameType: session.selectedGameType,
+      gameConfig: currentConfig,
+    };
+    socket.emit(SystemPacketType.GAME_CONFIG_UPDATE, configPacket);
+    console.log(`[Server] Sent GAME_CONFIG_UPDATE to new player ${socket.id}`);
+  }
 
   // 만약 방이 꽉 찼거나 특정 조건 만족 시 게임 시작?
   // 현재는 자동 시작 or 수동 시작. 일단 자동 시작 로직 예시:

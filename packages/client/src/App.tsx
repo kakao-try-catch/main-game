@@ -89,6 +89,18 @@ function AppContent() {
 
   // 현재 게임 타입 및 프리셋 설정 (로비에서 받아옴)
   const currentGameType = useGameStore((s) => s.selectedGameType || undefined);
+  const descriptionKey = useMemo(() => {
+    switch (currentGameType) {
+      case GameType.APPLE_GAME:
+        return 'apple';
+      case GameType.FLAPPY_BIRD:
+        return 'flappy';
+      case GameType.MINESWEEPER:
+        return 'minesweeper';
+      default:
+        return undefined;
+    }
+  }, [currentGameType]);
   const [flappyPreset, setFlappyPreset] = useState<
     FlappyBirdGamePreset | undefined
   >(undefined);
@@ -379,7 +391,7 @@ function AppContent() {
         }}
       >
         {/* 게임 설명 */}
-        {currentGameType && GAME_DESCRIPTIONS[currentGameType] && (
+        {descriptionKey && GAME_DESCRIPTIONS[descriptionKey] && (
           <div
             style={{
               textAlign: 'center',
@@ -389,7 +401,7 @@ function AppContent() {
               fontWeight: 500,
             }}
           >
-            {GAME_DESCRIPTIONS[currentGameType]}
+            {GAME_DESCRIPTIONS[descriptionKey]}
           </div>
         )}
 

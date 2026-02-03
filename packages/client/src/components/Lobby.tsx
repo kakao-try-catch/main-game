@@ -734,7 +734,9 @@ function Lobby({ players, onGameStart }: LobbyProps) {
                                   }
                                   onFocus={() => handleSelectGame(game.id)}
                                 />
-                                <span style={{ color: DIFFICULTY_COLORS.easy }}>
+                                <span
+                                  style={{ color: DIFFICULTY_COLORS.normal }}
+                                >
                                   X
                                 </span>
                               </label>

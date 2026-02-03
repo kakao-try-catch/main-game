@@ -38,6 +38,7 @@ export interface LobbyProps {
 }
 import { useSFXContext } from '../contexts/SFXContext';
 import { GAME_DESCRIPTIONS } from '../constants/gameDescriptions';
+import faviconIcon from '../assets/icons/favicon.png';
 
 const {
   PLAYER_COLORS,
@@ -446,6 +447,7 @@ function Lobby({ players, onGameStart }: LobbyProps) {
   return (
     <div className="lobby-container">
       <div className="lobby-header">
+        <img src={faviconIcon} alt="favicon" className="lobby-title-icon" />
         <h1 className="nes-text is-primary lobby-title">다같이 오락가락</h1>
       </div>
 

@@ -809,7 +809,10 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       if (this.groundTile) {
         this.groundTile.tilePositionX = this.cameras.main.scrollX;
       }
-      // 배경은 scrollFactor(0)으로 카메라를 따라다니므로 별도 처리 불필요
+      // 배경은 TileSprite이므로 tilePositionX로 천천히 스크롤
+      if (this.background) {
+        this.background.tilePositionX = this.cameras.main.scrollX * 0.2;
+      }
     }
 
     // 4. 밧줄 그리기

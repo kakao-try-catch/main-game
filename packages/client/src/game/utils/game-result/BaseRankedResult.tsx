@@ -281,11 +281,18 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
   const isHost = isPlayerHost();
   const [showReplayTooltip, setShowReplayTooltip] = useState(false);
   const [showLobbyTooltip, setShowLobbyTooltip] = useState(false);
+  const [showDisconnectTooltip, setShowDisconnectTooltip] = useState<
+    'replay' | 'lobby' | null
+  >(null);
+  const isSocketDisconnected = useGameStore((s) => s.isSocketDisconnected);
 
   const playerRanks = result.reduce<number[]>((ranks, player, idx) => {
     if (idx === 0) return [1];
     const prevScore = result[idx - 1].reportCard.score;
-    return [...ranks, player.reportCard.score === prevScore ? ranks[idx - 1] : idx + 1];
+    return [
+      ...ranks,
+      player.reportCard.score === prevScore ? ranks[idx - 1] : idx + 1,
+    ];
   }, []);
 
   const playerSublines = renderPlayerSubline
@@ -390,28 +397,43 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
             {/* REPLAY 버튼 */}
             <div
               style={{ position: 'relative', display: 'inline-block' }}
-              onMouseEnter={() => !isHost && setShowReplayTooltip(true)}
-              onMouseLeave={() => setShowReplayTooltip(false)}
+              onMouseEnter={() =>
+                !isHost && !isSocketDisconnected && setShowReplayTooltip(true)
+              }
+              onMouseLeave={() => {
+                setShowReplayTooltip(false);
+                setShowDisconnectTooltip(null);
+              }}
             >
               <button
                 type="button"
                 className="nes-btn is-primary"
                 style={styles.button()}
                 onClick={() => {
+                  if (isSocketDisconnected) {
+                    setShowDisconnectTooltip('replay');
+                    return;
+                  }
                   if (!isHost) return;
                   playSFX('buttonClick');
                   onReplay();
                 }}
                 onMouseEnter={() => {
-                  if (isHost) playSFX('buttonHover');
+                  if (isHost && !isSocketDisconnected) playSFX('buttonHover');
                 }}
-                disabled={!isHost}
+                disabled={!isHost && !isSocketDisconnected}
               >
                 REPLAY
               </button>
-              {showReplayTooltip && !isHost && (
+              {showReplayTooltip && !isHost && !isSocketDisconnected && (
                 <div style={styles.toolTipBox()}>
                   방장만 해당 작업을 수행할 수 있습니다.
+                  <div style={styles.toolTipDownArrow()} />
+                </div>
+              )}
+              {showDisconnectTooltip === 'replay' && (
+                <div style={styles.toolTipBox()}>
+                  서버와 연결이 끊겼어요. 연결을 위해서 재접속해주세요.
                   <div style={styles.toolTipDownArrow()} />
                 </div>
               )}
@@ -420,28 +442,43 @@ const BaseRankedResult: React.FC<BaseRankedResultProps> = ({
             {/* LOBBY 버튼 */}
             <div
               style={{ position: 'relative', display: 'inline-block' }}
-              onMouseEnter={() => !isHost && setShowLobbyTooltip(true)}
-              onMouseLeave={() => setShowLobbyTooltip(false)}
+              onMouseEnter={() =>
+                !isHost && !isSocketDisconnected && setShowLobbyTooltip(true)
+              }
+              onMouseLeave={() => {
+                setShowLobbyTooltip(false);
+                setShowDisconnectTooltip(null);
+              }}
             >
               <button
                 type="button"
                 className="nes-btn is-primary"
                 style={styles.button()}
                 onClick={() => {
+                  if (isSocketDisconnected) {
+                    setShowDisconnectTooltip('lobby');
+                    return;
+                  }
                   if (!isHost) return;
                   playSFX('buttonClick');
                   onLobby();
                 }}
                 onMouseEnter={() => {
-                  if (isHost) playSFX('buttonHover');
+                  if (isHost && !isSocketDisconnected) playSFX('buttonHover');
                 }}
-                disabled={!isHost}
+                disabled={!isHost && !isSocketDisconnected}
               >
                 LOBBY
               </button>
-              {showLobbyTooltip && !isHost && (
+              {showLobbyTooltip && !isHost && !isSocketDisconnected && (
                 <div style={styles.toolTipBox()}>
                   방장만 해당 작업을 수행할 수 있습니다.
+                  <div style={styles.toolTipDownArrow()} />
+                </div>
+              )}
+              {showDisconnectTooltip === 'lobby' && (
+                <div style={styles.toolTipBox()}>
+                  서버와 연결이 끊겼어요. 연결을 위해서 재접속해주세요.
                   <div style={styles.toolTipDownArrow()} />
                 </div>
               )}

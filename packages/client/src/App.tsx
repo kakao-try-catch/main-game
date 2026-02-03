@@ -60,6 +60,7 @@ function AppContent() {
   //   'landing' | 'lobby' | 'game' | 'flappybird'
   // >('landing');
   const screen = useGameStore((s) => s.screen);
+  const setConnectionError = useGameStore((s) => s.setConnectionError);
 
   const gameReady = useGameStore((s) => s.gameReady);
   const setGameReady = useGameStore((s) => s.setGameReady);
@@ -293,6 +294,36 @@ function AppContent() {
       if (parts.length > 1) {
         roomId = parts[1].split('/')[0]; // /invite/ 다음의 첫 번째 세그먼트 가져오기
       }
+    }
+
+    // 소켓이 끊어진 경우 에러 메시지 표시 후 재연결 시도
+    if (!socketManager.isConnected()) {
+      console.log(
+        '[App] Socket disconnected, reconnecting before JOIN_ROOM...',
+      );
+
+      // 즉시 에러 메시지 표시
+      setConnectionError({ message: '서버가 응답하지 않습니다.' });
+
+      // 백그라운드에서 재연결 시도
+      socketManager.reconnect();
+      const socket = socketManager.getSocket();
+      if (socket) {
+        const onConnect = () => {
+          // 연결 성공 시 에러 메시지 제거하고 JOIN_ROOM 전송
+          setConnectionError(null);
+          const joinRoomPacket: JoinRoomPacket = {
+            type: SystemPacketType.JOIN_ROOM,
+            roomId: roomId,
+            playerName: inputNickname,
+          };
+          socketManager.send(joinRoomPacket);
+          console.log('JOIN_ROOM sent after reconnect: ', joinRoomPacket);
+        };
+
+        socket.once('connect', onConnect);
+      }
+      return;
     }
 
     const joinRoomPacket: JoinRoomPacket = {

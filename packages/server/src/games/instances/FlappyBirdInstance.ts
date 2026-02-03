@@ -530,8 +530,9 @@ export class FlappyBirdInstance implements GameInstance {
     if (this.isGameOverState) return;
 
     this.isGameOverState = true;
-    this.session.stopGame();
 
+    // 패킷을 먼저 전송한 후 게임을 정지해야 함
+    // (stopGame에서 destroy가 호출되어 this.score가 0으로 초기화되기 때문)
     const gameOverPacket: FlappyGameOverPacket = {
       type: FlappyBirdPacketType.FLAPPY_GAME_OVER,
       reason,
@@ -541,8 +542,10 @@ export class FlappyBirdInstance implements GameInstance {
     this.session.broadcastPacket(gameOverPacket);
 
     console.log(
-      `[FlappyBirdInstance] 게임 오버: ${reason} (Player ${playerIndex})`,
+      `[FlappyBirdInstance] 게임 오버: ${reason} (Player ${playerIndex}), 점수: ${this.score}`,
     );
+
+    this.session.stopGame();
   }
 
   // ========== 입력 처리 ==========

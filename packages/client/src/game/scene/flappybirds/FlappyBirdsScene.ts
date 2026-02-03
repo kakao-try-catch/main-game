@@ -976,8 +976,11 @@ export default class FlappyBirdsScene extends Phaser.Scene {
       console.log('[FlappyBirdsScene] Store 구독 해제 완료');
     }
 
-    // FlappyBird 상태 초기화
-    useGameStore.getState().resetFlappyState();
+    // 게임 오버 상태가 아닐 때만 FlappyBird 상태 초기화
+    // (게임 오버 시에는 결과 화면에서 점수를 표시해야 하므로 상태 유지)
+    if (!this.isGameOver) {
+      useGameStore.getState().resetFlappyState();
+    }
 
     // Mock 서버 코어 정리
     if (this.mockServerCore) {
